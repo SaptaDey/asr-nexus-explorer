@@ -23,19 +23,19 @@ interface APIConfig {
 export const APIIntegration: React.FC = () => {
   const [perplexityConfig, setPerplexityConfig] = useState<APIConfig>({
     name: 'Perplexity Sonar',
-    enabled: false,
+    enabled: true,
     apiKey: '',
     endpoint: 'https://api.perplexity.ai/chat/completions',
-    model: 'llama-3.1-sonar-small-128k-online',
+    model: 'sonar-reasoning-pro',
     status: 'disconnected'
   });
 
   const [geminiConfig, setGeminiConfig] = useState<APIConfig>({
     name: 'Gemini 2.5 Pro',
-    enabled: false,
+    enabled: true,
     apiKey: '',
     endpoint: 'https://generativelanguage.googleapis.com/v1beta/models',
-    model: 'gemini-2.5-pro',
+    model: 'gemini-2.5-pro-preview-05-06',
     status: 'disconnected'
   });
 
