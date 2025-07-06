@@ -169,7 +169,7 @@ export const useASRGoT = () => {
     localStorage.setItem('asr-got-api-keys', JSON.stringify(keys));
   }, []);
 
-  const stageProgress = ((currentStage + 1) / 8) * 100;
+  const stageProgress = ((currentStage + 1) / 9) * 100;
 
   const callPerplexityAPI = async (query: string): Promise<string> => {
     if (!apiKeys.perplexity) {
@@ -214,7 +214,7 @@ export const useASRGoT = () => {
     }
 
     try {
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-0506:generateContent', {
         method: 'POST',
         headers: {
           'x-goog-api-key': apiKeys.gemini,
@@ -230,8 +230,13 @@ export const useASRGoT = () => {
           ],
           generationConfig: {
             temperature: 0.4,
-            maxOutputTokens: 2000,
-          }
+            maxOutputTokens: 1000000,
+          },
+          tools: [
+            {
+              codeExecution: {}
+            }
+          ]
         }),
       });
 
@@ -283,6 +288,9 @@ export const useASRGoT = () => {
         case 7: // Reflection
           result = await performReflection();
           break;
+        case 8: // Final Comprehensive Analysis
+          result = await generateFinalAnalysis();
+          break;
       }
       
       setStageResults(prev => {
@@ -292,7 +300,12 @@ export const useASRGoT = () => {
       });
       
       if (stageIndex === currentStage) {
-        setCurrentStage(prev => Math.min(prev + 1, 7));
+        setCurrentStage(prev => Math.min(prev + 1, 8));
+      }
+      
+      // Automatically trigger final analysis after reflection
+      if (stageIndex === 7 && !stageResults[8]) {
+        setTimeout(() => executeStage(8), 2000);
       }
       
       toast.success(`Stage ${stageIndex + 1} completed successfully`);
@@ -535,6 +548,69 @@ export const useASRGoT = () => {
     );
 
     return `**Stage 8 Complete: Reflection & Audit**\n\n**Critical Assessment:**\n${reflection}`;
+  };
+
+  const generateFinalAnalysis = async (): Promise<string> => {
+    // Compile all previous stage results
+    const allResults = stageResults.join('\n\n---\n\n');
+    
+    // Generate comprehensive final analysis with Gemini Pro
+    const finalAnalysis = await callGeminiAPI(
+      `You are a PhD-level scientist conducting comprehensive analysis. Based on all the research stages completed below, generate a detailed final scientific report with:
+
+1. **Executive Summary** (key findings and conclusions)
+2. **Methodology Analysis** (research approach evaluation)
+3. **Evidence Synthesis** (critical analysis of all collected evidence)
+4. **Statistical Analysis** (quantitative insights where applicable)
+5. **Visualization Recommendations** (suggest graphs, charts, tables that should be created)
+6. **Conclusions** (definitive scientific conclusions)
+7. **Future Research Directions** (recommended next steps)
+8. **References and Citations** (Vancouver format)
+
+Include code snippets for data visualization using Python/R where appropriate. Generate actual data tables and statistical analyses.
+
+Previous Research Stages:
+${allResults}
+
+Research Context: ${JSON.stringify(researchContext, null, 2)}
+
+Please provide a comprehensive, PhD-level scientific analysis that could be published in a peer-reviewed journal.`
+    );
+
+    // Create final analysis node
+    const finalNode: GraphNode = {
+      id: '9.0',
+      label: 'Final Comprehensive Analysis',
+      type: 'root',
+      confidence: [0.9, 0.9, 0.9, 0.9],
+      metadata: {
+        parameter_id: 'P1.0',
+        type: 'Final Analysis',
+        source_description: 'Comprehensive PhD-level scientific analysis',
+        value: finalAnalysis,
+        timestamp: new Date().toISOString(),
+        notes: 'Complete synthesis of all research stages'
+      },
+      position: { x: 400, y: 800 }
+    };
+
+    setGraphData(prev => ({
+      nodes: [...prev.nodes, finalNode],
+      edges: [...prev.edges]
+    }));
+
+    return `# Final Comprehensive Scientific Analysis
+
+${finalAnalysis}
+
+---
+
+## Research Statistics
+- **Total Knowledge Nodes**: ${graphData.nodes.length + 1}
+- **Research Connections**: ${graphData.edges.length}
+- **Stages Completed**: 9/9
+- **Research Field**: ${researchContext.field}
+- **Analysis Date**: ${new Date().toLocaleDateString()}`;
   };
 
   const resetFramework = useCallback(() => {

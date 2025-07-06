@@ -41,7 +41,7 @@ const Index = () => {
   const stages = [
     "Initialization", "Decomposition", "Hypothesis/Planning", 
     "Evidence Integration", "Pruning/Merging", "Subgraph Extraction",
-    "Composition", "Reflection"
+    "Composition", "Reflection", "Final Analysis"
   ];
 
   // Check for API keys on mount
@@ -191,7 +191,7 @@ const Index = () => {
                 style={{ width: `${stageProgress}%` }}
               />
             </Progress>
-            <div className="grid grid-cols-8 gap-1 mt-2">
+            <div className="grid grid-cols-9 gap-1 mt-2">
               {stages.map((stage, index) => (
                 <div
                   key={index}

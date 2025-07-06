@@ -1,5 +1,7 @@
 
 import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -67,7 +69,7 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
   const stageNames = [
     'Initialization', 'Decomposition', 'Hypothesis/Planning', 
     'Evidence Integration', 'Pruning/Merging', 'Subgraph Extraction',
-    'Composition', 'Reflection'
+    'Composition', 'Reflection', 'Final Analysis'
   ];
 
   const renderStageInput = () => {
@@ -125,7 +127,7 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
           </p>
           <Button 
             onClick={handleContinueToNext}
-            disabled={isProcessing || currentStage >= 8}
+            disabled={isProcessing || currentStage >= 9}
             className="gradient-bg"
           >
             {isProcessing ? (
@@ -198,10 +200,10 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
               <div>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="font-medium">Overall Progress</span>
-                  <span className="gradient-text font-bold">{Math.round(((currentStage + 1) / 8) * 100)}%</span>
+                  <span className="gradient-text font-bold">{Math.round(((currentStage + 1) / 9) * 100)}%</span>
                 </div>
                 <Progress 
-                  value={((currentStage + 1) / 8) * 100} 
+                  value={((currentStage + 1) / 9) * 100} 
                   className="h-3 bg-purple-100"
                 />
               </div>
@@ -225,8 +227,25 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
                           </div>
                         </CardHeader>
                         <CardContent className="pt-0">
-                          <div className="text-sm whitespace-pre-wrap">
-                            {result}
+                          <div className="text-sm prose prose-sm max-w-none">
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                h1: ({children}) => <h1 className="gradient-text text-lg font-bold mb-2">{children}</h1>,
+                                h2: ({children}) => <h2 className="gradient-text text-base font-semibold mb-2">{children}</h2>,
+                                h3: ({children}) => <h3 className="text-purple-700 text-sm font-semibold mb-1">{children}</h3>,
+                                p: ({children}) => <p className="mb-2 text-sm">{children}</p>,
+                                ul: ({children}) => <ul className="list-disc pl-4 mb-2 text-sm">{children}</ul>,
+                                ol: ({children}) => <ol className="list-decimal pl-4 mb-2 text-sm">{children}</ol>,
+                                code: ({children}) => <code className="bg-purple-100 px-1 py-0.5 rounded text-xs">{children}</code>,
+                                pre: ({children}) => <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{children}</pre>,
+                                table: ({children}) => <table className="border-collapse border border-gray-300 text-xs w-full mb-2">{children}</table>,
+                                th: ({children}) => <th className="border border-gray-300 px-2 py-1 bg-purple-50 font-semibold">{children}</th>,
+                                td: ({children}) => <td className="border border-gray-300 px-2 py-1">{children}</td>,
+                              }}
+                            >
+                              {result}
+                            </ReactMarkdown>
                           </div>
                         </CardContent>
                       </Card>
@@ -274,7 +293,7 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
               </div>
 
               {/* Continue Button */}
-              {!isProcessing && currentStage < 7 && stageResults.length > 0 && (
+              {!isProcessing && currentStage < 8 && stageResults.length > 0 && (
                 <Button 
                   onClick={handleContinueToNext}
                   className="w-full gradient-bg"
@@ -282,6 +301,23 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
                   <Zap className="h-4 w-4 mr-2" />
                   Continue to Next Stage
                 </Button>
+              )}
+              
+              {/* Final Analysis Complete */}
+              {stageResults.length >= 9 && (
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <h3 className="font-semibold text-green-800">Analysis Complete!</h3>
+                  </div>
+                  <p className="text-sm text-green-700 mb-3">
+                    Comprehensive PhD-level scientific analysis has been generated.
+                  </p>
+                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Export Final Report (HTML)
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -311,7 +347,7 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground">Stages Completed</div>
-                        <div className="font-medium">{stageResults.length} / 8</div>
+                        <div className="font-medium">{stageResults.length} / 9</div>
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground">Knowledge Nodes</div>
