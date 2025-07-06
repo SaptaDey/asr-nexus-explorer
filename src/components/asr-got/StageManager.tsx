@@ -10,6 +10,7 @@ interface StageManagerProps {
   stages: string[];
   onExecuteStage: (stageIndex: number, input?: any) => void;
   isProcessing: boolean;
+  stageResults: string[];
 }
 
 const stageDescriptions = [
@@ -38,7 +39,8 @@ export const StageManager: React.FC<StageManagerProps> = ({
   currentStage,
   stages,
   onExecuteStage,
-  isProcessing
+  isProcessing,
+  stageResults
 }) => {
   return (
     <div className="space-y-6">
