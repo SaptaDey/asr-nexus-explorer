@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,16 +8,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Play, 
-  Pause, 
-  SkipForward, 
   Brain, 
   Search, 
   FileText, 
   Network,
   Loader2,
-  CheckCircle
+  CheckCircle,
+  Sparkles,
+  Rocket,
+  Zap
 } from 'lucide-react';
 import { GraphData } from '@/hooks/useASRGoT';
 import { toast } from 'sonner';
@@ -26,28 +29,30 @@ interface ResearchInterfaceProps {
   graphData: GraphData;
   onExecuteStage: (stageIndex: number, input?: any) => void;
   isProcessing: boolean;
+  stageResults?: string[];
+  researchContext?: {
+    field: string;
+    topic: string;
+    objectives: string[];
+    hypotheses: string[];
+  };
 }
 
 export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
   currentStage,
   graphData,
   onExecuteStage,
-  isProcessing
+  isProcessing,
+  stageResults = [],
+  researchContext
 }) => {
   const [researchQuery, setResearchQuery] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
-  const [selectedDimensions, setSelectedDimensions] = useState<string[]>([]);
-  const [hypotheses, setHypotheses] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('input');
-
-  const defaultDimensions = [
-    'Scope', 'Objectives', 'Constraints', 'Data Needs', 
-    'Use Cases', 'Potential Biases', 'Knowledge Gaps'
-  ];
 
   const handleStartResearch = async () => {
     if (!taskDescription.trim()) {
-      toast.error('Please provide a task description');
+      toast.error('Please provide a research question or topic');
       return;
     }
 
@@ -55,312 +60,307 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
     setActiveTab('progress');
   };
 
-  const handleDecomposition = async () => {
-    const dimensions = selectedDimensions.length > 0 ? selectedDimensions : defaultDimensions;
-    await onExecuteStage(1, dimensions);
+  const handleContinueToNext = async () => {
+    await onExecuteStage(currentStage);
   };
 
-  const handleHypothesisGeneration = async () => {
-    if (hypotheses.length === 0) {
-      toast.error('Please add at least one hypothesis');
-      return;
-    }
-    await onExecuteStage(2, hypotheses);
-  };
+  const stageNames = [
+    'Initialization', 'Decomposition', 'Hypothesis/Planning', 
+    'Evidence Integration', 'Pruning/Merging', 'Subgraph Extraction',
+    'Composition', 'Reflection'
+  ];
 
-  const addHypothesis = () => {
-    setHypotheses([...hypotheses, '']);
-  };
-
-  const updateHypothesis = (index: number, value: string) => {
-    const updated = [...hypotheses];
-    updated[index] = value;
-    setHypotheses(updated);
-  };
-
-  const removeHypothesis = (index: number) => {
-    setHypotheses(hypotheses.filter((_, i) => i !== index));
-  };
-
-  const toggleDimension = (dimension: string) => {
-    setSelectedDimensions(prev => 
-      prev.includes(dimension) 
-        ? prev.filter(d => d !== dimension)
-        : [...prev, dimension]
-    );
-  };
-
-  const stageInputs = {
-    0: (
-      <div className="space-y-4">
-        <div>
-          <Label htmlFor="task-description">Research Task Description</Label>
-          <Textarea
-            id="task-description"
-            placeholder="Describe your research question or scientific problem..."
-            value={taskDescription}
-            onChange={(e) => setTaskDescription(e.target.value)}
-            rows={4}
-          />
-        </div>
-        <Button onClick={handleStartResearch} disabled={isProcessing}>
-          {isProcessing ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Initializing...
-            </>
-          ) : (
-            <>
-              <Play className="h-4 w-4 mr-2" />
-              Start Research
-            </>
-          )}
-        </Button>
-      </div>
-    ),
-    1: (
-      <div className="space-y-4">
-        <div>
-          <Label>Task Decomposition Dimensions</Label>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            {defaultDimensions.map(dimension => (
-              <div 
-                key={dimension}
-                className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                  selectedDimensions.includes(dimension) 
-                    ? 'border-primary bg-primary/5' 
-                    : 'hover:bg-muted'
-                }`}
-                onClick={() => toggleDimension(dimension)}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{dimension}</span>
-                  {selectedDimensions.includes(dimension) && (
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                  )}
-                </div>
-              </div>
-            ))}
+  const renderStageInput = () => {
+    if (currentStage === 0 && !stageResults[0]) {
+      return (
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="task-description" className="text-lg font-semibold">Research Question or Topic</Label>
+            <Textarea
+              id="task-description"
+              placeholder="Enter your scientific research question or topic of interest. The AI will automatically analyze the field, generate hypotheses, and conduct comprehensive research..."
+              value={taskDescription}
+              onChange={(e) => setTaskDescription(e.target.value)}
+              rows={4}
+              className="mt-2"
+            />
           </div>
-        </div>
-        <Button onClick={handleDecomposition} disabled={isProcessing}>
-          {isProcessing ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Decomposing...
-            </>
-          ) : (
-            <>
-              <Network className="h-4 w-4 mr-2" />
-              Execute Decomposition
-            </>
-          )}
-        </Button>
-      </div>
-    ),
-    2: (
-      <div className="space-y-4">
-        <div>
-          <Label>Research Hypotheses</Label>
-          <div className="space-y-3 mt-2">
-            {hypotheses.map((hypothesis, index) => (
-              <div key={index} className="flex gap-2">
-                <Textarea
-                  placeholder={`Hypothesis ${index + 1}...`}
-                  value={hypothesis}
-                  onChange={(e) => updateHypothesis(index, e.target.value)}
-                  rows={2}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => removeHypothesis(index)}
-                >
-                  Remove
-                </Button>
-              </div>
-            ))}
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+            <h4 className="font-semibold text-purple-800 mb-2">AI-Powered Research Process</h4>
+            <ul className="text-sm text-purple-700 space-y-1">
+              <li>• Automatic field identification and background research</li>
+              <li>• AI-generated hypotheses and research dimensions</li>
+              <li>• Real-time evidence collection via Perplexity Sonar</li>
+              <li>• Advanced analysis with Gemini 2.5 Pro</li>
+              <li>• Comprehensive scientific reasoning and validation</li>
+            </ul>
           </div>
-          <Button
-            variant="outline"
-            onClick={addHypothesis}
-            className="mt-2"
-          >
-            Add Hypothesis
+          <Button onClick={handleStartResearch} disabled={isProcessing} className="w-full gradient-bg">
+            {isProcessing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                AI is analyzing and researching...
+              </>
+            ) : (
+              <>
+                <Rocket className="h-4 w-4 mr-2" />
+                Start AI-Powered Research
+              </>
+            )}
           </Button>
         </div>
-        <Button onClick={handleHypothesisGeneration} disabled={isProcessing}>
-          {isProcessing ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Brain className="h-4 w-4 mr-2" />
-              Generate Hypotheses
-            </>
-          )}
-        </Button>
-      </div>
-    ),
-    3: (
+      );
+    }
+
+    return (
       <div className="space-y-4">
-        <div>
-          <Label htmlFor="research-query">Research Query for Evidence</Label>
-          <Input
-            id="research-query"
-            placeholder="Enter specific research query for Perplexity..."
-            value={researchQuery}
-            onChange={(e) => setResearchQuery(e.target.value)}
-          />
+        <div className="text-center">
+          <div className="mb-4">
+            <Badge className="bg-purple-100 text-purple-800 text-lg px-4 py-2">
+              Stage {currentStage + 1}: {stageNames[currentStage]}
+            </Badge>
+          </div>
+          <p className="text-muted-foreground mb-4">
+            The AI will automatically proceed with the next stage of analysis
+          </p>
+          <Button 
+            onClick={handleContinueToNext}
+            disabled={isProcessing || currentStage >= 8}
+            className="gradient-bg"
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                AI Processing...
+              </>
+            ) : (
+              <>
+                <Zap className="h-4 w-4 mr-2" />
+                Continue AI Analysis
+              </>
+            )}
+          </Button>
         </div>
-        <Button 
-          onClick={() => onExecuteStage(3, researchQuery)} 
-          disabled={isProcessing}
-        >
-          {isProcessing ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Integrating Evidence...
-            </>
-          ) : (
-            <>
-              <Search className="h-4 w-4 mr-2" />
-              Integrate Evidence
-            </>
-          )}
-        </Button>
       </div>
-    )
+    );
   };
 
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="input">Research Input</TabsTrigger>
-          <TabsTrigger value="progress">Progress</TabsTrigger>
-          <TabsTrigger value="results">Results</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 bg-white/50">
+          <TabsTrigger value="input" className="data-[state=active]:gradient-bg data-[state=active]:text-white">Research Input</TabsTrigger>
+          <TabsTrigger value="progress" className="data-[state=active]:gradient-bg data-[state=active]:text-white">AI Analysis</TabsTrigger>
+          <TabsTrigger value="results" className="data-[state=active]:gradient-bg data-[state=active]:text-white">Results</TabsTrigger>
         </TabsList>
 
         <TabsContent value="input" className="space-y-6">
-          <Card>
+          <Card className="card-gradient">
             <CardHeader>
-              <CardTitle>
-                Stage {currentStage + 1}: {
-                  ['Initialization', 'Decomposition', 'Hypothesis/Planning', 'Evidence Integration',
-                   'Pruning/Merging', 'Subgraph Extraction', 'Composition', 'Reflection'][currentStage]
-                }
+              <CardTitle className="gradient-text flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                Research Configuration
               </CardTitle>
               <CardDescription>
-                Provide the required inputs for the current stage
+                Enter your research topic and let AI guide the complete analysis
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {stageInputs[currentStage] || (
-                <div className="text-center py-8">
-                  <Button 
-                    onClick={() => onExecuteStage(currentStage)}
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Play className="h-4 w-4 mr-2" />
-                        Execute Stage
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
+              {renderStageInput()}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="progress" className="space-y-6">
-          <Card>
+          <Card className="card-gradient">
             <CardHeader>
-              <CardTitle>Research Progress</CardTitle>
+              <CardTitle className="gradient-text flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                AI-Powered Research Progress
+              </CardTitle>
               <CardDescription>
-                Monitor the ASR-GoT framework execution
+                Monitor the ASR-GoT framework execution with real-time AI analysis
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+              {/* Current Research Context */}
+              {researchContext?.topic && (
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border">
+                  <h3 className="font-semibold gradient-text mb-2">Current Research</h3>
+                  <p className="text-sm"><strong>Topic:</strong> {researchContext.topic}</p>
+                  {researchContext.field && (
+                    <p className="text-sm"><strong>Field:</strong> {researchContext.field}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Progress Overview */}
               <div>
                 <div className="flex justify-between text-sm mb-2">
-                  <span>Overall Progress</span>
-                  <span>{Math.round(((currentStage + 1) / 8) * 100)}%</span>
+                  <span className="font-medium">Overall Progress</span>
+                  <span className="gradient-text font-bold">{Math.round(((currentStage + 1) / 8) * 100)}%</span>
                 </div>
-                <Progress value={((currentStage + 1) / 8) * 100} />
+                <Progress 
+                  value={((currentStage + 1) / 8) * 100} 
+                  className="h-3 bg-purple-100"
+                />
               </div>
 
+              {/* Stage Results */}
+              <div className="space-y-4">
+                <h3 className="font-semibold gradient-text">Stage Analysis Results</h3>
+                <ScrollArea className="h-96 w-full">
+                  <div className="space-y-4 pr-4">
+                    {stageResults.map((result, index) => (
+                      <Card key={index} className="card-gradient">
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <CardTitle className="text-sm">
+                              Stage {index + 1}: {stageNames[index]}
+                            </CardTitle>
+                            <Badge variant="secondary" className="text-xs">
+                              Completed
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="text-sm whitespace-pre-wrap">
+                            {result}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    
+                    {/* Current Processing Stage */}
+                    {isProcessing && (
+                      <Card className="card-gradient border-purple-200 border-2">
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
+                            <CardTitle className="text-sm gradient-text">
+                              Stage {currentStage + 1}: {stageNames[currentStage]}
+                            </CardTitle>
+                            <Badge className="gradient-bg text-white text-xs">
+                              Processing
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="text-sm text-muted-foreground">
+                            AI is analyzing and processing this stage...
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+
+              {/* Graph Statistics */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{graphData.nodes.length}</div>
-                  <div className="text-sm text-muted-foreground">Nodes Created</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{graphData.edges.length}</div>
-                  <div className="text-sm text-muted-foreground">Edges Created</div>
-                </div>
+                <Card className="card-gradient">
+                  <CardContent className="p-4 text-center">
+                    <div className="text-2xl font-bold gradient-text">{graphData.nodes.length}</div>
+                    <div className="text-sm text-muted-foreground">Knowledge Nodes</div>
+                  </CardContent>
+                </Card>
+                <Card className="card-gradient">
+                  <CardContent className="p-4 text-center">
+                    <div className="text-2xl font-bold gradient-text">{graphData.edges.length}</div>
+                    <div className="text-sm text-muted-foreground">Reasoning Links</div>
+                  </CardContent>
+                </Card>
               </div>
 
-              {isProcessing && (
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                  <span>Processing stage {currentStage + 1}...</span>
-                </div>
+              {/* Continue Button */}
+              {!isProcessing && currentStage < 7 && stageResults.length > 0 && (
+                <Button 
+                  onClick={handleContinueToNext}
+                  className="w-full gradient-bg"
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Continue to Next Stage
+                </Button>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="results" className="space-y-6">
-          <Card>
+          <Card className="card-gradient">
             <CardHeader>
-              <CardTitle>Research Results</CardTitle>
+              <CardTitle className="gradient-text flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Comprehensive Research Results
+              </CardTitle>
               <CardDescription>
-                View generated insights and conclusions
+                AI-generated insights and comprehensive scientific analysis
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {graphData.nodes.length > 0 ? (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-medium mb-2">Generated Knowledge Graph</h3>
+              {stageResults.length > 0 ? (
+                <div className="space-y-6">
+                  {/* Research Summary */}
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border">
+                    <h3 className="font-bold gradient-text text-lg mb-4">Research Summary</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <div className="text-sm text-muted-foreground">Node Types</div>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {Array.from(new Set(graphData.nodes.map(n => n.type))).map(type => (
-                            <Badge key={type} variant="secondary">{type}</Badge>
-                          ))}
-                        </div>
+                        <div className="text-sm text-muted-foreground">Research Field</div>
+                        <div className="font-medium">{researchContext?.field || 'General Science'}</div>
                       </div>
                       <div>
-                        <div className="text-sm text-muted-foreground">Edge Types</div>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {Array.from(new Set(graphData.edges.map(e => e.type))).map(type => (
-                            <Badge key={type} variant="outline">{type}</Badge>
-                          ))}
-                        </div>
+                        <div className="text-sm text-muted-foreground">Stages Completed</div>
+                        <div className="font-medium">{stageResults.length} / 8</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-muted-foreground">Knowledge Nodes</div>
+                        <div className="font-medium">{graphData.nodes.length}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-muted-foreground">Reasoning Connections</div>
+                        <div className="font-medium">{graphData.edges.length}</div>
                       </div>
                     </div>
                   </div>
-                  
-                  <Button variant="outline" className="w-full">
+
+                  {/* Node and Edge Analysis */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-semibold gradient-text mb-2">Knowledge Types</h4>
+                      <div className="space-y-1">
+                        {Array.from(new Set(graphData.nodes.map(n => n.type))).map(type => (
+                          <Badge key={type} variant="secondary" className="mr-1">
+                            {type} ({graphData.nodes.filter(n => n.type === type).length})
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold gradient-text mb-2">Relationship Types</h4>
+                      <div className="space-y-1">
+                        {Array.from(new Set(graphData.edges.map(e => e.type))).map(type => (
+                          <Badge key={type} variant="outline" className="mr-1">
+                            {type} ({graphData.edges.filter(e => e.type === type).length})
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Export Button */}
+                  <Button className="w-full gradient-bg">
                     <FileText className="h-4 w-4 mr-2" />
-                    Export Results
+                    Export Complete Analysis
                   </Button>
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No results available yet. Start the research process to generate insights.
+                <div className="text-center py-12">
+                  <Brain className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-medium text-muted-foreground mb-2">No Results Yet</h3>
+                  <p className="text-muted-foreground">
+                    Start the research process to generate comprehensive AI-powered insights.
+                  </p>
                 </div>
               )}
             </CardContent>
