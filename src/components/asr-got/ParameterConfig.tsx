@@ -107,5 +107,6 @@ export const ParameterConfig: React.FC<ParameterConfigProps> = ({
         ))}
       </Tabs>
     </div>
+  );
 };
 
