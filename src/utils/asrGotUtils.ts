@@ -93,19 +93,19 @@ export const exportGraphAsSVG = (graphData: GraphData) => {
   exportSVG(graphData);
 };
 
-export const loadApiKeysFromStorage = () => {
+export const loadApiKeysFromStorage = (): APICredentials => {
   const cached = sessionStorage.getItem('asr-got-credentials');
   if (cached) {
     try {
       return JSON.parse(cached);
     } catch (error) {
       console.warn('Failed to load cached credentials');
-      return { perplexity: '', gemini: '' };
+      return { gemini: '' };
     }
   }
-  return { perplexity: '', gemini: '' };
+  return { gemini: '' };
 };
 
-export const saveApiKeysToStorage = (apiKeys: { perplexity: string; gemini: string }) => {
+export const saveApiKeysToStorage = (apiKeys: APICredentials) => {
   sessionStorage.setItem('asr-got-credentials', JSON.stringify(apiKeys));
 };

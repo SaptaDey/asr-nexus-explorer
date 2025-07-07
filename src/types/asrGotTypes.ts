@@ -95,7 +95,7 @@ export interface ASRGoTParameters {
 }
 
 export interface APICredentials {
-  perplexity: string;
+  perplexity?: string;
   gemini: string;
   mcp_servers?: string[];
 }

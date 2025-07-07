@@ -78,7 +78,7 @@ export const callGeminiAPI = async (prompt: string, apiKey: string): Promise<str
   }
 
   try {
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent', {
       method: 'POST',
       headers: {
         'x-goog-api-key': apiKey,
@@ -97,6 +97,14 @@ export const callGeminiAPI = async (prompt: string, apiKey: string): Promise<str
           maxOutputTokens: 120000,
         },
         tools: [
+          {
+            googleSearchRetrieval: {
+              dynamicRetrievalConfig: {
+                mode: "MODE_DYNAMIC",
+                dynamicThreshold: 0.7
+              }
+            }
+          },
           {
             codeExecution: {}
           }

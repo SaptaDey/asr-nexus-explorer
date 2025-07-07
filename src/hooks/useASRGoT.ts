@@ -34,7 +34,7 @@ export const useASRGoT = () => {
   const [graphData, setGraphData] = useState<GraphData>(createInitialGraphData);
   const [parameters, setParameters] = useState<ASRGoTParameters>(completeASRGoTParameters);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [apiKeys, setApiKeys] = useState<APICredentials>({ perplexity: '', gemini: '' });
+  const [apiKeys, setApiKeys] = useState<APICredentials>({ gemini: '' });
   const [stageResults, setStageResults] = useState<string[]>([]);
   const [researchContext, setResearchContext] = useState<ResearchContext>(createInitialResearchContext);
   const [stageEngine, setStageEngine] = useState<AsrGotStageEngine | null>(null);
@@ -42,7 +42,7 @@ export const useASRGoT = () => {
 
   // Initialize Stage Engine when API keys are available
   useEffect(() => {
-    if (apiKeys.perplexity && apiKeys.gemini && !stageEngine) {
+    if (apiKeys.gemini && !stageEngine) {
       const engine = new AsrGotStageEngine(apiKeys, graphData);
       setStageEngine(engine);
     }
@@ -69,8 +69,8 @@ export const useASRGoT = () => {
 
   // ASR-GoT 8-Stage Execution Engine
   const executeStage = useCallback(async (stageIndex: number, input?: any) => {
-    if (!apiKeys.perplexity || !apiKeys.gemini) {
-      toast.error('Please configure API keys first');
+    if (!apiKeys.gemini) {
+      toast.error('Please configure Gemini API key first');
       return;
     }
 

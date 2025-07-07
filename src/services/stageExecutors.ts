@@ -4,10 +4,10 @@
  */
 
 import { GraphData, GraphNode, GraphEdge, ResearchContext } from '@/types/asrGotTypes';
-import { callPerplexityAPI, callGeminiAPI } from './apiService';
+import { callGeminiAPI } from './apiService';
 
 export interface StageExecutorContext {
-  apiKeys: { perplexity: string; gemini: string };
+  apiKeys: { gemini: string };
   graphData: GraphData;
   researchContext: ResearchContext;
   stageResults: string[];
@@ -19,16 +19,21 @@ export const initializeGraph = async (
   taskDescription: string,
   context: StageExecutorContext
 ): Promise<string> => {
-  // Analyze research field using Gemini
-  const fieldAnalysis = await callGeminiAPI(
-    `Analyze this research question and identify: 1) The primary scientific field, 2) Key research objectives, 3) Potential interdisciplinary connections. Question: "${taskDescription}"`,
-    context.apiKeys.gemini
-  );
+  // Comprehensive research analysis using Gemini with web search
+  const comprehensiveAnalysis = await callGeminiAPI(
+    `You are a PhD-level researcher. Perform a comprehensive analysis of this research question using web search capabilities:
 
-  // Get background research using Perplexity
-  const backgroundResearch = await callPerplexityAPI(
-    `Provide current scientific background and recent developments for: ${taskDescription}`,
-    context.apiKeys.perplexity
+Research Question: "${taskDescription}"
+
+Please provide:
+1. **Field Analysis**: Identify the primary scientific field, key research objectives, and potential interdisciplinary connections
+2. **Current Background**: Search for and analyze recent scientific developments, publications, and trends in this field
+3. **Key Researchers**: Identify leading researchers and institutions working in this area
+4. **Methodological Approaches**: Common research methodologies used in this field
+5. **Recent Breakthroughs**: Latest significant findings or innovations (within last 2 years)
+
+Use web search to find current, peer-reviewed sources and provide a comprehensive foundation for research planning.`,
+    context.apiKeys.gemini
   );
 
   const rootNode: GraphNode = {
@@ -42,7 +47,7 @@ export const initializeGraph = async (
       source_description: 'Initial task understanding with AI analysis',
       value: taskDescription,
       timestamp: new Date().toISOString(),
-      notes: `Field Analysis: ${fieldAnalysis}\n\nBackground: ${backgroundResearch}`
+      notes: comprehensiveAnalysis
     },
     position: { x: 400, y: 200 }
   };
@@ -60,16 +65,19 @@ export const initializeGraph = async (
     }
   }));
 
-  // Update research context
+  // Update research context - extract field from comprehensive analysis
+  const fieldMatch = comprehensiveAnalysis.match(/\*\*Field Analysis\*\*[\s\S]*?(\w+[\w\s]+)/);
+  const field = fieldMatch ? fieldMatch[1].trim() : 'General Science';
+  
   const newContext = {
     ...context.researchContext,
-    field: fieldAnalysis.split('\n')[0] || 'General Science',
+    field: field,
     topic: taskDescription,
-    objectives: fieldAnalysis.split('\n').slice(1, 4) || []
+    objectives: comprehensiveAnalysis.split('\n').filter(line => line.includes('objective')).slice(0, 3)
   };
   context.setResearchContext(() => newContext);
 
-  return `**Stage 1 Complete: Initialization**\n\n**Field Analysis:**\n${fieldAnalysis}\n\n**Background Research:**\n${backgroundResearch}`;
+  return `**Stage 1 Complete: Initialization**\n\n${comprehensiveAnalysis}`;
 };
 
 export const decomposeTask = async (
@@ -132,20 +140,25 @@ export const generateHypotheses = async (
   customHypotheses: string[] | undefined,
   context: StageExecutorContext
 ): Promise<string> => {
-  // Generate hypotheses using both AI models
-  const hypothesisGeneration = await callPerplexityAPI(
-    `Generate 3-5 testable scientific hypotheses for: ${context.researchContext.topic}. Include falsification criteria for each hypothesis.`,
-    context.apiKeys.perplexity
-  );
+  // Generate comprehensive hypotheses using Gemini with web search
+  const comprehensiveHypothesisAnalysis = await callGeminiAPI(
+    `You are a PhD-level researcher. Using web search capabilities, generate and analyze testable scientific hypotheses for: "${context.researchContext.topic}"
 
-  const hypothesisAnalysis = await callGeminiAPI(
-    `Analyze these hypotheses for scientific rigor, testability, and potential impact: ${hypothesisGeneration}`,
+Please provide:
+1. **Hypothesis Generation**: Create 3-5 specific, testable scientific hypotheses based on current literature
+2. **Falsification Criteria**: Define clear criteria for how each hypothesis could be falsified
+3. **Methodological Approaches**: Suggest research methods to test each hypothesis
+4. **Statistical Considerations**: Identify appropriate statistical tests and sample size considerations
+5. **Literature Support**: Reference recent peer-reviewed studies that support or challenge each hypothesis
+6. **Impact Assessment**: Evaluate the potential scientific impact of each hypothesis
+
+Use web search to ensure hypotheses are grounded in current scientific understanding and identify any similar work already published.`,
     context.apiKeys.gemini
   );
 
   // Extract hypotheses from AI response
-  const generatedHypotheses = hypothesisGeneration.split('\n').filter(line => 
-    line.includes('Hypothesis') || line.includes('H1:') || line.includes('H2:') || line.includes('H3:')
+  const generatedHypotheses = comprehensiveHypothesisAnalysis.split('\n').filter(line => 
+    line.includes('Hypothesis') || line.includes('H1:') || line.includes('H2:') || line.includes('H3:') || line.includes('**H')
   ).slice(0, 5);
 
   const hypothesisNodes: GraphNode[] = generatedHypotheses.map((hyp, index) => ({
@@ -159,7 +172,7 @@ export const generateHypotheses = async (
       source_description: 'AI-generated hypothesis with analysis',
       value: hyp,
       timestamp: new Date().toISOString(),
-      notes: hypothesisAnalysis,
+      notes: comprehensiveHypothesisAnalysis,
       falsification_criteria: `Testable via experimental validation - ${hyp}`,
       impact_score: 0.7 + (index * 0.05)
     },
@@ -202,22 +215,27 @@ export const generateHypotheses = async (
     hypotheses: generatedHypotheses
   }));
 
-  return `**Stage 3 Complete: Hypothesis Generation**\n\n**Generated Hypotheses:**\n${hypothesisGeneration}\n\n**AI Analysis:**\n${hypothesisAnalysis}`;
+  return `**Stage 3 Complete: Hypothesis Generation**\n\n${comprehensiveHypothesisAnalysis}`;
 };
 
 export const integrateEvidence = async (
   query: string | undefined,
   context: StageExecutorContext
 ): Promise<string> => {
-  // Search for evidence using Perplexity
-  const evidenceSearch = await callPerplexityAPI(
-    `Find recent scientific evidence and research studies related to: ${context.researchContext.topic}. Focus on peer-reviewed sources and statistical data.`,
-    context.apiKeys.perplexity
-  );
+  // Comprehensive evidence analysis using Gemini with web search
+  const comprehensiveEvidenceAnalysis = await callGeminiAPI(
+    `You are a PhD-level researcher. Using web search capabilities, conduct comprehensive evidence integration for: "${context.researchContext.topic}"
 
-  // Analyze evidence using Gemini
-  const evidenceAnalysis = await callGeminiAPI(
-    `Analyze this scientific evidence for quality, statistical power, and relevance to our hypotheses: ${evidenceSearch}`,
+Please provide:
+1. **Literature Search**: Find and analyze recent peer-reviewed studies, meta-analyses, and systematic reviews
+2. **Statistical Evidence**: Identify studies with strong statistical power, effect sizes, and confidence intervals
+3. **Quality Assessment**: Evaluate research methodologies, sample sizes, and potential biases in found studies
+4. **Evidence Synthesis**: Synthesize findings across multiple studies and identify patterns
+5. **Gaps Analysis**: Identify what evidence is missing or inconclusive
+6. **Citation Network**: Map relationships between key studies and researchers
+7. **Strength of Evidence**: Rate the overall quality and reliability of available evidence
+
+Focus on recent publications (last 5 years) and high-impact journals. Provide specific citations and data where available.`,
     context.apiKeys.gemini
   );
 
@@ -230,11 +248,11 @@ export const integrateEvidence = async (
     metadata: {
       parameter_id: 'P1.4',
       type: 'Evidence',
-      source_description: 'AI-collected and analyzed evidence',
-      value: evidenceSearch,
+      source_description: 'AI-collected and analyzed evidence with web search',
+      value: comprehensiveEvidenceAnalysis,
       timestamp: new Date().toISOString(),
-      notes: evidenceAnalysis,
-      statistical_power: 0.75
+      notes: comprehensiveEvidenceAnalysis,
+      statistical_power: 0.85
     },
     position: { x: 600, y: 400 }
   }];
@@ -268,7 +286,7 @@ export const integrateEvidence = async (
     }
   }));
 
-  return `**Stage 4 Complete: Evidence Integration**\n\n**Evidence Found:**\n${evidenceSearch}\n\n**Analysis:**\n${evidenceAnalysis}`;
+  return `**Stage 4 Complete: Evidence Integration**\n\n${comprehensiveEvidenceAnalysis}`;
 };
 
 export const pruneMergeNodes = async (context: StageExecutorContext): Promise<string> => {
