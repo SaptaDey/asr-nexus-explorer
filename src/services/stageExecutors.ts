@@ -19,21 +19,22 @@ export const initializeGraph = async (
   taskDescription: string,
   context: StageExecutorContext
 ): Promise<string> => {
-  // Comprehensive research analysis using Gemini with web search
+  // Stage 1: Use structured outputs for canonical JSON generation
   const comprehensiveAnalysis = await callGeminiAPI(
-    `You are a PhD-level researcher. Perform a comprehensive analysis of this research question using web search capabilities:
+    `You are a PhD-level researcher. Perform a comprehensive analysis of this research question:
 
 Research Question: "${taskDescription}"
 
-Please provide:
+Please provide a structured analysis with:
 1. **Field Analysis**: Identify the primary scientific field, key research objectives, and potential interdisciplinary connections
-2. **Current Background**: Search for and analyze recent scientific developments, publications, and trends in this field
+2. **Current Background**: Analyze recent scientific developments, publications, and trends in this field
 3. **Key Researchers**: Identify leading researchers and institutions working in this area
 4. **Methodological Approaches**: Common research methodologies used in this field
 5. **Recent Breakthroughs**: Latest significant findings or innovations (within last 2 years)
 
-Use web search to find current, peer-reviewed sources and provide a comprehensive foundation for research planning.`,
-    context.apiKeys.gemini
+Provide a comprehensive foundation for research planning.`,
+    context.apiKeys.gemini,
+    'structured'
   );
 
   const rootNode: GraphNode = {
@@ -87,10 +88,11 @@ export const decomposeTask = async (
   const defaultDimensions = ['Scope', 'Objectives', 'Constraints', 'Data Needs', 'Use Cases', 'Potential Biases', 'Knowledge Gaps'];
   const useDimensions = dimensions || defaultDimensions;
 
-  // Get AI recommendations for decomposition
+  // Stage 2: Use structured outputs for decomposition analysis
   const decompositionAnalysis = await callGeminiAPI(
     `For the research topic "${context.researchContext.topic}", analyze each dimension and provide specific insights: ${useDimensions.join(', ')}`,
-    context.apiKeys.gemini
+    context.apiKeys.gemini,
+    'structured'
   );
 
   const dimensionNodes: GraphNode[] = useDimensions.map((dim, index) => ({
@@ -140,7 +142,7 @@ export const generateHypotheses = async (
   customHypotheses: string[] | undefined,
   context: StageExecutorContext
 ): Promise<string> => {
-  // Generate comprehensive hypotheses using Gemini with web search
+  // Stage 3 Pass A: Use search grounding for literature-based hypothesis generation
   const comprehensiveHypothesisAnalysis = await callGeminiAPI(
     `You are a PhD-level researcher. Using web search capabilities, generate and analyze testable scientific hypotheses for: "${context.researchContext.topic}"
 
@@ -153,7 +155,8 @@ Please provide:
 6. **Impact Assessment**: Evaluate the potential scientific impact of each hypothesis
 
 Use web search to ensure hypotheses are grounded in current scientific understanding and identify any similar work already published.`,
-    context.apiKeys.gemini
+    context.apiKeys.gemini,
+    'search'
   );
 
   // Extract hypotheses from AI response
@@ -222,7 +225,7 @@ export const integrateEvidence = async (
   query: string | undefined,
   context: StageExecutorContext
 ): Promise<string> => {
-  // Comprehensive evidence analysis using Gemini with web search
+  // Stage 4 Step 1: Use search grounding for evidence collection
   const comprehensiveEvidenceAnalysis = await callGeminiAPI(
     `You are a PhD-level researcher. Using web search capabilities, conduct comprehensive evidence integration for: "${context.researchContext.topic}"
 
@@ -236,7 +239,8 @@ Please provide:
 7. **Strength of Evidence**: Rate the overall quality and reliability of available evidence
 
 Focus on recent publications (last 5 years) and high-impact journals. Provide specific citations and data where available.`,
-    context.apiKeys.gemini
+    context.apiKeys.gemini,
+    'search'
   );
 
   // Create evidence nodes
@@ -290,36 +294,81 @@ Focus on recent publications (last 5 years) and high-impact journals. Provide sp
 };
 
 export const pruneMergeNodes = async (context: StageExecutorContext): Promise<string> => {
+  // Stage 5 Pass A: Use thinking mode for Bayesian reasoning
   const pruningAnalysis = await callGeminiAPI(
-    `Analyze the current research graph for: 1) Low-confidence nodes to prune, 2) Redundant information to merge, 3) Quality assessment of evidence and hypotheses.`,
-    context.apiKeys.gemini
+    `<thinking>
+    Analyze the current research graph for:
+    1) Low-confidence nodes to prune (E[C] < 0.2)
+    2) Redundant information to merge (semantic similarity ≥ 0.8)
+    3) Quality assessment of evidence and hypotheses
+    4) Bayesian updates to confidence scores
+    </thinking>
+    
+    Perform pure Bayesian analysis to identify nodes for pruning and merging. Consider confidence thresholds and semantic similarity.`,
+    context.apiKeys.gemini,
+    'thinking'
   );
 
   return `**Stage 5 Complete: Pruning/Merging**\n\n**Analysis:**\n${pruningAnalysis}`;
 };
 
 export const extractSubgraphs = async (context: StageExecutorContext): Promise<string> => {
+  // Stage 6: Use code execution for graph analysis
   const subgraphAnalysis = await callGeminiAPI(
-    `Identify the most important subgraphs and relationships in our research analysis. Focus on high-impact findings and strong evidence chains.`,
-    context.apiKeys.gemini
+    `Analyze the research graph using computational methods. Calculate centrality metrics, mutual information, and impact scores to identify the most important subgraphs.
+
+Graph Data: ${JSON.stringify(context.graphData, null, 2)}
+
+Write Python code to:
+1. Calculate node centrality (degree, betweenness, closeness)
+2. Compute mutual information between connected nodes
+3. Rank subgraphs by impact and relevance
+4. Generate NetworkX analysis results
+
+Return ranked list of top subgraphs with quantitative metrics.`,
+    context.apiKeys.gemini,
+    'code'
   );
 
   return `**Stage 6 Complete: Subgraph Extraction**\n\n**Key Findings:**\n${subgraphAnalysis}`;
 };
 
 export const composeResults = async (context: StageExecutorContext): Promise<string> => {
+  // Stage 7: Use structured outputs for composition
   const composition = await callGeminiAPI(
     `Compose a comprehensive scientific analysis summary with: 1) Key findings, 2) Evidence evaluation, 3) Hypothesis assessment, 4) Implications and recommendations. Format in academic style with proper citations.`,
-    context.apiKeys.gemini
+    context.apiKeys.gemini,
+    'structured'
   );
 
   return `**Stage 7 Complete: Composition**\n\n**Scientific Analysis:**\n${composition}`;
 };
 
 export const performReflection = async (context: StageExecutorContext): Promise<string> => {
+  // Stage 8 Pass A: Use thinking + code execution for comprehensive audit
   const reflection = await callGeminiAPI(
-    `Perform a critical audit of our research analysis: 1) Bias assessment, 2) Gap identification, 3) Methodological rigor, 4) Statistical validity, 5) Future research directions.`,
-    context.apiKeys.gemini
+    `<thinking>
+    Perform systematic audit of research analysis:
+    1) Coverage assessment - are all aspects addressed?
+    2) Bias detection - methodological, selection, confirmation biases
+    3) Statistical power analysis - adequate sample sizes, effect sizes
+    4) Causality evaluation - correlation vs causation issues
+    5) Missing perspectives or contradictory evidence
+    </thinking>
+    
+    Run automated audit checks and provide critical assessment:
+    
+    Research Context: ${JSON.stringify(context.researchContext, null, 2)}
+    
+    Write Python code to:
+    - Check for statistical power issues
+    - Identify potential biases in methodology
+    - Validate logical consistency
+    - Generate audit report with recommendations
+    
+    Perform critical audit of methodology, biases, gaps, and statistical validity.`,
+    context.apiKeys.gemini,
+    'thinking'
   );
 
   return `**Stage 8 Complete: Reflection & Audit**\n\n**Critical Assessment:**\n${reflection}`;
@@ -329,9 +378,18 @@ export const generateFinalAnalysis = async (context: StageExecutorContext): Prom
   // Compile all previous stage results
   const allResults = context.stageResults.join('\n\n---\n\n');
   
-  // Generate comprehensive final analysis with Gemini Pro
+  // Stage 9: Use thinking mode for comprehensive final analysis
   const finalAnalysis = await callGeminiAPI(
-    `You are a PhD-level scientist conducting comprehensive analysis. Based on all the research stages completed below, generate a detailed final scientific report with:
+    `<thinking>
+    I need to synthesize all research stages into a comprehensive PhD-level analysis:
+    - Review all evidence and findings systematically
+    - Identify the strongest conclusions supported by evidence
+    - Note limitations and areas of uncertainty
+    - Suggest concrete next steps for research
+    - Ensure academic rigor throughout
+    </thinking>
+    
+    You are a PhD-level scientist conducting comprehensive analysis. Based on all the research stages completed below, generate a detailed final scientific report with:
 
 1. **Executive Summary** (key findings and conclusions)
 2. **Methodology Analysis** (research approach evaluation)
@@ -350,7 +408,8 @@ ${allResults}
 Research Context: ${JSON.stringify(context.researchContext, null, 2)}
 
 Please provide a comprehensive, PhD-level scientific analysis that could be published in a peer-reviewed journal.`,
-    context.apiKeys.gemini
+    context.apiKeys.gemini,
+    'thinking'
   );
 
   // Create final analysis node
