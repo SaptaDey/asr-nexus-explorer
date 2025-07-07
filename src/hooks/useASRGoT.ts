@@ -118,10 +118,7 @@ export const useASRGoT = () => {
         setCurrentStage(prev => Math.min(prev + 1, 8));
       }
       
-      // Automatically trigger final analysis after reflection
-      if (stageIndex === 7 && !stageResults[8]) {
-        setTimeout(() => executeStage(8), 2000);
-      }
+      // Note: Manual stage progression - no automatic jumping
       
       toast.success(`Stage ${stageIndex + 1} completed successfully`);
     } catch (error) {
