@@ -1,64 +1,13 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from "sonner";
+import { GraphData, GraphNode, GraphEdge, ASRGoTParameters, APICredentials, StageExecutionContext, ResearchContext } from '@/types/asrGotTypes';
+import { completeASRGoTParameters } from '@/config/asrGotParameters';
+import { backgroundProcessor, queuePerplexityCall, queueGeminiCall, getTaskResult } from '@/utils/backgroundProcessor';
 
-export interface GraphNode {
-  id: string;
-  label: string;
-  type: 'root' | 'dimension' | 'hypothesis' | 'evidence' | 'bridge' | 'gap';
-  confidence: number[];
-  metadata: {
-    parameter_id?: string;
-    type?: string;
-    source_description?: string;
-    value?: string;
-    notes?: string;
-    disciplinary_tags?: string[];
-    falsification_criteria?: string;
-    bias_flags?: string[];
-    layer_id?: string;
-    impact_score?: number;
-    attribution?: string;
-    timestamp?: string;
-    statistical_power?: number;
-    info_metrics?: Record<string, number>;
-    topology_metrics?: Record<string, number>;
-    causal_metadata?: Record<string, any>;
-    temporal_metadata?: Record<string, any>;
-  };
-  position?: { x: number; y: number };
-}
+// Types are now imported from centralized type definitions
 
-export interface GraphEdge {
-  id: string;
-  source: string;
-  target: string;
-  type: 'correlative' | 'supportive' | 'contradictory' | 'causal' | 'temporal' | 'prerequisite';
-  confidence: number;
-  metadata: {
-    edge_type?: string;
-    causal_metadata?: any;
-    temporal_metadata?: any;
-  };
-}
-
-export interface GraphData {
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-}
-
-export interface ASRGoTParameters {
-  [key: string]: {
-    parameter_id: string;
-    type: string;
-    source_description: string;
-    value: string;
-    notes: string;
-    enabled: boolean;
-  };
-}
-
-const defaultParameters: ASRGoTParameters = {
+const defaultParameters: ASRGoTParameters = completeASRGoTParameters;
   'P1.0': {
     parameter_id: 'P1.0',
     type: 'Parameter - Framework',
