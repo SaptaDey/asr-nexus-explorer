@@ -1,7 +1,9 @@
 /**
  * API Service for ASR-GoT Framework
- * Handles Perplexity and Gemini API interactions
+ * Handles Perplexity and Gemini API interactions with security validation
  */
+
+import { validateInput, validateAPIKey, apiRateLimiter } from '@/utils/securityUtils';
 
 export interface APICredentials {
   perplexity: string;
@@ -9,8 +11,17 @@ export interface APICredentials {
 }
 
 export const callPerplexityAPI = async (query: string, apiKey: string): Promise<string> => {
-  if (!apiKey) {
-    throw new Error('Perplexity API key not configured');
+  // Validate API key
+  if (!apiKey || !validateAPIKey(apiKey, 'perplexity')) {
+    throw new Error('Invalid Perplexity API key');
+  }
+
+  // Validate and sanitize input
+  const sanitizedQuery = validateInput(query, 'query');
+
+  // Rate limiting
+  if (!apiRateLimiter.isAllowed('perplexity')) {
+    throw new Error('Rate limit exceeded for Perplexity API');
   }
 
   try {
@@ -25,7 +36,7 @@ export const callPerplexityAPI = async (query: string, apiKey: string): Promise<
         messages: [
           {
             role: 'user',
-            content: query
+            content: sanitizedQuery
           }
         ],
         max_tokens: 128000,
@@ -34,11 +45,18 @@ export const callPerplexityAPI = async (query: string, apiKey: string): Promise<
     });
 
     if (!response.ok) {
-      throw new Error(`Perplexity API error: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`Perplexity API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    return data.choices[0]?.message?.content || 'No response from Perplexity API';
+    const content = data.choices[0]?.message?.content;
+    
+    if (!content || typeof content !== 'string') {
+      throw new Error('Invalid response from Perplexity API');
+    }
+    
+    return content;
   } catch (error) {
     console.error('Perplexity API call failed:', error);
     throw error;
@@ -46,8 +64,17 @@ export const callPerplexityAPI = async (query: string, apiKey: string): Promise<
 };
 
 export const callGeminiAPI = async (prompt: string, apiKey: string): Promise<string> => {
-  if (!apiKey) {
-    throw new Error('Gemini API key not configured');
+  // Validate API key
+  if (!apiKey || !validateAPIKey(apiKey, 'gemini')) {
+    throw new Error('Invalid Gemini API key');
+  }
+
+  // Validate and sanitize input
+  const sanitizedPrompt = validateInput(prompt, 'prompt');
+
+  // Rate limiting
+  if (!apiRateLimiter.isAllowed('gemini')) {
+    throw new Error('Rate limit exceeded for Gemini API');
   }
 
   try {
@@ -61,7 +88,7 @@ export const callGeminiAPI = async (prompt: string, apiKey: string): Promise<str
         contents: [
           {
             parts: [
-              { text: prompt }
+              { text: sanitizedPrompt }
             ]
           }
         ],
@@ -78,11 +105,18 @@ export const callGeminiAPI = async (prompt: string, apiKey: string): Promise<str
     });
 
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    return data.candidates[0]?.content?.parts[0]?.text || 'No response from Gemini API';
+    const content = data.candidates[0]?.content?.parts[0]?.text;
+    
+    if (!content || typeof content !== 'string') {
+      throw new Error('Invalid response from Gemini API');
+    }
+    
+    return content;
   } catch (error) {
     console.error('Gemini API call failed:', error);
     throw error;

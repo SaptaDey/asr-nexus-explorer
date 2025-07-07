@@ -19,8 +19,9 @@ import {
 import {
   createInitialGraphData,
   createInitialResearchContext,
-  exportResultsAsMarkdown,
+  exportResultsAsHTML,
   exportResultsAsJSON,
+  exportGraphAsSVG,
   loadApiKeysFromStorage,
   saveApiKeysToStorage
 } from '@/utils/asrGotUtils';
@@ -150,14 +151,32 @@ export const useASRGoT = () => {
     toast.success('API credentials cached securely');
   }, []);
 
-  const exportResults = useCallback(() => {
-    if (stageResults.length === 0) {
+  const exportResults = useCallback((format?: 'html' | 'json' | 'svg') => {
+    const exportFormat = format || 'json';
+    if (stageResults.length === 0 && exportFormat !== 'svg') {
       toast.warning('No results to export yet');
       return;
     }
 
-    exportResultsAsJSON(stageResults, graphData, researchContext, finalReport, parameters);
-    toast.success('ASR-GoT analysis exported successfully');
+    try {
+      switch (exportFormat) {
+        case 'html':
+          exportResultsAsHTML(stageResults, graphData, researchContext, finalReport, parameters);
+          toast.success('HTML report exported successfully');
+          break;
+        case 'svg':
+          exportGraphAsSVG(graphData);
+          toast.success('Graph exported as SVG successfully');
+          break;
+        case 'json':
+        default:
+          exportResultsAsJSON(stageResults, graphData, researchContext, finalReport, parameters);
+          toast.success('JSON analysis exported successfully');
+          break;
+      }
+    } catch (error) {
+      toast.error(`Export failed: ${error}`);
+    }
   }, [stageResults, graphData, researchContext, finalReport, parameters]);
 
   // Load cached credentials on mount

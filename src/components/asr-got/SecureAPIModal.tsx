@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Shield, Key, CheckCircle, AlertTriangle, Zap, Database } from 'lucide-react';
 import { toast } from 'sonner';
 import { APICredentials } from '@/types/asrGotTypes';
+import { validateAPIKey, encryptCredentials, decryptCredentials } from '@/utils/securityUtils';
 
 interface SecureAPIModalProps {
   open: boolean;
@@ -39,14 +40,17 @@ export const SecureAPIModal: React.FC<SecureAPIModalProps> = ({
   });
 
   useEffect(() => {
-    // Load from secure session storage on mount
-    const storedCredentials = sessionStorage.getItem('asr-got-credentials');
-    if (storedCredentials) {
+    // Load from encrypted session storage on mount
+    const encryptedCredentials = sessionStorage.getItem('asr-got-credentials-encrypted');
+    if (encryptedCredentials) {
       try {
-        const parsed = JSON.parse(storedCredentials);
+        const decrypted = decryptCredentials(encryptedCredentials);
+        const parsed = JSON.parse(decrypted);
         setCredentials(parsed);
       } catch (error) {
-        console.warn('Failed to parse stored credentials');
+        console.warn('Failed to decrypt stored credentials');
+        // Clear invalid credentials
+        sessionStorage.removeItem('asr-got-credentials-encrypted');
       }
     }
   }, []);
@@ -129,16 +133,35 @@ export const SecureAPIModal: React.FC<SecureAPIModalProps> = ({
       return;
     }
 
-    // Store securely in session storage (as per ASR-GoT spec)
-    sessionStorage.setItem('asr-got-credentials', JSON.stringify(credentials));
-    
-    // Cache securely (ASR-GoT requirement)
-    const timestamp = new Date().toISOString();
-    localStorage.setItem('asr-got-auth-timestamp', timestamp);
-    
-    onCredentialsSave(credentials);
-    onOpenChange(false);
-    toast.success('ASR-GoT credentials cached securely');
+    // Validate API key formats
+    if (!validateAPIKey(credentials.perplexity, 'perplexity')) {
+      toast.error('Invalid Perplexity API key format');
+      return;
+    }
+
+    if (!validateAPIKey(credentials.gemini, 'gemini')) {
+      toast.error('Invalid Gemini API key format');
+      return;
+    }
+
+    try {
+      // Encrypt and store credentials
+      const encrypted = encryptCredentials(JSON.stringify(credentials));
+      sessionStorage.setItem('asr-got-credentials-encrypted', encrypted);
+      
+      // Cache timestamp securely (ASR-GoT requirement)
+      const timestamp = new Date().toISOString();
+      localStorage.setItem('asr-got-auth-timestamp', timestamp);
+      
+      // Clear any old unencrypted credentials
+      sessionStorage.removeItem('asr-got-credentials');
+      
+      onCredentialsSave(credentials);
+      onOpenChange(false);
+      toast.success('ASR-GoT credentials cached securely with encryption');
+    } catch (error) {
+      toast.error('Failed to encrypt and save credentials');
+    }
   };
 
   const getValidationIcon = (status: 'pending' | 'success' | 'error') => {

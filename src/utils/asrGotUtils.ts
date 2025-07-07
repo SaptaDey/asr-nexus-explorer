@@ -3,8 +3,9 @@
  * Export, reset, and other helper functions
  */
 
-import { GraphData, ResearchContext, ASRGoTParameters } from '@/types/asrGotTypes';
-import { completeASRGoTParameters } from '@/config/asrGotParameters';
+import { GraphData, ResearchContext, ASRGoTParameters, APICredentials } from '@/types/asrGotTypes';
+import { exportAsHTML, exportAsJSON, exportGraphAsSVG } from './exportUtils';
+import { decryptCredentials } from './securityUtils';
 
 export const createInitialGraphData = (): GraphData => ({
   nodes: [],
@@ -68,37 +69,28 @@ Generated on: ${new Date().toLocaleString()}
   URL.revokeObjectURL(url);
 };
 
+export const exportResultsAsHTML = (
+  stageResults: string[],
+  graphData: GraphData,
+  researchContext: ResearchContext,
+  finalReport: string,
+  parameters: ASRGoTParameters
+) => {
+  exportAsHTML(stageResults, graphData, researchContext, finalReport, parameters);
+};
+
 export const exportResultsAsJSON = (
   stageResults: string[],
   graphData: GraphData,
   researchContext: ResearchContext,
   finalReport: string,
   parameters: ASRGoTParameters
-): void => {
-  const exportData = {
-    metadata: {
-      exported_at: new Date().toISOString(),
-      framework_version: 'ASR-GoT v2025.07.07',
-      stages_completed: stageResults.length,
-      total_nodes: graphData.nodes.length,
-      total_edges: graphData.edges.length
-    },
-    research_context: researchContext,
-    graph_data: graphData,
-    stage_results: stageResults,
-    final_report: finalReport,
-    parameters_used: parameters
-  };
+) => {
+  exportAsJSON(stageResults, graphData, researchContext, finalReport, parameters);
+};
 
-  const jsonBlob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(jsonBlob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `ASR-GoT-Analysis-${new Date().toISOString().split('T')[0]}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+export const exportGraphAsSVG = (graphData: GraphData) => {
+  exportGraphAsSVG(graphData);
 };
 
 export const loadApiKeysFromStorage = () => {

@@ -1,6 +1,6 @@
 /**
  * HTML-only Results Display for ASR-GoT
- * Renders formatted HTML output without raw markdown
+ * Renders sanitized HTML output without raw markdown
  */
 
 import React from 'react';
@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { ResearchContext } from '@/types/asrGotTypes';
+import { sanitizeHTML } from '@/utils/securityUtils';
 
 interface HTMLResultsDisplayProps {
   stageResults: string[];
@@ -19,7 +20,7 @@ interface HTMLResultsDisplayProps {
 }
 
 const parseMarkdownToHTML = (markdown: string): string => {
-  return markdown
+  const html = markdown
     // Headers
     .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2 text-primary">$1</h3>')
     .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-6 mb-3 text-primary">$1</h2>')
@@ -45,6 +46,9 @@ const parseMarkdownToHTML = (markdown: string): string => {
     // Wrap in paragraphs
     .replace(/^(?!<[hlu])/gim, '<p class="mb-3">')
     .replace(/(?<![>])$/gim, '</p>');
+    
+  // Sanitize the HTML to prevent XSS
+  return sanitizeHTML(html);
 };
 
 const StageCard: React.FC<{ 

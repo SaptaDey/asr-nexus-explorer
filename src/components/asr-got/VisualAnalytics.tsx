@@ -13,6 +13,7 @@ import { motion } from 'framer-motion';
 import { GraphData, GraphNode } from '@/types/asrGotTypes';
 import { BarChart3, LineChart, PieChart, Download, Play, AlertTriangle, Code } from 'lucide-react';
 import { toast } from 'sonner';
+import { safeJSONParse, validatePlotlyConfig, apiRateLimiter } from '@/utils/securityUtils';
 
 // Import Plotly.js dynamically to avoid bundle size issues
 declare global {
@@ -77,16 +78,20 @@ export const VisualAnalytics: React.FC<VisualAnalyticsProps> = ({
 
   // Generate Gemini code execution request for data visualization
   const generateVisualizationCode = useCallback(async (evidenceNode: GraphNode): Promise<string> => {
+    // Rate limiting check
+    if (!apiRateLimiter.isAllowed('visualization')) {
+      throw new Error('Rate limit exceeded. Please wait before generating more visualizations.');
+    }
+
     const prompt = `
-Analyze this research evidence node and generate a JavaScript visualization using Plotly.js:
+Analyze this research evidence node and generate a JSON visualization configuration for Plotly.js:
 
 Node ID: ${evidenceNode.id}
 Label: ${evidenceNode.label}
 Type: ${evidenceNode.type}
-Metadata: ${JSON.stringify(evidenceNode.metadata, null, 2)}
 
 Requirements:
-1. Return ONLY executable JavaScript code for Plotly.js
+1. Return ONLY valid JSON for Plotly.js configuration
 2. Create appropriate visualization based on the data type
 3. Include proper data array and layout configuration
 4. Use meaningful titles, labels, and colors
@@ -94,17 +99,16 @@ Requirements:
 
 Expected format:
 {
-  data: [/* Plotly data traces */],
-  layout: {
-    title: "Title Here",
-    xaxis: { title: "X Axis Label" },
-    yaxis: { title: "Y Axis Label" },
-    // other layout options
-  },
-  config: { responsive: true }
+  "data": [{"x": [1,2,3], "y": [1,4,9], "type": "scatter"}],
+  "layout": {
+    "title": "Title Here",
+    "xaxis": {"title": "X Axis Label"},
+    "yaxis": {"title": "Y Axis Label"}
+  }
 }
 
 Generate synthetic but realistic data if no actual data is available.
+Return only the JSON object, no code blocks or explanations.
 `;
 
     try {
@@ -113,7 +117,10 @@ Generate synthetic but realistic data if no actual data is available.
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 2000 }
+          generationConfig: { 
+            maxOutputTokens: 2000,
+            temperature: 0.3
+          }
         })
       });
 
@@ -123,7 +130,7 @@ Generate synthetic but realistic data if no actual data is available.
       const code = data.candidates[0]?.content?.parts[0]?.text || '';
       
       // Extract JSON from code block if wrapped
-      const jsonMatch = code.match(/```(?:javascript|json)?\s*(\{[\\s\\S]*\})\s*```/);
+      const jsonMatch = code.match(/```(?:javascript|json)?\s*(\{[\s\S]*\})\s*```/);
       return jsonMatch ? jsonMatch[1] : code;
       
     } catch (error) {
@@ -131,30 +138,31 @@ Generate synthetic but realistic data if no actual data is available.
     }
   }, [geminiApiKey]);
 
-  // Execute generated code in sandbox and create visualization
+  // Execute generated code safely without eval()
   const executeVisualizationCode = useCallback(async (code: string, nodeId: string): Promise<AnalyticsFigure> => {
     try {
-      // Sandbox evaluation of the generated code
-      const sanitizedCode = code.replace(/[^{}[\]:;,"'\s\w-]/g, ''); // Basic sanitization
-      const plotConfig = eval(`(${sanitizedCode})`);
+      // Safe JSON parsing with validation
+      const allowedKeys = ['data', 'layout', 'config'];
+      const plotConfig = safeJSONParse(code, allowedKeys);
       
-      if (!plotConfig.data || !plotConfig.layout) {
-        throw new Error('Invalid plot configuration generated');
+      // Validate the plot configuration
+      if (!validatePlotlyConfig(plotConfig)) {
+        throw new Error('Invalid or unsafe plot configuration');
       }
 
       // Determine chart type from the data
       const firstTrace = plotConfig.data[0];
       let chartType: AnalyticsFigure['type'] = 'scatter';
       
-      if (firstTrace.type === 'bar') chartType = 'bar';
-      else if (firstTrace.type === 'histogram') chartType = 'histogram';
-      else if (firstTrace.type === 'box') chartType = 'box';
-      else if (firstTrace.type === 'heatmap') chartType = 'heatmap';
-      else if (firstTrace.type === 'pie') chartType = 'pie';
+      if (firstTrace?.type === 'bar') chartType = 'bar';
+      else if (firstTrace?.type === 'histogram') chartType = 'histogram';
+      else if (firstTrace?.type === 'box') chartType = 'box';
+      else if (firstTrace?.type === 'heatmap') chartType = 'heatmap';
+      else if (firstTrace?.type === 'pie') chartType = 'pie';
 
       return {
         id: `fig_${nodeId}_${Date.now()}`,
-        title: plotConfig.layout.title || `Analysis for ${nodeId}`,
+        title: typeof plotConfig.layout.title === 'string' ? plotConfig.layout.title : `Analysis for ${nodeId}`,
         code: code,
         data: plotConfig.data,
         layout: plotConfig.layout,
@@ -164,7 +172,7 @@ Generate synthetic but realistic data if no actual data is available.
       };
       
     } catch (error) {
-      throw new Error(`Code execution failed: ${error}`);
+      throw new Error(`Safe parsing failed: ${error}`);
     }
   }, []);
 
