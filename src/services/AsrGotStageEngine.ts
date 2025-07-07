@@ -2,7 +2,7 @@
 // Based on ASR-GoT System Prompt Version 2025-07-07
 
 import { GraphData, GraphNode, GraphEdge, APICredentials, StageExecutionContext, ResearchContext } from '@/types/asrGotTypes';
-import { queueGeminiCall, getTaskResult } from '@/utils/backgroundProcessor';
+import { queueGeminiCall, getTaskResult } from '@/utils/background';
 import { toast } from 'sonner';
 
 export class AsrGotStageEngine {
