@@ -219,6 +219,21 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
 
   // Render tree nodes and branches
   const renderTree = () => {
+    if (!treeRoot && hierarchyData.length === 0) {
+      // Show placeholder tree structure when no data
+      return (
+        <g transform="translate(200, 50)">
+          <text x="100" y="150" textAnchor="middle" className="fill-muted-foreground text-sm">
+            🌱 Start your research analysis to grow the tree
+          </text>
+          <circle cx="100" cy="200" r="20" fill="hsl(var(--muted))" opacity="0.5" />
+          <text x="100" y="205" textAnchor="middle" className="fill-muted-foreground text-xs">
+            Root
+          </text>
+        </g>
+      );
+    }
+
     if (!treeRoot) return null;
 
     const nodes = treeRoot.descendants();
@@ -322,7 +337,7 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
             stroke="#228B22"
             strokeWidth="1"
             style={{
-              transform: animations.evidencePulse.scale.to((s: any) => `scale(${Array.isArray(s) ? s[0] : s})`)
+              transform: animations.evidencePulse.scale.to((s: any) => `scale(${s})`)
             }}
           />
         );
@@ -498,19 +513,19 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
         {/* Growth Statistics */}
         <div className="grid grid-cols-4 gap-4 text-center text-sm">
           <div>
-            <div className="font-bold text-lg text-amber-600">{hierarchyData.filter(n => n.botanicalType === 'root-bulb').length}</div>
+            <div className="font-bold text-lg text-amber-600">{hierarchyData.filter(n => n.botanicalType === 'root-bulb').length || 0}</div>
             <div className="text-muted-foreground">Roots</div>
           </div>
           <div>
-            <div className="font-bold text-lg text-green-600">{hierarchyData.filter(n => n.botanicalType === 'branch').length}</div>
+            <div className="font-bold text-lg text-green-600">{hierarchyData.filter(n => n.botanicalType === 'branch').length || 0}</div>
             <div className="text-muted-foreground">Branches</div>
           </div>
           <div>
-            <div className="font-bold text-lg text-blue-600">{hierarchyData.filter(n => n.botanicalType === 'leaf').length}</div>
+            <div className="font-bold text-lg text-blue-600">{hierarchyData.filter(n => n.botanicalType === 'leaf').length || 0}</div>
             <div className="text-muted-foreground">Leaves</div>
           </div>
           <div>
-            <div className="font-bold text-lg text-pink-600">{hierarchyData.filter(n => n.botanicalType === 'blossom').length}</div>
+            <div className="font-bold text-lg text-pink-600">{hierarchyData.filter(n => n.botanicalType === 'blossom').length || 0}</div>
             <div className="text-muted-foreground">Blossoms</div>
           </div>
         </div>

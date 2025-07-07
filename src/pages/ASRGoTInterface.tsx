@@ -55,24 +55,63 @@ const ASRGoTInterface: React.FC = () => {
   };
 
   const handleExportHTML = () => {
-    if (!canExportHtml) {
-      toast.error('Complete the analysis first');
+    if (!hasResults) {
+      toast.error('No results to export yet - run some analysis stages first');
       return;
     }
     
+    const reportContent = stageResults.length > 0 ? stageResults.join('\n\n---\n\n') : 'No analysis completed yet';
     const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
           <title>ASR-GoT Analysis Report</title>
+          <meta charset="UTF-8">
           <style>
-            body { font-family: system-ui; margin: 2rem; }
-            .header { color: #7E5BEF; }
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; 
+              margin: 2rem; 
+              line-height: 1.6;
+              max-width: 1200px;
+              margin: 0 auto;
+              padding: 2rem;
+            }
+            .header { 
+              color: #7E5BEF; 
+              border-bottom: 3px solid #7E5BEF;
+              padding-bottom: 1rem;
+              margin-bottom: 2rem;
+            }
+            .stage { 
+              background: #f8f9fa; 
+              padding: 1.5rem; 
+              margin: 1rem 0; 
+              border-left: 4px solid #7E5BEF;
+              border-radius: 4px;
+            }
+            .metadata {
+              background: #e9ecef;
+              padding: 1rem;
+              margin: 1rem 0;
+              border-radius: 4px;
+              font-family: monospace;
+              font-size: 0.9em;
+            }
+            pre { white-space: pre-wrap; }
           </style>
         </head>
         <body>
           <h1 class="header">ASR-GoT Analysis Report</h1>
-          <div>${finalReport}</div>
+          <div class="metadata">
+            <strong>Generated:</strong> ${new Date().toISOString()}<br>
+            <strong>Stages Completed:</strong> ${stageResults.length}/9<br>
+            <strong>Research Topic:</strong> ${researchContext.topic || 'Not specified'}<br>
+            <strong>Nodes:</strong> ${graphData.nodes.length}<br>
+            <strong>Connections:</strong> ${graphData.edges.length}
+          </div>
+          <div class="stage">
+            <pre>${reportContent}</pre>
+          </div>
         </body>
       </html>
     `;
@@ -81,28 +120,48 @@ const ASRGoTInterface: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'asr-got-report.html';
+    a.download = `asr-got-report-${new Date().toISOString().split('T')[0]}.html`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success('HTML report downloaded');
+    toast.success('HTML report downloaded successfully');
   };
 
   const handleExportSVG = () => {
-    const svg = document.querySelector('.tree-scene svg');
+    // Look for SVG in the tree visualization area
+    const treeContainer = document.querySelector('[data-testid="tree-scene"], .tree-scene');
+    const svg = treeContainer?.querySelector('svg') || document.querySelector('svg');
+    
     if (!svg) {
-      toast.error('No tree visualization to export');
+      toast.error('No visualization found to export. Try switching to Tree View tab first.');
       return;
     }
     
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const blob = new Blob([svgData], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'tree-visualization.svg';
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('SVG exported');
+    try {
+      // Clone the SVG to avoid modifying the original
+      const svgClone = svg.cloneNode(true) as SVGElement;
+      
+      // Set proper dimensions and viewBox
+      svgClone.setAttribute('width', '800');
+      svgClone.setAttribute('height', '600');
+      svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      
+      const svgData = new XMLSerializer().serializeToString(svgClone);
+      const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `asr-got-tree-${new Date().toISOString().split('T')[0]}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('Tree visualization exported as SVG');
+    } catch (error) {
+      console.error('SVG export error:', error);
+      toast.error('Failed to export SVG - please try again');
+    }
   };
 
   return (
@@ -203,7 +262,7 @@ const ASRGoTInterface: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="tree-scene">
+                <div className="tree-scene" data-testid="tree-scene">
                   <TreeOfReasoningVisualization 
                     graphData={graphData}
                     currentStage={currentStage}
@@ -239,7 +298,7 @@ const ASRGoTInterface: React.FC = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <Button onClick={handleExportHTML} disabled={!canExportHtml} className="gradient-bg">
+                  <Button onClick={handleExportHTML} disabled={!hasResults} className="gradient-bg">
                     <FileText className="h-4 w-4 mr-2" />
                     Export HTML Report
                   </Button>

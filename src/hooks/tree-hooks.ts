@@ -182,7 +182,7 @@ export const useStageAnimation = (currentStage: number, nodes: any[]) => {
 
   // Stage 4: Evidence pulse animation
   const evidencePulse = useSpring({
-    scale: currentStage === 4 ? [1, 1.2, 1] : [1],
+    scale: currentStage === 4 ? 1.2 : 1,
     config: { tension: 300, friction: 30 }
   });
 

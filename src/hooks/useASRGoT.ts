@@ -114,11 +114,10 @@ export const useASRGoT = () => {
         return newResults;
       });
       
-      if (stageIndex === currentStage) {
+      // Manual stage progression - advance to next stage after successful execution
+      if (stageIndex === currentStage && stageIndex < 8) {
         setCurrentStage(prev => Math.min(prev + 1, 8));
       }
-      
-      // Note: Manual stage progression - no automatic jumping
       
       toast.success(`Stage ${stageIndex + 1} completed successfully`);
     } catch (error) {

@@ -67,7 +67,7 @@ export const callGeminiAPI = async (prompt: string, apiKey: string): Promise<str
         ],
         generationConfig: {
           temperature: 0.4,
-          maxOutputTokens: 1000000,
+          maxOutputTokens: 200000,
         },
         tools: [
           {
