@@ -2,7 +2,7 @@
 // Based on ASR-GoT System Prompt Version 2025-07-07
 
 import { GraphData, GraphNode, GraphEdge, APICredentials, StageExecutionContext, ResearchContext } from '@/types/asrGotTypes';
-import { queuePerplexityCall, queueGeminiCall, getTaskResult } from '@/utils/backgroundProcessor';
+import { queueGeminiCall, getTaskResult } from '@/utils/backgroundProcessor';
 import { toast } from 'sonner';
 
 export class AsrGotStageEngine {
@@ -503,7 +503,7 @@ Focus on:
 
 Provide comprehensive evidence with citations and quality assessment.`;
 
-        const evidenceTaskId = queuePerplexityCall(evidenceSearchPrompt, this.credentials, 'high');
+        const evidenceTaskId = queueGeminiCall(evidenceSearchPrompt, this.credentials, 'high');
         stageContext.api_calls_made++;
 
         const evidenceResults = await getTaskResult(evidenceTaskId, 30000);

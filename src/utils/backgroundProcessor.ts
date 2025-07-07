@@ -96,64 +96,23 @@ class BackgroundProcessor {
 
   // Process API calls
   private async processApiCall(payload: {
-    type: 'perplexity' | 'gemini';
+    type: 'gemini';
     prompt: string;
     credentials: APICredentials;
     options?: any;
   }): Promise<any> {
     const { type, prompt, credentials, options = {} } = payload;
 
-    if (type === 'perplexity') {
-      return await this.callPerplexityAPI(prompt, credentials.perplexity, options);
-    } else if (type === 'gemini') {
+    if (type === 'gemini') {
       return await this.callGeminiAPI(prompt, credentials.gemini, options);
     } else {
       throw new Error(`Unsupported API type: ${type}`);
     }
   }
 
-  // Perplexity API call
-  private async callPerplexityAPI(prompt: string, apiKey: string, options: any = {}): Promise<any> {
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'sonar-reasoning-pro',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert scientific researcher. Provide detailed, evidence-based responses with citations.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: options.maxTokens || 3000,
-        temperature: options.temperature || 0.2,
-        top_p: 0.9,
-        frequency_penalty: 1,
-        presence_penalty: 0,
-        return_images: false,
-        return_related_questions: false,
-        search_recency_filter: 'month'
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Perplexity API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.choices[0]?.message?.content || '';
-  }
-
   // Gemini API call
   private async callGeminiAPI(prompt: string, apiKey: string, options: any = {}): Promise<any> {
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent', {
       method: 'POST',
       headers: {
         'x-goog-api-key': apiKey,
@@ -171,11 +130,19 @@ class BackgroundProcessor {
         ],
         generationConfig: {
           temperature: options.temperature || 0.4,
-          maxOutputTokens: options.maxTokens || 1000000,
+          maxOutputTokens: options.maxTokens || 120000,
           topP: 0.8,
           topK: 40
         },
         tools: [
+          {
+            googleSearchRetrieval: {
+              dynamicRetrievalConfig: {
+                mode: "MODE_DYNAMIC",
+                dynamicThreshold: 0.7
+              }
+            }
+          },
           {
             codeExecution: {}
           }
@@ -221,18 +188,6 @@ class BackgroundProcessor {
 export const backgroundProcessor = new BackgroundProcessor();
 
 // Utility functions for common operations
-
-export const queuePerplexityCall = (prompt: string, credentials: APICredentials, priority: 'high' | 'medium' | 'low' = 'medium'): string => {
-  return backgroundProcessor.addTask({
-    type: 'api_call',
-    priority,
-    payload: {
-      type: 'perplexity',
-      prompt,
-      credentials
-    }
-  });
-};
 
 export const queueGeminiCall = (prompt: string, credentials: APICredentials, priority: 'high' | 'medium' | 'low' = 'medium'): string => {
   return backgroundProcessor.addTask({

@@ -39,19 +39,19 @@ const ASRGoTInterface: React.FC = () => {
     canExportHtml
   } = useASRGoT();
 
-  const [showTokenModal, setShowTokenModal] = useState(!apiKeys.perplexity || !apiKeys.gemini);
-  const [tempTokens, setTempTokens] = useState({ perplexity: '', gemini: '' });
+  const [showTokenModal, setShowTokenModal] = useState(!apiKeys.gemini);
+  const [tempToken, setTempToken] = useState('');
   const [activeTab, setActiveTab] = useState('research');
 
   const handleTokenSave = () => {
-    if (!tempTokens.perplexity || !tempTokens.gemini) {
-      toast.error('Both API tokens are required');
+    if (!tempToken) {
+      toast.error('Gemini API token is required');
       return;
     }
 
-    updateApiKeys(tempTokens);
+    updateApiKeys({ gemini: tempToken });
     setShowTokenModal(false);
-    toast.success('✅ Tokens saved. ASR-GoT ready.');
+    toast.success('✅ Token saved. ASR-GoT ready.');
   };
 
   const handleExportHTML = () => {
@@ -180,23 +180,13 @@ const ASRGoTInterface: React.FC = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="perplexity-token">Perplexity API Key</Label>
-              <Input
-                id="perplexity-token"
-                type="password"
-                placeholder="pplx-..."
-                value={tempTokens.perplexity}
-                onChange={(e) => setTempTokens(prev => ({ ...prev, perplexity: e.target.value }))}
-              />
-            </div>
-            <div>
               <Label htmlFor="gemini-token">Gemini API Key</Label>
               <Input
                 id="gemini-token"
                 type="password"
                 placeholder="AIza..."
-                value={tempTokens.gemini}
-                onChange={(e) => setTempTokens(prev => ({ ...prev, gemini: e.target.value }))}
+                value={tempToken}
+                onChange={(e) => setTempToken(e.target.value)}
               />
             </div>
             <Button onClick={handleTokenSave} className="w-full gradient-bg">
