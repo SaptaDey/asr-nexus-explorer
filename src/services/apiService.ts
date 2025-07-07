@@ -28,7 +28,7 @@ export const callPerplexityAPI = async (query: string, apiKey: string): Promise<
             content: query
           }
         ],
-        max_tokens: 2000,
+        max_tokens: 128000,
         temperature: 0.3
       }),
     });
@@ -67,7 +67,7 @@ export const callGeminiAPI = async (prompt: string, apiKey: string): Promise<str
         ],
         generationConfig: {
           temperature: 0.4,
-          maxOutputTokens: 200000,
+          maxOutputTokens: 128000,
         },
         tools: [
           {

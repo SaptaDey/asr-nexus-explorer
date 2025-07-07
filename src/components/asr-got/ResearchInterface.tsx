@@ -292,15 +292,21 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
                 </Card>
               </div>
 
-              {/* Continue Button */}
-              {!isProcessing && currentStage < 8 && stageResults.length > 0 && (
-                <Button 
-                  onClick={handleContinueToNext}
-                  className="w-full gradient-bg"
-                >
-                  <Zap className="h-4 w-4 mr-2" />
-                  Continue to Next Stage
-                </Button>
+              {/* Continue Button - Enhanced */}
+              {!isProcessing && currentStage < 8 && (
+                <div className="space-y-2">
+                  <Button 
+                    onClick={handleContinueToNext}
+                    className="w-full gradient-bg"
+                    disabled={currentStage >= 8}
+                  >
+                    <Zap className="h-4 w-4 mr-2" />
+                    Execute Stage {currentStage + 1}: {stageNames[currentStage]}
+                  </Button>
+                  <p className="text-xs text-center text-muted-foreground">
+                    Click to proceed manually through each stage
+                  </p>
+                </div>
               )}
               
               {/* Final Analysis Complete */}

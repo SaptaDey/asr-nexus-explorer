@@ -97,6 +97,20 @@ export const useTreeScene = (graphData: GraphData, currentStage: number) => {
   const hierarchyData = useMemo((): TreeNode[] => {
     const nodes: TreeNode[] = [];
     
+    // Always show at least a root node for visualization
+    if (graphData.nodes.length === 0) {
+      nodes.push({
+        id: 'placeholder-root',
+        label: 'Start Research Analysis',
+        type: 'root',
+        confidence: [0.5, 0.5, 0.5, 0.5],
+        metadata: { placeholder: true },
+        stage: 0,
+        botanicalType: 'root-bulb'
+      });
+      return nodes;
+    }
+    
     // Process all graph nodes
     graphData.nodes.forEach(node => {
       const parentEdge = graphData.edges.find(e => e.target === node.id);
@@ -117,11 +131,21 @@ export const useTreeScene = (graphData: GraphData, currentStage: number) => {
     return nodes;
   }, [graphData]);
 
-  // Create D3 hierarchy
+  // Create D3 hierarchy with better error handling
   const treeHierarchy = useMemo(() => {
     if (hierarchyData.length === 0) return null;
     
     try {
+      // Find root nodes (nodes without parents)
+      const rootNodes = hierarchyData.filter(node => !node.parentId);
+      
+      if (rootNodes.length === 0) {
+        // If no root found, use first node as root
+        const firstNode = hierarchyData[0];
+        firstNode.parentId = undefined;
+        rootNodes.push(firstNode);
+      }
+      
       const stratifyFn = stratify<TreeNode>()
         .id(d => d.id)
         .parentId(d => d.parentId);
@@ -129,6 +153,13 @@ export const useTreeScene = (graphData: GraphData, currentStage: number) => {
       return stratifyFn(hierarchyData);
     } catch (error) {
       console.warn('Tree hierarchy error:', error);
+      
+      // Return a simple root-only hierarchy as fallback
+      if (hierarchyData.length > 0) {
+        const root = hierarchyData.find(n => n.type === 'root') || hierarchyData[0];
+        return hierarchy(root);
+      }
+      
       return null;
     }
   }, [hierarchyData]);

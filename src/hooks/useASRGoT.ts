@@ -47,6 +47,13 @@ export const useASRGoT = () => {
     }
   }, [apiKeys, graphData, stageEngine]);
 
+  // Manual stage advancement
+  const advanceStage = useCallback(() => {
+    if (currentStage < 8) {
+      setCurrentStage(prev => prev + 1);
+    }
+  }, [currentStage]);
+
   const stageProgress = ((currentStage + 1) / 9) * 100;
 
   // Create context for stage executors
@@ -114,9 +121,9 @@ export const useASRGoT = () => {
         return newResults;
       });
       
-      // Manual stage progression - advance to next stage after successful execution
-      if (stageIndex === currentStage && stageIndex < 8) {
-        setCurrentStage(prev => Math.min(prev + 1, 8));
+      // Update stage progress after successful execution
+      if (stageIndex === currentStage) {
+        setTimeout(() => advanceStage(), 1000); // Advance after success toast
       }
       
       toast.success(`Stage ${stageIndex + 1} completed successfully`);
@@ -125,7 +132,7 @@ export const useASRGoT = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [apiKeys, isProcessing, currentStage, stageResults, createStageContext]);
+  }, [apiKeys, isProcessing, stageResults, createStageContext, advanceStage]);
 
   const resetFramework = useCallback(() => {
     setCurrentStage(0);
@@ -174,6 +181,7 @@ export const useASRGoT = () => {
     setParameters,
     updateApiKeys,
     exportResults,
+    advanceStage,
     isComplete: currentStage >= 8,
     hasResults: stageResults.length > 0,
     canExportHtml: finalReport.length > 0

@@ -298,15 +298,27 @@ const ASRGoTInterface: React.FC = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <Button onClick={handleExportHTML} disabled={!hasResults} className="gradient-bg">
+                  <Button 
+                    onClick={handleExportHTML} 
+                    disabled={!hasResults} 
+                    className="gradient-bg disabled:opacity-50"
+                  >
                     <FileText className="h-4 w-4 mr-2" />
                     Export HTML Report
                   </Button>
-                  <Button onClick={handleExportSVG} className="gradient-bg">
+                  <Button 
+                    onClick={handleExportSVG} 
+                    className="gradient-bg"
+                    disabled={graphData.nodes.length === 0}
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     Export Tree SVG
                   </Button>
-                  <Button onClick={exportResults} disabled={!hasResults} className="gradient-bg">
+                  <Button 
+                    onClick={exportResults} 
+                    disabled={!hasResults} 
+                    className="gradient-bg disabled:opacity-50"
+                  >
                     <Database className="h-4 w-4 mr-2" />
                     Export JSON Data
                   </Button>
