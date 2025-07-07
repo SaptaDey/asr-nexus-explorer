@@ -22,21 +22,21 @@ interface GraphVisualizationProps {
 }
 
 const nodeTypes = {
-  root: { color: '#3b82f6', label: 'Root' },
-  dimension: { color: '#10b981', label: 'Dimension' },
-  hypothesis: { color: '#f59e0b', label: 'Hypothesis' },
-  evidence: { color: '#ef4444', label: 'Evidence' },
-  bridge: { color: '#8b5cf6', label: 'Bridge' },
-  gap: { color: '#6b7280', label: 'Gap' },
+  root: { color: 'hsl(var(--brand-start))', label: 'Root' },
+  dimension: { color: 'hsl(var(--branch-fill))', label: 'Dimension' },
+  hypothesis: { color: 'hsl(var(--brand-end))', label: 'Hypothesis' },
+  evidence: { color: 'hsl(191 70% 45%)', label: 'Evidence' },
+  bridge: { color: 'hsl(var(--brand-start))', label: 'Bridge' },
+  gap: { color: 'hsl(var(--muted))', label: 'Gap' },
 };
 
 const edgeTypes = {
-  correlative: { color: '#64748b', label: '⇢' },
-  supportive: { color: '#22c55e', label: '↑' },
-  contradictory: { color: '#ef4444', label: '⊥' },
-  causal: { color: '#3b82f6', label: '→' },
-  temporal: { color: '#f59e0b', label: '≺' },
-  prerequisite: { color: '#8b5cf6', label: '⊢' },
+  correlative: { color: 'hsl(var(--muted-foreground))', label: '⇢' },
+  supportive: { color: 'hsl(var(--branch-fill))', label: '↑' },
+  contradictory: { color: 'hsl(var(--destructive))', label: '⊥' },
+  causal: { color: 'hsl(var(--brand-start))', label: '→' },
+  temporal: { color: 'hsl(var(--brand-end))', label: '≺' },
+  prerequisite: { color: 'hsl(261 60% 50%)', label: '⊢' },
 };
 
 export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
@@ -65,7 +65,7 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
                     key={`${node.id}-conf-${idx}`}
                     className="w-2 h-2 rounded-full"
                     style={{
-                      backgroundColor: conf > 0.7 ? '#22c55e' : conf > 0.4 ? '#f59e0b' : '#ef4444'
+                      backgroundColor: conf > 0.7 ? 'hsl(var(--branch-fill))' : conf > 0.4 ? 'hsl(var(--brand-end))' : 'hsl(var(--destructive))'
                     }}
                   />
                 ))}
@@ -113,7 +113,7 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
     data.nodes.find(n => n.id === selectedNode.id) : null;
 
   return (
-    <div className="h-[600px] w-full bg-background border rounded-lg">
+    <div className="h-[600px] w-full bg-background border rounded-lg brand-border">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -127,9 +127,9 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
         <Background />
         
         <Panel position="top-left">
-          <Card className="w-80">
+          <Card className="w-80 card-gradient">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Graph Legend</CardTitle>
+              <CardTitle className="text-sm gradient-text">Graph Legend</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
@@ -167,9 +167,9 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
 
         {correspondingDataNode && (
           <Panel position="top-right">
-            <Card className="w-80">
+            <Card className="w-80 card-gradient">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Node Details</CardTitle>
+                <CardTitle className="text-sm gradient-text">Node Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>

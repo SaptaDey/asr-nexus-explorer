@@ -200,7 +200,7 @@ export const TreeContainer: React.FC<TreeContainerProps> = ({
   };
 
   return (
-    <Card className="h-full bg-gradient-to-br from-emerald-50 via-green-50 to-blue-50 dark:from-emerald-950/20 dark:via-green-950/20 dark:to-blue-950/20">
+    <Card className="h-full bg-gradient-to-br from-white/80 via-emerald-50/30 to-cyan-50/30 dark:from-emerald-950/20 dark:via-green-950/20 dark:to-cyan-950/20 card-gradient">
       <CardHeader>
         <CardTitle>
           <TreeControls
@@ -217,7 +217,7 @@ export const TreeContainer: React.FC<TreeContainerProps> = ({
       
       <CardContent className="space-y-4">
         {/* Tree Visualization */}
-        <div className="border rounded-lg bg-white/50 dark:bg-black/10 p-4 overflow-hidden relative">
+        <div className="border rounded-lg bg-white/50 dark:bg-black/10 p-4 overflow-hidden relative brand-border">
           <svg
             ref={svgRef}
             viewBox="0 0 600 400"
@@ -225,16 +225,22 @@ export const TreeContainer: React.FC<TreeContainerProps> = ({
             style={{ maxWidth: '100%', height: 'auto' }}
           >
             <defs>
+              {/* Brand gradient */}
+              <linearGradient id="brand-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="hsl(var(--brand-start))" />
+                <stop offset="100%" stopColor="hsl(var(--brand-end))" />
+              </linearGradient>
+              
               {/* Gradient patterns for color-blind mode */}
               <pattern id="branch-pattern" patternUnits="userSpaceOnUse" width="4" height="4">
                 <rect width="4" height="4" fill="none" />
-                <path d="M 0,4 l 4,-4 M -1,1 l 2,-2 M 3,5 l 2,-2" stroke="currentColor" strokeWidth="0.5" />
+                <path d="M 0,4 l 4,-4 M -1,1 l 2,-2 M 3,5 l 2,-2" stroke="hsl(var(--branch-fill))" strokeWidth="0.5" />
               </pattern>
               
               {/* Background gradient */}
               <linearGradient id="soil-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stopColor="hsl(var(--background))" />
-                <stop offset="100%" stopColor="hsl(25, 30%, 80%)" />
+                <stop offset="100%" stopColor="hsl(var(--branch-fill) / 0.2)" />
               </linearGradient>
             </defs>
             
@@ -282,19 +288,19 @@ export const TreeContainer: React.FC<TreeContainerProps> = ({
         {/* Growth Statistics */}
         <div className="grid grid-cols-4 gap-4 text-center text-sm">
           <div>
-            <div className="font-bold text-lg text-amber-600">{hierarchyData.filter(n => n.botanicalType === 'root-bulb').length || 0}</div>
+            <div className="font-bold text-lg" style={{ color: 'hsl(var(--branch-fill))' }}>{hierarchyData.filter(n => n.botanicalType === 'root-bulb').length || 0}</div>
             <div className="text-muted-foreground">Roots</div>
           </div>
           <div>
-            <div className="font-bold text-lg text-green-600">{hierarchyData.filter(n => n.botanicalType === 'branch').length || 0}</div>
+            <div className="font-bold text-lg" style={{ color: 'hsl(var(--branch-fill))' }}>{hierarchyData.filter(n => n.botanicalType === 'branch').length || 0}</div>
             <div className="text-muted-foreground">Branches</div>
           </div>
           <div>
-            <div className="font-bold text-lg text-blue-600">{hierarchyData.filter(n => n.botanicalType === 'leaf').length || 0}</div>
+            <div className="font-bold text-lg" style={{ color: 'hsl(var(--brand-end))' }}>{hierarchyData.filter(n => n.botanicalType === 'leaf').length || 0}</div>
             <div className="text-muted-foreground">Leaves</div>
           </div>
           <div>
-            <div className="font-bold text-lg text-pink-600">{hierarchyData.filter(n => n.botanicalType === 'blossom').length || 0}</div>
+            <div className="font-bold text-lg" style={{ color: 'hsl(var(--brand-start))' }}>{hierarchyData.filter(n => n.botanicalType === 'blossom').length || 0}</div>
             <div className="text-muted-foreground">Blossoms</div>
           </div>
         </div>

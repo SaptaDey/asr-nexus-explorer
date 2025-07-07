@@ -13,7 +13,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 262 83% 58%;
+    --primary: 261 83% 58%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -25,8 +25,15 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 262 83% 58%;
+    --ring: 261 83% 58%;
     --radius: 0.5rem;
+    
+    /* ASR-GoT Brand Colors */
+    --brand-start: 261 83% 58%;
+    --brand-end: 191 100% 50%;
+    --branch-fill: 172 79% 41%;
+    --brand-gradient: linear-gradient(135deg, hsl(var(--brand-start)) 0%, hsl(var(--brand-end)) 100%);
+    --brand-glow: 0 0 20px hsl(var(--brand-start) / 0.3);
   }
 
   .dark {
@@ -36,7 +43,7 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 262 83% 58%;
+    --primary: 261 83% 58%;
     --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -48,7 +55,14 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 262 83% 58%;
+    --ring: 261 83% 58%;
+    
+    /* ASR-GoT Brand Colors - Dark Mode */
+    --brand-start: 261 83% 58%;
+    --brand-end: 191 100% 50%;
+    --branch-fill: 172 79% 41%;
+    --brand-gradient: linear-gradient(135deg, hsl(var(--brand-start)) 0%, hsl(var(--brand-end)) 100%);
+    --brand-glow: 0 0 20px hsl(var(--brand-start) / 0.4);
   }
 }
 
@@ -58,42 +72,61 @@
   }
 
   body {
-    @apply bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 text-foreground;
+    background: linear-gradient(135deg, 
+      hsl(var(--brand-start) / 0.05) 0%, 
+      hsl(var(--brand-end) / 0.03) 35%, 
+      hsl(var(--branch-fill) / 0.02) 70%, 
+      hsl(var(--background)) 100%);
+    @apply text-foreground;
     background-attachment: fixed;
+    min-height: 100vh;
   }
 }
 
 /* Enhanced animations and gradients */
 @layer components {
   .gradient-bg {
-    @apply bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600;
+    background: var(--brand-gradient);
   }
   
   .gradient-text {
-    @apply bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent;
+    background: var(--brand-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
   
   .card-gradient {
-    @apply bg-gradient-to-br from-white/80 via-purple-50/50 to-pink-50/50 backdrop-blur-sm;
+    @apply bg-gradient-to-br from-white/80 via-purple-50/20 to-cyan-50/20 backdrop-blur-sm;
+    border: 1px solid hsl(var(--brand-start) / 0.1);
   }
   
   .pulse-glow {
     @apply animate-pulse;
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+    box-shadow: var(--brand-glow);
+  }
+  
+  .brand-border {
+    border-color: hsl(var(--brand-start));
+  }
+  
+  .branch-color {
+    color: hsl(var(--branch-fill));
   }
   
   .stage-card {
     @apply transition-all duration-300 hover:scale-105 hover:shadow-2xl;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--brand-gradient);
   }
   
   .stage-card.completed {
-    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    background: linear-gradient(135deg, hsl(var(--branch-fill)) 0%, hsl(172 79% 55%) 100%);
   }
   
   .stage-card.active {
-    background: linear-gradient(135deg, #ff9a56 0%, #ff6b6b 100%);
+    background: var(--brand-gradient);
     animation: pulse 2s infinite;
+    box-shadow: var(--brand-glow);
   }
   
   .floating-element {
@@ -107,20 +140,21 @@
   
   .neural-bg {
     background-image: 
-      radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 40% 80%, rgba(120, 219, 255, 0.1) 0%, transparent 50%);
+      radial-gradient(circle at 20% 50%, hsl(var(--brand-start) / 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(var(--brand-end) / 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 80%, hsl(var(--branch-fill) / 0.1) 0%, transparent 50%);
   }
   
   .node-visualization {
-    @apply rounded-full border-4 border-purple-400 bg-gradient-to-br from-purple-100 to-pink-100;
-    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+    @apply rounded-full border-4 bg-gradient-to-br from-white/90 to-white/70;
+    border-color: hsl(var(--brand-start));
+    box-shadow: var(--brand-glow);
   }
   
   .edge-line {
-    stroke: url(#gradient);
+    stroke: url(#brand-gradient);
     stroke-width: 2;
-    filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.6));
+    filter: drop-shadow(0 0 4px hsl(var(--brand-start) / 0.6));
   }
 }
 
@@ -134,9 +168,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gradient-to-b from-purple-400 to-pink-400 rounded-full;
+  background: var(--brand-gradient);
+  @apply rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply from-purple-500 to-pink-500;
+  background: linear-gradient(to bottom, hsl(var(--brand-start) / 0.9), hsl(var(--brand-end) / 0.9));
 }
