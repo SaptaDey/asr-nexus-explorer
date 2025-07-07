@@ -92,27 +92,31 @@ Return only the JSON array, no explanations.
         throw new Error('Invalid API response structure');
       }
       
-      // Multiple extraction strategies for JSON
-      let extractedJson = responseText;
+      // Multiple extraction strategies for JSON with robust parsing
+      let extractedJson = responseText.trim();
       
-      // Strategy 1: Extract from ```json blocks
-      const jsonBlockMatch = responseText.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
-      const codeBlockMatch = responseText.match(/```[\s\S]*?(\[[\s\S]*?\])[\s\S]*?```/);
-      const arrayMatch = responseText.match(/(\[[\s\S]*?\])/);
+      // Remove leading/trailing markdown code blocks
+      extractedJson = extractedJson.replace(/^```(?:json|javascript)?\s*/i, '');
+      extractedJson = extractedJson.replace(/\s*```$/i, '');
       
-      if (jsonBlockMatch) {
-        extractedJson = jsonBlockMatch[1];
-      } else if (codeBlockMatch) {
-        extractedJson = codeBlockMatch[1];
-      } else if (arrayMatch) {
-        extractedJson = arrayMatch[1];
+      // Extract JSON array from various formats
+      const patterns = [
+        /```(?:json|javascript)?\s*(\[[\s\S]*?\])\s*```/i,  // Code blocks
+        /^\s*(\[[\s\S]*?\])\s*$/,                           // Direct array
+        /json\s*(\[[\s\S]*?\])/i,                          // After "json" keyword
+        /(\[[\s\S]*?\])/                                    // Any array pattern
+      ];
+      
+      for (const pattern of patterns) {
+        const match = responseText.match(pattern);
+        if (match) {
+          extractedJson = match[1];
+          break;
+        }
       }
       
-      // Clean up common issues
-      extractedJson = extractedJson.trim()
-        .replace(/```json\s*/g, '')
-        .replace(/```\s*/g, '')
-        .replace(/^\s*json\s*/g, '');
+      // Final cleanup
+      extractedJson = extractedJson.trim();
       
       let chartConfigs;
       try {
