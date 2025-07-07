@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Download, Play, Pause, RotateCcw } from 'lucide-react';
 import { GraphData, GraphNode } from '@/types/asrGotTypes';
 import { toast } from 'sonner';
-import { hierarchy, tree, stratify } from 'd3-hierarchy';
+import { hierarchy, tree, stratify, HierarchyNode, HierarchyLink } from 'd3-hierarchy';
 import { select } from 'd3-selection';
 import 'd3-transition';
 
@@ -29,6 +29,16 @@ interface TreeNode {
   confidence: number[];
   stage: number;
   metadata: any;
+}
+
+interface D3TreeNode extends HierarchyNode<TreeNode> {
+  x?: number;
+  y?: number;
+}
+
+interface D3TreeLink extends HierarchyLink<TreeNode> {
+  source: D3TreeNode;
+  target: D3TreeNode;
 }
 
 export const TreeOfReasoningVisualization: React.FC<TreeOfReasoningProps> = ({
@@ -149,51 +159,53 @@ export const TreeOfReasoningVisualization: React.FC<TreeOfReasoningProps> = ({
       .size([300, 400])
       .separation((a, b) => a.parent === b.parent ? 1 : 2);
 
-    treeLayout(root);
+    const treeRoot = treeLayout(root) as D3TreeNode;
 
     const g = svg.append('g')
       .attr('transform', 'translate(200, 50)');
 
     // Links (branches)
+    const treeLinks = root.links() as D3TreeLink[];
     const links = g.selectAll('.link')
-      .data(root.links())
+      .data(treeLinks)
       .enter()
       .append('line')
       .attr('class', 'link branch-link')
-      .attr('x1', d => d.source.x!)
-      .attr('y1', d => d.source.y!)
-      .attr('x2', d => d.target.x!)
-      .attr('y2', d => d.target.y!)
-      .attr('stroke', d => getConfidenceColor(d.target.data.confidence))
-      .attr('stroke-width', d => getBranchThickness(d.target.data))
+      .attr('x1', (d: D3TreeLink) => d.source.x || 0)
+      .attr('y1', (d: D3TreeLink) => d.source.y || 0)
+      .attr('x2', (d: D3TreeLink) => d.target.x || 0)
+      .attr('y2', (d: D3TreeLink) => d.target.y || 0)
+      .attr('stroke', (d: D3TreeLink) => getConfidenceColor(d.target.data.confidence))
+      .attr('stroke-width', (d: D3TreeLink) => getBranchThickness(d.target.data))
       .attr('opacity', 0)
       .transition()
       .duration(1000)
-      .delay((d, i) => d.target.data.stage * 200)
+      .delay((d: D3TreeLink, i) => d.target.data.stage * 200)
       .attr('opacity', 0.8);
 
     // Nodes
+    const treeNodes = root.descendants() as D3TreeNode[];
     const nodes = g.selectAll('.node')
-      .data(root.descendants())
+      .data(treeNodes)
       .enter()
       .append('g')
       .attr('class', 'node')
-      .attr('transform', d => `translate(${d.x},${d.y})`);
+      .attr('transform', (d: D3TreeNode) => `translate(${d.x || 0},${d.y || 0})`);
 
     // Node circles
     nodes.append('circle')
-      .attr('r', d => d.data.type === 'trunk' ? 8 : 5)
-      .attr('fill', d => getConfidenceColor(d.data.confidence))
+      .attr('r', (d: D3TreeNode) => d.data.type === 'trunk' ? 8 : 5)
+      .attr('fill', (d: D3TreeNode) => getConfidenceColor(d.data.confidence))
       .attr('stroke', '#fff')
       .attr('stroke-width', 2)
       .style('opacity', 0)
       .transition()
       .duration(800)
-      .delay((d, i) => d.data.stage * 200)
+      .delay((d: D3TreeNode, i) => d.data.stage * 200)
       .style('opacity', 1);
 
     // Flowers for high-confidence hypotheses
-    nodes.filter(d => {
+    nodes.filter((d: D3TreeNode) => {
       const avgConf = d.data.confidence.reduce((a, b) => a + b, 0) / d.data.confidence.length;
       const impact = d.data.metadata?.impact_score || 0;
       return avgConf >= 0.8 && impact >= 0.7 && d.data.type === 'secondary-branch';
@@ -215,11 +227,11 @@ export const TreeOfReasoningVisualization: React.FC<TreeOfReasoningProps> = ({
       .attr('text-anchor', 'middle')
       .attr('font-size', '10px')
       .attr('fill', '#333')
-      .text(d => d.data.label.substring(0, 15))
+      .text((d: D3TreeNode) => d.data.label.substring(0, 15))
       .style('opacity', 0)
       .transition()
       .duration(500)
-      .delay((d, i) => d.data.stage * 200 + 300)
+      .delay((d: D3TreeNode, i) => d.data.stage * 200 + 300)
       .style('opacity', 1);
 
   }, [convertToHierarchy, currentStage]);
