@@ -199,11 +199,39 @@ const ASRGoTInterface: React.FC = () => {
 
       {/* Main Interface */}
       <div className="container mx-auto px-4 py-6">
-        {/* Header */}
+        {/* Header with Logo and Hero */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold gradient-text mb-2">
-            Scientific Research
-          </h1>
+          {/* Logo */}
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <img 
+              src="/img/logo.png" 
+              alt="ASR-GoT Logo" 
+              className="h-16 w-16 object-contain"
+            />
+            <h1 className="text-4xl font-bold gradient-text">
+              ASR-GoT
+            </h1>
+          </div>
+          
+          {/* Hero Banner */}
+          <div className="relative mb-6 rounded-lg overflow-hidden">
+            <img 
+              src="/img/hero.png" 
+              alt="ASR-GoT Research Framework" 
+              className="w-full h-48 object-cover opacity-80"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-center">
+              <div className="text-left pl-8">
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  Advanced Scientific Reasoning
+                </h2>
+                <p className="text-white/90 text-lg">
+                  Graph of Thoughts Framework
+                </p>
+              </div>
+            </div>
+          </div>
+          
           <p className="text-muted-foreground text-lg mb-2">
             🚀 Next-Generation AI Reasoning Framework for Scientific Research
           </p>
