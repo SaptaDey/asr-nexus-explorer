@@ -76,7 +76,7 @@ Return only the JSON array, no explanations.
         body: JSON.stringify({
           contents: [{ parts: [{ text: analysisPrompt }] }],
           generationConfig: { 
-            maxOutputTokens: 4000,
+            maxOutputTokens: 8000,
             temperature: 0.1
           }
         })
@@ -85,6 +85,11 @@ Return only the JSON array, no explanations.
       if (!response.ok) throw new Error('Failed to generate visualizations');
       
       const data = await response.json();
+      
+      // Check if response was truncated due to token limit
+      if (data.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
+        throw new Error('Response was truncated due to token limit. Please try again or use a shorter prompt.');
+      }
       
       // Robust API response extraction
       const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
