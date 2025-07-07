@@ -52,8 +52,28 @@ export const exportAsHTML = (
   finalReport: string,
   parameters: ASRGoTParameters
 ): void => {
-  const sanitizedResults = stageResults.map(result => sanitizeHTML(result));
-  const sanitizedFinalReport = sanitizeHTML(finalReport);
+// Convert markdown to HTML first, then sanitize
+  const parseMarkdownToHTML = (markdown: string): string => {
+    const html = markdown
+      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2 text-primary">$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-6 mb-3 text-primary">$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-8 mb-4 text-primary">$1</h1>')
+      .replace(/\*\*(.*)\*\*/gim, '<strong class="font-semibold">$1</strong>')
+      .replace(/\*(.*)\*/gim, '<em class="italic">$1</em>')
+      .replace(/```([\s\S]*?)```/gim, '<pre class="bg-gray-100 p-3 rounded-md text-sm overflow-x-auto my-3"><code>$1</code></pre>')
+      .replace(/`([^`]*)`/gim, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>')
+      .replace(/^\* (.*$)/gim, '<li class="ml-4 list-disc">$1</li>')
+      .replace(/^- (.*$)/gim, '<li class="ml-4 list-disc">$1</li>')
+      .replace(/^\d+\. (.*$)/gim, '<li class="ml-4 list-decimal">$1</li>')
+      .replace(/\n\n/gim, '</p><p class="mb-3">')
+      .replace(/\n/gim, '<br>')
+      .replace(/^(?!<[hlu])/gim, '<p class="mb-3">')
+      .replace(/(?<![>])$/gim, '</p>');
+    return sanitizeHTML(html);
+  };
+
+  const sanitizedResults = stageResults.map(result => parseMarkdownToHTML(result));
+  const sanitizedFinalReport = parseMarkdownToHTML(finalReport);
   
   const html = `
 <!DOCTYPE html>
@@ -152,45 +172,44 @@ export const exportGraphAsSVG = (graphData: GraphData): void => {
     throw new Error('No graph data to export');
   }
 
-  // Create a simple SVG representation
-  const width = 800;
-  const height = 600;
-  const centerX = width / 2;
-  const centerY = height / 2;
+  // Improve SVG export with better node positioning and actual data
+  const width = 1200;
+  const height = 800;
   
-  // Position nodes in a circle
-  const nodeElements = graphData.nodes.map((node, index) => {
-    const angle = (index * 2 * Math.PI) / graphData.nodes.length;
-    const radius = Math.min(width, height) * 0.3;
-    const x = centerX + radius * Math.cos(angle);
-    const y = centerY + radius * Math.sin(angle);
+  // Use force-directed layout for better positioning
+  const nodePositions = graphData.nodes.map((node, index) => {
+    const cols = Math.ceil(Math.sqrt(graphData.nodes.length));
+    const row = Math.floor(index / cols);
+    const col = index % cols;
+    const x = (col + 1) * (width / (cols + 1));
+    const y = (row + 1) * (height / (Math.ceil(graphData.nodes.length / cols) + 1));
+    return { ...node, x, y };
+  });
+
+  // Create edge lines with proper connections
+  const edgeElements = graphData.edges.map(edge => {
+    const sourceNode = nodePositions.find(n => n.id === edge.source);
+    const targetNode = nodePositions.find(n => n.id === edge.target);
+    
+    if (!sourceNode || !targetNode) return '';
+    
+    return `<line x1="${sourceNode.x}" y1="${sourceNode.y}" x2="${targetNode.x}" y2="${targetNode.y}" stroke="#666" stroke-width="2" opacity="0.7"/>`;
+  }).join('');
+
+  // Create styled nodes with labels
+  const nodeElements = nodePositions.map(node => {
+    const nodeColor = node.type === 'evidence' ? '#22c55e' : 
+                     node.type === 'hypothesis' ? '#3b82f6' : 
+                     node.type === 'root' ? '#f59e0b' : '#8b5cf6';
     
     return `
       <g>
-        <circle cx="${x}" cy="${y}" r="20" fill="#007acc" stroke="#333" stroke-width="2"/>
-        <text x="${x}" y="${y + 5}" text-anchor="middle" font-size="10" fill="white">${node.id}</text>
-        <text x="${x}" y="${y + 35}" text-anchor="middle" font-size="8" fill="#333">${node.label}</text>
+        <circle cx="${node.x}" cy="${node.y}" r="25" fill="${nodeColor}" stroke="#1f2937" stroke-width="2" opacity="0.9"/>
+        <text x="${node.x}" y="${node.y + 5}" text-anchor="middle" font-size="12" font-weight="bold" fill="white">${node.type.charAt(0).toUpperCase()}</text>
+        <text x="${node.x}" y="${node.y + 45}" text-anchor="middle" font-size="10" fill="#374151" width="100">${node.label.substring(0, 20)}${node.label.length > 20 ? '...' : ''}</text>
+        ${typeof node.confidence === 'number' && !isNaN(node.confidence) ? `<text x="${node.x}" y="${node.y + 58}" text-anchor="middle" font-size="8" fill="#6b7280">conf: ${(node.confidence as number).toFixed(2)}</text>` : ''}
       </g>
     `;
-  }).join('');
-
-  // Create edge lines
-  const edgeElements = graphData.edges.map(edge => {
-    const sourceIndex = graphData.nodes.findIndex(n => n.id === edge.source);
-    const targetIndex = graphData.nodes.findIndex(n => n.id === edge.target);
-    
-    if (sourceIndex === -1 || targetIndex === -1) return '';
-    
-    const sourceAngle = (sourceIndex * 2 * Math.PI) / graphData.nodes.length;
-    const targetAngle = (targetIndex * 2 * Math.PI) / graphData.nodes.length;
-    const radius = Math.min(width, height) * 0.3;
-    
-    const x1 = centerX + radius * Math.cos(sourceAngle);
-    const y1 = centerY + radius * Math.sin(sourceAngle);
-    const x2 = centerX + radius * Math.cos(targetAngle);
-    const y2 = centerY + radius * Math.sin(targetAngle);
-    
-    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#666" stroke-width="1"/>`;
   }).join('');
 
   const svg = `

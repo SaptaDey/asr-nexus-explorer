@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { GraphData, GraphNode } from '@/types/asrGotTypes';
+import { GraphData, GraphNode, ResearchContext } from '@/types/asrGotTypes';
 import { toast } from 'sonner';
 import { apiRateLimiter } from '@/utils/securityUtils';
 
@@ -23,7 +23,8 @@ interface AnalyticsFigure {
 export const useEnhancedVisualAnalytics = (
   graphData: GraphData,
   currentStage: number,
-  geminiApiKey: string
+  geminiApiKey: string,
+  researchContext: ResearchContext
 ) => {
   const [figures, setFigures] = useState<AnalyticsFigure[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -35,15 +36,21 @@ export const useEnhancedVisualAnalytics = (
     }
 
     const analysisPrompt = `
-Generate 4 research charts for ASR-GoT analysis (Nodes: ${graphData.nodes.length}, Edges: ${graphData.edges.length}, Stage: ${currentStage}):
+Based on the research topic "${researchContext.topic}" in the field of ${researchContext.field}, generate 4 scientific charts relevant to this research:
 
-1. Node degree histogram
-2. Confidence scatter plot  
-3. Research quality heatmap
-4. Effect size comparison
+Research Context: ${researchContext.topic}
+Field: ${researchContext.field}
+Stage: ${currentStage}
 
-Return JSON array only:
-[{"title": "Chart Name", "type": "bar|scatter|heatmap", "data": [{"x": [1,2,3], "y": [4,5,6], "type": "bar"}], "layout": {"title": "Title", "xaxis": {"title": "X"}, "yaxis": {"title": "Y"}}}]
+Generate charts that would be appropriate for this scientific topic (e.g., for medical research: patient outcomes, biomarker correlations, treatment efficacy; for genetics: mutation frequencies, expression levels, pathway analysis; etc.):
+
+1. Primary data visualization (bar/scatter based on topic)
+2. Correlation analysis (scatter plot)
+3. Distribution analysis (histogram/box plot)
+4. Comparative analysis (bar chart)
+
+Return JSON array with realistic scientific data relevant to the research topic:
+[{"title": "Chart Name", "type": "bar|scatter|heatmap|histogram", "data": [{"x": [realistic_labels], "y": [realistic_values], "type": "bar"}], "layout": {"title": "Title", "xaxis": {"title": "X"}, "yaxis": {"title": "Y"}}}]
 `;
 
     try {
@@ -130,7 +137,7 @@ Return JSON array only:
       console.error('Enhanced visualization generation failed:', error);
       return [];
     }
-  }, [graphData, currentStage, geminiApiKey]);
+  }, [graphData, currentStage, geminiApiKey, researchContext]);
 
   // Auto-generate visualizations for stages 6+
   useEffect(() => {

@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
-import { GraphData, GraphNode } from '@/types/asrGotTypes';
+import { GraphData, GraphNode, ResearchContext } from '@/types/asrGotTypes';
 import { BarChart3, LineChart, PieChart, Download, Play, AlertTriangle, Code } from 'lucide-react';
 import { toast } from 'sonner';
 import { safeJSONParse, validatePlotlyConfig, apiRateLimiter } from '@/utils/securityUtils';
@@ -38,12 +38,14 @@ interface VisualAnalyticsProps {
   graphData: GraphData;
   currentStage: number;
   geminiApiKey: string;
+  researchContext: ResearchContext;
 }
 
 export const VisualAnalytics: React.FC<VisualAnalyticsProps> = ({
   graphData,
   currentStage,
-  geminiApiKey
+  geminiApiKey,
+  researchContext
 }) => {
   const [figures, setFigures] = useState<AnalyticsFigure[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -83,14 +85,19 @@ export const VisualAnalytics: React.FC<VisualAnalyticsProps> = ({
     }
 
     const analysisPrompt = `
-Generate 4 charts for ASR-GoT graph (${graphData.nodes.length} nodes, ${graphData.edges.length} edges):
+Based on the research topic "${researchContext.topic}" in the field of ${researchContext.field}, generate 4 scientific charts relevant to this research:
 
-1. Node degree histogram
-2. Confidence scatter plot 
-3. Stage quality heatmap
-4. Hypothesis comparison bar chart
+Research Context: ${researchContext.topic}
+Field: ${researchContext.field}
 
-JSON format: [{"title": "Name", "type": "bar|scatter|heatmap", "data": [{"x": [1,2], "y": [3,4], "type": "bar"}], "layout": {"title": "Title", "xaxis": {"title": "X"}, "yaxis": {"title": "Y"}}}]
+Generate charts that would be appropriate for this scientific topic (e.g., for medical research: patient outcomes, biomarker correlations, treatment efficacy; for genetics: mutation frequencies, expression levels, pathway analysis; etc.):
+
+1. Primary data visualization (bar/scatter based on topic)
+2. Correlation analysis (scatter plot)  
+3. Distribution analysis (histogram/box plot)
+4. Comparative analysis (bar chart)
+
+JSON format: [{"title": "Name", "type": "bar|scatter|heatmap|histogram", "data": [{"x": [realistic_labels], "y": [realistic_values], "type": "bar"}], "layout": {"title": "Title", "xaxis": {"title": "X"}, "yaxis": {"title": "Y"}}}]
 `;
 
     try {
@@ -140,7 +147,7 @@ JSON format: [{"title": "Name", "type": "bar|scatter|heatmap", "data": [{"x": [1
     } catch (error) {
       throw new Error(`Comprehensive analysis failed: ${error}`);
     }
-  }, [graphData, geminiApiKey]);
+  }, [graphData, geminiApiKey, researchContext]);
 
   // Generate evidence-specific visualization
   const generateEvidenceVisualization = useCallback(async (evidenceNode: GraphNode): Promise<AnalyticsFigure> => {

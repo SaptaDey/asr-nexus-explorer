@@ -64,7 +64,16 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
     figures: analyticsFigures, 
     isGenerating: analyticsGenerating, 
     exportFigureAsDataURL 
-  } = useEnhancedVisualAnalytics(graphData, currentStage, apiKeys.gemini);
+  } = useEnhancedVisualAnalytics(graphData, currentStage, apiKeys.gemini, {
+    topic: researchContext?.topic || '',
+    field: researchContext?.field || '', 
+    objectives: researchContext?.objectives || [],
+    hypotheses: researchContext?.hypotheses || [],
+    constraints: [],
+    biases_detected: [],
+    knowledge_gaps: [],
+    auto_generated: false
+  });
 
   const handleStartResearch = async () => {
     if (!taskDescription.trim()) {
@@ -355,6 +364,16 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
                     graphData={graphData}
                     currentStage={currentStage}
                     geminiApiKey={apiKeys.gemini}
+                    researchContext={{
+                      topic: researchContext?.topic || '',
+                      field: researchContext?.field || '', 
+                      objectives: researchContext?.objectives || [],
+                      hypotheses: researchContext?.hypotheses || [],
+                      constraints: [],
+                      biases_detected: [],
+                      knowledge_gaps: [],
+                      auto_generated: false
+                    }}
                   />
                 </div>
               )}
