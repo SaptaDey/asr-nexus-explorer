@@ -35,7 +35,7 @@ export const APIIntegration: React.FC = () => {
     enabled: true,
     apiKey: '',
     endpoint: 'https://generativelanguage.googleapis.com/v1beta/models',
-    model: 'gemini-2.5-pro-preview-05-06',
+    model: 'gemini-2.5-pro',
     status: 'disconnected'
   });
 
