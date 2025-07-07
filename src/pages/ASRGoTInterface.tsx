@@ -454,11 +454,12 @@ const ASRGoTInterface: React.FC = () => {
           {/* Left Panel - Tabs */}
           <div className="col-span-8">
             <Tabs defaultValue="stage-log" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="parameters">Parameters</TabsTrigger>
+                <TabsTrigger value="graph">Graph</TabsTrigger>
                 <TabsTrigger value="stage-log">Stage Log</TabsTrigger>
                 <TabsTrigger value="preview">Preview</TabsTrigger>
-                <TabsTrigger value="export">Export</TabsTrigger>
+                <TabsTrigger value="tree">Tree</TabsTrigger>
               </TabsList>
 
               <TabsContent value="parameters">
@@ -501,34 +502,61 @@ const ASRGoTInterface: React.FC = () => {
                   <CardHeader>
                     <CardTitle>HTML Synopsis</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
                     <ScrollArea className="h-[400px]">
                       <div 
                         dangerouslySetInnerHTML={{ __html: state.htmlSynthesis || '<p>HTML synthesis will appear after Stage 7...</p>' }}
                       />
                     </ScrollArea>
+                    <div className="flex gap-2 pt-4 border-t">
+                      <Button className="flex-1" variant="outline">
+                        <Download className="h-4 w-4 mr-2" />
+                        Download HTML
+                      </Button>
+                      <Button className="flex-1" variant="outline">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Download Markdown
+                      </Button>
+                      <Button className="flex-1" variant="outline">
+                        <Database className="h-4 w-4 mr-2" />
+                        Download Graph (JSON)
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              <TabsContent value="export">
+              <TabsContent value="graph">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Export Options</CardTitle>
+                    <CardTitle>Force-Directed Graph Visualization</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Button className="w-full" variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download HTML
-                    </Button>
-                    <Button className="w-full" variant="outline">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Download Markdown
-                    </Button>
-                    <Button className="w-full" variant="outline">
-                      <Database className="h-4 w-4 mr-2" />
-                      Download Graph (JSON)
-                    </Button>
+                  <CardContent>
+                    <div className="h-[500px] border rounded-lg bg-white/5 flex items-center justify-center">
+                      <div className="text-center text-white/60">
+                        <Network className="h-12 w-12 mx-auto mb-2" />
+                        <p>Interactive Graph Visualization</p>
+                        <p className="text-sm">Nodes: {state.graph.nodes.length}</p>
+                        <p className="text-sm">Edges: {state.graph.edges?.length || 0}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="tree">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Tree-of-Reasoning Animation</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[500px] border rounded-lg bg-gradient-to-b from-emerald-50 to-indigo-50 flex items-center justify-center">
+                      <div className="text-center text-gray-600">
+                        <Brain className="h-12 w-12 mx-auto mb-2" />
+                        <p>Animated Hierarchical Tree</p>
+                        <p className="text-sm">Stage {state.stage}/8 Growth</p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
