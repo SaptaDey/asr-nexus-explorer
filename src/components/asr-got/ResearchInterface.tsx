@@ -106,7 +106,7 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
             <ul className="text-sm text-purple-700 space-y-1">
               <li>• Automatic field identification and background research</li>
               <li>• AI-generated hypotheses and research dimensions</li>
-              <li>• Real-time evidence collection via Perplexity Sonar</li>
+              <li>• Real-time evidence collection and analysis</li>
               <li>• Advanced analysis with Gemini 2.5 Pro</li>
               <li>• Comprehensive scientific reasoning and validation</li>
             </ul>
