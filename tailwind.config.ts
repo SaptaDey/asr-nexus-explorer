@@ -19,6 +19,9 @@ export default {
 		},
 		extend: {
 			colors: {
+				brandStart: '#7E5BEF',
+				brandEnd: '#00D2FF', 
+				branchFill: '#14B8A6',
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
