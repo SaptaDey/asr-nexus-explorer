@@ -202,10 +202,13 @@ const ASRGoTInterface: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold gradient-text mb-2">
-            ASR-GoT Framework
+            Scientific Research
           </h1>
-          <p className="text-muted-foreground text-lg mb-4">
-            Advanced Scientific Reasoning - Graph of Thoughts
+          <p className="text-muted-foreground text-lg mb-2">
+            🚀 Next-Generation AI Reasoning Framework for Scientific Research
+          </p>
+          <p className="text-muted-foreground text-base mb-4">
+            Leveraging graph structures to transform how AI systems approach scientific reasoning
           </p>
           <div className="flex items-center justify-center gap-4">
             <Badge className="gradient-bg text-white">

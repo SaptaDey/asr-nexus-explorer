@@ -85,13 +85,50 @@ Return only the JSON array, no explanations.
       if (!response.ok) throw new Error('Failed to generate visualizations');
       
       const data = await response.json();
-      let responseText = data.candidates[0]?.content?.parts[0]?.text || '';
       
-      // Extract JSON from code block if wrapped
-      const jsonMatch = responseText.match(/```(?:javascript|json)?\s*(\[[\s\S]*\])\s*```/);
-      responseText = jsonMatch ? jsonMatch[1] : responseText;
+      // Robust API response extraction
+      if (!data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        throw new Error('Invalid API response structure');
+      }
       
-      const chartConfigs = JSON.parse(responseText);
+      let responseText = data.candidates[0].content.parts[0].text;
+      
+      // Multiple extraction strategies for JSON
+      let extractedJson = responseText;
+      
+      // Strategy 1: Extract from ```json blocks
+      const jsonBlockMatch = responseText.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
+      const codeBlockMatch = responseText.match(/```[\s\S]*?(\[[\s\S]*?\])[\s\S]*?```/);
+      const arrayMatch = responseText.match(/(\[[\s\S]*?\])/);
+      
+      if (jsonBlockMatch) {
+        extractedJson = jsonBlockMatch[1];
+      } else if (codeBlockMatch) {
+        extractedJson = codeBlockMatch[1];
+      } else if (arrayMatch) {
+        extractedJson = arrayMatch[1];
+      }
+      
+      // Clean up common issues
+      extractedJson = extractedJson.trim()
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .replace(/^\s*json\s*/g, '');
+      
+      let chartConfigs;
+      try {
+        chartConfigs = JSON.parse(extractedJson);
+      } catch (parseError) {
+        console.error('JSON Parse Error:', parseError);
+        console.error('Raw response:', responseText);
+        console.error('Extracted JSON:', extractedJson);
+        throw new Error(`JSON parsing failed: ${parseError}`);
+      }
+      
+      // Validate array structure
+      if (!Array.isArray(chartConfigs)) {
+        throw new Error('Response is not a valid array of chart configurations');
+      }
       
       return chartConfigs.map((config: any, index: number) => ({
         id: `enhanced_${index}_${Date.now()}`,
