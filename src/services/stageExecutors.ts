@@ -422,39 +422,42 @@ export const performReflection = async (context: StageExecutorContext): Promise<
 };
 
 export const generateFinalAnalysis = async (context: StageExecutorContext): Promise<string> => {
-  // Compile all previous stage results
-  const allResults = context.stageResults.join('\n\n---\n\n');
+  // Create concise summary of key findings from each stage
+  const stageSummary = context.stageResults.map((result, index) => {
+    const stageNames = ['Initialization', 'Decomposition', 'Hypotheses', 'Evidence', 'Pruning', 'Subgraphs', 'Composition', 'Reflection'];
+    const stageName = stageNames[index] || `Stage ${index + 1}`;
+    // Extract first 200 characters of key findings
+    const summary = result.split('\n').find(line => line.includes('**') || line.includes('##') || line.length > 50)?.substring(0, 200) || 
+                   result.substring(0, 200);
+    return `${stageName}: ${summary}...`;
+  }).join('\n');
   
   // Stage 9: Use thinking mode for comprehensive final analysis
   const finalAnalysis = await callGeminiAPI(
     `<thinking>
-    I need to synthesize all research stages into a comprehensive PhD-level analysis:
-    - Review all evidence and findings systematically
-    - Identify the strongest conclusions supported by evidence
+    I need to synthesize research findings into a comprehensive PhD-level analysis:
+    - Review evidence and findings systematically
+    - Identify strongest conclusions supported by evidence
     - Note limitations and areas of uncertainty
     - Suggest concrete next steps for research
     - Ensure academic rigor throughout
     </thinking>
     
-    You are a PhD-level scientist conducting comprehensive analysis. Based on all the research stages completed below, generate a detailed final scientific report with:
+    You are a PhD-level scientist conducting comprehensive analysis. Based on the research stages completed, generate a detailed final scientific report with:
 
 1. **Executive Summary** (key findings and conclusions)
 2. **Methodology Analysis** (research approach evaluation)
-3. **Evidence Synthesis** (critical analysis of all collected evidence)
+3. **Evidence Synthesis** (critical analysis of collected evidence)
 4. **Statistical Analysis** (quantitative insights where applicable)
-5. **Visualization Recommendations** (suggest graphs, charts, tables that should be created)
-6. **Conclusions** (definitive scientific conclusions)
-7. **Future Research Directions** (recommended next steps)
-8. **References and Citations** (Vancouver format)
+5. **Conclusions** (definitive scientific conclusions)
+6. **Future Research Directions** (recommended next steps)
 
-Include code snippets for data visualization using Python/R where appropriate. Generate actual data tables and statistical analyses.
-
-Previous Research Stages:
-${allResults}
+Stage Summary:
+${stageSummary}
 
 Research Context: ${JSON.stringify(context.researchContext, null, 2)}
 
-Please provide a comprehensive, PhD-level scientific analysis that could be published in a peer-reviewed journal.`,
+Provide a comprehensive, PhD-level scientific analysis.`,
     context.apiKeys.gemini,
     'thinking-only', // RULE 5: Final analysis uses pure THINKING 
     undefined,
