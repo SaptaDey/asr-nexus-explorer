@@ -42,6 +42,7 @@ export const callGeminiAPI = async (
 
   try {
     // RULE 4: Auto-cache for large prompts (>200k tokens)
+    // Note: Max input token limit is 1,048,576 - no artificial limiting
     const promptSize = new TextEncoder().encode(sanitizedPrompt).length;
     const shouldCache = promptSize > 200000;
 
@@ -56,7 +57,7 @@ export const callGeminiAPI = async (
       ],
       generationConfig: {
         temperature: options.temperature || 0.4,
-        maxOutputTokens: options.maxTokens || 4096, // RULE COMPLIANCE: As specified
+        maxOutputTokens: options.maxTokens || 65536, // Updated: Max output token limit
         thinkingBudget: options.thinkingBudget || 16384 // RULE COMPLIANCE: Default thinking budget
       },
       systemInstruction: {

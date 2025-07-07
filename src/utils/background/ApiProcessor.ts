@@ -23,6 +23,7 @@ export class ApiProcessor {
   ): Promise<any> {
     
     // RULE 4: Auto-cache for large prompts (>200k tokens)
+    // Note: Max input token limit is 1,048,576 - no artificial limiting
     const promptSize = new TextEncoder().encode(prompt).length;
     const shouldCache = promptSize > 200000;
     
@@ -37,7 +38,7 @@ export class ApiProcessor {
       ],
       generationConfig: {
         temperature: options.temperature || 0.4,
-        maxOutputTokens: options.maxTokens || 4096, // RULE COMPLIANCE: As specified
+        maxOutputTokens: options.maxTokens || 65536, // Updated: Max output token limit
         topP: 0.8,
         topK: 40,
         thinkingBudget: options.thinkingBudget || 16384 // RULE COMPLIANCE: Default thinking budget
