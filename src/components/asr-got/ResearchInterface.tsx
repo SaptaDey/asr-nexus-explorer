@@ -21,9 +21,11 @@ import {
   CheckCircle,
   Sparkles,
   Rocket,
-  Zap
+  Zap,
+  BarChart3
 } from 'lucide-react';
 import { GraphData } from '@/hooks/useASRGoT';
+import { VisualAnalytics } from './VisualAnalytics';
 import { toast } from 'sonner';
 
 interface ResearchInterfaceProps {
@@ -38,6 +40,9 @@ interface ResearchInterfaceProps {
     objectives: string[];
     hypotheses: string[];
   };
+  apiKeys?: {
+    gemini: string;
+  };
 }
 
 export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
@@ -46,7 +51,8 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
   onExecuteStage,
   isProcessing,
   stageResults = [],
-  researchContext
+  researchContext,
+  apiKeys = { gemini: '' }
 }) => {
   const [researchQuery, setResearchQuery] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
@@ -309,6 +315,21 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
                 </div>
               )}
               
+              {/* Visual Analytics */}
+              {currentStage >= 4 && graphData.nodes.some(n => n.type === 'evidence') && (
+                <div className="space-y-4">
+                  <h3 className="font-semibold gradient-text flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    Visual Analytics & Charts
+                  </h3>
+                  <VisualAnalytics 
+                    graphData={graphData}
+                    currentStage={currentStage}
+                    geminiApiKey={apiKeys.gemini}
+                  />
+                </div>
+              )}
+
               {/* Final Analysis Complete */}
               {stageResults.length >= 9 && (
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
@@ -319,7 +340,75 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
                   <p className="text-sm text-green-700 mb-3">
                     Comprehensive PhD-level scientific analysis has been generated.
                   </p>
-                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                  <Button 
+                    onClick={() => {
+                      // Export HTML with final report content
+                      const finalStageResult = stageResults[8] || stageResults[stageResults.length - 1] || 'No final analysis available';
+                      const htmlContent = `
+                        <!DOCTYPE html>
+                        <html>
+                          <head>
+                            <title>ASR-GoT Final Analysis Report</title>
+                            <meta charset="UTF-8">
+                            <style>
+                              body { 
+                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; 
+                                margin: 2rem; 
+                                line-height: 1.6;
+                                max-width: 1200px;
+                                margin: 0 auto;
+                                padding: 2rem;
+                              }
+                              .header { 
+                                color: #7E5BEF; 
+                                border-bottom: 3px solid #7E5BEF;
+                                padding-bottom: 1rem;
+                                margin-bottom: 2rem;
+                              }
+                              .content { 
+                                background: #f8f9fa; 
+                                padding: 2rem; 
+                                border-radius: 8px;
+                                white-space: pre-wrap;
+                              }
+                              .metadata {
+                                background: #e9ecef;
+                                padding: 1rem;
+                                margin: 1rem 0;
+                                border-radius: 4px;
+                                font-family: monospace;
+                                font-size: 0.9em;
+                              }
+                            </style>
+                          </head>
+                          <body>
+                            <h1 class="header">ASR-GoT Final Analysis Report</h1>
+                            <div class="metadata">
+                              <strong>Generated:</strong> ${new Date().toISOString()}<br>
+                              <strong>Research Topic:</strong> ${researchContext?.topic || 'Not specified'}<br>
+                              <strong>Field:</strong> ${researchContext?.field || 'Not specified'}<br>
+                              <strong>Stages Completed:</strong> ${stageResults.length}/9<br>
+                              <strong>Knowledge Nodes:</strong> ${graphData.nodes.length}<br>
+                              <strong>Reasoning Connections:</strong> ${graphData.edges.length}
+                            </div>
+                            <div class="content">${finalStageResult}</div>
+                          </body>
+                        </html>
+                      `;
+                      
+                      const blob = new Blob([htmlContent], { type: 'text/html' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `asr-got-final-report-${new Date().toISOString().split('T')[0]}.html`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                      toast.success('Final report exported successfully');
+                    }}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  >
                     <FileText className="h-4 w-4 mr-2" />
                     Export Final Report (HTML)
                   </Button>
@@ -391,7 +480,42 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
                   </div>
 
                   {/* Export Button */}
-                  <Button className="w-full gradient-bg">
+                  <Button 
+                    onClick={() => {
+                      const reportContent = stageResults.length > 0 ? stageResults.join('\n\n---\n\n') : 'No analysis completed yet';
+                      const jsonData = {
+                        metadata: {
+                          exported: new Date().toISOString(),
+                          version: '1.0.0',
+                          framework: 'ASR-GoT'
+                        },
+                        researchContext: researchContext || {},
+                        stages: stageResults.map((result, index) => ({
+                          stage: index + 1,
+                          result: result || ''
+                        })),
+                        graph: {
+                          nodes: graphData.nodes.length,
+                          edges: graphData.edges.length,
+                          nodeTypes: Array.from(new Set(graphData.nodes.map(n => n.type))),
+                          edgeTypes: Array.from(new Set(graphData.edges.map(e => e.type)))
+                        },
+                        completeAnalysis: reportContent
+                      };
+                      
+                      const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `asr-got-complete-analysis-${new Date().toISOString().split('T')[0]}.json`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                      toast.success('Complete analysis exported successfully');
+                    }}
+                    className="w-full gradient-bg"
+                  >
                     <FileText className="h-4 w-4 mr-2" />
                     Export Complete Analysis
                   </Button>

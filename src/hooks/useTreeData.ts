@@ -28,15 +28,15 @@ interface BotanicalProperties {
 }
 
 // Botanical mapping according to specifications
-const getBotanicalType = (node: GraphNode): TreeNode['botanicalType'] => {
-  switch (node.type) {
+const getBotanicalType = (nodeType: string, stage: number): TreeNode['botanicalType'] => {
+  switch (nodeType) {
     case 'root': return 'root-bulb';
     case 'dimension': return 'rootlet';
     case 'hypothesis': return 'branch';
     case 'evidence': return 'bud';
     case 'synthesis': return 'leaf';
     case 'reflection': return 'blossom';
-    default: return 'branch';
+    default: return stage <= 2 ? 'rootlet' : stage <= 4 ? 'branch' : 'leaf';
   }
 };
 
@@ -145,7 +145,7 @@ export const useTreeScene = (graphData: GraphData, currentStage: number) => {
         confidence: node.confidence,
         metadata: node.metadata,
         stage,
-        botanicalType: getBotanicalType(node)
+        botanicalType: getBotanicalType(node.type, stage)
       });
     });
     

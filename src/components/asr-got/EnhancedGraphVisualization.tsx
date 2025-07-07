@@ -148,11 +148,13 @@ export const EnhancedGraphVisualization: React.FC<EnhancedGraphVisualizationProp
   );
 
   const initialEdges: Edge[] = useMemo(() => 
-    graphData.edges.map((edge: GraphEdge) => ({
-      id: edge.id,
+    graphData.edges.map((edge: GraphEdge, index: number) => ({
+      id: edge.id || `edge-${index}`,
       source: edge.source,
       target: edge.target,
-      type: 'scientific',
+      type: 'smoothstep',
+      sourceHandle: null,
+      targetHandle: null,
       data: {
         type: edge.type,
         confidence: edge.confidence,
@@ -160,8 +162,16 @@ export const EnhancedGraphVisualization: React.FC<EnhancedGraphVisualizationProp
       },
       animated: edge.metadata?.type === 'hypothesis_derivation',
       style: { 
-        strokeWidth: 2,
+        strokeWidth: Math.max(1, (edge.confidence || 0.5) * 4),
         opacity: 0.8,
+        stroke: edge.type === 'supportive' ? 'hsl(var(--chart-2))' : 
+               edge.type === 'contradictory' ? 'hsl(var(--destructive))' : 
+               'hsl(var(--muted-foreground))'
+      },
+      markerEnd: {
+        type: 'arrowclosed' as any,
+        width: 20,
+        height: 20,
       },
     })), [graphData.edges]
   );

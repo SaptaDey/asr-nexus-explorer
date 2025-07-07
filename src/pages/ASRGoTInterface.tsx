@@ -240,6 +240,7 @@ const ASRGoTInterface: React.FC = () => {
               isProcessing={isProcessing}
               stageResults={stageResults}
               researchContext={researchContext}
+              apiKeys={apiKeys}
             />
           </TabsContent>
 
