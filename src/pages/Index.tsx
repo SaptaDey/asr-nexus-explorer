@@ -13,6 +13,7 @@ import { StageManager } from "@/components/asr-got/StageManager";
 import { ParameterConfig } from "@/components/asr-got/ParameterConfig";
 import { APIIntegration } from "@/components/asr-got/APIIntegration";
 import { ResearchInterface } from "@/components/asr-got/ResearchInterface";
+import { TreeOfReasoningVisualization } from "@/components/asr-got/TreeOfReasoningVisualization";
 import { Brain, Network, Settings, Database, Zap, Download, Sparkles, Rocket } from "lucide-react";
 import { useASRGoT } from "@/hooks/useASRGoT";
 import { toast } from "sonner";
@@ -212,10 +213,14 @@ const Index = () => {
       {/* Main Interface */}
       <div className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-white/80 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-6 bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="research" className="flex items-center gap-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
               <Zap className="h-4 w-4" />
               Research
+            </TabsTrigger>
+            <TabsTrigger value="tree" className="flex items-center gap-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
+              🌳
+              Tree
             </TabsTrigger>
             <TabsTrigger value="graph" className="flex items-center gap-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
               <Network className="h-4 w-4" />
@@ -254,6 +259,27 @@ const Index = () => {
                   isProcessing={isProcessing}
                   stageResults={stageResults}
                   researchContext={researchContext}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="tree" className="space-y-6">
+            <Card className="card-gradient bg-gradient-to-b from-emerald-50 to-indigo-50 dark:from-emerald-950/20 dark:to-indigo-950/20">
+              <CardHeader>
+                <CardTitle className="gradient-text flex items-center gap-2">
+                  🌳
+                  Tree of Reasoning - Animated Growth
+                </CardTitle>
+                <CardDescription>
+                  Watch your research grow like a living tree - from trunk (question) to branches (dimensions) to flowers (insights)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-2">
+                <TreeOfReasoningVisualization 
+                  graphData={graphData}
+                  currentStage={currentStage}
+                  isProcessing={isProcessing}
                 />
               </CardContent>
             </Card>
