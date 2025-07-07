@@ -25,6 +25,10 @@ interface ExportFunctionalityProps {
   researchContext: ResearchContext;
   finalReport: string;
   parameters: ASRGoTParameters;
+  visualAnalytics?: {
+    figures: any[];
+    exportFigure: (figure: any) => Promise<string>;
+  };
 }
 
 export const ExportFunctionality: React.FC<ExportFunctionalityProps> = ({
@@ -32,7 +36,8 @@ export const ExportFunctionality: React.FC<ExportFunctionalityProps> = ({
   graphData,
   researchContext,
   finalReport,
-  parameters
+  parameters,
+  visualAnalytics
 }) => {
   const [isExporting, setIsExporting] = useState(false);
 
@@ -178,6 +183,27 @@ export const ExportFunctionality: React.FC<ExportFunctionalityProps> = ({
     <div class="final-report">
         <h2 style="color: #b45309; margin-bottom: 1rem;">📊 Final Comprehensive Analysis</h2>
         <div>${parseMarkdownToHTML(finalReport)}</div>
+        
+        ${visualAnalytics && visualAnalytics.figures.length > 0 ? `
+        <div style="margin-top: 2rem;">
+            <h3 style="color: #1e40af; margin-bottom: 1rem;">📈 Visual Analytics</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
+                ${visualAnalytics.figures.slice(0, 8).map((figure, index) => `
+                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem;">
+                    <h4 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">${figure.title}</h4>
+                    <div id="chart-${figure.id}" style="width: 100%; height: 300px; background: white; border-radius: 0.25rem;">
+                        <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">
+                            Chart ${index + 1}: ${figure.type.toUpperCase()}
+                        </div>
+                    </div>
+                    <p style="font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem;">
+                        Figure ${index + 1}: ${figure.title} - Generated from ${figure.nodeId}
+                    </p>
+                </div>
+                `).join('')}
+            </div>
+        </div>
+        ` : ''}</div>
     </div>
     ` : ''}
 

@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { GraphData } from '@/hooks/useASRGoT';
 import { VisualAnalytics } from './VisualAnalytics';
+import { useEnhancedVisualAnalytics } from './EnhancedVisualAnalytics';
 import { toast } from 'sonner';
 
 interface ResearchInterfaceProps {
@@ -315,13 +316,34 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
                 </div>
               )}
               
-              {/* Visual Analytics */}
+              {/* Enhanced Visual Analytics */}
               {currentStage >= 4 && graphData.nodes.some(n => n.type === 'evidence') && (
                 <div className="space-y-4">
                   <h3 className="font-semibold gradient-text flex items-center gap-2">
                     <BarChart3 className="h-4 w-4" />
-                    Visual Analytics & Charts
+                    Enhanced Visual Analytics & Charts
+                    {analyticsGenerating && (
+                      <div className="animate-spin text-primary ml-2">
+                        <Loader2 className="h-4 w-4" />
+                      </div>
+                    )}
                   </h3>
+                  
+                  {analyticsFigures.length > 0 && (
+                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-sm text-blue-700 font-medium mb-2">
+                        📊 {analyticsFigures.length} Publication-Ready Charts Generated
+                      </p>
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
+                        {analyticsFigures.slice(0, 6).map((fig, idx) => (
+                          <span key={idx} className="bg-white/80 px-2 py-1 rounded border">
+                            {fig.title.substring(0, 30)}...
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
                   <VisualAnalytics 
                     graphData={graphData}
                     currentStage={currentStage}

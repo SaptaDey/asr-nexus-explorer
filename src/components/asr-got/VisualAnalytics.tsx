@@ -76,39 +76,111 @@ export const VisualAnalytics: React.FC<VisualAnalyticsProps> = ({
     };
   }, []);
 
-  // Generate Gemini code execution request for data visualization
-  const generateVisualizationCode = useCallback(async (evidenceNode: GraphNode): Promise<string> => {
-    // Rate limiting check
+  // Generate comprehensive analytical visualizations
+  const generateComprehensiveVisualizations = useCallback(async (): Promise<AnalyticsFigure[]> => {
     if (!apiRateLimiter.isAllowed('visualization')) {
       throw new Error('Rate limit exceeded. Please wait before generating more visualizations.');
     }
 
-    const prompt = `
-Analyze this research evidence node and generate a JSON visualization configuration for Plotly.js:
+    const analysisPrompt = `
+Generate comprehensive research visualizations based on this ASR-GoT graph data:
 
-Node ID: ${evidenceNode.id}
-Label: ${evidenceNode.label}
-Type: ${evidenceNode.type}
+Nodes: ${graphData.nodes.length}
+Edges: ${graphData.edges.length}
+Evidence Nodes: ${graphData.nodes.filter(n => n.type === 'evidence').length}
+Hypothesis Nodes: ${graphData.nodes.filter(n => n.type === 'hypothesis').length}
 
-Requirements:
-1. Return ONLY valid JSON for Plotly.js configuration
-2. Create appropriate visualization based on the data type
-3. Include proper data array and layout configuration
-4. Use meaningful titles, labels, and colors
-5. Make the visualization publication-ready
+Create multiple visualization configurations for Plotly.js. Return a JSON array with these chart types:
 
-Expected format:
-{
-  "data": [{"x": [1,2,3], "y": [1,4,9], "type": "scatter"}],
-  "layout": {
-    "title": "Title Here",
-    "xaxis": {"title": "X Axis Label"},
-    "yaxis": {"title": "Y Axis Label"}
+1. NETWORK TOPOLOGY ANALYSIS:
+- Node degree distribution histogram
+- Confidence levels scatter plot
+- Evidence strength heatmap
+
+2. STATISTICAL ANALYSIS:
+- Effect size forest plot
+- Confidence interval analysis
+- Research stage progression
+
+3. COMPARATIVE ANALYSIS:
+- Hypothesis vs Evidence comparison
+- Cross-disciplinary correlation matrix
+- Research quality metrics
+
+Format each as:
+[
+  {
+    "title": "Chart Title",
+    "type": "bar|scatter|heatmap|histogram",
+    "data": [{"x": [], "y": [], "type": "bar"}],
+    "layout": {"title": "", "xaxis": {"title": ""}, "yaxis": {"title": ""}}
   }
-}
+]
 
-Generate synthetic but realistic data if no actual data is available.
-Return only the JSON object, no code blocks or explanations.
+Generate 6-8 publication-ready charts with realistic synthetic data. Return only the JSON array.
+`;
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: analysisPrompt }] }],
+          generationConfig: { 
+            maxOutputTokens: 4000,
+            temperature: 0.2
+          }
+        })
+      });
+
+      if (!response.ok) throw new Error('Gemini API error');
+      
+      const data = await response.json();
+      let responseText = data.candidates[0]?.content?.parts[0]?.text || '';
+      
+      // Extract JSON from code block if wrapped
+      const jsonMatch = responseText.match(/```(?:javascript|json)?\s*(\[[\s\S]*\])\s*```/);
+      responseText = jsonMatch ? jsonMatch[1] : responseText;
+      
+      const chartConfigs = JSON.parse(responseText);
+      
+      return chartConfigs.map((config: any, index: number) => ({
+        id: `comprehensive_${index}_${Date.now()}`,
+        title: config.title,
+        code: JSON.stringify(config),
+        data: config.data,
+        layout: config.layout,
+        type: config.type as AnalyticsFigure['type'],
+        nodeId: 'comprehensive_analysis',
+        generated: new Date().toISOString()
+      }));
+      
+    } catch (error) {
+      throw new Error(`Comprehensive analysis failed: ${error}`);
+    }
+  }, [graphData, geminiApiKey]);
+
+  // Generate evidence-specific visualization
+  const generateEvidenceVisualization = useCallback(async (evidenceNode: GraphNode): Promise<AnalyticsFigure> => {
+    const prompt = `
+Generate a publication-ready visualization for this evidence node:
+
+Node: ${evidenceNode.label}
+Type: ${evidenceNode.type}
+Confidence: ${evidenceNode.confidence}
+
+Create a statistical visualization showing:
+1. Evidence strength analysis
+2. Confidence intervals
+3. Supporting data distribution
+4. Quality metrics
+
+Return format:
+{
+  "title": "Evidence Analysis: [Node Label]",
+  "data": [{"x": [], "y": [], "type": "bar|scatter|box"}],
+  "layout": {"title": "", "xaxis": {"title": ""}, "yaxis": {"title": ""}}
+}
 `;
 
     try {
@@ -127,14 +199,26 @@ Return only the JSON object, no code blocks or explanations.
       if (!response.ok) throw new Error('Gemini API error');
       
       const data = await response.json();
-      const code = data.candidates[0]?.content?.parts[0]?.text || '';
+      let code = data.candidates[0]?.content?.parts[0]?.text || '';
       
-      // Extract JSON from code block if wrapped
       const jsonMatch = code.match(/```(?:javascript|json)?\s*(\{[\s\S]*\})\s*```/);
-      return jsonMatch ? jsonMatch[1] : code;
+      code = jsonMatch ? jsonMatch[1] : code;
+      
+      const plotConfig = JSON.parse(code);
+      
+      return {
+        id: `evidence_${evidenceNode.id}_${Date.now()}`,
+        title: plotConfig.title || `Evidence Analysis: ${evidenceNode.label}`,
+        code: code,
+        data: plotConfig.data,
+        layout: plotConfig.layout,
+        type: plotConfig.data[0].type as AnalyticsFigure['type'],
+        nodeId: evidenceNode.id,
+        generated: new Date().toISOString()
+      };
       
     } catch (error) {
-      throw new Error(`Code generation failed: ${error}`);
+      throw new Error(`Evidence visualization failed: ${error}`);
     }
   }, [geminiApiKey]);
 
@@ -176,51 +260,45 @@ Return only the JSON object, no code blocks or explanations.
     }
   }, []);
 
-  // Trigger automatic visualization generation for Stage 4 evidence nodes
+  // Trigger comprehensive visualization generation for advanced stages
   useEffect(() => {
-    if (currentStage !== 4 || !plotlyLoaded || !geminiApiKey) return;
+    if (currentStage < 4 || !plotlyLoaded || !geminiApiKey) return;
 
-    const evidenceNodes = graphData.nodes.filter(node => 
-      node.type === 'evidence' && 
-      !figures.some(fig => fig.nodeId === node.id)
-    );
-
-    if (evidenceNodes.length === 0) return;
-
-    const generateFigures = async () => {
-      setIsGenerating(true);
-      const newFigures: AnalyticsFigure[] = [];
-
-      for (const node of evidenceNodes.slice(0, 3)) { // Limit to 3 to avoid API limits
+    // Generate comprehensive analysis for stages 6-9
+    if (currentStage >= 6 && figures.length === 0) {
+      const generateAnalysis = async () => {
+        setIsGenerating(true);
         try {
-          const code = await generateVisualizationCode(node);
-          const figure = await executeVisualizationCode(code, node.id);
-          newFigures.push(figure);
+          // Generate comprehensive visualizations
+          const comprehensiveFigures = await generateComprehensiveVisualizations();
           
-          toast.success(`Generated visualization for ${node.label}`);
+          // Generate evidence-specific visualizations
+          const evidenceNodes = graphData.nodes.filter(node => node.type === 'evidence').slice(0, 3);
+          const evidenceFigures: AnalyticsFigure[] = [];
+          
+          for (const node of evidenceNodes) {
+            try {
+              const figure = await generateEvidenceVisualization(node);
+              evidenceFigures.push(figure);
+            } catch (error) {
+              console.warn(`Failed to generate visualization for ${node.id}:`, error);
+            }
+          }
+          
+          const allFigures = [...comprehensiveFigures, ...evidenceFigures];
+          setFigures(allFigures);
+          
+          toast.success(`Generated ${allFigures.length} comprehensive visualizations`);
         } catch (error) {
-          const errorFigure: AnalyticsFigure = {
-            id: `error_${node.id}`,
-            title: `Error: ${node.label}`,
-            code: '',
-            data: [],
-            layout: {},
-            type: 'scatter',
-            nodeId: node.id,
-            generated: new Date().toISOString(),
-            error: String(error)
-          };
-          newFigures.push(errorFigure);
-          toast.error(`Failed to generate visualization for ${node.label}`);
+          toast.error(`Failed to generate comprehensive analysis: ${error}`);
+        } finally {
+          setIsGenerating(false);
         }
-      }
+      };
 
-      setFigures(prev => [...prev, ...newFigures]);
-      setIsGenerating(false);
-    };
-
-    generateFigures();
-  }, [currentStage, graphData.nodes, plotlyLoaded, geminiApiKey, figures, generateVisualizationCode, executeVisualizationCode]);
+      generateAnalysis();
+    }
+  }, [currentStage, graphData, plotlyLoaded, geminiApiKey, figures.length, generateComprehensiveVisualizations, generateEvidenceVisualization]);
 
   // Render Plotly figure
   const renderPlotlyFigure = useCallback((figure: AnalyticsFigure) => {
