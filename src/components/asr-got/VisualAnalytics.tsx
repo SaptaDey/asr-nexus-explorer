@@ -83,41 +83,14 @@ export const VisualAnalytics: React.FC<VisualAnalyticsProps> = ({
     }
 
     const analysisPrompt = `
-Generate comprehensive research visualizations based on this ASR-GoT graph data:
+Generate 4 charts for ASR-GoT graph (${graphData.nodes.length} nodes, ${graphData.edges.length} edges):
 
-Nodes: ${graphData.nodes.length}
-Edges: ${graphData.edges.length}
-Evidence Nodes: ${graphData.nodes.filter(n => n.type === 'evidence').length}
-Hypothesis Nodes: ${graphData.nodes.filter(n => n.type === 'hypothesis').length}
+1. Node degree histogram
+2. Confidence scatter plot 
+3. Stage quality heatmap
+4. Hypothesis comparison bar chart
 
-Create multiple visualization configurations for Plotly.js. Return a JSON array with these chart types:
-
-1. NETWORK TOPOLOGY ANALYSIS:
-- Node degree distribution histogram
-- Confidence levels scatter plot
-- Evidence strength heatmap
-
-2. STATISTICAL ANALYSIS:
-- Effect size forest plot
-- Confidence interval analysis
-- Research stage progression
-
-3. COMPARATIVE ANALYSIS:
-- Hypothesis vs Evidence comparison
-- Cross-disciplinary correlation matrix
-- Research quality metrics
-
-Format each as:
-[
-  {
-    "title": "Chart Title",
-    "type": "bar|scatter|heatmap|histogram",
-    "data": [{"x": [], "y": [], "type": "bar"}],
-    "layout": {"title": "", "xaxis": {"title": ""}, "yaxis": {"title": ""}}
-  }
-]
-
-Generate 6-8 publication-ready charts with realistic synthetic data. Return only the JSON array.
+JSON format: [{"title": "Name", "type": "bar|scatter|heatmap", "data": [{"x": [1,2], "y": [3,4], "type": "bar"}], "layout": {"title": "Title", "xaxis": {"title": "X"}, "yaxis": {"title": "Y"}}}]
 `;
 
     try {
@@ -172,24 +145,11 @@ Generate 6-8 publication-ready charts with realistic synthetic data. Return only
   // Generate evidence-specific visualization
   const generateEvidenceVisualization = useCallback(async (evidenceNode: GraphNode): Promise<AnalyticsFigure> => {
     const prompt = `
-Generate a publication-ready visualization for this evidence node:
+Generate chart for evidence node "${evidenceNode.label}" (confidence: ${evidenceNode.confidence}):
 
-Node: ${evidenceNode.label}
-Type: ${evidenceNode.type}
-Confidence: ${evidenceNode.confidence}
+Create evidence strength bar chart.
 
-Create a statistical visualization showing:
-1. Evidence strength analysis
-2. Confidence intervals
-3. Supporting data distribution
-4. Quality metrics
-
-Return format:
-{
-  "title": "Evidence Analysis: [Node Label]",
-  "data": [{"x": [], "y": [], "type": "bar|scatter|box"}],
-  "layout": {"title": "", "xaxis": {"title": ""}, "yaxis": {"title": ""}}
-}
+JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Support", "Against"], "y": [0.8, 0.2], "type": "bar"}], "layout": {"title": "Evidence Strength", "xaxis": {"title": "Category"}, "yaxis": {"title": "Score"}}}
 `;
 
     try {

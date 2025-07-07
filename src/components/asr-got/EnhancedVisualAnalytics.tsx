@@ -35,38 +35,15 @@ export const useEnhancedVisualAnalytics = (
     }
 
     const analysisPrompt = `
-Generate comprehensive research visualizations for this ASR-GoT analysis:
+Generate 4 research charts for ASR-GoT analysis (Nodes: ${graphData.nodes.length}, Edges: ${graphData.edges.length}, Stage: ${currentStage}):
 
-GRAPH STATISTICS:
-- Total Nodes: ${graphData.nodes.length}
-- Total Edges: ${graphData.edges.length}
-- Evidence Nodes: ${graphData.nodes.filter(n => n.type === 'evidence').length}
-- Hypothesis Nodes: ${graphData.nodes.filter(n => n.type === 'hypothesis').length}
-- Research Stage: ${currentStage}
+1. Node degree histogram
+2. Confidence scatter plot  
+3. Research quality heatmap
+4. Effect size comparison
 
-REQUIRED CHARTS (Return JSON array):
-1. Network Topology Histogram - Node degree distribution
-2. Confidence Analysis Scatter - Evidence confidence levels
-3. Research Quality Heatmap - Stage completion metrics
-4. Statistical Analysis Forest Plot - Effect sizes with confidence intervals
-5. Comparative Bar Chart - Hypothesis vs Evidence comparison
-6. Research Progression Line Chart - Stage development timeline
-
-Format each chart as:
-{
-  "title": "Descriptive Chart Title",
-  "type": "bar|scatter|heatmap|histogram|box",
-  "data": [{"x": [realistic_data], "y": [realistic_data], "type": "chart_type"}],
-  "layout": {
-    "title": "Chart Title",
-    "xaxis": {"title": "X Axis Label"},
-    "yaxis": {"title": "Y Axis Label"},
-    "showlegend": true
-  }
-}
-
-Generate 6 publication-ready charts with realistic synthetic data based on the graph statistics.
-Return only the JSON array, no explanations.
+Return JSON array only:
+[{"title": "Chart Name", "type": "bar|scatter|heatmap", "data": [{"x": [1,2,3], "y": [4,5,6], "type": "bar"}], "layout": {"title": "Title", "xaxis": {"title": "X"}, "yaxis": {"title": "Y"}}}]
 `;
 
     try {
