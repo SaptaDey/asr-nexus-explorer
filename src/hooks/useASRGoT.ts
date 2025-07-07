@@ -5,82 +5,12 @@ import { GraphData, GraphNode, GraphEdge, ASRGoTParameters, APICredentials, Stag
 import { completeASRGoTParameters } from '@/config/asrGotParameters';
 import { backgroundProcessor, queuePerplexityCall, queueGeminiCall, getTaskResult } from '@/utils/backgroundProcessor';
 
+// Re-export types for other components
+export type { GraphData, GraphNode, GraphEdge, ASRGoTParameters } from '@/types/asrGotTypes';
+
 // Types are now imported from centralized type definitions
 
 const defaultParameters: ASRGoTParameters = completeASRGoTParameters;
-  'P1.0': {
-    parameter_id: 'P1.0',
-    type: 'Parameter - Framework',
-    source_description: 'Core GoT Protocol Definition (2025-04-24)',
-    value: 'Mandatory 8-stage GoT execution: 1.Initialization, 2.Decomposition, 3.Hypothesis/Planning, 4.Evidence Integration, 5.Pruning/Merging, 6.Subgraph Extraction, 7.Composition, 8.Reflection',
-    notes: 'Establishes the fundamental workflow ensuring structured reasoning',
-    enabled: true
-  },
-  'P1.1': {
-    parameter_id: 'P1.1',
-    type: 'Parameter - Initialization',
-    source_description: 'GoT Initialization Rule (2025-04-24)',
-    value: 'Root node n₀ label=Task Understanding, confidence=C₀ multi-dimensional vector',
-    notes: 'Defines the graphs starting state',
-    enabled: true
-  },
-  'P1.2': {
-    parameter_id: 'P1.2',
-    type: 'Parameter - Decomposition',
-    source_description: 'Enhanced GoT Decomposition Dimensions (2025-04-24)',
-    value: 'Default dimensions: Scope, Objectives, Constraints, Data Needs, Use Cases, Potential Biases, Knowledge Gaps',
-    notes: 'Ensures comprehensive initial analysis',
-    enabled: true
-  },
-  'P1.3': {
-    parameter_id: 'P1.3',
-    type: 'Parameter - Hypothesis',
-    source_description: 'Enhanced GoT Hypothesis Generation Rules (2025-04-24)',
-    value: 'Generate k=3-5 hypotheses per dimension node with explicit plans and metadata tagging',
-    notes: 'Guides structured hypothesis exploration',
-    enabled: true
-  },
-  'P1.4': {
-    parameter_id: 'P1.4',
-    type: 'Parameter - Evidence Integration',
-    source_description: 'Enhanced GoT Evidence Integration Process (2025-04-24)',
-    value: 'Iterative loop based on multi-dimensional confidence-to-cost ratio and potential impact',
-    notes: 'Defines the core learning and graph evolution cycle',
-    enabled: true
-  },
-  'P1.5': {
-    parameter_id: 'P1.5',
-    type: 'Parameter - Refinement & Confidence',
-    source_description: 'Enhanced GoT Confidence Representation & Refinement Rules (2025-04-24)',
-    value: 'Confidence C = [empirical_support, theoretical_basis, methodological_rigor, consensus_alignment]',
-    notes: 'Defines belief representation and graph simplification rules',
-    enabled: true
-  },
-  'P1.6': {
-    parameter_id: 'P1.6',
-    type: 'Parameter - Output & Extraction',
-    source_description: 'Enhanced GoT Output Generation & Subgraph Selection Rules (2025-04-24)',
-    value: 'Numeric node labels, verbatim queries, reasoning trace, Vancouver citations',
-    notes: 'Ensures transparent, traceable, user-aligned output',
-    enabled: true
-  },
-  'P1.7': {
-    parameter_id: 'P1.7',
-    type: 'Parameter - Verification',
-    source_description: 'Enhanced GoT Self-Audit Protocol (2025-04-24)',
-    value: 'Mandatory self-audit checking coverage, constraints, bias, gaps, falsifiability',
-    notes: 'Mandates final quality control',
-    enabled: true
-  },
-  'P1.8': {
-    parameter_id: 'P1.8',
-    type: 'Parameter - Cross-Domain Linking',
-    source_description: 'Methodology for Interdisciplinary Bridge Nodes (IBNs)',
-    value: 'Maintain explicit disciplinary_tags and create IBNs for cross-domain connections',
-    notes: 'Facilitates integration across fields',
-    enabled: true
-  }
-};
 
 interface APIKeys {
   perplexity: string;
@@ -91,7 +21,16 @@ export const useASRGoT = () => {
   const [currentStage, setCurrentStage] = useState(0);
   const [graphData, setGraphData] = useState<GraphData>({
     nodes: [],
-    edges: []
+    edges: [],
+    metadata: {
+      version: '1.0',
+      created: new Date().toISOString(),
+      last_updated: new Date().toISOString(),
+      stage: 0,
+      total_nodes: 0,
+      total_edges: 0,
+      graph_metrics: {}
+    }
   });
   const [parameters, setParameters] = useState<ASRGoTParameters>(defaultParameters);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -295,7 +234,14 @@ export const useASRGoT = () => {
     setGraphData(prev => ({
       ...prev,
       nodes: [rootNode],
-      edges: []
+      edges: [],
+      metadata: {
+        ...prev.metadata,
+        last_updated: new Date().toISOString(),
+        total_nodes: 1,
+        total_edges: 0,
+        stage: 1
+      }
     }));
 
     // Update research context
@@ -341,14 +287,22 @@ export const useASRGoT = () => {
       target: node.id,
       type: 'supportive' as const,
       confidence: 0.8,
-      metadata: {
-        edge_type: 'decomposition'
-      }
+        metadata: {
+          type: 'decomposition'
+        }
     }));
 
     setGraphData(prev => ({
+      ...prev,
       nodes: [...prev.nodes, ...dimensionNodes],
-      edges: [...prev.edges, ...dimensionEdges]
+      edges: [...prev.edges, ...dimensionEdges],
+      metadata: {
+        ...prev.metadata,
+        last_updated: new Date().toISOString(),
+        total_nodes: prev.nodes.length + dimensionNodes.length,
+        total_edges: prev.edges.length + dimensionEdges.length,
+        stage: 2
+      }
     }));
 
     return `**Stage 2 Complete: Decomposition**\n\n**AI Analysis:**\n${decompositionAnalysis}`;
@@ -398,14 +352,24 @@ export const useASRGoT = () => {
           target: hypNode.id,
           type: 'supportive',
           confidence: 0.7,
-          metadata: { edge_type: 'hypothesis_derivation' }
+          metadata: {
+            type: 'hypothesis_derivation'
+          }
         });
       });
     });
 
     setGraphData(prev => ({
+      ...prev,
       nodes: [...prev.nodes, ...hypothesisNodes],
-      edges: [...prev.edges, ...hypothesisEdges]
+      edges: [...prev.edges, ...hypothesisEdges],
+      metadata: {
+        ...prev.metadata,
+        last_updated: new Date().toISOString(),
+        total_nodes: prev.nodes.length + hypothesisNodes.length,
+        total_edges: prev.edges.length + hypothesisEdges.length,
+        stage: 3
+      }
     }));
 
     setResearchContext(prev => ({
@@ -455,13 +419,23 @@ export const useASRGoT = () => {
         target: hypNode.id,
         type: 'supportive',
         confidence: 0.7,
-        metadata: { edge_type: 'evidence_support' }
+        metadata: {
+          type: 'evidence_support'
+        }
       });
     });
 
     setGraphData(prev => ({
+      ...prev,
       nodes: [...prev.nodes, ...evidenceNodes],
-      edges: [...prev.edges, ...evidenceEdges]
+      edges: [...prev.edges, ...evidenceEdges],
+      metadata: {
+        ...prev.metadata,
+        last_updated: new Date().toISOString(),
+        total_nodes: prev.nodes.length + evidenceNodes.length,
+        total_edges: prev.edges.length + evidenceEdges.length,
+        stage: 4
+      }
     }));
 
     return `**Stage 4 Complete: Evidence Integration**\n\n**Evidence Found:**\n${evidenceSearch}\n\n**Analysis:**\n${evidenceAnalysis}`;
@@ -544,8 +518,16 @@ Please provide a comprehensive, PhD-level scientific analysis that could be publ
     };
 
     setGraphData(prev => ({
+      ...prev,
       nodes: [...prev.nodes, finalNode],
-      edges: [...prev.edges]
+      edges: [...prev.edges],
+      metadata: {
+        ...prev.metadata,
+        last_updated: new Date().toISOString(),
+        total_nodes: prev.nodes.length + 1,
+        total_edges: prev.edges.length,
+        stage: 9
+      }
     }));
 
     return `# Final Comprehensive Scientific Analysis
@@ -564,7 +546,19 @@ ${finalAnalysis}
 
   const resetFramework = useCallback(() => {
     setCurrentStage(0);
-    setGraphData({ nodes: [], edges: [] });
+    setGraphData({
+      nodes: [],
+      edges: [],
+      metadata: {
+        version: '1.0',
+        created: new Date().toISOString(),
+        last_updated: new Date().toISOString(),
+        stage: 0,
+        total_nodes: 0,
+        total_edges: 0,
+        graph_metrics: {}
+      }
+    });
     setParameters(defaultParameters);
     setStageResults([]);
     setResearchContext({ field: '', topic: '', objectives: [], hypotheses: [] });
