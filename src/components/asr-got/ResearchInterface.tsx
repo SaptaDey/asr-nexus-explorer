@@ -58,6 +58,13 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
   const [researchQuery, setResearchQuery] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
   const [activeTab, setActiveTab] = useState('input');
+  
+  // Enhanced visual analytics for comprehensive chart generation
+  const { 
+    figures: analyticsFigures, 
+    isGenerating: analyticsGenerating, 
+    exportFigureAsDataURL 
+  } = useEnhancedVisualAnalytics(graphData, currentStage, apiKeys.gemini);
 
   const handleStartResearch = async () => {
     if (!taskDescription.trim()) {
