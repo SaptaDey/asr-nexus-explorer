@@ -87,11 +87,10 @@ Return only the JSON array, no explanations.
       const data = await response.json();
       
       // Robust API response extraction
-      if (!data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+      const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!responseText) {
         throw new Error('Invalid API response structure');
       }
-      
-      let responseText = data.candidates[0].content.parts[0].text;
       
       // Multiple extraction strategies for JSON
       let extractedJson = responseText;

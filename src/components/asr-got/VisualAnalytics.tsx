@@ -136,13 +136,16 @@ Generate 6-8 publication-ready charts with realistic synthetic data. Return only
       if (!response.ok) throw new Error('Gemini API error');
       
       const data = await response.json();
-      let responseText = data.candidates[0]?.content?.parts[0]?.text || '';
+      const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!responseText) {
+        throw new Error('Gemini API returned invalid response structure');
+      }
       
       // Extract JSON from code block if wrapped
       const jsonMatch = responseText.match(/```(?:javascript|json)?\s*(\[[\s\S]*\])\s*```/);
-      responseText = jsonMatch ? jsonMatch[1] : responseText;
+      const extractedJson = jsonMatch ? jsonMatch[1] : responseText;
       
-      const chartConfigs = JSON.parse(responseText);
+      const chartConfigs = JSON.parse(extractedJson);
       
       return chartConfigs.map((config: any, index: number) => ({
         id: `comprehensive_${index}_${Date.now()}`,
@@ -199,17 +202,20 @@ Return format:
       if (!response.ok) throw new Error('Gemini API error');
       
       const data = await response.json();
-      let code = data.candidates[0]?.content?.parts[0]?.text || '';
+      const code = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!code) {
+        throw new Error('Gemini API returned invalid response structure');
+      }
       
       const jsonMatch = code.match(/```(?:javascript|json)?\s*(\{[\s\S]*\})\s*```/);
-      code = jsonMatch ? jsonMatch[1] : code;
+      const extractedCode = jsonMatch ? jsonMatch[1] : code;
       
-      const plotConfig = JSON.parse(code);
+      const plotConfig = JSON.parse(extractedCode);
       
       return {
         id: `evidence_${evidenceNode.id}_${Date.now()}`,
         title: plotConfig.title || `Evidence Analysis: ${evidenceNode.label}`,
-        code: code,
+        code: extractedCode,
         data: plotConfig.data,
         layout: plotConfig.layout,
         type: plotConfig.data[0].type as AnalyticsFigure['type'],
