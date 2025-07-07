@@ -338,11 +338,18 @@ export const pruneMergeNodes = async (context: StageExecutorContext): Promise<st
 };
 
 export const extractSubgraphs = async (context: StageExecutorContext): Promise<string> => {
-  // Stage 6: Use code execution for graph analysis
+  // Stage 6: Use code execution for graph analysis with summarized data
+  const graphSummary = {
+    nodeCount: context.graphData.nodes.length,
+    edgeCount: context.graphData.edges.length,
+    nodeTypes: context.graphData.nodes.map(n => ({ id: n.id, type: n.type, confidence: n.confidence })),
+    edgeTypes: context.graphData.edges.map(e => ({ source: e.source, target: e.target, type: e.type, confidence: e.confidence }))
+  };
+
   const subgraphAnalysis = await callGeminiAPI(
     `Analyze the research graph using computational methods. Calculate centrality metrics, mutual information, and impact scores to identify the most important subgraphs.
 
-Graph Data: ${JSON.stringify(context.graphData, null, 2)}
+Graph Summary: ${JSON.stringify(graphSummary, null, 2)}
 
 Write Python code to:
 1. Calculate node centrality (degree, betweenness, closeness)

@@ -32,24 +32,39 @@ export const TreeControls: React.FC<TreeControlsProps> = ({
 }) => {
   // Export SVG functionality
   const exportSVG = useCallback(() => {
-    if (!svgRef.current) return;
+    if (!svgRef.current) {
+      toast.error('No tree visualization to export');
+      return;
+    }
     
     try {
       const svgElement = svgRef.current;
-      const serializer = new XMLSerializer();
-      const svgString = serializer.serializeToString(svgElement);
       
-      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      // Check if SVG has content
+      const hasContent = svgElement.children.length > 0;
+      if (!hasContent) {
+        toast.warning('Tree visualization is empty - start analysis first');
+        return;
+      }
+      
+      const serializer = new XMLSerializer();
+      let svgString = serializer.serializeToString(svgElement);
+      
+      // Add XML declaration and ensure proper namespace
+      svgString = '<?xml version="1.0" encoding="UTF-8"?>\n' + svgString;
+      
+      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'asr-tree-botanical.svg';
+      a.download = `asr-tree-botanical-${new Date().toISOString().split('T')[0]}.svg`;
       a.click();
       URL.revokeObjectURL(url);
       
       toast.success('Botanical tree exported as SVG');
     } catch (error) {
-      toast.error('Export failed');
+      console.error('SVG export error:', error);
+      toast.error('Export failed - check console for details');
     }
   }, [svgRef]);
 

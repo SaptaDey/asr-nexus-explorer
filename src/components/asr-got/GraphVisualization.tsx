@@ -44,10 +44,13 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
   currentStage
 }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(
-    data.nodes.map(node => ({
+    data.nodes.map((node, index) => ({
       id: node.id,
       type: 'default',
-      position: node.position || { x: Math.random() * 500, y: Math.random() * 500 },
+      position: node.position || { 
+        x: 100 + (index % 5) * 150, 
+        y: 100 + Math.floor(index / 5) * 120 
+      },
       data: {
         label: (
           <div className="px-3 py-2 text-center">
@@ -59,7 +62,7 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
               <div className="flex gap-1 mt-1 justify-center">
                 {node.confidence.map((conf, idx) => (
                   <div
-                    key={idx}
+                    key={`${node.id}-conf-${idx}`}
                     className="w-2 h-2 rounded-full"
                     style={{
                       backgroundColor: conf > 0.7 ? '#22c55e' : conf > 0.4 ? '#f59e0b' : '#ef4444'
@@ -82,20 +85,21 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
   );
 
   const [edges, setEdges, onEdgesChange] = useEdgesState(
-    data.edges.map(edge => ({
-      id: edge.id,
+    data.edges.map((edge, index) => ({
+      id: edge.id || `edge-${index}`,
       source: edge.source,
       target: edge.target,
       type: 'smoothstep',
       style: {
         stroke: edgeTypes[edge.type]?.color || '#64748b',
-        strokeWidth: Math.max(1, edge.confidence * 3),
+        strokeWidth: Math.max(1, (edge.confidence || 0.5) * 3),
       },
       label: edgeTypes[edge.type]?.label || '',
       labelStyle: {
         fontSize: '12px',
         fontWeight: 'bold',
       },
+      animated: edge.type === 'causal',
     }))
   );
 

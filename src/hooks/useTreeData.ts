@@ -109,6 +109,7 @@ export const useTreeScene = (graphData: GraphData, currentStage: number) => {
   // Transform graph data to hierarchical structure
   const hierarchyData = useMemo((): TreeNode[] => {
     const nodes: TreeNode[] = [];
+    const seenIds = new Set<string>();
     
     // Always show at least a root node for visualization
     if (graphData.nodes.length === 0) {
@@ -124,13 +125,20 @@ export const useTreeScene = (graphData: GraphData, currentStage: number) => {
       return nodes;
     }
     
-    // Process all graph nodes
-    graphData.nodes.forEach(node => {
+    // Process all graph nodes, ensuring unique IDs
+    graphData.nodes.forEach((node, index) => {
       const parentEdge = graphData.edges.find(e => e.target === node.id);
       const stage = getNodeStage(node.type);
       
+      // Ensure unique ID
+      let uniqueId = node.id;
+      if (seenIds.has(uniqueId)) {
+        uniqueId = `${node.id}-${index}`;
+      }
+      seenIds.add(uniqueId);
+      
       nodes.push({
-        id: node.id,
+        id: uniqueId,
         parentId: parentEdge?.source,
         label: node.label,
         type: node.type,
