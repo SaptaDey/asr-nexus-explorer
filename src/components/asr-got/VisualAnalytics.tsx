@@ -363,7 +363,7 @@ Generate synthetic but realistic data if no actual data is available.
                         size="sm"
                         variant="outline"
                         onClick={() => exportFigure(figure)}
-                        disabled={figure.error || !plotlyLoaded}
+                        disabled={!!figure.error || !plotlyLoaded}
                       >
                         <Download className="h-4 w-4 mr-1" />
                         Export PNG
