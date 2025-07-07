@@ -15,10 +15,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { Brain, Database, FileText, Eye, Download, Zap, Settings, Network } from 'lucide-react';
+import { TreeOfReasoningVisualization } from '@/components/asr-got/TreeOfReasoningVisualization';
+import { GraphData, GraphNode, GraphEdge } from '@/types/asrGotTypes';
 
 interface ASRGoTState {
   stage: number;
-  graph: any;
+  graph: GraphData;
   stageLog: string[];
   parameters: Record<string, any>;
   tokens: {
@@ -32,7 +34,19 @@ interface ASRGoTState {
 const ASRGoTInterface: React.FC = () => {
   const [state, setState] = useState<ASRGoTState>({
     stage: 0,
-    graph: { nodes: [], edges: [] },
+    graph: { 
+      nodes: [], 
+      edges: [], 
+      metadata: {
+        version: '1.0',
+        created: new Date().toISOString(),
+        last_updated: new Date().toISOString(),
+        stage: 0,
+        total_nodes: 0,
+        total_edges: 0,
+        graph_metrics: {}
+      }
+    },
     stageLog: [],
     parameters: {},
     tokens: { perplexity: '', gemini: '' },
@@ -147,21 +161,32 @@ const ASRGoTInterface: React.FC = () => {
       addToStageLog(`🧬 Auto-inferred discipline: ${discipline}`);
       
       // Create root node
-      const rootNode = {
+      const rootNode: GraphNode = {
         id: 'n0',
         label: 'Task Understanding',
         type: 'root',
-        question: question,
-        discipline: discipline,
         confidence: [0.8, 0.8, 0.8, 0.8],
-        timestamp: new Date().toISOString()
+        metadata: {
+          type: 'root',
+          source_description: question,
+          disciplinary_tags: [discipline],
+          timestamp: new Date().toISOString(),
+          impact_score: 1.0
+        }
       };
 
       setState(prev => ({
         ...prev,
         graph: {
+          ...prev.graph,
           nodes: [rootNode],
-          edges: []
+          edges: [],
+          metadata: {
+            ...prev.graph.metadata,
+            stage: 1,
+            total_nodes: 1,
+            last_updated: new Date().toISOString()
+          }
         }
       }));
 
@@ -185,20 +210,44 @@ const ASRGoTInterface: React.FC = () => {
       const dimensionsResponse = await callGeminiAPI(dimensionPrompt);
       const dimensions = JSON.parse(dimensionsResponse.replace(/```json|```/g, ''));
       
-      const dimensionNodes = dimensions.map((dim: string, index: number) => ({
+      const dimensionNodes: GraphNode[] = dimensions.map((dim: string, index: number) => ({
         id: `d${index + 1}`,
         label: dim,
         type: 'dimension',
-        parent_id: 'n0',
         confidence: [0.7, 0.7, 0.7, 0.7],
-        timestamp: new Date().toISOString()
+        metadata: {
+          type: 'dimension',
+          source_description: dim,
+          timestamp: new Date().toISOString(),
+          impact_score: 0.7
+        }
+      }));
+
+      const dimensionEdges: GraphEdge[] = dimensionNodes.map((node) => ({
+        id: `e-n0-${node.id}`,
+        source: 'n0',
+        target: node.id,
+        type: 'supportive',
+        confidence: 0.8,
+        metadata: {
+          type: 'hierarchy',
+          timestamp: new Date().toISOString()
+        }
       }));
 
       setState(prev => ({
         ...prev,
         graph: {
           ...prev.graph,
-          nodes: [...prev.graph.nodes, ...dimensionNodes]
+          nodes: [...prev.graph.nodes, ...dimensionNodes],
+          edges: [...prev.graph.edges, ...dimensionEdges],
+          metadata: {
+            ...prev.graph.metadata,
+            stage: 2,
+            total_nodes: prev.graph.nodes.length + dimensionNodes.length,
+            total_edges: prev.graph.edges.length + dimensionEdges.length,
+            last_updated: new Date().toISOString()
+          }
         }
       }));
 
@@ -221,21 +270,31 @@ const ASRGoTInterface: React.FC = () => {
       const hypothesesResponse = await callGeminiAPI(hypothesisPrompt);
       const hypotheses = JSON.parse(hypothesesResponse.replace(/```json|```/g, ''));
       
-      const hypothesisNodes = hypotheses.map((hyp: any, index: number) => ({
+      const hypothesisNodes: GraphNode[] = hypotheses.map((hyp: any, index: number) => ({
         id: `h${index + 1}`,
         label: `Hypothesis ${index + 1}`,
         type: 'hypothesis',
-        hypothesis_text: hyp.text || hyp,
-        falsification_criteria: hyp.falsification || 'TBD',
         confidence: [0.6, 0.6, 0.6, 0.6],
-        timestamp: new Date().toISOString()
+        metadata: {
+          type: 'hypothesis',
+          source_description: hyp.text || hyp,
+          falsification_criteria: hyp.falsification || 'TBD',
+          timestamp: new Date().toISOString(),
+          impact_score: 0.6
+        }
       }));
 
       setState(prev => ({
         ...prev,
         graph: {
           ...prev.graph,
-          nodes: [...prev.graph.nodes, ...hypothesisNodes]
+          nodes: [...prev.graph.nodes, ...hypothesisNodes],
+          metadata: {
+            ...prev.graph.metadata,
+            stage: 3,
+            total_nodes: prev.graph.nodes.length + hypothesisNodes.length,
+            last_updated: new Date().toISOString()
+          }
         }
       }));
 
@@ -262,21 +321,31 @@ const ASRGoTInterface: React.FC = () => {
       const analysis = await callGeminiAPI(analysisPrompt);
       
       // Create evidence nodes
-      const evidenceNode = {
+      const evidenceNode: GraphNode = {
         id: 'e1',
         label: 'Evidence Collection',
         type: 'evidence',
-        evidence_text: evidenceResponse,
-        analysis: analysis,
         confidence: [0.8, 0.7, 0.8, 0.7],
-        timestamp: new Date().toISOString()
+        metadata: {
+          type: 'evidence',
+          source_description: evidenceResponse,
+          notes: analysis,
+          timestamp: new Date().toISOString(),
+          impact_score: 0.75
+        }
       };
 
       setState(prev => ({
         ...prev,
         graph: {
           ...prev.graph,
-          nodes: [...prev.graph.nodes, evidenceNode]
+          nodes: [...prev.graph.nodes, evidenceNode],
+          metadata: {
+            ...prev.graph.metadata,
+            stage: 4,
+            total_nodes: prev.graph.nodes.length + 1,
+            last_updated: new Date().toISOString()
+          }
         }
       }));
 
@@ -453,200 +522,12 @@ const ASRGoTInterface: React.FC = () => {
         <div className="grid grid-cols-12 gap-6">
           {/* Left Panel - Tree Visualization (Primary) */}
           <div className="col-span-7">
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-6 w-6 text-emerald-600" />
-                  Tree of Reasoning - Live Growth
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Watch your research question grow from trunk to branches, with hypotheses as branches and evidence as nourishing growth
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[500px] border rounded-lg bg-gradient-to-b from-emerald-50 to-indigo-50 dark:from-emerald-950/20 dark:to-indigo-950/20 relative overflow-hidden">
-                  {/* Tree Animation Container */}
-                  <svg
-                    className="absolute inset-0 w-full h-full"
-                    viewBox="0 0 600 500"
-                    style={{ background: 'transparent' }}
-                  >
-                    {/* Trunk (Research Question Base) */}
-                    {state.stage >= 1 && (
-                      <g className="animate-fade-in">
-                        <rect
-                          x="290"
-                          y="350"
-                          width="20"
-                          height="100"
-                          fill="#8B4513"
-                          rx="10"
-                          className="transition-all duration-1000"
-                          style={{
-                            height: state.stage >= 1 ? '100px' : '0px',
-                            transformOrigin: 'bottom'
-                          }}
-                        />
-                        <text x="300" y="480" textAnchor="middle" fontSize="12" fill="#333" className="font-medium">
-                          {researchQuestion.substring(0, 30)}...
-                        </text>
-                      </g>
-                    )}
-
-                    {/* Primary Branches (Dimensions) */}
-                    {state.stage >= 2 && state.graph.nodes.filter(n => n.type === 'dimension').map((node, index) => (
-                      <g key={node.id} className="animate-scale-in" style={{ animationDelay: `${index * 200}ms` }}>
-                        <line
-                          x1="300"
-                          y1="350"
-                          x2={280 + (index * 40)}
-                          y2="250"
-                          stroke="#00857C"
-                          strokeWidth="8"
-                          strokeLinecap="round"
-                          className="transition-all duration-1000"
-                        />
-                        <circle
-                          cx={280 + (index * 40)}
-                          cy="250"
-                          r="6"
-                          fill="#00857C"
-                          className="animate-pulse"
-                        />
-                        <text
-                          x={280 + (index * 40)}
-                          y="235"
-                          textAnchor="middle"
-                          fontSize="10"
-                          fill="#00857C"
-                          className="font-medium"
-                        >
-                          {node.label.substring(0, 8)}
-                        </text>
-                      </g>
-                    ))}
-
-                    {/* Secondary Branches (Hypotheses) */}
-                    {state.stage >= 3 && state.graph.nodes.filter(n => n.type === 'hypothesis').map((node, index) => {
-                      const confidence = node.confidence ? node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length : 0.5;
-                      const branchColor = confidence >= 0.8 ? '#00857C' : confidence >= 0.5 ? '#FFB200' : '#B60000';
-                      const branchThickness = Math.max(3, confidence * 12);
-                      
-                      return (
-                        <g key={node.id} className="animate-slide-in-right" style={{ animationDelay: `${(index + 2) * 300}ms` }}>
-                          <line
-                            x1={280 + ((index % 3) * 40)}
-                            y1="250"
-                            x2={250 + (index * 35)}
-                            y2="150"
-                            stroke={branchColor}
-                            strokeWidth={branchThickness}
-                            strokeLinecap="round"
-                            className="transition-all duration-800"
-                          />
-                          <circle
-                            cx={250 + (index * 35)}
-                            cy="150"
-                            r="4"
-                            fill={branchColor}
-                          />
-                          <text
-                            x={250 + (index * 35)}
-                            y="135"
-                            textAnchor="middle"
-                            fontSize="9"
-                            fill={branchColor}
-                            className="font-medium"
-                          >
-                            H{index + 1}
-                          </text>
-                        </g>
-                      );
-                    })}
-
-                    {/* Evidence Twigs */}
-                    {state.stage >= 4 && state.graph.nodes.filter(n => n.type === 'evidence').map((node, index) => (
-                      <g key={node.id} className="animate-fade-in" style={{ animationDelay: `${(index + 4) * 200}ms` }}>
-                        <line
-                          x1={250 + ((index % 3) * 35)}
-                          y1="150"
-                          x2={230 + (index * 25)}
-                          y2="80"
-                          stroke="#4ADE80"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                        <circle
-                          cx={230 + (index * 25)}
-                          cy="80"
-                          r="2"
-                          fill="#4ADE80"
-                        />
-                      </g>
-                    ))}
-
-                    {/* Flowers (Well-supported hypotheses) */}
-                    {state.stage >= 7 && state.graph.nodes.filter(n => {
-                      if (n.type !== 'hypothesis') return false;
-                      const confidence = n.confidence ? n.confidence.reduce((a, b) => a + b, 0) / n.confidence.length : 0;
-                      return confidence >= 0.8;
-                    }).map((node, index) => (
-                      <g key={`flower-${node.id}`} className="animate-scale-in" style={{ animationDelay: `${7 * 200}ms` }}>
-                        <circle
-                          cx={250 + (index * 35)}
-                          cy="150"
-                          r="12"
-                          fill="#FFB200"
-                          opacity="0.8"
-                          className="animate-pulse"
-                        />
-                        <text x={250 + (index * 35)} y="155" textAnchor="middle" fontSize="16">🌸</text>
-                      </g>
-                    ))}
-
-                    {/* Final Synthesis Indicator */}
-                    {state.stage >= 8 && (
-                      <g className="animate-fade-in" style={{ animationDelay: '1600ms' }}>
-                        <circle
-                          cx="300"
-                          cy="50"
-                          r="20"
-                          fill="#662D91"
-                          opacity="0.9"
-                          className="animate-pulse"
-                        />
-                        <text x="300" y="56" textAnchor="middle" fontSize="24">🍎</text>
-                        <text x="300" y="30" textAnchor="middle" fontSize="12" fill="#662D91" className="font-bold">
-                          Final Analysis
-                        </text>
-                      </g>
-                    )}
-                  </svg>
-
-                  {/* Growth Statistics Overlay */}
-                  <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-black/90 rounded-lg p-3 shadow-lg">
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div className="text-center">
-                        <div className="font-bold text-emerald-600">{state.graph.nodes.filter(n => n.type === 'dimension').length}</div>
-                        <div className="text-muted-foreground">Branches</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-bold text-amber-600">{state.graph.nodes.filter(n => n.type === 'hypothesis').length}</div>
-                        <div className="text-muted-foreground">Hypotheses</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-bold text-green-600">{state.graph.nodes.filter(n => n.type === 'evidence').length}</div>
-                        <div className="text-muted-foreground">Evidence</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="font-bold text-purple-600">{state.stage}/8</div>
-                        <div className="text-muted-foreground">Stage</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <TreeOfReasoningVisualization 
+              graphData={state.graph}
+              currentStage={state.stage}
+              isProcessing={state.isProcessing}
+              onStageSelect={(stage) => setState(prev => ({ ...prev, stage }))}
+            />
           </div>
 
           {/* Right Panel - Controls & Details */}
