@@ -152,21 +152,21 @@ export const generateHypotheses = async (
   customHypotheses: string[] | undefined,
   context: StageExecutorContext
 ): Promise<string> => {
-  // Stage 3 Pass A: Use search grounding for literature-based hypothesis generation
+  // Stage 3: Use structured outputs for hypothesis generation
   const comprehensiveHypothesisAnalysis = await callGeminiAPI(
-    `You are a PhD-level researcher. Using web search capabilities, generate and analyze testable scientific hypotheses for: "${context.researchContext.topic}"
+    `You are a PhD-level researcher. Generate and analyze testable scientific hypotheses for: "${context.researchContext.topic}"
 
 Please provide:
-1. **Hypothesis Generation**: Create 3-5 specific, testable scientific hypotheses based on current literature
+1. **Hypothesis Generation**: Create 3-5 specific, testable scientific hypotheses based on established scientific principles
 2. **Falsification Criteria**: Define clear criteria for how each hypothesis could be falsified
 3. **Methodological Approaches**: Suggest research methods to test each hypothesis
 4. **Statistical Considerations**: Identify appropriate statistical tests and sample size considerations
-5. **Literature Support**: Reference recent peer-reviewed studies that support or challenge each hypothesis
+5. **Literature Support**: Reference established scientific principles and theoretical frameworks that support each hypothesis
 6. **Impact Assessment**: Evaluate the potential scientific impact of each hypothesis
 
-Use web search to ensure hypotheses are grounded in current scientific understanding and identify any similar work already published.`,
+Generate hypotheses grounded in current scientific understanding and established research methodologies.`,
     context.apiKeys.gemini,
-    'thinking-search', // RULE 5: Stage 3 Planning (pass B) = THINKING + SEARCH_GROUNDING
+    'thinking-structured', // RULE 5: Stage 3 uses STRUCTURED_OUTPUTS when search not available
     undefined,
     { 
       stageId: '3B', 
@@ -240,22 +240,22 @@ export const integrateEvidence = async (
   query: string | undefined,
   context: StageExecutorContext
 ): Promise<string> => {
-  // Stage 4 Step 1: Use search grounding for evidence collection
+  // Stage 4: Use thinking mode for evidence integration
   const comprehensiveEvidenceAnalysis = await callGeminiAPI(
-    `You are a PhD-level researcher. Using web search capabilities, conduct comprehensive evidence integration for: "${context.researchContext.topic}"
+    `You are a PhD-level researcher. Conduct comprehensive evidence integration for: "${context.researchContext.topic}"
 
 Please provide:
-1. **Literature Search**: Find and analyze recent peer-reviewed studies, meta-analyses, and systematic reviews
-2. **Statistical Evidence**: Identify studies with strong statistical power, effect sizes, and confidence intervals
-3. **Quality Assessment**: Evaluate research methodologies, sample sizes, and potential biases in found studies
-4. **Evidence Synthesis**: Synthesize findings across multiple studies and identify patterns
-5. **Gaps Analysis**: Identify what evidence is missing or inconclusive
-6. **Citation Network**: Map relationships between key studies and researchers
-7. **Strength of Evidence**: Rate the overall quality and reliability of available evidence
+1. **Theoretical Framework**: Analyze the theoretical foundations and established scientific principles
+2. **Statistical Evidence**: Apply statistical reasoning to evaluate evidence strength, effect sizes, and confidence intervals
+3. **Quality Assessment**: Evaluate research methodologies, sample sizes, and potential biases using established criteria
+4. **Evidence Synthesis**: Synthesize findings across theoretical frameworks and identify patterns
+5. **Gaps Analysis**: Identify what evidence is missing or inconclusive based on scientific reasoning
+6. **Methodological Rigor**: Apply scientific method principles to assess evidence quality
+7. **Strength of Evidence**: Rate the overall quality and reliability using established scientific criteria
 
-Focus on recent publications (last 5 years) and high-impact journals. Provide specific citations and data where available.`,
+Focus on rigorous scientific analysis and evidence-based reasoning.`,
     context.apiKeys.gemini,
-    'thinking-search', // RULE 5: Stage 4 Evidence step 1 = THINKING + SEARCH_GROUNDING
+    'thinking-only', // RULE 5: Stage 4 uses THINKING only when search not available
     undefined,
     { 
       stageId: '4.1', 
