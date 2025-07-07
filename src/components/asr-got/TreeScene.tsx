@@ -6,7 +6,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { animated, useSpring, useChain, useSpringRef } from '@react-spring/web';
 import { tree } from 'd3-hierarchy';
-import * as anime from 'animejs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -107,18 +106,12 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
   // Calculate tree positions
   const treeRoot = treeHierarchy ? treeLayout(treeHierarchy) : null;
 
-  // Anime.js stroke-dash animation for branch drawing
+  // CSS-based animation for branch drawing
   useEffect(() => {
     if (!reducedMotion && currentStage >= 3 && svgRef.current) {
       const branches = svgRef.current.querySelectorAll('.branch-path');
-      
-      anime({
-        targets: branches,
-        strokeDashoffset: [anime.setDashoffset, 0],
-        easing: 'easeInOutSine',
-        duration: 1500,
-        delay: (el, i) => i * 200,
-        direction: 'normal'
+      branches.forEach((branch, i) => {
+        (branch as SVGElement).style.animation = `branch-draw 1.5s ease-in-out ${i * 0.2}s forwards`;
       });
     }
   }, [currentStage, reducedMotion]);
@@ -130,23 +123,20 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
       
       evidenceNodes.forEach((node, i) => {
         setTimeout(() => {
-          // Anime.js pulse animation
-          anime({
-            targets: `#node-${node.data.id}`,
-            scale: [1, 1.3, 1],
-            duration: 600,
-            easing: 'easeInOutQuad'
-          });
+          // CSS-based pulse animation
+          const element = document.getElementById(`node-${(node.data as any).id}`);
+          if (element) {
+            element.style.animation = 'pulse-botanical 0.6s ease-in-out';
+          }
           
-          // Parent branch radius increase
-          const parentId = node.parent?.data.id;
+          // Parent branch thickness increase
+          const parentId = (node.parent?.data as any)?.id;
           if (parentId) {
-            anime({
-              targets: `#branch-${parentId}`,
-              strokeWidth: '+=2',
-              duration: 400,
-              easing: 'easeOutQuart'
-            });
+            const branchElement = document.getElementById(`branch-${parentId}`);
+            if (branchElement) {
+              const currentWidth = branchElement.getAttribute('stroke-width') || '2';
+              branchElement.setAttribute('stroke-width', String(parseInt(currentWidth) + 2));
+            }
           }
         }, i * 300);
       });
@@ -174,15 +164,17 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
       
       setPollenParticles(particles);
       
-      // Animate particles
+      // Animate particles with CSS
       if (!reducedMotion) {
-        anime({
-          targets: particles,
-          x: (particle) => particle.x + particle.vx * 50,
-          y: (particle) => particle.y + particle.vy * 50,
-          opacity: [1, 0],
-          duration: 2000,
-          easing: 'easeOutQuart'
+        particles.forEach((particle, i) => {
+          setTimeout(() => {
+            const element = document.getElementById(`particle-${particle.id}`);
+            if (element) {
+              element.style.animation = 'particle-float 2s ease-out forwards';
+              element.style.setProperty('--float-x', `${particle.vx * 50}px`);
+              element.style.setProperty('--float-y', `${particle.vy * 50}px`);
+            }
+          }, i * 100);
         });
       }
     }
@@ -237,8 +229,8 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
         {/* Branch links */}
         {links.map((link, i) => {
           const d = `M${link.source.x},${link.source.y}L${link.target.x},${link.target.y}`;
-          const node = link.target.data;
-          const confidence = node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length;
+          const node = link.target.data as any;
+          const confidence = node.confidence?.reduce((a: number, b: number) => a + b, 0) / node.confidence?.length || 0;
           
           return (
             <animated.path
@@ -262,10 +254,10 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
         {nodes.map((node, i) => (
           <g
             key={`node-${i}`}
-            id={`node-${node.data.id}`}
+            id={`node-${(node.data as any).id}`}
             transform={`translate(${node.x},${node.y})`}
             style={{ cursor: 'pointer' }}
-            onClick={() => handleNodeClick(node.data.id)}
+            onClick={() => handleNodeClick((node.data as any).id)}
           >
             {renderBotanicalElement(node)}
           </g>
@@ -275,6 +267,7 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
         {pollenParticles.map(particle => (
           <circle
             key={particle.id}
+            id={`particle-${particle.id}`}
             cx={particle.x}
             cy={particle.y}
             r="2"
