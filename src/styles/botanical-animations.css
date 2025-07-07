@@ -1,0 +1,104 @@
+/**
+ * botanical-animations.css - Animation utilities and keyframes
+ * All animation-related styles for botanical visualization
+ */
+
+@layer utilities {
+  /* Animation utilities */
+  .animate-grow {
+    animation: grow var(--growth-duration) ease-out forwards;
+  }
+
+  .animate-pulse-botanical {
+    animation: pulse-botanical var(--pulse-duration) ease-in-out infinite;
+  }
+
+  .animate-bloom {
+    animation: bloom var(--bloom-duration) ease-out forwards;
+  }
+
+  .animate-particle-float {
+    animation: particle-float var(--particle-duration) ease-out forwards;
+  }
+
+  .animate-branch-draw {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    animation: branch-draw var(--growth-duration) ease-out forwards;
+  }
+}
+
+/* Keyframe animations */
+@keyframes grow {
+  0% {
+    transform: scale(0) rotate(-5deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1) rotate(2deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-botanical {
+  0%, 100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.15);
+    filter: brightness(1.2);
+  }
+}
+
+@keyframes bloom {
+  0% {
+    transform: scale(0) rotate(45deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.2) rotate(-10deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes particle-float {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(var(--float-x, 20px), var(--float-y, -30px)) scale(0.8);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(var(--float-x, 40px), var(--float-y, -60px)) scale(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes branch-draw {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}

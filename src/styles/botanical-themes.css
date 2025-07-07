@@ -1,0 +1,41 @@
+/**
+ * botanical-themes.css - Color themes and variables for botanical visualization
+ * HSL-based color palette with dark mode support
+ */
+
+@layer base {
+  :root {
+    /* Botanical color palette based on specification */
+    --branch-hue: 120;
+    --leaf-sat: 80%;
+    --blossom-light: 70%;
+    
+    /* Tree-specific CSS variables - All HSL values */
+    --root-bulb: 25 70% 55%;
+    --rootlet: 120 60% 40%;
+    --branch-primary: 110 70% 45%;
+    --branch-secondary: 130 65% 50%;
+    --evidence-bud: 90 80% 60%;
+    --leaf-cluster: 140 85% 45%;
+    --blossom-petal: 330 75% 75%;
+    --pollen-gold: 45 95% 55%;
+    --pollen-warning: 0 85% 60%;
+    
+    /* Animation timing variables */
+    --growth-duration: 1200ms;
+    --pulse-duration: 600ms;
+    --bloom-duration: 800ms;
+    --particle-duration: 2000ms;
+  }
+
+  .dark {
+    /* Dark mode botanical adjustments - All HSL values */
+    --root-bulb: 25 50% 35%;
+    --rootlet: 120 40% 30%;
+    --branch-primary: 110 50% 35%;
+    --branch-secondary: 130 45% 40%;
+    --evidence-bud: 90 60% 50%;
+    --leaf-cluster: 140 65% 35%;
+    --blossom-petal: 330 55% 55%;
+  }
+}
