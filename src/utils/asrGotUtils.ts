@@ -4,7 +4,7 @@
  */
 
 import { GraphData, ResearchContext, ASRGoTParameters, APICredentials } from '@/types/asrGotTypes';
-import { exportAsHTML, exportAsJSON, exportGraphAsSVG } from './exportUtils';
+import { exportAsHTML, exportAsJSON, exportGraphAsSVG as exportSVG } from './exportUtils';
 import { decryptCredentials } from './securityUtils';
 
 export const createInitialGraphData = (): GraphData => ({
@@ -90,7 +90,7 @@ export const exportResultsAsJSON = (
 };
 
 export const exportGraphAsSVG = (graphData: GraphData) => {
-  exportGraphAsSVG(graphData);
+  exportSVG(graphData);
 };
 
 export const loadApiKeysFromStorage = () => {

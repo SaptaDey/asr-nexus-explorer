@@ -315,7 +315,7 @@ const ASRGoTInterface: React.FC = () => {
                     Export Tree SVG
                   </Button>
                   <Button 
-                    onClick={exportResults} 
+                    onClick={() => exportResults('json')} 
                     disabled={!hasResults} 
                     className="gradient-bg disabled:opacity-50"
                   >
