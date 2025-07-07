@@ -37,7 +37,6 @@ Provide a comprehensive foundation for research planning.`,
     'thinking-structured', // RULE 5: Stage 1 = THINKING + STRUCTURED_OUTPUTS
     undefined,
     { 
-      thinkingBudget: 16384, 
       stageId: '1', 
       graphHash: JSON.stringify(context.graphData).slice(0, 100) 
     }
@@ -101,7 +100,6 @@ export const decomposeTask = async (
     'thinking-structured', // RULE 5: Stage 2 = THINKING + STRUCTURED_OUTPUTS
     undefined,
     { 
-      thinkingBudget: 16384, 
       stageId: '2', 
       graphHash: JSON.stringify(context.graphData).slice(0, 100) 
     }
@@ -171,7 +169,6 @@ Use web search to ensure hypotheses are grounded in current scientific understan
     'thinking-search', // RULE 5: Stage 3 Planning (pass B) = THINKING + SEARCH_GROUNDING
     undefined,
     { 
-      thinkingBudget: 16384, 
       stageId: '3B', 
       graphHash: JSON.stringify(context.graphData).slice(0, 100) 
     }
@@ -261,7 +258,6 @@ Focus on recent publications (last 5 years) and high-impact journals. Provide sp
     'thinking-search', // RULE 5: Stage 4 Evidence step 1 = THINKING + SEARCH_GROUNDING
     undefined,
     { 
-      thinkingBudget: 16384, 
       stageId: '4.1', 
       graphHash: JSON.stringify(context.graphData).slice(0, 100) 
     }
@@ -333,7 +329,6 @@ export const pruneMergeNodes = async (context: StageExecutorContext): Promise<st
     'thinking-only', // RULE 5: Stage 5 Prune (pass A) = THINKING only
     undefined,
     { 
-      thinkingBudget: 16384, 
       stageId: '5A', 
       graphHash: JSON.stringify(context.graphData).slice(0, 100) 
     }
@@ -360,7 +355,6 @@ Return ranked list of top subgraphs with quantitative metrics.`,
     'thinking-code', // RULE 5: Stage 6 Subgraph rank = THINKING + CODE_EXECUTION
     undefined,
     { 
-      thinkingBudget: 16384, 
       stageId: '6', 
       graphHash: JSON.stringify(context.graphData).slice(0, 100) 
     }
@@ -377,7 +371,6 @@ export const composeResults = async (context: StageExecutorContext): Promise<str
     'thinking-structured', // RULE 5: Stage 7 Composition = THINKING + STRUCTURED_OUTPUTS
     undefined,
     { 
-      thinkingBudget: 16384, 
       stageId: '7', 
       graphHash: JSON.stringify(context.graphData).slice(0, 100) 
     }
@@ -413,7 +406,6 @@ export const performReflection = async (context: StageExecutorContext): Promise<
     'thinking-only', // RULE 5: Stage 8 Audit (pass A) = THINKING + CODE_EXECUTION, but this is primarily thinking analysis
     undefined,
     { 
-      thinkingBudget: 16384, 
       stageId: '8A', 
       graphHash: JSON.stringify(context.graphData).slice(0, 100) 
     }
@@ -460,7 +452,6 @@ Please provide a comprehensive, PhD-level scientific analysis that could be publ
     'thinking-only', // RULE 5: Final analysis uses pure THINKING 
     undefined,
     { 
-      thinkingBudget: 16384, 
       stageId: '9', 
       graphHash: JSON.stringify(context.graphData).slice(0, 100) 
     }

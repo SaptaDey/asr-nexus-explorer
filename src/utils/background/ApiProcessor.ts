@@ -38,10 +38,9 @@ export class ApiProcessor {
       ],
       generationConfig: {
         temperature: options.temperature || 0.4,
-        maxOutputTokens: options.maxTokens || 65536, // Updated: Max output token limit
+        maxOutputTokens: options.maxTokens || 65536,
         topP: 0.8,
-        topK: 40,
-        thinkingBudget: options.thinkingBudget || 16384 // RULE COMPLIANCE: Default thinking budget
+        topK: 40
       },
       systemInstruction: {
         parts: [
