@@ -52,9 +52,6 @@ export const callGeminiAPI = async (prompt: string, apiKey: string): Promise<str
                 dynamicThreshold: 0.7
               }
             }
-          },
-          {
-            codeExecution: {}
           }
         ]
       }),

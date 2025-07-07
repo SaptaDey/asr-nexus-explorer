@@ -142,9 +142,6 @@ class BackgroundProcessor {
                 dynamicThreshold: 0.7
               }
             }
-          },
-          {
-            codeExecution: {}
           }
         ]
       }),
