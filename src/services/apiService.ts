@@ -11,13 +11,21 @@ export interface APICredentials {
 
 // Perplexity API removed - using only Gemini with web search
 
-export type GeminiCapability = 'search' | 'structured' | 'code' | 'function' | 'thinking' | 'cache';
+// RULE COMPLIANT: Capability types follow SECTION 2 matrix
+export type GeminiCapability = 
+  | 'thinking-only'        // THINKING only (Stage 5 pass A)
+  | 'thinking-structured'  // THINKING + STRUCTURED_OUTPUTS
+  | 'thinking-search'      // THINKING + SEARCH_GROUNDING  
+  | 'thinking-code'        // THINKING + CODE_EXECUTION
+  | 'thinking-function'    // THINKING + FUNCTION_CALLING
+  | 'thinking-cache';      // THINKING + CACHING
 
 export const callGeminiAPI = async (
   prompt: string, 
   apiKey: string, 
-  capability: GeminiCapability = 'thinking',
-  schema?: any
+  capability: GeminiCapability = 'thinking-only',
+  schema?: any,
+  options: { thinkingBudget?: number; stageId?: string; graphHash?: string; temperature?: number; maxTokens?: number } = {}
 ): Promise<string> => {
   // Validate API key
   if (!apiKey || !validateAPIKey(apiKey, 'gemini')) {
@@ -33,7 +41,12 @@ export const callGeminiAPI = async (
   }
 
   try {
+    // RULE 4: Auto-cache for large prompts (>200k tokens)
+    const promptSize = new TextEncoder().encode(sanitizedPrompt).length;
+    const shouldCache = promptSize > 200000;
+
     const requestBody: any = {
+      model: "gemini-2.5-pro", // RULE COMPLIANCE: Correct model
       contents: [
         {
           parts: [
@@ -42,61 +55,72 @@ export const callGeminiAPI = async (
         }
       ],
       generationConfig: {
-        temperature: 0.4,
-        maxOutputTokens: 120000,
+        temperature: options.temperature || 0.4,
+        maxOutputTokens: options.maxTokens || 4096, // RULE COMPLIANCE: As specified
+        thinkingBudget: options.thinkingBudget || 16384 // RULE COMPLIANCE: Default thinking budget
       },
       systemInstruction: {
         parts: [
-          { text: "You are an expert AI research assistant. Always think step-by-step and provide detailed, accurate responses." }
+          { text: "You are an expert AI research assistant. Always think step-by-step and provide detailed, accurate responses. Use <thinking> tags to show your reasoning process." }
         ]
       }
     };
 
-    // Configure based on capability - only one at a time
+    // RULE 1 COMPLIANCE: Always include THINKING + exactly one other capability
+    const tools: any[] = [];
+    
     switch (capability) {
-      case 'search':
-        requestBody.tools = [
-          {
-            googleSearchRetrieval: {
-              dynamicRetrievalConfig: {
-                mode: "MODE_DYNAMIC",
-                dynamicThreshold: 0.7
-              }
-            }
-          }
-        ];
-        break;
-      case 'structured':
+      case 'thinking-structured':
         if (schema) {
           requestBody.generationConfig.responseSchema = schema;
           requestBody.generationConfig.responseMimeType = "application/json";
         }
         break;
-      case 'code':
-        requestBody.tools = [
-          {
-            codeExecution: {}
+      case 'thinking-search':
+        tools.push({
+          googleSearchRetrieval: {
+            dynamicRetrievalConfig: {
+              mode: "MODE_DYNAMIC",
+              dynamicThreshold: 0.7
+            }
           }
-        ];
+        });
         break;
-      case 'function':
+      case 'thinking-code':
+        tools.push({
+          codeExecution: {}
+        });
+        break;
+      case 'thinking-function':
         // Function calling tools would be added here when needed
         break;
-      case 'thinking':
-        // Enable thinking mode
-        requestBody.systemInstruction.parts[0].text += " Use <thinking> tags to show your reasoning process.";
+      case 'thinking-cache':
+        // Caching configuration
         break;
-      case 'cache':
-        // Caching would be configured here when needed
+      case 'thinking-only':
+        // Pure thinking mode - no additional tools
         break;
     }
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent', {
+    if (tools.length > 0) {
+      requestBody.tools = tools;
+    }
+
+    const headers: any = {
+      'x-goog-api-key': apiKey,
+      'Content-Type': 'application/json',
+    };
+
+    // RULE 4: Add cache header for large prompts
+    if (shouldCache) {
+      const cacheKey = await generateCacheKey(sanitizedPrompt, options.stageId || '', options.graphHash || '');
+      headers['x-goog-cache'] = 'true';
+      headers['x-goog-cache-key'] = cacheKey;
+    }
+
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', {
       method: 'POST',
-      headers: {
-        'x-goog-api-key': apiKey,
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(requestBody),
     });
 
@@ -118,3 +142,11 @@ export const callGeminiAPI = async (
     throw error;
   }
 };
+
+// Helper function for cache key generation (RULE 4)
+async function generateCacheKey(prompt: string, stageId: string, graphHash: string): Promise<string> {
+  const data = new TextEncoder().encode(stageId + graphHash + prompt);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}

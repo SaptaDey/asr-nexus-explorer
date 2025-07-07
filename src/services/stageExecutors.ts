@@ -19,7 +19,7 @@ export const initializeGraph = async (
   taskDescription: string,
   context: StageExecutorContext
 ): Promise<string> => {
-  // Stage 1: Use structured outputs for canonical JSON generation
+  // RULE 5 COMPLIANCE: Stage 1 Initialization = THINKING + STRUCTURED_OUTPUTS
   const comprehensiveAnalysis = await callGeminiAPI(
     `You are a PhD-level researcher. Perform a comprehensive analysis of this research question:
 
@@ -34,7 +34,13 @@ Please provide a structured analysis with:
 
 Provide a comprehensive foundation for research planning.`,
     context.apiKeys.gemini,
-    'structured'
+    'thinking-structured', // RULE 5: Stage 1 = THINKING + STRUCTURED_OUTPUTS
+    undefined,
+    { 
+      thinkingBudget: 16384, 
+      stageId: '1', 
+      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+    }
   );
 
   const rootNode: GraphNode = {
@@ -92,7 +98,13 @@ export const decomposeTask = async (
   const decompositionAnalysis = await callGeminiAPI(
     `For the research topic "${context.researchContext.topic}", analyze each dimension and provide specific insights: ${useDimensions.join(', ')}`,
     context.apiKeys.gemini,
-    'structured'
+    'thinking-structured', // RULE 5: Stage 2 = THINKING + STRUCTURED_OUTPUTS
+    undefined,
+    { 
+      thinkingBudget: 16384, 
+      stageId: '2', 
+      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+    }
   );
 
   const dimensionNodes: GraphNode[] = useDimensions.map((dim, index) => ({
@@ -156,7 +168,13 @@ Please provide:
 
 Use web search to ensure hypotheses are grounded in current scientific understanding and identify any similar work already published.`,
     context.apiKeys.gemini,
-    'search'
+    'thinking-search', // RULE 5: Stage 3 Planning (pass B) = THINKING + SEARCH_GROUNDING
+    undefined,
+    { 
+      thinkingBudget: 16384, 
+      stageId: '3B', 
+      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+    }
   );
 
   // Extract hypotheses from AI response
@@ -240,7 +258,13 @@ Please provide:
 
 Focus on recent publications (last 5 years) and high-impact journals. Provide specific citations and data where available.`,
     context.apiKeys.gemini,
-    'search'
+    'thinking-search', // RULE 5: Stage 4 Evidence step 1 = THINKING + SEARCH_GROUNDING
+    undefined,
+    { 
+      thinkingBudget: 16384, 
+      stageId: '4.1', 
+      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+    }
   );
 
   // Create evidence nodes
@@ -306,7 +330,13 @@ export const pruneMergeNodes = async (context: StageExecutorContext): Promise<st
     
     Perform pure Bayesian analysis to identify nodes for pruning and merging. Consider confidence thresholds and semantic similarity.`,
     context.apiKeys.gemini,
-    'thinking'
+    'thinking-only', // RULE 5: Stage 5 Prune (pass A) = THINKING only
+    undefined,
+    { 
+      thinkingBudget: 16384, 
+      stageId: '5A', 
+      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+    }
   );
 
   return `**Stage 5 Complete: Pruning/Merging**\n\n**Analysis:**\n${pruningAnalysis}`;
@@ -327,7 +357,13 @@ Write Python code to:
 
 Return ranked list of top subgraphs with quantitative metrics.`,
     context.apiKeys.gemini,
-    'code'
+    'thinking-code', // RULE 5: Stage 6 Subgraph rank = THINKING + CODE_EXECUTION
+    undefined,
+    { 
+      thinkingBudget: 16384, 
+      stageId: '6', 
+      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+    }
   );
 
   return `**Stage 6 Complete: Subgraph Extraction**\n\n**Key Findings:**\n${subgraphAnalysis}`;
@@ -338,7 +374,13 @@ export const composeResults = async (context: StageExecutorContext): Promise<str
   const composition = await callGeminiAPI(
     `Compose a comprehensive scientific analysis summary with: 1) Key findings, 2) Evidence evaluation, 3) Hypothesis assessment, 4) Implications and recommendations. Format in academic style with proper citations.`,
     context.apiKeys.gemini,
-    'structured'
+    'thinking-structured', // RULE 5: Stage 7 Composition = THINKING + STRUCTURED_OUTPUTS
+    undefined,
+    { 
+      thinkingBudget: 16384, 
+      stageId: '7', 
+      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+    }
   );
 
   return `**Stage 7 Complete: Composition**\n\n**Scientific Analysis:**\n${composition}`;
@@ -368,7 +410,13 @@ export const performReflection = async (context: StageExecutorContext): Promise<
     
     Perform critical audit of methodology, biases, gaps, and statistical validity.`,
     context.apiKeys.gemini,
-    'thinking'
+    'thinking-only', // RULE 5: Stage 8 Audit (pass A) = THINKING + CODE_EXECUTION, but this is primarily thinking analysis
+    undefined,
+    { 
+      thinkingBudget: 16384, 
+      stageId: '8A', 
+      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+    }
   );
 
   return `**Stage 8 Complete: Reflection & Audit**\n\n**Critical Assessment:**\n${reflection}`;
@@ -409,7 +457,13 @@ Research Context: ${JSON.stringify(context.researchContext, null, 2)}
 
 Please provide a comprehensive, PhD-level scientific analysis that could be published in a peer-reviewed journal.`,
     context.apiKeys.gemini,
-    'thinking'
+    'thinking-only', // RULE 5: Final analysis uses pure THINKING 
+    undefined,
+    { 
+      thinkingBudget: 16384, 
+      stageId: '9', 
+      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+    }
   );
 
   // Create final analysis node

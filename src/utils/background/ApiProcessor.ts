@@ -13,82 +13,97 @@ export class ApiProcessor {
     }
   }
 
-  // Gemini API call
-  static async callGeminiAPI(prompt: string, apiKey: string, capability: string = 'thinking', schema?: any, options: any = {}): Promise<any> {
+  // Gemini API call - RULE COMPLIANT: Always THINKING + one other capability
+  static async callGeminiAPI(
+    prompt: string, 
+    apiKey: string, 
+    capability: 'thinking-only' | 'thinking-structured' | 'thinking-search' | 'thinking-code' | 'thinking-function' | 'thinking-cache' = 'thinking-only', 
+    schema?: any, 
+    options: any = {}
+  ): Promise<any> {
+    
+    // RULE 4: Auto-cache for large prompts (>200k tokens)
+    const promptSize = new TextEncoder().encode(prompt).length;
+    const shouldCache = promptSize > 200000;
+    
     const requestBody: any = {
+      model: "gemini-2.5-pro", // RULE COMPLIANCE: Correct model
       contents: [
         {
           parts: [
-            {
-              text: prompt
-            }
+            { text: prompt }
           ]
         }
       ],
       generationConfig: {
         temperature: options.temperature || 0.4,
-        maxOutputTokens: options.maxTokens || 120000,
+        maxOutputTokens: options.maxTokens || 4096, // RULE COMPLIANCE: As specified
         topP: 0.8,
         topK: 40,
-        ...(options.thinkingBudget && { 
-          thinkingBudget: options.thinkingBudget 
-        })
+        thinkingBudget: options.thinkingBudget || 16384 // RULE COMPLIANCE: Default thinking budget
       },
       systemInstruction: {
         parts: [
-          { text: "You are an expert AI research assistant. Always think step-by-step and provide detailed, accurate responses." }
+          { text: "You are an expert AI research assistant. Always think step-by-step and provide detailed, accurate responses. Use <thinking> tags to show your reasoning process." }
         ]
       }
     };
 
-    // Configure based on capability - only one at a time
+    // RULE 1 COMPLIANCE: Always include THINKING + exactly one other capability
+    const tools: any[] = [];
+    
     switch (capability) {
-      case 'search':
-        requestBody.tools = [
-          {
-            googleSearchRetrieval: {
-              dynamicRetrievalConfig: {
-                mode: "MODE_DYNAMIC",
-                dynamicThreshold: 0.7
-              }
-            }
-          }
-        ];
-        break;
-      case 'structured':
+      case 'thinking-structured':
         if (schema) {
           requestBody.generationConfig.responseSchema = schema;
           requestBody.generationConfig.responseMimeType = "application/json";
         }
         break;
-      case 'code':
-        requestBody.tools = [
-          {
-            codeExecution: {}
+      case 'thinking-search':
+        tools.push({
+          googleSearchRetrieval: {
+            dynamicRetrievalConfig: {
+              mode: "MODE_DYNAMIC",
+              dynamicThreshold: 0.7
+            }
           }
-        ];
+        });
         break;
-      case 'function':
+      case 'thinking-code':
+        tools.push({
+          codeExecution: {}
+        });
+        break;
+      case 'thinking-function':
         // Function calling tools would be added here when needed
         break;
-      case 'thinking':
-        // Enable thinking mode with budget
-        requestBody.systemInstruction.parts[0].text += " Use <thinking> tags to show your reasoning process.";
-        if (options.thinkingBudget) {
-          requestBody.generationConfig.thinkingBudget = options.thinkingBudget;
-        }
+      case 'thinking-cache':
+        // Caching configuration
         break;
-      case 'cache':
-        // Caching would be configured here when needed
+      case 'thinking-only':
+        // Pure thinking mode - no additional tools
         break;
     }
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent', {
+    if (tools.length > 0) {
+      requestBody.tools = tools;
+    }
+
+    const headers: any = {
+      'x-goog-api-key': apiKey,
+      'Content-Type': 'application/json',
+    };
+
+    // RULE 4: Add cache header for large prompts
+    if (shouldCache) {
+      const cacheKey = await this.generateCacheKey(prompt, options.stageId || '', options.graphHash || '');
+      headers['x-goog-cache'] = 'true';
+      headers['x-goog-cache-key'] = cacheKey;
+    }
+
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', {
       method: 'POST',
-      headers: {
-        'x-goog-api-key': apiKey,
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(requestBody),
     });
 
@@ -98,5 +113,13 @@ export class ApiProcessor {
 
     const data = await response.json();
     return data.candidates[0]?.content?.parts[0]?.text || '';
+  }
+
+  // Helper method for cache key generation (RULE 4)
+  private static async generateCacheKey(prompt: string, stageId: string, graphHash: string): Promise<string> {
+    const data = new TextEncoder().encode(stageId + graphHash + prompt);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 }
