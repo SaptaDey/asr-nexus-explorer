@@ -449,17 +449,214 @@ const ASRGoTInterface: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* ⚙︎ ❺ Exact Tab Structure */}
+        {/* Main Content Layout - Tree-Centered */}
         <div className="grid grid-cols-12 gap-6">
-          {/* Left Panel - Tabs */}
-          <div className="col-span-8">
+          {/* Left Panel - Tree Visualization (Primary) */}
+          <div className="col-span-7">
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="h-6 w-6 text-emerald-600" />
+                  Tree of Reasoning - Live Growth
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Watch your research question grow from trunk to branches, with hypotheses as branches and evidence as nourishing growth
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[500px] border rounded-lg bg-gradient-to-b from-emerald-50 to-indigo-50 dark:from-emerald-950/20 dark:to-indigo-950/20 relative overflow-hidden">
+                  {/* Tree Animation Container */}
+                  <svg
+                    className="absolute inset-0 w-full h-full"
+                    viewBox="0 0 600 500"
+                    style={{ background: 'transparent' }}
+                  >
+                    {/* Trunk (Research Question Base) */}
+                    {state.stage >= 1 && (
+                      <g className="animate-fade-in">
+                        <rect
+                          x="290"
+                          y="350"
+                          width="20"
+                          height="100"
+                          fill="#8B4513"
+                          rx="10"
+                          className="transition-all duration-1000"
+                          style={{
+                            height: state.stage >= 1 ? '100px' : '0px',
+                            transformOrigin: 'bottom'
+                          }}
+                        />
+                        <text x="300" y="480" textAnchor="middle" fontSize="12" fill="#333" className="font-medium">
+                          {researchQuestion.substring(0, 30)}...
+                        </text>
+                      </g>
+                    )}
+
+                    {/* Primary Branches (Dimensions) */}
+                    {state.stage >= 2 && state.graph.nodes.filter(n => n.type === 'dimension').map((node, index) => (
+                      <g key={node.id} className="animate-scale-in" style={{ animationDelay: `${index * 200}ms` }}>
+                        <line
+                          x1="300"
+                          y1="350"
+                          x2={280 + (index * 40)}
+                          y2="250"
+                          stroke="#00857C"
+                          strokeWidth="8"
+                          strokeLinecap="round"
+                          className="transition-all duration-1000"
+                        />
+                        <circle
+                          cx={280 + (index * 40)}
+                          cy="250"
+                          r="6"
+                          fill="#00857C"
+                          className="animate-pulse"
+                        />
+                        <text
+                          x={280 + (index * 40)}
+                          y="235"
+                          textAnchor="middle"
+                          fontSize="10"
+                          fill="#00857C"
+                          className="font-medium"
+                        >
+                          {node.label.substring(0, 8)}
+                        </text>
+                      </g>
+                    ))}
+
+                    {/* Secondary Branches (Hypotheses) */}
+                    {state.stage >= 3 && state.graph.nodes.filter(n => n.type === 'hypothesis').map((node, index) => {
+                      const confidence = node.confidence ? node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length : 0.5;
+                      const branchColor = confidence >= 0.8 ? '#00857C' : confidence >= 0.5 ? '#FFB200' : '#B60000';
+                      const branchThickness = Math.max(3, confidence * 12);
+                      
+                      return (
+                        <g key={node.id} className="animate-slide-in-right" style={{ animationDelay: `${(index + 2) * 300}ms` }}>
+                          <line
+                            x1={280 + ((index % 3) * 40)}
+                            y1="250"
+                            x2={250 + (index * 35)}
+                            y2="150"
+                            stroke={branchColor}
+                            strokeWidth={branchThickness}
+                            strokeLinecap="round"
+                            className="transition-all duration-800"
+                          />
+                          <circle
+                            cx={250 + (index * 35)}
+                            cy="150"
+                            r="4"
+                            fill={branchColor}
+                          />
+                          <text
+                            x={250 + (index * 35)}
+                            y="135"
+                            textAnchor="middle"
+                            fontSize="9"
+                            fill={branchColor}
+                            className="font-medium"
+                          >
+                            H{index + 1}
+                          </text>
+                        </g>
+                      );
+                    })}
+
+                    {/* Evidence Twigs */}
+                    {state.stage >= 4 && state.graph.nodes.filter(n => n.type === 'evidence').map((node, index) => (
+                      <g key={node.id} className="animate-fade-in" style={{ animationDelay: `${(index + 4) * 200}ms` }}>
+                        <line
+                          x1={250 + ((index % 3) * 35)}
+                          y1="150"
+                          x2={230 + (index * 25)}
+                          y2="80"
+                          stroke="#4ADE80"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                        <circle
+                          cx={230 + (index * 25)}
+                          cy="80"
+                          r="2"
+                          fill="#4ADE80"
+                        />
+                      </g>
+                    ))}
+
+                    {/* Flowers (Well-supported hypotheses) */}
+                    {state.stage >= 7 && state.graph.nodes.filter(n => {
+                      if (n.type !== 'hypothesis') return false;
+                      const confidence = n.confidence ? n.confidence.reduce((a, b) => a + b, 0) / n.confidence.length : 0;
+                      return confidence >= 0.8;
+                    }).map((node, index) => (
+                      <g key={`flower-${node.id}`} className="animate-scale-in" style={{ animationDelay: `${7 * 200}ms` }}>
+                        <circle
+                          cx={250 + (index * 35)}
+                          cy="150"
+                          r="12"
+                          fill="#FFB200"
+                          opacity="0.8"
+                          className="animate-pulse"
+                        />
+                        <text x={250 + (index * 35)} y="155" textAnchor="middle" fontSize="16">🌸</text>
+                      </g>
+                    ))}
+
+                    {/* Final Synthesis Indicator */}
+                    {state.stage >= 8 && (
+                      <g className="animate-fade-in" style={{ animationDelay: '1600ms' }}>
+                        <circle
+                          cx="300"
+                          cy="50"
+                          r="20"
+                          fill="#662D91"
+                          opacity="0.9"
+                          className="animate-pulse"
+                        />
+                        <text x="300" y="56" textAnchor="middle" fontSize="24">🍎</text>
+                        <text x="300" y="30" textAnchor="middle" fontSize="12" fill="#662D91" className="font-bold">
+                          Final Analysis
+                        </text>
+                      </g>
+                    )}
+                  </svg>
+
+                  {/* Growth Statistics Overlay */}
+                  <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-black/90 rounded-lg p-3 shadow-lg">
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="text-center">
+                        <div className="font-bold text-emerald-600">{state.graph.nodes.filter(n => n.type === 'dimension').length}</div>
+                        <div className="text-muted-foreground">Branches</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-bold text-amber-600">{state.graph.nodes.filter(n => n.type === 'hypothesis').length}</div>
+                        <div className="text-muted-foreground">Hypotheses</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-bold text-green-600">{state.graph.nodes.filter(n => n.type === 'evidence').length}</div>
+                        <div className="text-muted-foreground">Evidence</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-bold text-purple-600">{state.stage}/8</div>
+                        <div className="text-muted-foreground">Stage</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Panel - Controls & Details */}
+          <div className="col-span-5">
             <Tabs defaultValue="stage-log" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="parameters">Parameters</TabsTrigger>
-                <TabsTrigger value="graph">Graph</TabsTrigger>
                 <TabsTrigger value="stage-log">Stage Log</TabsTrigger>
                 <TabsTrigger value="preview">Preview</TabsTrigger>
-                <TabsTrigger value="tree">Tree</TabsTrigger>
+                <TabsTrigger value="graph">Graph</TabsTrigger>
               </TabsList>
 
               <TabsContent value="parameters">
@@ -529,32 +726,22 @@ const ASRGoTInterface: React.FC = () => {
               <TabsContent value="graph">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Force-Directed Graph Visualization</CardTitle>
+                    <CardTitle>Network Analysis</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-[500px] border rounded-lg bg-white/5 flex items-center justify-center">
-                      <div className="text-center text-white/60">
-                        <Network className="h-12 w-12 mx-auto mb-2" />
-                        <p>Interactive Graph Visualization</p>
-                        <p className="text-sm">Nodes: {state.graph.nodes.length}</p>
-                        <p className="text-sm">Edges: {state.graph.edges?.length || 0}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="tree">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Tree-of-Reasoning Animation</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[500px] border rounded-lg bg-gradient-to-b from-emerald-50 to-indigo-50 flex items-center justify-center">
-                      <div className="text-center text-gray-600">
-                        <Brain className="h-12 w-12 mx-auto mb-2" />
-                        <p>Animated Hierarchical Tree</p>
-                        <p className="text-sm">Stage {state.stage}/8 Growth</p>
+                    <div className="h-[400px] border rounded-lg bg-white/5 flex flex-col items-center justify-center space-y-4">
+                      <Network className="h-12 w-12 text-white/60" />
+                      <div className="text-center text-white/80">
+                        <p className="text-lg font-medium">Graph Metrics</p>
+                        <div className="mt-3 space-y-2 text-sm">
+                          <div>Nodes: <span className="font-bold text-emerald-400">{state.graph.nodes.length}</span></div>
+                          <div>Edges: <span className="font-bold text-blue-400">{state.graph.edges?.length || 0}</span></div>
+                          <div>Density: <span className="font-bold text-amber-400">
+                            {state.graph.nodes.length > 1 ? 
+                              ((state.graph.edges?.length || 0) / (state.graph.nodes.length * (state.graph.nodes.length - 1) / 2) * 100).toFixed(1) + '%' : 
+                              '0%'}
+                          </span></div>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -563,23 +750,6 @@ const ASRGoTInterface: React.FC = () => {
             </Tabs>
           </div>
 
-          {/* Right Panel - Force-directed Graph */}
-          <div className="col-span-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Graph Visualization</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[500px] border rounded-lg bg-white/5 flex items-center justify-center">
-                  <div className="text-center text-white/60">
-                    <Network className="h-12 w-12 mx-auto mb-2" />
-                    <p>Force-directed graph</p>
-                    <p className="text-sm">Nodes: {state.graph.nodes.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </div>
     </div>
