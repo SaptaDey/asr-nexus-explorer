@@ -8,8 +8,8 @@ export const completeASRGoTParameters: ASRGoTParameters = {
     parameter_id: 'P1.0',
     type: 'Parameter - Framework',
     source_description: 'Core GoT Protocol Definition (2025-04-24)',
-    value: 'Mandatory 8-stage GoT execution: 1.Initialization, 2.Decomposition, 3.Hypothesis/Planning, 4.Evidence Integration, 5.Pruning/Merging, 6.Subgraph Extraction, 7.Composition, 8.Reflection',
-    notes: 'Establishes the fundamental workflow ensuring structured reasoning',
+    value: 'Mandatory 9-stage GoT execution: 1.Initialization, 2.Decomposition, 3.Hypothesis/Planning, 4.Evidence Integration, 5.Pruning/Merging, 6.Subgraph Extraction, 7.Composition, 8.Reflection, 9.Final Analysis',
+    notes: 'Establishes the fundamental workflow ensuring structured reasoning with comprehensive final analysis',
     enabled: true,
     category: 'framework'
   },
