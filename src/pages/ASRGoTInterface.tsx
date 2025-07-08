@@ -507,72 +507,85 @@ const ASRGoTInterface: React.FC = () => {
 
       {/* Main Interface */}
       <div className="container mx-auto px-4 py-6">
-        {/* Enhanced Header with Large Logo and Hero */}
+        {/* Enhanced Header with Massive Logo Hero Section */}
         <div className="text-center mb-8">
-          {/* Large Logo Section with Full Width Background */}
-          <div className="relative mb-8 rounded-2xl overflow-hidden shadow-xl">
-            {/* Full-width logo background with fade */}
+          {/* Massive Logo Hero Section */}
+          <div className="relative mb-8 overflow-hidden shadow-2xl" style={{ minHeight: '400px' }}>
+            {/* Massive full-width logo background */}
             <div 
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-60"
               style={{
                 backgroundImage: 'url("/img/logo.png")',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
+                backgroundSize: 'contain',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+                transform: 'scale(1.5)'
               }}
             ></div>
             
-            {/* Gradient overlay for text visibility */}
-            <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/95"></div>
+            {/* Enhanced gradient overlay with stronger fade effect */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/95 via-white/85 via-white/85 to-white/95"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-transparent to-white/90"></div>
             
-            {/* Content */}
-            <div className="relative z-10 bg-gradient-to-br from-white/90 to-purple-50/80 p-8 border border-white/20 backdrop-blur-sm">
-              <div className="flex flex-col lg:flex-row items-center justify-center gap-8">
-                {/* Logo with proper sizing */}
-                <div className="flex-shrink-0">
-                  <img 
-                    src="/img/logo.png" 
-                    alt="Scientific Reasoning Framework Logo" 
-                    className="h-32 w-32 lg:h-40 lg:w-40 object-contain drop-shadow-lg"
-                  />
-                </div>
-                
-                {/* Enhanced Title Section */}
-                <div className="text-center lg:text-left">
-                  <h1 className="text-4xl lg:text-6xl font-bold leading-tight mb-3" style={{ color: '#1a365d' }}>
+            {/* Hero Content */}
+            <div className="relative z-10 p-12 lg:p-16">
+              <div className="max-w-6xl mx-auto">
+                {/* Main Title */}
+                <div className="mb-8">
+                  <h1 className="text-5xl lg:text-8xl font-bold leading-tight mb-6" 
+                      style={{ 
+                        color: '#0f172a',
+                        textShadow: '2px 2px 4px rgba(255,255,255,0.9)',
+                        fontWeight: '900'
+                      }}>
                     Scientific Reasoning
                   </h1>
-                  <p className="text-xl lg:text-2xl mb-4 font-medium" style={{ color: '#4a5568' }}>
+                  <p className="text-2xl lg:text-4xl mb-8 font-bold" 
+                     style={{ 
+                       color: '#1e293b',
+                       textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
+                     }}>
                     Graph of Thoughts Framework
                   </p>
-                  <div className="flex flex-wrap justify-center lg:justify-start gap-2 mb-4">
-                    <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">AI-Powered</span>
-                    <span className="px-3 py-1 bg-secondary/10 text-secondary-foreground rounded-full text-sm font-medium">Research Framework</span>
-                    <span className="px-3 py-1 bg-accent/10 text-accent-foreground rounded-full text-sm font-medium">Graph Neural Networks</span>
-                  </div>
-                  <div className="flex flex-col lg:flex-row items-center gap-4">
-                    <p className="max-w-2xl" style={{ color: '#2d3748' }}>
-                      🚀 Next-Generation AI Reasoning Framework leveraging graph structures to transform scientific research methodologies
-                    </p>
+                </div>
+                
+                {/* Enhanced Tags */}
+                <div className="flex flex-wrap justify-center gap-3 mb-8">
+                  <span className="px-4 py-2 bg-blue-600/90 text-white rounded-full text-lg font-semibold shadow-lg backdrop-blur-sm">AI-Powered</span>
+                  <span className="px-4 py-2 bg-purple-600/90 text-white rounded-full text-lg font-semibold shadow-lg backdrop-blur-sm">Research Framework</span>
+                  <span className="px-4 py-2 bg-green-600/90 text-white rounded-full text-lg font-semibold shadow-lg backdrop-blur-sm">Graph Neural Networks</span>
+                </div>
+                
+                {/* Description and CTA */}
+                <div className="max-w-4xl mx-auto mb-8">
+                  <p className="text-xl lg:text-2xl mb-8 leading-relaxed font-medium" 
+                     style={{ 
+                       color: '#0f172a',
+                       textShadow: '1px 1px 2px rgba(255,255,255,0.7)'
+                     }}>
+                    🚀 Next-Generation AI Reasoning Framework leveraging graph structures to transform scientific research methodologies
+                  </p>
+                  
+                  <div className="flex flex-col sm:flex-row justify-center gap-4">
                     <Link to="/guide">
-                      <Button variant="outline" className="bg-white/80 hover:bg-white">
-                        <BookOpen className="h-4 w-4 mr-2" />
+                      <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white shadow-xl text-lg px-8 py-4">
+                        <BookOpen className="h-5 w-5 mr-2" />
                         Learn How It Works
                       </Button>
                     </Link>
+                    <Button size="lg" variant="outline" className="bg-white/90 hover:bg-white border-2 border-blue-600 text-blue-600 shadow-xl text-lg px-8 py-4">
+                      <Brain className="h-5 w-5 mr-2" />
+                      Explore Features
+                    </Button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
           
-          <p className="text-muted-foreground text-lg mb-2">
-            🚀 Next-Generation AI Reasoning Framework for Scientific Research
-          </p>
-          <p className="text-muted-foreground text-base mb-4">
-            Leveraging graph structures to transform how AI systems approach scientific reasoning
-          </p>
-          <div className="flex items-center justify-center gap-4 mb-4">
-            <Badge className="gradient-bg text-white">
+          {/* Status Indicators */}
+          <div className="flex items-center justify-center gap-4 mb-6 bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 shadow-lg mx-auto w-fit">
+            <Badge className="bg-blue-600 text-white">
               Stage {currentStage + 1}/9
             </Badge>
             <Progress value={stageProgress} className="w-32" />
