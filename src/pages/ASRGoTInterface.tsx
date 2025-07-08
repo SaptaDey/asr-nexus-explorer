@@ -446,35 +446,17 @@ const ASRGoTInterface: React.FC = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900"></div>
+      {/* Soft Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50"></div>
       
-      {/* Dynamic Pattern Overlay */}
-      <div className="absolute inset-0 opacity-20">
+      {/* Subtle Pattern Overlay */}
+      <div className="absolute inset-0 opacity-30">
         <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 25% 25%, #00f5ff 0%, transparent 50%), 
-                           radial-gradient(circle at 75% 75%, #ff00ff 0%, transparent 50%),
-                           radial-gradient(circle at 50% 50%, #00ff88 0%, transparent 50%)`,
-          animation: 'float 20s ease-in-out infinite'
+          backgroundImage: `radial-gradient(circle at 25% 25%, rgba(147, 197, 253, 0.3) 0%, transparent 50%), 
+                           radial-gradient(circle at 75% 75%, rgba(196, 181, 253, 0.3) 0%, transparent 50%),
+                           radial-gradient(circle at 50% 50%, rgba(134, 239, 172, 0.3) 0%, transparent 50%)`,
+          animation: 'float 30s ease-in-out infinite'
         }}></div>
-      </div>
-      
-      {/* Floating Particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-white/10 animate-pulse"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              width: `${Math.random() * 4 + 2}px`,
-              height: `${Math.random() * 4 + 2}px`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${Math.random() * 3 + 2}s`
-            }}
-          />
-        ))}
       </div>
       
       {/* Main Content */}
@@ -572,64 +554,53 @@ const ASRGoTInterface: React.FC = () => {
               }}
             ></div>
             
-            {/* Gradient Overlays for Text Visibility */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-900/40 via-transparent to-blue-900/40"></div>
-            
-            {/* Animated Border */}
-            <div className="absolute inset-0 rounded-3xl border-4 border-transparent bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 opacity-30 animate-pulse"></div>
+            {/* Gentle Overlays for Text Visibility */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/60 to-white/80"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-50/60 via-transparent to-purple-50/60"></div>
             
             {/* Hero Content */}
             <div className="relative z-10 p-12 lg:p-20">
               <div className="max-w-6xl mx-auto">
-                {/* Animated Main Title */}
-                <div className="mb-10 transform hover:scale-105 transition-transform duration-500">
-                  <h1 className="text-6xl lg:text-9xl font-black leading-tight mb-6 animate-fade-in" 
-                      style={{ 
-                        background: 'linear-gradient(45deg, #00f5ff, #ff00ff, #00ff88)',
-                        backgroundSize: '200% 200%',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        animation: 'gradient-text 3s ease infinite, glow 2s ease-in-out infinite alternate',
-                        textShadow: '0 0 20px rgba(0, 245, 255, 0.5)'
-                      }}>
+                {/* Main Title */}
+                <div className="mb-10">
+                  <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6 text-slate-800">
                     Scientific Reasoning
                   </h1>
-                  <p className="text-3xl lg:text-5xl mb-8 font-bold text-white animate-slide-up" 
-                     style={{ 
-                       textShadow: '2px 2px 10px rgba(0,0,0,0.8)',
-                       animationDelay: '0.5s'
-                     }}>
+                  <p className="text-2xl lg:text-4xl mb-8 font-semibold text-slate-600">
                     Graph of Thoughts Framework
                   </p>
                 </div>
                 
-                {/* Glowing Tags */}
-                <div className="flex flex-wrap justify-center gap-4 mb-10 animate-slide-up" style={{ animationDelay: '1s' }}>
-                  <span className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full text-lg font-bold shadow-2xl backdrop-blur-sm border border-cyan-300/30 hover:scale-110 transition-transform duration-300 hover:glow">🤖 AI-Powered</span>
-                  <span className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-lg font-bold shadow-2xl backdrop-blur-sm border border-purple-300/30 hover:scale-110 transition-transform duration-300 hover:glow">🧠 Research Framework</span>
-                  <span className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full text-lg font-bold shadow-2xl backdrop-blur-sm border border-green-300/30 hover:scale-110 transition-transform duration-300 hover:glow">🔗 Graph Neural Networks</span>
+                {/* Elegant Tags */}
+                <div className="flex flex-wrap justify-center gap-4 mb-10">
+                  <span className="px-5 py-2 bg-blue-100 text-blue-700 rounded-full text-base font-medium shadow-sm border border-blue-200 hover:bg-blue-200 transition-colors duration-200">🤖 AI-Powered</span>
+                  <span className="px-5 py-2 bg-purple-100 text-purple-700 rounded-full text-base font-medium shadow-sm border border-purple-200 hover:bg-purple-200 transition-colors duration-200">🧠 Research Framework</span>
+                  <span className="px-5 py-2 bg-green-100 text-green-700 rounded-full text-base font-medium shadow-sm border border-green-200 hover:bg-green-200 transition-colors duration-200">🔗 Graph Neural Networks</span>
                 </div>
                 
-                {/* Enhanced Description */}
-                <div className="max-w-5xl mx-auto mb-10 animate-slide-up" style={{ animationDelay: '1.5s' }}>
-                  <p className="text-xl lg:text-3xl mb-8 leading-relaxed font-medium text-white/90" 
-                     style={{ 
-                       textShadow: '2px 2px 8px rgba(0,0,0,0.7)'
-                     }}>
+                {/* Description */}
+                <div className="max-w-5xl mx-auto mb-10">
+                  <p className="text-lg lg:text-xl mb-8 leading-relaxed font-medium text-slate-700">
                     🚀 Next-Generation AI Reasoning Framework leveraging graph structures to transform scientific research methodologies
                   </p>
                   
-                  {/* Spectacular Call-to-Action Buttons */}
-                  <div className="flex flex-col sm:flex-row justify-center gap-6">
+                  {/* Elegant Call-to-Action Buttons */}
+                  <div className="flex flex-col sm:flex-row justify-center gap-4">
                     <Link to="/guide">
-                      <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-2xl text-xl px-10 py-6 rounded-full font-bold border-2 border-blue-300/50 hover:scale-110 transform transition-all duration-300 hover:shadow-blue-500/50 hover:shadow-2xl">
-                        <BookOpen className="h-6 w-6 mr-3" />
+                      <Button size="lg" className="bg-blue-500 hover:bg-blue-600 text-white shadow-lg text-lg px-8 py-3 rounded-lg font-semibold transition-all duration-200 hover:shadow-xl">
+                        <BookOpen className="h-5 w-5 mr-2" />
                         Learn How It Works
                       </Button>
                     </Link>
-                    <Button size="lg" className="bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-700 hover:to-red-700 text-white shadow-2xl text-xl px-10 py-6 rounded-full font-bold border-2 border-pink-300/50 hover:scale-110 transform transition-all duration-300 hover:shadow-pink-500/50 hover:shadow-2xl">
-                      <Brain className="h-6 w-6 mr-3" />
+                    <Button 
+                      size="lg" 
+                      className="bg-purple-500 hover:bg-purple-600 text-white shadow-lg text-lg px-8 py-3 rounded-lg font-semibold transition-all duration-200 hover:shadow-xl"
+                      onClick={() => {
+                        setActiveTab('research');
+                        document.getElementById('research-section')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                    >
+                      <Brain className="h-5 w-5 mr-2" />
                       Explore Features
                     </Button>
                   </div>
@@ -638,115 +609,103 @@ const ASRGoTInterface: React.FC = () => {
             </div>
           </div>
           
-          {/* Spectacular Status Indicators */}
+          {/* Clean Status Indicators */}
           <div className="flex items-center justify-center gap-6 mb-8">
-            <div className="bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-lg rounded-2xl px-8 py-4 shadow-2xl border border-white/20 hover:scale-105 transform transition-all duration-300">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl px-6 py-3 shadow-lg border border-gray-200">
               <div className="flex items-center gap-4">
-                <Badge className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-lg px-4 py-2 rounded-full font-bold shadow-lg animate-pulse">
-                  🎯 Stage {currentStage + 1}/9
+                <Badge className="bg-blue-500 text-white text-sm px-3 py-1 rounded-full font-medium">
+                  Stage {currentStage + 1}/9
                 </Badge>
-                <div className="relative">
-                  <Progress value={stageProgress} className="w-40 h-3 bg-white/20 rounded-full overflow-hidden" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full opacity-50 animate-pulse"></div>
-                </div>
+                <Progress value={stageProgress} className="w-32 h-2" />
                 {isProcessing && (
-                  <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white animate-bounce px-4 py-2 rounded-full font-bold">
-                    ⚡ Processing...
+                  <Badge className="bg-orange-500 text-white px-3 py-1 rounded-full font-medium">
+                    Processing...
                   </Badge>
                 )}
               </div>
             </div>
           </div>
           
-          {/* Stunning Interactive Controls */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 mb-8">
-            {/* Futuristic Mode Toggle */}
-            <div className="relative group">
-              <div className="absolute -inset-2 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 rounded-2xl blur opacity-40 group-hover:opacity-100 transition duration-500 animate-pulse"></div>
-              <div className="relative flex items-center gap-4 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-xl rounded-2xl px-6 py-4 border border-white/30 shadow-2xl hover:scale-105 transform transition-all duration-300">
-                <div className={`transition-all duration-500 ${isAutomatic ? 'text-green-400' : 'text-cyan-400'}`}>
+          {/* Clean Interactive Controls */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-8">
+            {/* Mode Toggle */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-lg px-6 py-3 shadow-lg border border-gray-200">
+              <div className="flex items-center gap-4">
+                <div className={`transition-all duration-300 ${isAutomatic ? 'text-green-600' : 'text-blue-600'}`}>
                   {isAutomatic ? 
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
-                      <span className="text-lg font-bold text-white">🤖 AUTO MODE</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm font-semibold">AUTO MODE</span>
                     </div> :
-                    <div className="flex items-center gap-3">
-                      <ToggleLeft className="h-5 w-5 text-cyan-400" />
-                      <span className="text-lg font-bold text-white">⚡ MANUAL MODE</span>
+                    <div className="flex items-center gap-2">
+                      <ToggleLeft className="h-4 w-4" />
+                      <span className="text-sm font-semibold">MANUAL MODE</span>
                     </div>
                   }
                 </div>
                 <Button
                   onClick={toggleMode}
-                  className={`relative overflow-hidden transition-all duration-500 hover:scale-110 transform ${
+                  className={`transition-all duration-300 ${
                     isAutomatic 
-                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 shadow-lg shadow-green-500/50' 
-                      : 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 shadow-lg shadow-cyan-500/50'
-                  } text-white font-bold rounded-xl px-6 py-3 border border-white/20`}
+                      ? 'bg-green-500 hover:bg-green-600' 
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  } text-white font-medium rounded-md px-4 py-2`}
+                  size="sm"
                 >
-                  <span className="relative z-10 text-lg">
-                    Switch to {isAutomatic ? '⚡ Manual' : '🤖 Auto'}
-                  </span>
-                  <div className="absolute inset-0 bg-white/20 opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+                  Switch to {isAutomatic ? 'Manual' : 'Auto'}
                 </Button>
               </div>
             </div>
             
-            {/* Spectacular Contact Button */}
+            {/* Contact Button */}
             <Link to="/contact">
               <Button 
                 size="lg" 
-                className="relative group bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-2xl transition-all duration-500 hover:scale-110 transform rounded-2xl px-8 py-4 border-2 border-blue-300/30 font-bold text-lg"
+                className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg transition-all duration-200 rounded-lg px-6 py-3 font-semibold"
               >
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-2xl blur opacity-50 group-hover:opacity-100 transition duration-500"></div>
-                <div className="relative flex items-center gap-3">
-                  <Mail className="h-6 w-6 animate-pulse" />
-                  <span className="font-bold">📧 Contact Us</span>
-                </div>
+                <Mail className="h-5 w-5 mr-2" />
+                Contact Us
               </Button>
             </Link>
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          {/* Spectacular Tabs Navigation */}
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 rounded-2xl blur opacity-30 animate-pulse"></div>
-            <TabsList className="relative grid w-full grid-cols-5 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-xl rounded-2xl border border-white/30 shadow-2xl p-2">
-              <TabsTrigger 
-                value="research" 
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/50 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 data-[state=active]:border data-[state=active]:border-cyan-300/50"
-              >
-                🔬 Research
-              </TabsTrigger>
-              <TabsTrigger 
-                value="tree" 
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-green-500/50 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 data-[state=active]:border data-[state=active]:border-green-300/50"
-              >
-                🌳 Tree View
-              </TabsTrigger>
-              <TabsTrigger 
-                value="graph" 
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/50 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 data-[state=active]:border data-[state=active]:border-purple-300/50"
-              >
-                📊 Graph View
-              </TabsTrigger>
-              <TabsTrigger 
-                value="developer" 
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/50 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 data-[state=active]:border data-[state=active]:border-orange-300/50"
-              >
-                ⚙️ Developer
-              </TabsTrigger>
-              <TabsTrigger 
-                value="export" 
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-blue-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-indigo-500/50 text-white font-bold rounded-xl transition-all duration-300 hover:scale-105 data-[state=active]:border data-[state=active]:border-indigo-300/50"
-              >
-                📤 Export
-              </TabsTrigger>
-            </TabsList>
-          </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          {/* Clean Tabs Navigation */}
+          <TabsList className="grid w-full grid-cols-5 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-1">
+            <TabsTrigger 
+              value="research" 
+              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-blue-50 data-[state=active]:shadow-md"
+            >
+              🔬 Research
+            </TabsTrigger>
+            <TabsTrigger 
+              value="tree" 
+              className="data-[state=active]:bg-green-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-green-50 data-[state=active]:shadow-md"
+            >
+              🌳 Tree View
+            </TabsTrigger>
+            <TabsTrigger 
+              value="graph" 
+              className="data-[state=active]:bg-purple-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-purple-50 data-[state=active]:shadow-md"
+            >
+              📊 Graph View
+            </TabsTrigger>
+            <TabsTrigger 
+              value="developer" 
+              className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-orange-50 data-[state=active]:shadow-md"
+            >
+              ⚙️ Developer
+            </TabsTrigger>
+            <TabsTrigger 
+              value="export" 
+              className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-indigo-50 data-[state=active]:shadow-md"
+            >
+              📤 Export
+            </TabsTrigger>
+          </TabsList>
 
-          <TabsContent value="research">
+          <TabsContent value="research" id="research-section">
             <ResearchInterface
               currentStage={currentStage}
               graphData={graphData}
