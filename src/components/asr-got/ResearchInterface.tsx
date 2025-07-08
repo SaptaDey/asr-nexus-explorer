@@ -44,6 +44,7 @@ interface ResearchInterfaceProps {
   apiKeys?: {
     gemini: string;
   };
+  processingMode?: 'automatic' | 'manual';
 }
 
 export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
@@ -53,7 +54,8 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
   isProcessing,
   stageResults = [],
   researchContext,
-  apiKeys = { gemini: '' }
+  apiKeys = { gemini: '' },
+  processingMode = 'manual'
 }) => {
   const [researchQuery, setResearchQuery] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
@@ -83,6 +85,20 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
 
     await onExecuteStage(0, taskDescription);
     setActiveTab('progress');
+    
+    // Auto-execute all stages if in automatic mode
+    if (processingMode === 'automatic') {
+      toast.success('🤖 Automatic mode: All stages will execute sequentially');
+      
+      // Execute remaining stages with delay
+      for (let stage = 1; stage < 9; stage++) {
+        setTimeout(async () => {
+          if (stage <= 8) {
+            await onExecuteStage(stage);
+          }
+        }, stage * 4000); // 4 second delay between stages
+      }
+    }
   };
 
   const handleContinueToNext = async () => {
@@ -146,25 +162,35 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
             </Badge>
           </div>
           <p className="text-muted-foreground mb-4">
-            The AI will automatically proceed with the next stage of analysis
+            {processingMode === 'automatic' 
+              ? 'All stages will execute automatically in sequence' 
+              : 'Click to manually proceed with the next stage of analysis'
+            }
           </p>
-          <Button 
-            onClick={handleContinueToNext}
-            disabled={isProcessing || currentStage >= 9}
-            className="gradient-bg"
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                AI Processing...
-              </>
-            ) : (
-              <>
-                <Zap className="h-4 w-4 mr-2" />
-                Continue AI Analysis
-              </>
-            )}
-          </Button>
+          {processingMode === 'manual' && (
+            <Button 
+              onClick={handleContinueToNext}
+              disabled={isProcessing || currentStage >= 9}
+              className="gradient-bg"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  AI Processing...
+                </>
+              ) : (
+                <>
+                  <Zap className="h-4 w-4 mr-2" />
+                  Continue AI Analysis
+                </>
+              )}
+            </Button>
+          )}
+          {processingMode === 'automatic' && (
+            <Badge className="gradient-bg text-white text-base px-4 py-2">
+              🤖 Automatic execution in progress...
+            </Badge>
+          )}
         </div>
       </div>
     );
@@ -316,7 +342,7 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
               </div>
 
               {/* Continue Button - Enhanced */}
-              {!isProcessing && currentStage < 8 && (
+              {!isProcessing && currentStage < 8 && processingMode === 'manual' && (
                 <div className="space-y-2">
                   <Button 
                     onClick={handleContinueToNext}
@@ -328,6 +354,21 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
                   </Button>
                   <p className="text-xs text-center text-muted-foreground">
                     Click to proceed manually through each stage
+                  </p>
+                </div>
+              )}
+              
+              {/* Automatic Mode Indicator */}
+              {processingMode === 'automatic' && currentStage < 8 && (
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="animate-spin text-blue-500">
+                      <Loader2 className="h-4 w-4" />
+                    </div>
+                    <span className="font-semibold text-blue-800">Automatic Mode Active</span>
+                  </div>
+                  <p className="text-sm text-blue-700">
+                    All remaining stages will execute automatically with 4-second intervals
                   </p>
                 </div>
               )}
