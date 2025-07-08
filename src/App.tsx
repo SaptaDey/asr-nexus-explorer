@@ -7,6 +7,9 @@ import Index from "./pages/Index";
 import Contact from "./pages/Contact";
 import GraphOfThoughtsGuide from "./pages/GraphOfThoughtsGuide";
 import StageDetail from "./pages/StageDetail";
+import AIPowered from "./pages/AIPowered";
+import ResearchFramework from "./pages/ResearchFramework";
+import GraphNeuralNetworks from "./pages/GraphNeuralNetworks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +25,9 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/guide" element={<GraphOfThoughtsGuide />} />
           <Route path="/stage/:stageId" element={<StageDetail />} />
+          <Route path="/ai-powered" element={<AIPowered />} />
+          <Route path="/research-framework" element={<ResearchFramework />} />
+          <Route path="/graph-neural-networks" element={<GraphNeuralNetworks />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

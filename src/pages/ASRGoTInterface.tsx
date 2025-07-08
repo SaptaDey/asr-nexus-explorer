@@ -524,7 +524,7 @@ const ASRGoTInterface: React.FC = () => {
       <div className="container mx-auto px-4 py-6">
         {/* Spectacular Hero Section with Multiple Images */}
         <div className="text-center mb-8">
-          {/* Hero Section with Glass Morphism */}
+          {/* Hero Section with Prominent Logo */}
           <div className="relative mb-8 overflow-hidden rounded-3xl" style={{ minHeight: '500px' }}>
             {/* Hero Background Image */}
             <div 
@@ -533,54 +533,61 @@ const ASRGoTInterface: React.FC = () => {
                 backgroundImage: 'url("/img/hero.png")',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                filter: 'brightness(0.7)'
+                filter: 'brightness(0.8)'
               }}
             ></div>
             
-            {/* Logo Overlay */}
+            {/* Main Logo - Centered and Prominent */}
             <div 
-              className="absolute top-4 right-4 w-24 h-24 lg:w-32 lg:h-32 bg-contain bg-no-repeat bg-center opacity-20 animate-pulse"
+              className="absolute inset-0 bg-contain bg-no-repeat bg-center opacity-40"
               style={{
-                backgroundImage: 'url("/img/logo.png")'
+                backgroundImage: 'url("/img/logo.png")',
+                backgroundSize: 'contain',
+                backgroundPosition: 'center'
               }}
             ></div>
             
-            {/* Splash Image Side Decoration */}
+            {/* Logo Fade Effect - Radial Gradient */}
             <div 
-              className="absolute -left-10 top-1/2 transform -translate-y-1/2 w-32 h-32 lg:w-48 lg:h-48 bg-contain bg-no-repeat bg-center opacity-15 animate-bounce"
+              className="absolute inset-0"
               style={{
-                backgroundImage: 'url("/img/splash.png")',
-                animationDuration: '3s'
+                background: 'radial-gradient(circle at center, transparent 15%, rgba(255,255,255,0.7) 35%, rgba(255,255,255,0.9) 60%, rgba(255,255,255,0.95) 80%)'
               }}
             ></div>
             
-            {/* Gentle Overlays for Text Visibility */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/60 to-white/80"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-50/60 via-transparent to-purple-50/60"></div>
+            {/* Additional gentle overlays for perfect text visibility */}
+            <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-transparent to-white/90"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-transparent to-white/80"></div>
             
             {/* Hero Content */}
             <div className="relative z-10 p-12 lg:p-20">
               <div className="max-w-6xl mx-auto">
                 {/* Main Title */}
                 <div className="mb-10">
-                  <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6 text-slate-800">
+                  <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6 text-slate-900" style={{ textShadow: '2px 2px 4px rgba(255,255,255,0.8)' }}>
                     Scientific Reasoning
                   </h1>
-                  <p className="text-2xl lg:text-4xl mb-8 font-semibold text-slate-600">
+                  <p className="text-2xl lg:text-4xl mb-8 font-semibold text-slate-700" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.8)' }}>
                     Graph of Thoughts Framework
                   </p>
                 </div>
                 
-                {/* Elegant Tags */}
+                {/* Interactive Feature Tags */}
                 <div className="flex flex-wrap justify-center gap-4 mb-10">
-                  <span className="px-5 py-2 bg-blue-100 text-blue-700 rounded-full text-base font-medium shadow-sm border border-blue-200 hover:bg-blue-200 transition-colors duration-200">🤖 AI-Powered</span>
-                  <span className="px-5 py-2 bg-purple-100 text-purple-700 rounded-full text-base font-medium shadow-sm border border-purple-200 hover:bg-purple-200 transition-colors duration-200">🧠 Research Framework</span>
-                  <span className="px-5 py-2 bg-green-100 text-green-700 rounded-full text-base font-medium shadow-sm border border-green-200 hover:bg-green-200 transition-colors duration-200">🔗 Graph Neural Networks</span>
+                  <Link to="/ai-powered">
+                    <span className="px-5 py-2 bg-blue-100 text-blue-700 rounded-full text-base font-medium shadow-sm border border-blue-200 hover:bg-blue-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105">🤖 AI-Powered</span>
+                  </Link>
+                  <Link to="/research-framework">
+                    <span className="px-5 py-2 bg-purple-100 text-purple-700 rounded-full text-base font-medium shadow-sm border border-purple-200 hover:bg-purple-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105">🧠 Research Framework</span>
+                  </Link>
+                  <Link to="/graph-neural-networks">
+                    <span className="px-5 py-2 bg-green-100 text-green-700 rounded-full text-base font-medium shadow-sm border border-green-200 hover:bg-green-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105">🔗 Graph Neural Networks</span>
+                  </Link>
                 </div>
                 
                 {/* Description */}
                 <div className="max-w-5xl mx-auto mb-10">
-                  <p className="text-lg lg:text-xl mb-8 leading-relaxed font-medium text-slate-700">
+                  <p className="text-lg lg:text-xl mb-8 leading-relaxed font-medium text-slate-800" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.8)' }}>
                     🚀 Next-Generation AI Reasoning Framework leveraging graph structures to transform scientific research methodologies
                   </p>
                   
