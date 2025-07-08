@@ -146,11 +146,19 @@ const GraphOfThoughtsGuide = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <Badge className="gradient-bg text-white">Stage {stage.stage}</Badge>
-                        <h3 className="font-semibold text-lg">{stage.title}</h3>
+                        <Link to={`/stage/${stage.stage}`}>
+                          <h3 className="font-semibold text-lg hover:text-primary transition-colors cursor-pointer">{stage.title}</h3>
+                        </Link>
                       </div>
                       <p className="text-muted-foreground">{stage.description}</p>
                     </div>
-                    {index < 8 && <ArrowRight className="h-4 w-4 text-muted-foreground mt-4" />}
+                    {index < 8 && (
+                      <Link to={`/stage/${stage.stage + 1}`} className="flex-shrink-0">
+                        <Button variant="ghost" size="sm" className="p-2 hover:bg-primary/10">
+                          <ArrowRight className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 );
               })}
