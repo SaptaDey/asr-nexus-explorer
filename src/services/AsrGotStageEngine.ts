@@ -1,9 +1,16 @@
 // ASR-GoT Stage Engine - Implements the 9-stage mandatory pipeline
 // Based on ASR-GoT System Prompt Version 2025-07-07
 
-import { GraphData, GraphNode, GraphEdge, HyperEdge, APICredentials, StageExecutionContext, ResearchContext } from '@/types/asrGotTypes';
+import { GraphData, GraphNode, GraphEdge, HyperEdge, APICredentials, StageExecutionContext, ResearchContext, KnowledgeNode } from '@/types/asrGotTypes';
 import { queueGeminiCall, getTaskResult } from '@/utils/background';
 import { toast } from 'sonner';
+import { 
+  calculateNodeInformationMetrics, 
+  calculateEvidenceInformationMetrics, 
+  calculateHypothesisInformationMetrics,
+  calculateGraphComplexity,
+  InformationMetrics
+} from '@/utils/informationTheory';
 
 export class AsrGotStageEngine {
   private credentials: APICredentials;
@@ -24,6 +31,95 @@ export class AsrGotStageEngine {
       knowledge_gaps: [],
       auto_generated: true
     };
+    
+    // Initialize Knowledge Nodes (K1-K3)
+    this.initializeKnowledgeNodes();
+  }
+
+  // Initialize Knowledge Nodes based on framework specification
+  private initializeKnowledgeNodes(): void {
+    const knowledgeNodes: KnowledgeNode[] = [];
+    
+    // K1: Communication & Interaction Style
+    const k1Node: KnowledgeNode = {
+      id: 'K1',
+      label: 'Communication Preferences',
+      type: 'knowledge',
+      knowledgeType: 'communication',
+      confidence: [1.0, 1.0, 1.0, 1.0], // High confidence for framework constraints
+      metadata: {
+        parameter_id: 'K1',
+        type: 'knowledge_node',
+        source_description: 'Communication Preferences Definition (2025-02-22)',
+        value: 'Framework communication constraints',
+        timestamp: new Date().toISOString(),
+        notes: 'Formal, professional, academic tone with Vancouver citations'
+      },
+      knowledgeData: {
+        tone: 'formal',
+        style: 'informative',
+        citationStyle: 'vancouver',
+        length: 'extensive',
+        addressingStyle: 'formal'
+      },
+      position: { x: 100, y: 100 }
+    };
+    
+    // K2: Content Requirements
+    const k2Node: KnowledgeNode = {
+      id: 'K2',
+      label: 'Content Requirements',
+      type: 'knowledge',
+      knowledgeType: 'content',
+      confidence: [1.0, 1.0, 1.0, 1.0],
+      metadata: {
+        parameter_id: 'K2',
+        type: 'knowledge_node',
+        source_description: 'Content Requirements Definition (2025-02-22)',
+        value: 'Framework content standards',
+        timestamp: new Date().toISOString(),
+        notes: 'Current, scientifically accurate, relevant research with progressive insights'
+      },
+      knowledgeData: {
+        accuracy: 'high',
+        modality: ['text', 'image', 'sound'],
+        innovation: 'progressive',
+        querySpecificity: 'research'
+      },
+      position: { x: 250, y: 100 }
+    };
+    
+    // K3: User Profile
+    const k3Node: KnowledgeNode = {
+      id: 'K3',
+      label: 'User Profile',
+      type: 'knowledge',
+      knowledgeType: 'profile',
+      confidence: [1.0, 1.0, 1.0, 1.0],
+      metadata: {
+        parameter_id: 'K3',
+        type: 'knowledge_node',
+        source_description: 'User Profile Information (2025-04-23)',
+        value: 'Postdoctoral researcher profile',
+        timestamp: new Date().toISOString(),
+        notes: 'Specialized in immunology, molecular biology, skin research, CTCL'
+      },
+      knowledgeData: {
+        identity: 'Postdoctoral Researcher, Dept. Dermatology, Medical University of Graz',
+        experience: '>10 years in immunology, molecular biology, inflammatory diseases',
+        researchFocus: ['skin immunology', 'cutaneous malignancies', 'CTCL', 'chromosomal instability', 'skin microbiome'],
+        methodologies: ['patient genomic analysis', 'microbiome analysis', 'pharmacologic interference', 'molecular biology', 'Machine Learning'],
+        philosophy: 'Holistic approach, bridging domains, curiosity-driven research',
+        interests: ['learning', 'teaching', 'mentoring', 'astronomy', 'psychology', 'consciousness']
+      },
+      position: { x: 400, y: 100 }
+    };
+    
+    knowledgeNodes.push(k1Node, k2Node, k3Node);
+    
+    // Add knowledge nodes to graph
+    this.graphData.nodes.push(...knowledgeNodes);
+    this.graphData.metadata.total_nodes = this.graphData.nodes.length;
   }
 
   // Stage 1: Initialization - Create root node n₀ "Task Understanding"
@@ -530,12 +626,18 @@ Format with impact scores and quality metrics.`;
 
         const evidenceAnalysis = await getTaskResult(analysisTaskId, 30000);
 
+        // P1.27: Calculate information theory metrics
+        const confidenceVector = this.parseConfidenceVector(evidenceAnalysis);
+        const statisticalPower = this.extractStatisticalPower(evidenceAnalysis);
+        const evidenceQuality = this.assessEvidenceQuality(evidenceAnalysis);
+        const infoMetrics = calculateEvidenceInformationMetrics(evidenceQuality, statisticalPower, 'peer-reviewed');
+        
         // Create evidence nodes
         const evidenceNode: GraphNode = {
           id: `e_${hypothesis.id}`,
           label: `Evidence: ${hypothesis.label}`,
           type: 'evidence',
-          confidence: this.parseConfidenceVector(evidenceAnalysis),
+          confidence: confidenceVector,
           metadata: {
             parameter_id: 'P1.4',
             type: 'integrated_evidence',
@@ -546,9 +648,10 @@ Format with impact scores and quality metrics.`;
             timestamp: new Date().toISOString(),
             impact_score: this.calculateEvidenceImpact(evidenceAnalysis),
             attribution: 'Perplexity Sonar + Gemini 2.5 Pro',
-            statistical_power: this.extractStatisticalPower(evidenceAnalysis),
-            evidence_quality: this.assessEvidenceQuality(evidenceAnalysis),
-            peer_review_status: 'peer-reviewed'
+            statistical_power: statisticalPower,
+            evidence_quality: evidenceQuality,
+            peer_review_status: 'peer-reviewed',
+            info_metrics: infoMetrics
           }
         };
 
@@ -557,18 +660,26 @@ Format with impact scores and quality metrics.`;
         // P1.24: Perform causal analysis to determine edge type
         const causalAnalysis = await this.analyzeCausalRelationship(hypothesis, evidenceNode);
         
-        // Create evidence-hypothesis edge with causal classification
+        // P1.25: Perform temporal pattern analysis
+        const temporalAnalysis = this.analyzeTemporalPatterns(hypothesis, evidenceNode);
+        
+        // Determine final edge type (causal takes precedence over temporal)
+        const finalEdgeType = causalAnalysis.edgeType !== 'supportive' ? 
+          causalAnalysis.edgeType : temporalAnalysis.temporalType;
+        
+        // Create evidence-hypothesis edge with causal and temporal classification
         const evidenceEdge: GraphEdge = {
           id: `edge_${hypothesis.id}_${evidenceNode.id}`,
           source: hypothesis.id,
           target: evidenceNode.id,
-          type: causalAnalysis.edgeType,
+          type: finalEdgeType,
           confidence: evidenceNode.confidence[0], // Use empirical support confidence
           metadata: {
             type: 'evidence_support',
             source_description: 'Hypothesis-Evidence relationship',
             timestamp: new Date().toISOString(),
-            causal_metadata: causalAnalysis.causalMetadata
+            causal_metadata: causalAnalysis.causalMetadata,
+            temporal_metadata: temporalAnalysis.temporalMetadata
           }
         };
 
@@ -1384,6 +1495,88 @@ Return analysis in structured format with confidence score (0-1).
   private extractCausalConfidence(analysis: string): number {
     const confidenceMatch = analysis.match(/confidence[^:]*:\s*([0-9.]+)/i);
     return confidenceMatch ? Math.min(1, Math.max(0, parseFloat(confidenceMatch[1]))) : 0.7;
+  }
+
+  // P1.25: Temporal pattern analysis for relationships
+  private analyzeTemporalPatterns(sourceNode: GraphNode, targetNode: GraphNode): {
+    temporalType: GraphEdge['type'];
+    temporalMetadata: Record<string, any>;
+  } {
+    // Extract timestamps for temporal analysis
+    const sourceTime = new Date(sourceNode.metadata.timestamp || new Date().toISOString());
+    const targetTime = new Date(targetNode.metadata.timestamp || new Date().toISOString());
+    
+    // Calculate time difference
+    const timeDiff = targetTime.getTime() - sourceTime.getTime();
+    const timeDiffHours = timeDiff / (1000 * 60 * 60);
+    
+    // Determine temporal relationship type
+    let temporalType: GraphEdge['type'] = 'temporal';
+    
+    if (Math.abs(timeDiff) < 1000 * 60 * 5) { // Within 5 minutes
+      temporalType = 'temporal_sequential';
+    } else if (timeDiff > 0) { // Target after source
+      if (timeDiffHours > 24 * 7) { // More than a week
+        temporalType = 'temporal_delayed';
+      } else {
+        temporalType = 'temporal_precedence';
+      }
+    } else { // Target before source - potential causal loop
+      temporalType = 'temporal_cyclic';
+    }
+    
+    // Check for temporal patterns in metadata
+    const temporalPatterns = this.extractTemporalPatterns(sourceNode, targetNode);
+    
+    return {
+      temporalType,
+      temporalMetadata: {
+        time_difference_ms: timeDiff,
+        time_difference_hours: timeDiffHours,
+        temporal_direction: timeDiff > 0 ? 'forward' : 'backward',
+        temporal_patterns: temporalPatterns,
+        temporal_confidence: this.calculateTemporalConfidence(timeDiff),
+        analysis_timestamp: new Date().toISOString()
+      }
+    };
+  }
+
+  private extractTemporalPatterns(sourceNode: GraphNode, targetNode: GraphNode): string[] {
+    const patterns: string[] = [];
+    
+    // Check for cyclic patterns
+    if (sourceNode.type === targetNode.type) {
+      patterns.push('same_type_connection');
+    }
+    
+    // Check for hierarchical patterns
+    if (sourceNode.type === 'dimension' && targetNode.type === 'hypothesis') {
+      patterns.push('hierarchical_flow');
+    }
+    
+    // Check for evidence patterns
+    if (sourceNode.type === 'hypothesis' && targetNode.type === 'evidence') {
+      patterns.push('evidence_support_flow');
+    }
+    
+    // Check for synthesis patterns
+    if (targetNode.type === 'synthesis') {
+      patterns.push('synthesis_convergence');
+    }
+    
+    return patterns;
+  }
+
+  private calculateTemporalConfidence(timeDiff: number): number {
+    // Confidence decreases with time difference
+    const timeDiffHours = Math.abs(timeDiff) / (1000 * 60 * 60);
+    
+    if (timeDiffHours < 1) return 0.9; // Very recent
+    if (timeDiffHours < 24) return 0.8; // Same day
+    if (timeDiffHours < 24 * 7) return 0.7; // Same week
+    if (timeDiffHours < 24 * 30) return 0.6; // Same month
+    
+    return 0.5; // Older than a month
   }
 
   private calculateEvidenceImpact(analysis: string): number {

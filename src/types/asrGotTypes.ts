@@ -36,12 +36,43 @@ export interface ASRGoTMetadata {
 export interface GraphNode {
   id: string;
   label: string;
-  type: 'root' | 'dimension' | 'hypothesis' | 'evidence' | 'bridge' | 'gap' | 'synthesis' | 'reflection';
+  type: 'root' | 'dimension' | 'hypothesis' | 'evidence' | 'bridge' | 'gap' | 'synthesis' | 'reflection' | 'knowledge';
   confidence: number[]; // Multi-dimensional confidence vector per P1.5
   metadata: ASRGoTMetadata;
   position?: { x: number; y: number };
   children?: string[]; // Child node IDs
   parents?: string[]; // Parent node IDs
+}
+
+// Knowledge Nodes (K1-K3) for framework integration
+export interface KnowledgeNode extends GraphNode {
+  type: 'knowledge';
+  knowledgeType: 'communication' | 'content' | 'profile';
+  knowledgeData: CommunicationPreferences | ContentRequirements | UserProfile;
+}
+
+export interface CommunicationPreferences {
+  tone: 'formal' | 'informal';
+  style: 'informative' | 'narrative' | 'technical';
+  citationStyle: 'vancouver' | 'apa' | 'mla';
+  length: 'extensive' | 'brief' | 'medium';
+  addressingStyle: 'formal' | 'casual';
+}
+
+export interface ContentRequirements {
+  accuracy: 'high' | 'medium' | 'low';
+  modality: string[];
+  innovation: 'progressive' | 'conservative';
+  querySpecificity: 'research' | 'general' | 'application';
+}
+
+export interface UserProfile {
+  identity: string;
+  experience: string;
+  researchFocus: string[];
+  methodologies: string[];
+  philosophy: string;
+  interests: string[];
 }
 
 export interface GraphEdge {
