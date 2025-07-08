@@ -45,6 +45,7 @@ interface ResearchInterfaceProps {
     gemini: string;
   };
   processingMode?: 'automatic' | 'manual';
+  onShowApiModal?: () => void;
 }
 
 export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
@@ -55,7 +56,8 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
   stageResults = [],
   researchContext,
   apiKeys = { gemini: '' },
-  processingMode = 'manual'
+  processingMode = 'manual',
+  onShowApiModal
 }) => {
   const [researchQuery, setResearchQuery] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
@@ -83,6 +85,12 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
       return;
     }
 
+    if (!apiKeys?.gemini) {
+      toast.info('API key required to start research');
+      onShowApiModal?.();
+      return;
+    }
+
     await onExecuteStage(0, taskDescription);
     setActiveTab('progress');
     
@@ -102,6 +110,12 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
   };
 
   const handleContinueToNext = async () => {
+    if (!apiKeys?.gemini) {
+      toast.info('API key required to continue research');
+      onShowApiModal?.();
+      return;
+    }
+    
     await onExecuteStage(currentStage);
   };
 

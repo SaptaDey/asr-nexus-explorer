@@ -42,7 +42,7 @@ const ASRGoTInterface: React.FC = () => {
     canExportHtml
   } = useASRGoT();
 
-  const [showTokenModal, setShowTokenModal] = useState(!apiKeys.gemini);
+  const [showTokenModal, setShowTokenModal] = useState(false);
   const [tempToken, setTempToken] = useState('');
   const [activeTab, setActiveTab] = useState('research');
   
@@ -447,18 +447,19 @@ const ASRGoTInterface: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* API Token Modal */}
-      <Dialog open={showTokenModal} onOpenChange={() => {}}>
-        <DialogContent className="max-w-md">
+      <Dialog open={showTokenModal} onOpenChange={setShowTokenModal}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Database className="h-5 w-5" />
-              API Configuration
+              API Configuration Required
             </DialogTitle>
             <DialogDescription>
-              Enter your API tokens to start ASR-GoT analysis
+              To start ASR-GoT analysis, you need a Gemini API key. Don't have one? We'll show you how to get it!
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* API Key Input */}
             <div>
               <Label htmlFor="gemini-token">Gemini API Key</Label>
               <Input
@@ -467,12 +468,39 @@ const ASRGoTInterface: React.FC = () => {
                 placeholder="AIza..."
                 value={tempToken}
                 onChange={(e) => setTempToken(e.target.value)}
+                className="mt-1"
               />
             </div>
-            <Button onClick={handleTokenSave} className="w-full gradient-bg">
-              <Zap className="h-4 w-4 mr-2" />
-              Initialize ASR-GoT
-            </Button>
+            
+            {/* Instructions */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-800 mb-2">🔑 How to Get Your Gemini API Key:</h4>
+              <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                <li>Visit <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-900">Google AI Studio</a></li>
+                <li>Sign in with your Google account</li>
+                <li>Click "Create API Key" button</li>
+                <li>Select your Google Cloud project (or create a new one)</li>
+                <li>Copy the generated API key and paste it above</li>
+              </ol>
+              <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                <strong>Note:</strong> The API key is stored locally in your browser and never sent to our servers.
+              </div>
+            </div>
+            
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <Button 
+                onClick={() => setShowTokenModal(false)} 
+                variant="outline" 
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleTokenSave} className="flex-1 gradient-bg">
+                <Zap className="h-4 w-4 mr-2" />
+                Save & Continue
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -636,6 +664,7 @@ const ASRGoTInterface: React.FC = () => {
               researchContext={researchContext}
               apiKeys={apiKeys}
               processingMode={mode}
+              onShowApiModal={() => setShowTokenModal(true)}
             />
           </TabsContent>
 
