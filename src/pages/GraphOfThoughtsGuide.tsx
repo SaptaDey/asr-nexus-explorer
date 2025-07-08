@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Brain, Network, Zap, Database, Search, BookOpen, ArrowRight, Target, CheckCircle } from 'lucide-react';
+import { Brain, Network, Zap, Database, Search, BookOpen, ArrowRight, Target, CheckCircle, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
@@ -10,6 +10,16 @@ const GraphOfThoughtsGuide = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       <div className="container mx-auto px-4 py-8">
+        {/* Back Button */}
+        <div className="mb-6">
+          <Link to="/">
+            <Button variant="outline" className="mb-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Home
+            </Button>
+          </Link>
+        </div>
+        
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold gradient-text mb-4">Graph of Thoughts Framework</h1>

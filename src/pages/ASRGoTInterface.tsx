@@ -481,41 +481,57 @@ const ASRGoTInterface: React.FC = () => {
       <div className="container mx-auto px-4 py-6">
         {/* Enhanced Header with Large Logo and Hero */}
         <div className="text-center mb-8">
-          {/* Large Logo Section */}
-          <div className="relative mb-8 bg-gradient-to-br from-white/90 to-purple-50/80 rounded-2xl p-8 border border-white/20 shadow-xl backdrop-blur-sm">
-            <div className="flex flex-col lg:flex-row items-center justify-center gap-8">
-              {/* Logo with proper sizing */}
-              <div className="flex-shrink-0">
-                <img 
-                  src="/img/logo.png" 
-                  alt="Scientific Reasoning Framework Logo" 
-                  className="h-32 w-32 lg:h-40 lg:w-40 object-contain drop-shadow-lg"
-                />
-              </div>
-              
-              {/* Enhanced Title Section */}
-              <div className="text-center lg:text-left">
-                <h1 className="text-4xl lg:text-6xl font-bold gradient-text leading-tight mb-3">
-                  Scientific Reasoning
-                </h1>
-                <p className="text-xl lg:text-2xl text-muted-foreground mb-4 font-medium">
-                  Graph of Thoughts Framework
-                </p>
-                <div className="flex flex-wrap justify-center lg:justify-start gap-2 mb-4">
-                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">AI-Powered</span>
-                  <span className="px-3 py-1 bg-secondary/10 text-secondary-foreground rounded-full text-sm font-medium">Research Framework</span>
-                  <span className="px-3 py-1 bg-accent/10 text-accent-foreground rounded-full text-sm font-medium">Graph Neural Networks</span>
+          {/* Large Logo Section with Full Width Background */}
+          <div className="relative mb-8 rounded-2xl overflow-hidden shadow-xl">
+            {/* Full-width logo background with fade */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+              style={{
+                backgroundImage: 'url("/img/logo.png")',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            ></div>
+            
+            {/* Gradient overlay for text visibility */}
+            <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/95"></div>
+            
+            {/* Content */}
+            <div className="relative z-10 bg-gradient-to-br from-white/90 to-purple-50/80 p-8 border border-white/20 backdrop-blur-sm">
+              <div className="flex flex-col lg:flex-row items-center justify-center gap-8">
+                {/* Logo with proper sizing */}
+                <div className="flex-shrink-0">
+                  <img 
+                    src="/img/logo.png" 
+                    alt="Scientific Reasoning Framework Logo" 
+                    className="h-32 w-32 lg:h-40 lg:w-40 object-contain drop-shadow-lg"
+                  />
                 </div>
-                <div className="flex flex-col lg:flex-row items-center gap-4">
-                  <p className="text-muted-foreground max-w-2xl">
-                    🚀 Next-Generation AI Reasoning Framework leveraging graph structures to transform scientific research methodologies
+                
+                {/* Enhanced Title Section */}
+                <div className="text-center lg:text-left">
+                  <h1 className="text-4xl lg:text-6xl font-bold leading-tight mb-3" style={{ color: '#1a365d' }}>
+                    Scientific Reasoning
+                  </h1>
+                  <p className="text-xl lg:text-2xl mb-4 font-medium" style={{ color: '#4a5568' }}>
+                    Graph of Thoughts Framework
                   </p>
-                  <Link to="/guide">
-                    <Button variant="outline" className="bg-white/80 hover:bg-white">
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      Learn How It Works
-                    </Button>
-                  </Link>
+                  <div className="flex flex-wrap justify-center lg:justify-start gap-2 mb-4">
+                    <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">AI-Powered</span>
+                    <span className="px-3 py-1 bg-secondary/10 text-secondary-foreground rounded-full text-sm font-medium">Research Framework</span>
+                    <span className="px-3 py-1 bg-accent/10 text-accent-foreground rounded-full text-sm font-medium">Graph Neural Networks</span>
+                  </div>
+                  <div className="flex flex-col lg:flex-row items-center gap-4">
+                    <p className="max-w-2xl" style={{ color: '#2d3748' }}>
+                      🚀 Next-Generation AI Reasoning Framework leveraging graph structures to transform scientific research methodologies
+                    </p>
+                    <Link to="/guide">
+                      <Button variant="outline" className="bg-white/80 hover:bg-white">
+                        <BookOpen className="h-4 w-4 mr-2" />
+                        Learn How It Works
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
@@ -541,7 +557,7 @@ const ASRGoTInterface: React.FC = () => {
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-primary via-secondary to-primary rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
               <div className="relative flex items-center gap-3 bg-white/90 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20 shadow-lg">
-                <div className={`transition-all duration-300 ${isAutomatic ? 'text-green-600 animate-bounce' : 'text-blue-600'}`}>
+                <div className={`transition-all duration-300 ${isAutomatic ? 'text-green-600' : 'text-blue-600'}`}>
                   {isAutomatic ? 
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -570,22 +586,20 @@ const ASRGoTInterface: React.FC = () => {
               </div>
             </div>
             
-            {/* Enhanced Contact Us Button */}
+            {/* Contact Us Button */}
             <Link to="/contact">
               <Button 
                 size="lg" 
-                className="relative group text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 animate-pulse"
+                className="text-white shadow-md hover:shadow-lg transition-all duration-300"
                 style={{ 
-                  background: 'linear-gradient(to right, #00ffa4, #00e694)',
-                  '--hover-gradient': 'linear-gradient(to right, #00e694, #00d184)'
+                  backgroundColor: '#009dff',
+                  '--hover-bg': '#0085d9'
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0085d9'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#009dff'}
               >
-                <div 
-                  className="absolute -inset-1 rounded-lg blur opacity-70 group-hover:opacity-100 transition duration-300"
-                  style={{ background: 'linear-gradient(to right, #00ffa4, #00e694)' }}
-                ></div>
-                <div className="relative flex items-center gap-2">
-                  <Mail className="h-5 w-5 animate-bounce" />
+                <div className="flex items-center gap-2">
+                  <Mail className="h-5 w-5" />
                   <span className="font-semibold">Contact Us</span>
                 </div>
               </Button>
