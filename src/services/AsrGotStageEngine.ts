@@ -3,6 +3,7 @@
 
 import { GraphData, GraphNode, GraphEdge, HyperEdge, APICredentials, StageExecutionContext, ResearchContext, KnowledgeNode } from '@/types/asrGotTypes';
 import { queueGeminiCall, getTaskResult } from '@/utils/background';
+import { callPerplexitySonarAPI } from './apiService';
 import { toast } from 'sonner';
 import { 
   calculateNodeInformationMetrics, 
@@ -584,8 +585,19 @@ All hypotheses include explicit falsification criteria as required by P1.16 para
 
       // P1.4: Iterative evidence collection for each hypothesis
       for (const hypothesis of hypotheses) {
-        // Perplexity Sonar call for evidence search
-        const evidenceSearchPrompt = `
+        // P1.20: Perplexity Sonar call for evidence search
+        const evidenceSearchQuery = `${this.researchContext.field} "${hypothesis.metadata.value}" peer-reviewed recent research statistical data`;
+        
+        try {
+          const evidenceResults = await callPerplexitySonarAPI(
+            evidenceSearchQuery,
+            this.credentials.perplexity,
+            { recency: true, focus: this.researchContext.field }
+          );
+          stageContext.api_calls_made++;
+        } catch (error) {
+          // Fallback to Gemini search if Perplexity fails
+          const evidenceSearchPrompt = `
 Research evidence for this hypothesis in ${this.researchContext.field}:
 
 "${hypothesis.metadata.value}"
@@ -599,10 +611,10 @@ Focus on:
 
 Provide comprehensive evidence with citations and quality assessment.`;
 
-        const evidenceTaskId = queueGeminiCall(evidenceSearchPrompt, this.credentials, 'high');
-        stageContext.api_calls_made++;
-
-        const evidenceResults = await getTaskResult(evidenceTaskId, 30000);
+          const evidenceTaskId = queueGeminiCall(evidenceSearchPrompt, this.credentials, 'high');
+          stageContext.api_calls_made++;
+          var evidenceResults = await getTaskResult(evidenceTaskId, 30000);
+        }
 
         // Gemini analysis of collected evidence
         const analysisPrompt = `

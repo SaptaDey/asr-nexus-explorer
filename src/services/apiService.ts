@@ -7,9 +7,28 @@ import { validateInput, validateAPIKey, apiRateLimiter } from '@/utils/securityU
 
 export interface APICredentials {
   gemini: string;
+  perplexity?: string; // Optional Perplexity Sonar API key
 }
 
-// Perplexity API removed - using only Gemini with web search
+// Perplexity Sonar API integration (placeholder for future implementation)
+export const callPerplexitySonarAPI = async (
+  query: string,
+  apiKey?: string,
+  options: { recency?: boolean; focus?: string } = {}
+): Promise<string> => {
+  // Placeholder implementation - currently using Gemini with web search
+  // In production, this would call Perplexity Sonar API
+  console.log('Perplexity Sonar API call (placeholder):', query);
+  
+  // Fallback to Gemini with web search grounding
+  return await callGeminiAPI(
+    `Search for and analyze: ${query}. Focus on recent, peer-reviewed research.`,
+    apiKey || '',
+    'thinking-search',
+    undefined,
+    { stageId: 'sonar-fallback' }
+  );
+};
 
 // RULE COMPLIANT: Capability types follow SECTION 2 matrix
 export type GeminiCapability = 

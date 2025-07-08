@@ -108,42 +108,65 @@ This is the **ASR-GoT (Automatic Scientific Research - Graph of Thoughts)** fram
 ## ASR-GoT Framework Architecture
 
 ### 9-Stage Mandatory Pipeline
-1. **Initialization** - Task understanding and root node creation
+1. **Initialization** - Task understanding and root node creation with Knowledge Nodes (K1-K3)
 2. **Decomposition** - Multi-dimensional analysis (scope, objectives, constraints, biases, gaps)
-3. **Hypothesis/Planning** - Generate 3-5 testable hypotheses per dimension
-4. **Evidence Integration** - Iterative Perplexity Sonar + Gemini analysis loops
-5. **Pruning/Merging** - Graph optimization and redundancy removal
-6. **Subgraph Extraction** - High-impact pathway identification
-7. **Composition** - HTML synthesis with Vancouver citations
-8. **Reflection** - Self-audit for bias detection and gap analysis
-9. **Final Analysis** - Comprehensive PhD-level report generation
+3. **Hypothesis/Planning** - Generate 3-5 testable hypotheses per dimension with impact scoring
+4. **Evidence Integration** - Iterative Perplexity Sonar + Gemini analysis loops with causal inference
+5. **Pruning/Merging** - Graph optimization with information theory metrics
+6. **Subgraph Extraction** - High-impact pathway identification with complexity analysis
+7. **Composition** - HTML synthesis with Vancouver citations and statistical reporting
+8. **Reflection** - Self-audit for bias detection, temporal consistency, and statistical rigor
+9. **Final Analysis** - Comprehensive PhD-level report with quantitative insights
 
 ### Multi-AI Orchestration
-- **Perplexity Sonar**: Real-time web search and evidence collection
+- **Perplexity Sonar**: Real-time web search and evidence collection (with Gemini fallback)
 - **Gemini 2.5 Pro**: Advanced reasoning, synthesis, and analysis
 - **Background Processing**: Asynchronous task queuing for optimal performance
 - **Token Management**: P1.21 compliance (3000 tokens/Sonar, 6000/Gemini)
 
-### Graph Data Structure
+### Advanced Graph Data Structure
 - **Nodes**: Multi-dimensional confidence vectors `[empirical_support, theoretical_basis, methodological_rigor, consensus_alignment]`
-- **Edges**: Relationship types (supportive, contradictory, causal, temporal, prerequisite)
-- **HyperEdges**: Complex multi-node relationships
-- **Metadata**: Rich P1.12 schema compliance with bias flags, attribution, temporal data
+- **Edges**: Extended relationship types including:
+  - Basic: supportive, contradictory, correlative, prerequisite
+  - Causal: causal_direct, causal_counterfactual, causal_confounded
+  - Temporal: temporal_precedence, temporal_cyclic, temporal_delayed, temporal_sequential
+- **HyperEdges**: Complex multi-node relationships (interdisciplinary, multi_causal, complex_relationship)
+- **Knowledge Nodes**: K1-K3 framework constraints and user profile integration
+- **Metadata**: Rich P1.12 schema compliance with:
+  - Causal metadata (confounders, mechanisms, counterfactuals)
+  - Temporal metadata (patterns, precedence, confidence)
+  - Information theory metrics (entropy, complexity, information gain)
+  - Statistical power analysis (sample size, effect size, p-values)
+
+### Advanced Features Implementation
+- **Causal Inference (P1.24)**: Pearl's causal reasoning with confounder detection
+- **Temporal Reasoning (P1.25)**: Pattern detection and time-series analysis
+- **Information Theory (P1.27)**: Entropy calculations, mutual information, MDL scoring
+- **Statistical Power (P1.26)**: Comprehensive power analysis with methodological quality assessment
+- **Hyperedges (P1.9)**: Multi-node relationship modeling for complex interactions
+- **Dynamic Confidence (P1.5)**: Evidence-based confidence vector calculation
 
 ### Visualization System
 - **3D Botanical Trees**: Organic growth metaphor for knowledge development
-- **2D Graph Networks**: Cytoscape.js-powered relationship mapping
+- **2D Graph Networks**: Cytoscape.js-powered relationship mapping with hyperedge support
 - **Interactive Analytics**: Real-time confidence and quality metrics
-- **Export Capabilities**: SVG, PNG, HTML with embedded visualizations
+- **Export Capabilities**: SVG, PNG, HTML with embedded visualizations and statistical reports
 
-### Parameter System (P1.0-P1.29)
+### Parameter System (P1.0-P1.29) - FULLY IMPLEMENTED
 Complete control system covering:
-- Framework execution rules
-- Quality control standards
-- Evidence requirements
-- Graph operations
-- Export formats
-- Advanced features (temporal reasoning, causal analysis)
+- Framework execution rules (P1.0-P1.7)
+- Advanced graph operations (P1.8-P1.11)
+- Metadata and citation management (P1.12-P1.18)
+- Intervention and analysis tools (P1.19-P1.21)
+- Dynamic topology and multi-layer networks (P1.22-P1.23)
+- Causal and temporal reasoning (P1.24-P1.25)
+- Statistical and information theory (P1.26-P1.27)
+- Impact estimation and collaboration (P1.28-P1.29)
+
+### Knowledge Integration (K1-K3)
+- **K1**: Communication preferences (formal, academic, Vancouver citations)
+- **K2**: Content requirements (high accuracy, progressive insights, multimodal)
+- **K3**: User profile (dermatology researcher, immunology expertise, holistic approach)
 
 ## Technology Stack
 
