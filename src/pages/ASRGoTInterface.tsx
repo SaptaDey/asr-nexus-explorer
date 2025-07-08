@@ -539,7 +539,7 @@ const ASRGoTInterface: React.FC = () => {
             
             {/* Main Logo - Centered and Prominent */}
             <div 
-              className="absolute inset-0 bg-contain bg-no-repeat bg-center opacity-40"
+              className="absolute inset-0 bg-contain bg-no-repeat bg-center opacity-50"
               style={{
                 backgroundImage: 'url("/img/logo.png")',
                 backgroundSize: 'contain',
@@ -547,17 +547,17 @@ const ASRGoTInterface: React.FC = () => {
               }}
             ></div>
             
-            {/* Logo Fade Effect - Radial Gradient */}
+            {/* Subtle Logo Fade Effect - Lighter Radial Gradient */}
             <div 
               className="absolute inset-0"
               style={{
-                background: 'radial-gradient(circle at center, transparent 15%, rgba(255,255,255,0.7) 35%, rgba(255,255,255,0.9) 60%, rgba(255,255,255,0.95) 80%)'
+                background: 'radial-gradient(circle at center, transparent 25%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.7) 75%, rgba(255,255,255,0.85) 90%)'
               }}
             ></div>
             
-            {/* Additional gentle overlays for perfect text visibility */}
-            <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-transparent to-white/90"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-transparent to-white/80"></div>
+            {/* Gentle overlays for text visibility */}
+            <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-transparent to-white/70"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-white/60 via-transparent to-white/60"></div>
             
             {/* Hero Content */}
             <div className="relative z-10 p-12 lg:p-20">
