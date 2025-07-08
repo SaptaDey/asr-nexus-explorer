@@ -48,7 +48,9 @@ export interface GraphEdge {
   id: string;
   source: string;
   target: string;
-  type: 'correlative' | 'supportive' | 'contradictory' | 'causal' | 'temporal' | 'prerequisite' | 'hyperedge';
+  type: 'correlative' | 'supportive' | 'contradictory' | 'causal' | 'temporal' | 'prerequisite' | 'hyperedge' | 
+        'causal_direct' | 'causal_counterfactual' | 'causal_confounded' | 'temporal_precedence' | 'temporal_cyclic' | 
+        'temporal_delayed' | 'temporal_sequential';
   confidence: number;
   metadata: ASRGoTMetadata;
   weight?: number;

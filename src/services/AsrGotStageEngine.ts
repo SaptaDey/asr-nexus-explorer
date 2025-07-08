@@ -1,7 +1,7 @@
 // ASR-GoT Stage Engine - Implements the 9-stage mandatory pipeline
 // Based on ASR-GoT System Prompt Version 2025-07-07
 
-import { GraphData, GraphNode, GraphEdge, APICredentials, StageExecutionContext, ResearchContext } from '@/types/asrGotTypes';
+import { GraphData, GraphNode, GraphEdge, HyperEdge, APICredentials, StageExecutionContext, ResearchContext } from '@/types/asrGotTypes';
 import { queueGeminiCall, getTaskResult } from '@/utils/background';
 import { toast } from 'sonner';
 
@@ -554,26 +554,39 @@ Format with impact scores and quality metrics.`;
 
         evidenceNodes.push(evidenceNode);
 
-        // Create evidence-hypothesis edge
+        // P1.24: Perform causal analysis to determine edge type
+        const causalAnalysis = await this.analyzeCausalRelationship(hypothesis, evidenceNode);
+        
+        // Create evidence-hypothesis edge with causal classification
         const evidenceEdge: GraphEdge = {
           id: `edge_${hypothesis.id}_${evidenceNode.id}`,
           source: hypothesis.id,
           target: evidenceNode.id,
-          type: 'supportive',
+          type: causalAnalysis.edgeType,
           confidence: evidenceNode.confidence[0], // Use empirical support confidence
           metadata: {
             type: 'evidence_support',
             source_description: 'Hypothesis-Evidence relationship',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            causal_metadata: causalAnalysis.causalMetadata
           }
         };
 
         evidenceEdges.push(evidenceEdge);
       }
 
-      // Update graph with evidence
+      // P1.9: Create hyperedges for complex multi-node relationships
+      const hyperedges = this.createHyperedges(evidenceNodes, hypotheses);
+      
+      // Initialize hyperedges array if not exists
+      if (!this.graphData.hyperedges) {
+        this.graphData.hyperedges = [];
+      }
+      
+      // Update graph with evidence and hyperedges
       this.graphData.nodes.push(...evidenceNodes);
       this.graphData.edges.push(...evidenceEdges);
+      this.graphData.hyperedges.push(...hyperedges);
       this.graphData.metadata.stage = 4;
       this.graphData.metadata.last_updated = new Date().toISOString();
       this.graphData.metadata.total_nodes = this.graphData.nodes.length;
@@ -598,6 +611,16 @@ ${evidenceNodes.map((e, i) => `
 - **Impact Score**: ${e.metadata.impact_score}
 - **Sources**: Peer-reviewed research via Sonar API
 `).join('')}
+
+## P1.9 Hyperedges Created
+${hyperedges.length > 0 ? `
+**Complex Relationships Identified**: ${hyperedges.length} hyperedges
+${hyperedges.map(h => `
+- **${h.type}**: ${h.nodes.length} nodes connected
+  - ID: ${h.id}
+  - Confidence: ${h.confidence}
+  - Description: ${h.metadata.source_description}
+`).join('')}` : 'No complex multi-node relationships identified'}
 
 ## API Orchestration Stats
 - **Perplexity Sonar Calls**: ${hypotheses.length}
@@ -1052,10 +1075,315 @@ ${finalAnalysis}
     }
   }
 
-  // Helper methods for advanced graph operations
+  // P1.5: Dynamic confidence vector calculation based on analysis
   private parseConfidenceVector(analysis: string): number[] {
-    // Extract confidence values from Gemini analysis
-    return [0.8, 0.7, 0.8, 0.75]; // Default high-quality evidence confidence
+    // P1.5: Multi-dimensional confidence vector [empirical_support, theoretical_basis, methodological_rigor, consensus_alignment]
+    
+    // Extract empirical support
+    const empiricalSupport = this.extractEmpiricalSupport(analysis);
+    
+    // Extract theoretical basis
+    const theoreticalBasis = this.extractTheoreticalBasis(analysis);
+    
+    // Extract methodological rigor
+    const methodologicalRigor = this.extractMethodologicalRigor(analysis);
+    
+    // Extract consensus alignment
+    const consensusAlignment = this.extractConsensusAlignment(analysis);
+    
+    return [empiricalSupport, theoreticalBasis, methodologicalRigor, consensusAlignment];
+  }
+
+  private extractEmpiricalSupport(analysis: string): number {
+    const lowerAnalysis = analysis.toLowerCase();
+    let score = 0.5; // Base score
+    
+    // Statistical evidence indicators
+    if (lowerAnalysis.includes('meta-analysis')) score += 0.3;
+    else if (lowerAnalysis.includes('randomized controlled trial') || lowerAnalysis.includes('rct')) score += 0.25;
+    else if (lowerAnalysis.includes('cohort study')) score += 0.2;
+    else if (lowerAnalysis.includes('case study')) score -= 0.2;
+    
+    // Sample size indicators
+    if (lowerAnalysis.includes('large sample') || lowerAnalysis.includes('n > 1000')) score += 0.15;
+    else if (lowerAnalysis.includes('small sample') || lowerAnalysis.includes('n < 30')) score -= 0.15;
+    
+    // Statistical significance
+    if (lowerAnalysis.includes('p < 0.001')) score += 0.15;
+    else if (lowerAnalysis.includes('p < 0.01')) score += 0.1;
+    else if (lowerAnalysis.includes('p < 0.05')) score += 0.05;
+    else if (lowerAnalysis.includes('not significant')) score -= 0.2;
+    
+    return Math.min(1, Math.max(0, score));
+  }
+
+  private extractTheoreticalBasis(analysis: string): number {
+    const lowerAnalysis = analysis.toLowerCase();
+    let score = 0.5; // Base score
+    
+    // Theoretical framework indicators
+    if (lowerAnalysis.includes('well-established theory') || lowerAnalysis.includes('theoretical framework')) score += 0.2;
+    if (lowerAnalysis.includes('novel approach') || lowerAnalysis.includes('innovative')) score += 0.15;
+    if (lowerAnalysis.includes('established principles')) score += 0.1;
+    if (lowerAnalysis.includes('theoretical gap') || lowerAnalysis.includes('lacks theory')) score -= 0.2;
+    
+    // Citation and reference indicators
+    if (lowerAnalysis.includes('extensively cited') || lowerAnalysis.includes('foundational work')) score += 0.15;
+    if (lowerAnalysis.includes('limited citations') || lowerAnalysis.includes('few references')) score -= 0.1;
+    
+    return Math.min(1, Math.max(0, score));
+  }
+
+  private extractMethodologicalRigor(analysis: string): number {
+    const lowerAnalysis = analysis.toLowerCase();
+    let score = 0.5; // Base score
+    
+    // Methodology quality indicators
+    if (lowerAnalysis.includes('rigorous methodology') || lowerAnalysis.includes('well-designed')) score += 0.2;
+    if (lowerAnalysis.includes('controlled for confounders') || lowerAnalysis.includes('adjusted for')) score += 0.15;
+    if (lowerAnalysis.includes('blinded') || lowerAnalysis.includes('double-blind')) score += 0.15;
+    if (lowerAnalysis.includes('validated measures') || lowerAnalysis.includes('standardized')) score += 0.1;
+    
+    // Limitations and bias indicators
+    if (lowerAnalysis.includes('methodological limitations') || lowerAnalysis.includes('potential bias')) score -= 0.15;
+    if (lowerAnalysis.includes('selection bias') || lowerAnalysis.includes('confounding')) score -= 0.1;
+    if (lowerAnalysis.includes('poor methodology') || lowerAnalysis.includes('flawed design')) score -= 0.25;
+    
+    return Math.min(1, Math.max(0, score));
+  }
+
+  private extractConsensusAlignment(analysis: string): number {
+    const lowerAnalysis = analysis.toLowerCase();
+    let score = 0.5; // Base score
+    
+    // Consensus indicators
+    if (lowerAnalysis.includes('scientific consensus') || lowerAnalysis.includes('widely accepted')) score += 0.25;
+    if (lowerAnalysis.includes('expert agreement') || lowerAnalysis.includes('professional consensus')) score += 0.2;
+    if (lowerAnalysis.includes('replicated findings') || lowerAnalysis.includes('consistent results')) score += 0.15;
+    if (lowerAnalysis.includes('multiple studies confirm')) score += 0.1;
+    
+    // Controversy indicators
+    if (lowerAnalysis.includes('controversial') || lowerAnalysis.includes('disputed')) score -= 0.2;
+    if (lowerAnalysis.includes('conflicting evidence') || lowerAnalysis.includes('mixed results')) score -= 0.15;
+    if (lowerAnalysis.includes('preliminary findings') || lowerAnalysis.includes('needs replication')) score -= 0.1;
+    
+    return Math.min(1, Math.max(0, score));
+  }
+
+  // P1.9: Create hyperedges for complex multi-node relationships
+  private createHyperedges(evidenceNodes: GraphNode[], hypotheses: GraphNode[]): HyperEdge[] {
+    const hyperedges: HyperEdge[] = [];
+    
+    // Create interdisciplinary hyperedges based on disciplinary tags
+    const disciplinaryMap = new Map<string, string[]>();
+    
+    evidenceNodes.forEach(node => {
+      const tags = node.metadata.disciplinary_tags || [];
+      tags.forEach(tag => {
+        if (!disciplinaryMap.has(tag)) {
+          disciplinaryMap.set(tag, []);
+        }
+        disciplinaryMap.get(tag)!.push(node.id);
+      });
+    });
+    
+    // Create hyperedges for multi-disciplinary evidence clusters
+    disciplinaryMap.forEach((nodeIds, discipline) => {
+      if (nodeIds.length >= 2) {
+        const hyperedge: HyperEdge = {
+          id: `hyper_${discipline}_${Date.now()}`,
+          nodes: nodeIds,
+          type: 'interdisciplinary',
+          confidence: 0.7,
+          metadata: {
+            parameter_id: 'P1.9',
+            type: 'hyperedge',
+            source_description: `Interdisciplinary connection in ${discipline}`,
+            value: discipline,
+            timestamp: new Date().toISOString(),
+            disciplinary_tags: [discipline],
+            notes: `Hyperedge connecting ${nodeIds.length} nodes with shared disciplinary focus`
+          }
+        };
+        hyperedges.push(hyperedge);
+      }
+    });
+    
+    // Create multi-causal hyperedges - when multiple evidence nodes support same hypothesis
+    hypotheses.forEach(hypothesis => {
+      const supportingEvidence = evidenceNodes.filter(evidence => 
+        this.graphData.edges.some(edge => 
+          edge.source === hypothesis.id && edge.target === evidence.id
+        )
+      );
+      
+      if (supportingEvidence.length >= 2) {
+        const hyperedge: HyperEdge = {
+          id: `hyper_causal_${hypothesis.id}`,
+          nodes: [hypothesis.id, ...supportingEvidence.map(e => e.id)],
+          type: 'multi_causal',
+          confidence: 0.8,
+          metadata: {
+            parameter_id: 'P1.9',
+            type: 'hyperedge',
+            source_description: 'Multi-causal relationship between hypothesis and evidence',
+            value: `Multiple evidence sources supporting ${hypothesis.label}`,
+            timestamp: new Date().toISOString(),
+            notes: `Hyperedge connecting hypothesis with ${supportingEvidence.length} supporting evidence nodes`
+          }
+        };
+        hyperedges.push(hyperedge);
+      }
+    });
+    
+    // Create complex relationship hyperedges based on confidence patterns
+    const highConfidenceNodes = evidenceNodes.filter(node => 
+      node.confidence.reduce((sum, c) => sum + c, 0) / node.confidence.length > 0.8
+    );
+    
+    if (highConfidenceNodes.length >= 3) {
+      const hyperedge: HyperEdge = {
+        id: `hyper_complex_${Date.now()}`,
+        nodes: highConfidenceNodes.map(n => n.id),
+        type: 'complex_relationship',
+        confidence: 0.85,
+        metadata: {
+          parameter_id: 'P1.9',
+          type: 'hyperedge',
+          source_description: 'Complex relationship between high-confidence evidence nodes',
+          value: 'High-confidence evidence cluster',
+          timestamp: new Date().toISOString(),
+          notes: `Complex hyperedge connecting ${highConfidenceNodes.length} high-confidence nodes`
+        }
+      };
+      hyperedges.push(hyperedge);
+    }
+    
+    return hyperedges;
+  }
+
+  // P1.24: Causal inference analysis for evidence-hypothesis relationships
+  private async analyzeCausalRelationship(hypothesis: GraphNode, evidence: GraphNode): Promise<{
+    edgeType: GraphEdge['type'];
+    causalMetadata: Record<string, any>;
+  }> {
+    // Analyze causal relationship using AI reasoning
+    const causalPrompt = `
+Analyze the causal relationship between this hypothesis and evidence:
+
+**Hypothesis**: ${hypothesis.metadata.value}
+**Evidence**: ${evidence.metadata.value}
+
+Perform causal inference analysis:
+1. **Causal Direction**: Does evidence directly cause hypothesis to be true/false?
+2. **Confounding Variables**: Are there potential confounders?
+3. **Temporal Relationship**: What is the temporal order?
+4. **Counterfactual Analysis**: Would hypothesis be different without this evidence?
+5. **Mechanism**: What is the proposed causal mechanism?
+
+Classify the relationship type:
+- causal_direct: Direct causal relationship
+- causal_counterfactual: Counterfactual relationship
+- causal_confounded: Confounded relationship
+- supportive: Strong supportive but not causal
+- correlative: Correlation without clear causation
+- contradictory: Evidence contradicts hypothesis
+
+Return analysis in structured format with confidence score (0-1).
+`;
+
+    try {
+      const taskId = await queueGeminiCall(causalPrompt, 'Causal Analysis');
+      const analysis = await getTaskResult(taskId);
+      
+      // Extract causal classification from analysis
+      const causalType = this.extractCausalType(analysis);
+      const confounders = this.extractConfounders(analysis);
+      const mechanism = this.extractCausalMechanism(analysis);
+      const confidence = this.extractCausalConfidence(analysis);
+      
+      return {
+        edgeType: causalType,
+        causalMetadata: {
+          causal_direction: this.extractCausalDirection(analysis),
+          confounding_variables: confounders,
+          temporal_order: this.extractTemporalOrder(analysis),
+          causal_mechanism: mechanism,
+          counterfactual_analysis: this.extractCounterfactual(analysis),
+          causal_confidence: confidence,
+          analysis_timestamp: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      // Fallback to supportive edge if analysis fails
+      return {
+        edgeType: 'supportive',
+        causalMetadata: {
+          causal_direction: 'unknown',
+          confounding_variables: [],
+          analysis_error: error instanceof Error ? error.message : 'Unknown error',
+          fallback_classification: true
+        }
+      };
+    }
+  }
+
+  private extractCausalType(analysis: string): GraphEdge['type'] {
+    const lowerAnalysis = analysis.toLowerCase();
+    
+    if (lowerAnalysis.includes('causal_direct') || lowerAnalysis.includes('direct causal')) {
+      return 'causal_direct';
+    } else if (lowerAnalysis.includes('causal_counterfactual') || lowerAnalysis.includes('counterfactual')) {
+      return 'causal_counterfactual';
+    } else if (lowerAnalysis.includes('causal_confounded') || lowerAnalysis.includes('confounded')) {
+      return 'causal_confounded';
+    } else if (lowerAnalysis.includes('contradictory') || lowerAnalysis.includes('contradicts')) {
+      return 'contradictory';
+    } else if (lowerAnalysis.includes('correlative') || lowerAnalysis.includes('correlation')) {
+      return 'correlative';
+    } else {
+      return 'supportive'; // Default fallback
+    }
+  }
+
+  private extractConfounders(analysis: string): string[] {
+    const confounders: string[] = [];
+    const confoundingSection = analysis.match(/confounding[^:]*:([^]*?)(?=\n\d|\n[A-Z]|\n$)/i);
+    if (confoundingSection) {
+      const confoundingText = confoundingSection[1];
+      const matches = confoundingText.match(/[-•]\s*([^;\n]+)/g);
+      if (matches) {
+        matches.forEach(match => {
+          confounders.push(match.replace(/[-•]\s*/, '').trim());
+        });
+      }
+    }
+    return confounders;
+  }
+
+  private extractCausalMechanism(analysis: string): string {
+    const mechanismSection = analysis.match(/mechanism[^:]*:([^]*?)(?=\n\d|\n[A-Z]|\n$)/i);
+    return mechanismSection ? mechanismSection[1].trim() : 'Mechanism not specified';
+  }
+
+  private extractCausalDirection(analysis: string): string {
+    const directionSection = analysis.match(/causal direction[^:]*:([^]*?)(?=\n\d|\n[A-Z]|\n$)/i);
+    return directionSection ? directionSection[1].trim() : 'Direction not specified';
+  }
+
+  private extractTemporalOrder(analysis: string): string {
+    const temporalSection = analysis.match(/temporal[^:]*:([^]*?)(?=\n\d|\n[A-Z]|\n$)/i);
+    return temporalSection ? temporalSection[1].trim() : 'Temporal order not specified';
+  }
+
+  private extractCounterfactual(analysis: string): string {
+    const counterfactualSection = analysis.match(/counterfactual[^:]*:([^]*?)(?=\n\d|\n[A-Z]|\n$)/i);
+    return counterfactualSection ? counterfactualSection[1].trim() : 'Counterfactual not analyzed';
+  }
+
+  private extractCausalConfidence(analysis: string): number {
+    const confidenceMatch = analysis.match(/confidence[^:]*:\s*([0-9.]+)/i);
+    return confidenceMatch ? Math.min(1, Math.max(0, parseFloat(confidenceMatch[1]))) : 0.7;
   }
 
   private calculateEvidenceImpact(analysis: string): number {
@@ -1063,8 +1391,71 @@ ${finalAnalysis}
     return 0.8; // Default for peer-reviewed evidence
   }
 
+  // P1.26: Statistical power analysis implementation
   private extractStatisticalPower(analysis: string): number {
-    return 0.8; // Default statistical power
+    // Extract statistical power metrics from analysis
+    const powerMatch = analysis.match(/statistical power[^:]*:\s*([0-9.]+)/i);
+    const sampleSizeMatch = analysis.match(/sample size[^:]*:\s*([0-9,]+)/i);
+    const effectSizeMatch = analysis.match(/effect size[^:]*:\s*([0-9.]+)/i);
+    const pValueMatch = analysis.match(/p[- ]value[^:]*:\s*([0-9.]+)/i);
+    
+    let powerScore = 0.5; // Base power score
+    
+    // Adjust based on statistical indicators
+    if (powerMatch) {
+      powerScore = Math.min(1, Math.max(0, parseFloat(powerMatch[1])));
+    } else {
+      // Calculate estimated power based on other indicators
+      let estimatedPower = 0.5;
+      
+      // Sample size contribution
+      if (sampleSizeMatch) {
+        const sampleSize = parseInt(sampleSizeMatch[1].replace(/,/g, ''));
+        if (sampleSize > 1000) estimatedPower += 0.2;
+        else if (sampleSize > 300) estimatedPower += 0.15;
+        else if (sampleSize > 100) estimatedPower += 0.1;
+        else if (sampleSize < 30) estimatedPower -= 0.2;
+      }
+      
+      // Effect size contribution
+      if (effectSizeMatch) {
+        const effectSize = parseFloat(effectSizeMatch[1]);
+        if (effectSize > 0.8) estimatedPower += 0.15; // Large effect
+        else if (effectSize > 0.5) estimatedPower += 0.1; // Medium effect
+        else if (effectSize > 0.2) estimatedPower += 0.05; // Small effect
+        else estimatedPower -= 0.1; // Very small effect
+      }
+      
+      // P-value contribution
+      if (pValueMatch) {
+        const pValue = parseFloat(pValueMatch[1]);
+        if (pValue < 0.01) estimatedPower += 0.15;
+        else if (pValue < 0.05) estimatedPower += 0.1;
+        else if (pValue < 0.1) estimatedPower += 0.05;
+        else estimatedPower -= 0.1;
+      }
+      
+      // Check for methodological quality indicators
+      if (analysis.toLowerCase().includes('randomized controlled trial') || 
+          analysis.toLowerCase().includes('rct')) {
+        estimatedPower += 0.15;
+      } else if (analysis.toLowerCase().includes('meta-analysis')) {
+        estimatedPower += 0.2;
+      } else if (analysis.toLowerCase().includes('case study') || 
+                 analysis.toLowerCase().includes('anecdotal')) {
+        estimatedPower -= 0.2;
+      }
+      
+      // Check for peer review status
+      if (analysis.toLowerCase().includes('peer-reviewed') || 
+          analysis.toLowerCase().includes('published')) {
+        estimatedPower += 0.1;
+      }
+      
+      powerScore = Math.min(1, Math.max(0, estimatedPower));
+    }
+    
+    return powerScore;
   }
 
   private assessEvidenceQuality(analysis: string): 'high' | 'medium' | 'low' {
