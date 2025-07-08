@@ -524,22 +524,14 @@ const ASRGoTInterface: React.FC = () => {
       <div className="container mx-auto px-4 py-6">
         {/* Spectacular Hero Section with Multiple Images */}
         <div className="text-center mb-8">
-          {/* Hero Section with Prominent Logo */}
+          {/* Clean Hero Section with Logo */}
           <div className="relative mb-8 overflow-hidden rounded-3xl" style={{ minHeight: '500px' }}>
-            {/* Hero Background Image */}
-            <div 
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-              style={{
-                backgroundImage: 'url("/img/hero.png")',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                filter: 'brightness(0.8)'
-              }}
-            ></div>
+            {/* Clean Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50"></div>
             
-            {/* Main Logo - Centered and Prominent */}
+            {/* Logo - Centered and Elegant */}
             <div 
-              className="absolute inset-0 bg-contain bg-no-repeat bg-center opacity-50"
+              className="absolute inset-0 bg-contain bg-no-repeat bg-center opacity-60"
               style={{
                 backgroundImage: 'url("/img/logo.png")',
                 backgroundSize: 'contain',
@@ -547,17 +539,13 @@ const ASRGoTInterface: React.FC = () => {
               }}
             ></div>
             
-            {/* Subtle Logo Fade Effect - Lighter Radial Gradient */}
+            {/* Smooth Logo Fade - Natural Melting Effect */}
             <div 
               className="absolute inset-0"
               style={{
-                background: 'radial-gradient(circle at center, transparent 25%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.7) 75%, rgba(255,255,255,0.85) 90%)'
+                background: 'radial-gradient(ellipse at center, transparent 20%, rgba(248, 250, 252, 0.3) 40%, rgba(248, 250, 252, 0.6) 65%, rgba(248, 250, 252, 0.85) 85%, rgba(248, 250, 252, 0.95) 100%)'
               }}
             ></div>
-            
-            {/* Gentle overlays for text visibility */}
-            <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-transparent to-white/70"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-white/60 via-transparent to-white/60"></div>
             
             {/* Hero Content */}
             <div className="relative z-10 p-12 lg:p-20">
