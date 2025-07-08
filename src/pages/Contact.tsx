@@ -70,31 +70,50 @@ Sent from Scientific Reasoning Framework
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Profile */}
-              <div className="flex items-start gap-4">
+              {/* Enhanced Profile */}
+              <div className="flex items-start gap-6">
                 <img 
                   src="https://avatars.githubusercontent.com/u/142305749?v=4" 
                   alt="Sapta Dey"
-                  className="w-16 h-16 rounded-full border-2 border-primary/20"
+                  className="w-24 h-24 rounded-full border-3 border-primary/30 shadow-lg"
                 />
                 <div className="flex-1">
-                  <h3 className="text-xl font-semibold">Dr. Sapta Dey</h3>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    🔬 Biomedical Researcher | 🧠 AI Developer | 🧬 Computational Immunologist
+                  <h3 className="text-2xl font-bold">Dr. Sapta Dey</h3>
+                  <p className="text-base text-muted-foreground mb-3 leading-relaxed">
+                    🔬 Lead Biomedical Researcher & AI Framework Developer<br/>
+                    🧠 Specialist in Computational Immunology & Graph Neural Networks<br/>
+                    🧬 Creator of Advanced Scientific Reasoning (ASR-GoT) Framework
                   </p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 mb-4">
                     <Badge variant="secondary" className="text-xs">
                       <GraduationCap className="h-3 w-3 mr-1" />
-                      Researcher
+                      PhD Researcher
                     </Badge>
                     <Badge variant="secondary" className="text-xs">
                       <Microscope className="h-3 w-3 mr-1" />
-                      Biomedical
+                      Biomedical Sciences
                     </Badge>
                     <Badge variant="secondary" className="text-xs">
                       <Brain className="h-3 w-3 mr-1" />
-                      AI Developer
+                      AI/ML Expert
                     </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      Graph Theory
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      Immunology
+                    </Badge>
+                  </div>
+                  
+                  {/* Research Focus */}
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg border border-blue-100">
+                    <h4 className="font-semibold text-sm mb-2">Research Focus Areas</h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• Advanced AI reasoning systems for scientific research</li>
+                      <li>• Graph-based knowledge representation and reasoning</li>
+                      <li>• Computational immunology and biomedical data analysis</li>
+                      <li>• Evidence synthesis and bias detection in scientific literature</li>
+                    </ul>
                   </div>
                 </div>
               </div>

@@ -11,10 +11,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Brain, Database, FileText, Download, Zap, Settings, Network, Play, RotateCcw, Mail, ToggleLeft } from 'lucide-react';
+import { Brain, Database, FileText, Download, Zap, Settings, Network, Play, RotateCcw, Mail, ToggleLeft, BookOpen } from 'lucide-react';
 import { TreeOfReasoningVisualization } from '@/components/asr-got/TreeOfReasoningVisualization';
 import { ResearchInterface } from '@/components/asr-got/ResearchInterface';
 import { EnhancedGraphVisualization } from '@/components/asr-got/EnhancedGraphVisualization';
+import { DeveloperMode } from '@/components/asr-got/DeveloperMode';
 import { useASRGoT } from '@/hooks/useASRGoT';
 import { useProcessingMode } from '@/hooks/asr-got/useProcessingMode';
 import { toast } from 'sonner';
@@ -478,40 +479,44 @@ const ASRGoTInterface: React.FC = () => {
 
       {/* Main Interface */}
       <div className="container mx-auto px-4 py-6">
-        {/* Header with Logo and Hero */}
+        {/* Enhanced Header with Large Logo and Hero */}
         <div className="text-center mb-8">
-          {/* Logo */}
-          <div className="flex items-center justify-center gap-6 mb-6">
-            <img 
-              src="/img/logo.png" 
-              alt="Scientific Reasoning Framework Logo" 
-              className="h-24 w-24 object-contain"
-            />
-            <div className="text-center">
-              <h1 className="text-4xl font-bold gradient-text leading-tight">
-                Scientific Reasoning
-              </h1>
-              <p className="text-lg text-muted-foreground mt-1">
-                Graph of Thoughts Framework
-              </p>
-            </div>
-          </div>
-          
-          {/* Hero Banner */}
-          <div className="relative mb-6 rounded-lg overflow-hidden">
-            <img 
-              src="/img/hero.png" 
-              alt="ASR-GoT Research Framework" 
-              className="w-full h-48 object-cover opacity-80"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-center">
-              <div className="text-left pl-8">
-                <h2 className="text-2xl font-bold text-white mb-2">
-                  Advanced Scientific Reasoning
-                </h2>
-                <p className="text-white/90 text-lg">
+          {/* Large Logo Section */}
+          <div className="relative mb-8 bg-gradient-to-br from-white/90 to-purple-50/80 rounded-2xl p-8 border border-white/20 shadow-xl backdrop-blur-sm">
+            <div className="flex flex-col lg:flex-row items-center justify-center gap-8">
+              {/* Logo with proper sizing */}
+              <div className="flex-shrink-0">
+                <img 
+                  src="/img/logo.png" 
+                  alt="Scientific Reasoning Framework Logo" 
+                  className="h-32 w-32 lg:h-40 lg:w-40 object-contain drop-shadow-lg"
+                />
+              </div>
+              
+              {/* Enhanced Title Section */}
+              <div className="text-center lg:text-left">
+                <h1 className="text-4xl lg:text-6xl font-bold gradient-text leading-tight mb-3">
+                  Scientific Reasoning
+                </h1>
+                <p className="text-xl lg:text-2xl text-muted-foreground mb-4 font-medium">
                   Graph of Thoughts Framework
                 </p>
+                <div className="flex flex-wrap justify-center lg:justify-start gap-2 mb-4">
+                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">AI-Powered</span>
+                  <span className="px-3 py-1 bg-secondary/10 text-secondary-foreground rounded-full text-sm font-medium">Research Framework</span>
+                  <span className="px-3 py-1 bg-accent/10 text-accent-foreground rounded-full text-sm font-medium">Graph Neural Networks</span>
+                </div>
+                <div className="flex flex-col lg:flex-row items-center gap-4">
+                  <p className="text-muted-foreground max-w-2xl">
+                    🚀 Next-Generation AI Reasoning Framework leveraging graph structures to transform scientific research methodologies
+                  </p>
+                  <Link to="/guide">
+                    <Button variant="outline" className="bg-white/80 hover:bg-white">
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Learn How It Works
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -530,33 +535,59 @@ const ASRGoTInterface: React.FC = () => {
             {isProcessing && <Badge variant="secondary">Processing...</Badge>}
           </div>
           
-          {/* Processing Mode Toggle & Contact */}
-          <div className="flex items-center justify-center gap-4">
-            <div className="flex items-center gap-2 bg-white/70 rounded-lg px-3 py-2">
-              <ToggleLeft className="h-4 w-4" />
-              <span className="text-sm font-medium">
-                {isAutomatic ? 'Automatic' : 'Manual'} Mode
-              </span>
-              <Button
-                onClick={toggleMode}
-                variant="outline"
-                size="sm"
-                className="h-6 px-2 text-xs"
-              >
-                Switch to {isAutomatic ? 'Manual' : 'Automatic'}
-              </Button>
+          {/* Enhanced Processing Mode Toggle & Contact */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-6">
+            {/* Animated Processing Mode Toggle */}
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary via-secondary to-primary rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
+              <div className="relative flex items-center gap-3 bg-white/90 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20 shadow-lg">
+                <div className={`transition-all duration-300 ${isAutomatic ? 'text-green-600 animate-bounce' : 'text-blue-600'}`}>
+                  {isAutomatic ? 
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm font-semibold">AUTO MODE</span>
+                    </div> :
+                    <div className="flex items-center gap-2">
+                      <ToggleLeft className="h-4 w-4" />
+                      <span className="text-sm font-semibold">MANUAL MODE</span>
+                    </div>
+                  }
+                </div>
+                <Button
+                  onClick={toggleMode}
+                  className={`relative overflow-hidden transition-all duration-300 hover:scale-105 ${
+                    isAutomatic 
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600' 
+                      : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'
+                  } text-white shadow-lg`}
+                  size="sm"
+                >
+                  <span className="relative z-10">
+                    Switch to {isAutomatic ? 'Manual' : 'Automatic'}
+                  </span>
+                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </Button>
+              </div>
             </div>
+            
+            {/* Enhanced Contact Us Button */}
             <Link to="/contact">
-              <Button variant="outline" size="sm" className="bg-white/70">
-                <Mail className="h-4 w-4 mr-2" />
-                Contact Us
+              <Button 
+                size="lg" 
+                className="relative group bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 animate-pulse"
+              >
+                <div className="absolute -inset-1 bg-gradient-to-r from-orange-400 to-red-400 rounded-lg blur opacity-70 group-hover:opacity-100 transition duration-300"></div>
+                <div className="relative flex items-center gap-2">
+                  <Mail className="h-5 w-5 animate-bounce" />
+                  <span className="font-semibold">Contact Us</span>
+                </div>
               </Button>
             </Link>
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white/70">
+          <TabsList className="grid w-full grid-cols-5 bg-white/70">
             <TabsTrigger value="research" className="data-[state=active]:gradient-bg data-[state=active]:text-white">
               Research
             </TabsTrigger>
@@ -565,6 +596,9 @@ const ASRGoTInterface: React.FC = () => {
             </TabsTrigger>
             <TabsTrigger value="graph" className="data-[state=active]:gradient-bg data-[state=active]:text-white">
               Graph View
+            </TabsTrigger>
+            <TabsTrigger value="developer" className="data-[state=active]:gradient-bg data-[state=active]:text-white">
+              Developer
             </TabsTrigger>
             <TabsTrigger value="export" className="data-[state=active]:gradient-bg data-[state=active]:text-white">
               Export
@@ -617,6 +651,13 @@ const ASRGoTInterface: React.FC = () => {
                 <EnhancedGraphVisualization graphData={graphData} />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="developer">
+            <DeveloperMode 
+              parameters={parameters}
+              onParametersChange={setParameters}
+            />
           </TabsContent>
 
           <TabsContent value="export">
