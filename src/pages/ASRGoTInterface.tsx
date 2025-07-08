@@ -574,9 +574,16 @@ const ASRGoTInterface: React.FC = () => {
             <Link to="/contact">
               <Button 
                 size="lg" 
-                className="relative group bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 animate-pulse"
+                className="relative group text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 animate-pulse"
+                style={{ 
+                  background: 'linear-gradient(to right, #00ffa4, #00e694)',
+                  '--hover-gradient': 'linear-gradient(to right, #00e694, #00d184)'
+                }}
               >
-                <div className="absolute -inset-1 bg-gradient-to-r from-orange-400 to-red-400 rounded-lg blur opacity-70 group-hover:opacity-100 transition duration-300"></div>
+                <div 
+                  className="absolute -inset-1 rounded-lg blur opacity-70 group-hover:opacity-100 transition duration-300"
+                  style={{ background: 'linear-gradient(to right, #00ffa4, #00e694)' }}
+                ></div>
                 <div className="relative flex items-center gap-2">
                   <Mail className="h-5 w-5 animate-bounce" />
                   <span className="font-semibold">Contact Us</span>
