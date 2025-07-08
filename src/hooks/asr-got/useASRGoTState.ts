@@ -38,7 +38,7 @@ export const useASRGoTState = () => {
     });
   }, []);
 
-  const stageProgress = (stageResults.length / 9) * 100;
+  const stageProgress = stageResults.length > 0 ? ((currentStage + 1) / 9) * 100 : 0;
 
   return {
     // State
