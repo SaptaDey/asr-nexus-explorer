@@ -4,7 +4,7 @@
  */
 
 import { createClient, SupabaseClient, User, Session, AuthError } from '@supabase/supabase-js';
-import { DatabaseService, DbProfile } from '../database/DatabaseService';
+import { DbProfile } from '../database/DatabaseService';
 
 export interface AuthUser extends User {
   profile?: DbProfile;
@@ -50,7 +50,6 @@ export interface AuthState {
 
 export class AuthService {
   private supabase: SupabaseClient;
-  private db: DatabaseService;
   private authStateListeners: Set<(state: AuthState) => void> = new Set();
   private currentState: AuthState = {
     user: null,
@@ -60,15 +59,14 @@ export class AuthService {
   };
 
   constructor() {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
     if (!supabaseUrl || !supabaseKey) {
       throw new Error('Missing Supabase configuration');
     }
 
     this.supabase = createClient(supabaseUrl, supabaseKey);
-    this.db = new DatabaseService();
     
     this.initialize();
   }
@@ -110,7 +108,7 @@ export class AuthService {
 
       if (session?.user) {
         // Load user profile
-        const profile = await this.db.getProfile(session.user.id);
+        const profile = await this.getProfile(session.user.id);
         authUser = {
           ...session.user,
           profile: profile || undefined
@@ -344,7 +342,7 @@ export class AuthService {
       this.updateState({ loading: true });
 
       // Update profile in database
-      const profile = await this.db.updateProfile(user.id, {
+      const profile = await this.updateProfile(user.id, {
         full_name: data.fullName,
         research_interests: data.researchInterests,
         expertise_areas: data.expertiseAreas,
@@ -392,7 +390,7 @@ export class AuthService {
 
       // Update profile email
       if (data.user) {
-        await this.db.updateProfile(data.user.id, {
+        await this.updateProfile(data.user.id, {
           email: newEmail
         });
       }
@@ -649,6 +647,45 @@ export class AuthService {
 
     } catch (error) {
       return { activities: [], error: error as Error };
+    }
+  }
+
+  /**
+   * Get user profile
+   */
+  private async getProfile(userId: string): Promise<DbProfile | null> {
+    try {
+      const { data, error } = await this.supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    } catch (error) {
+      console.error('Error getting profile:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Update user profile
+   */
+  private async updateProfile(userId: string, updates: Partial<DbProfile>): Promise<DbProfile> {
+    try {
+      const { data, error } = await this.supabase
+        .from('profiles')
+        .update(updates)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
     }
   }
 }

@@ -151,6 +151,24 @@ export class HierarchicalAbstractionEngine {
   private conceptualBridges: Map<string, ConceptualBridge> = new Map();
 
   /**
+   * Initialize the hierarchical abstraction engine
+   */
+  public async initialize(): Promise<void> {
+    try {
+      // Initialize engine state
+      this.abstractionLevels.clear();
+      this.abstractConcepts.clear();
+      this.hierarchicalStructures.clear();
+      this.conceptualBridges.clear();
+      
+      console.log('Hierarchical Abstraction Engine initialized');
+    } catch (error) {
+      console.error('Failed to initialize Hierarchical Abstraction Engine:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Build hierarchical abstraction from graph data
    */
   public buildHierarchicalAbstraction(

@@ -109,6 +109,34 @@ export class HypothesisCompetitionFramework {
   private evolutionHistory: Map<string, HypothesisEvolution> = new Map();
 
   /**
+   * Initialize the hypothesis competition framework
+   */
+  public async initialize(): Promise<void> {
+    try {
+      // Initialize framework state
+      this.hypotheses.clear();
+      this.competitionHistory = [];
+      this.evidenceWeights.clear();
+      this.evolutionHistory.clear();
+      
+      console.log('Hypothesis Competition Framework initialized');
+    } catch (error) {
+      console.error('Failed to initialize Hypothesis Competition Framework:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cleanup method
+   */
+  public cleanup(): void {
+    this.hypotheses.clear();
+    this.competitionHistory = [];
+    this.evidenceWeights.clear();
+    this.evolutionHistory.clear();
+  }
+
+  /**
    * Register a new hypothesis in the competition
    */
   public registerHypothesis(hypothesis: Hypothesis): {

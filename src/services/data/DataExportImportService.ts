@@ -6,7 +6,6 @@
 import { DatabaseService } from '../database/DatabaseService';
 import { GraphDataService } from '../database/GraphDataService';
 import { GraphData } from '@/types/asrGotTypes';
-import JSZip from 'jszip';
 
 export interface ExportOptions {
   format: 'json' | 'csv' | 'xlsx' | 'xml' | 'archive';
@@ -106,6 +105,21 @@ export class DataExportImportService {
   constructor() {
     this.db = new DatabaseService();
     this.graphService = new GraphDataService();
+  }
+
+  /**
+   * Initialize the data export/import service
+   */
+  public async initialize(): Promise<void> {
+    try {
+      // Initialize database connections
+      await this.db.initialize();
+      
+      console.log('Data Export/Import Service initialized');
+    } catch (error) {
+      console.error('Failed to initialize Data Export/Import Service:', error);
+      throw error;
+    }
   }
 
   /**

@@ -245,6 +245,25 @@ export class FalsifiabilityValidator {
   private falsificationResults: Map<string, FalsificationResult> = new Map();
 
   /**
+   * Initialize the falsifiability validator
+   */
+  public async initialize(): Promise<void> {
+    try {
+      // Initialize validator state
+      this.assessments.clear();
+      this.testabilityDimensions.clear();
+      this.predictionFrameworks.clear();
+      this.validationExperiments.clear();
+      this.falsificationResults.clear();
+      
+      console.log('Falsifiability Validator initialized');
+    } catch (error) {
+      console.error('Failed to initialize Falsifiability Validator:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Comprehensive falsifiability assessment of claims and hypotheses
    */
   public assessFalsifiability(

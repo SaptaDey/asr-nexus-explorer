@@ -143,6 +143,23 @@ export class KnowledgeGapDetector {
   private gapFillStrategies: Map<string, GapFillStrategy> = new Map();
   
   /**
+   * Initialize the knowledge gap detector
+   */
+  public async initialize(): Promise<void> {
+    try {
+      // Initialize detector state
+      this.detectedGaps.clear();
+      this.placeholderNodes.clear();
+      this.gapFillStrategies.clear();
+      
+      console.log('Knowledge Gap Detector initialized');
+    } catch (error) {
+      console.error('Failed to initialize Knowledge Gap Detector:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Comprehensive gap detection across multiple dimensions
    */
   public detectKnowledgeGaps(

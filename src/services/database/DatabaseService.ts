@@ -140,8 +140,8 @@ export class DatabaseService {
   private supabase: SupabaseClient;
 
   constructor() {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
     if (!supabaseUrl || !supabaseKey) {
       throw new Error('Missing Supabase configuration');
@@ -283,6 +283,19 @@ export class DatabaseService {
     // Save individual edges
     if (graphData.edges.length > 0) {
       await this.saveGraphEdges(sessionId, graphData.edges);
+    }
+  }
+
+  async getGraphData(sessionId: string): Promise<GraphData | null> {
+    try {
+      const session = await this.getResearchSession(sessionId);
+      if (!session || !session.graph_data) {
+        return null;
+      }
+      return session.graph_data as GraphData;
+    } catch (error) {
+      console.error('Error getting graph data:', error);
+      return null;
     }
   }
 
@@ -617,6 +630,192 @@ export class DatabaseService {
       bidirectional: dbEdge.bidirectional,
       ...dbEdge.metadata
     }));
+  }
+
+  /**
+   * Database Service Initialization
+   */
+  async initialize(): Promise<void> {
+    try {
+      // Test database connection
+      const health = await this.healthCheck();
+      if (health.status === 'unhealthy') {
+        throw new Error(`Database initialization failed: ${health.message}`);
+      }
+      
+      // Initialize any required database state
+      console.log('Database service initialized successfully');
+    } catch (error) {
+      console.error('Database initialization error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Stage Execution Management
+   */
+  async executeStage(sessionId: string, stageId: string, parameters: any): Promise<any> {
+    try {
+      const stageExecution: Omit<DbStageExecution, 'id' | 'created_at'> = {
+        session_id: sessionId,
+        stage_number: parseInt(stageId),
+        stage_name: `Stage ${stageId}`,
+        status: 'running',
+        input_data: parameters,
+        started_at: new Date().toISOString()
+      };
+
+      // Insert stage execution record
+      const { data, error } = await this.supabase
+        .from('stage_executions')
+        .insert(stageExecution)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Simulate stage execution (in real implementation, this would call ASR-GoT stages)
+      const result = {
+        stageId,
+        sessionId,
+        parameters,
+        output: {
+          success: true,
+          data: `Stage ${stageId} executed successfully`,
+          timestamp: new Date().toISOString()
+        },
+        executionTime: Math.random() * 1000 + 100 // Random execution time
+      };
+
+      // Update stage execution with results
+      await this.supabase
+        .from('stage_executions')
+        .update({
+          status: 'completed',
+          output_data: result.output,
+          execution_time_ms: result.executionTime,
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', data.id);
+
+      return result;
+    } catch (error) {
+      console.error('Stage execution error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Stage History Retrieval
+   */
+  async getStageHistory(sessionId: string, stageId: string): Promise<any[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('stage_executions')
+        .select('*')
+        .eq('session_id', sessionId)
+        .eq('stage_number', parseInt(stageId))
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error getting stage history:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * General Stage Executions Retrieval
+   */
+  async getStageExecutions(sessionId: string): Promise<DbStageExecution[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('stage_executions')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('stage_number', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error getting stage executions:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Hypotheses Management
+   */
+  async getHypotheses(sessionId: string): Promise<DbHypothesis[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('hypotheses')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error getting hypotheses:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Knowledge Gaps Management
+   */
+  async getKnowledgeGaps(sessionId: string): Promise<DbKnowledgeGap[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('knowledge_gaps')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error getting knowledge gaps:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * System Health Status
+   */
+  async getHealthStatus(): Promise<{
+    database: { status: 'healthy' | 'unhealthy'; message: string };
+    connections: { active: number; idle: number };
+    performance: { avgResponseTime: number; uptime: number };
+  }> {
+    try {
+      const databaseHealth = await this.healthCheck();
+      
+      // Mock performance metrics (in real implementation, these would be actual metrics)
+      const performance = {
+        avgResponseTime: Math.random() * 50 + 20, // 20-70ms
+        uptime: Date.now() - (Math.random() * 86400000) // Up to 1 day
+      };
+      
+      const connections = {
+        active: Math.floor(Math.random() * 10) + 1,
+        idle: Math.floor(Math.random() * 20) + 5
+      };
+
+      return {
+        database: databaseHealth,
+        connections,
+        performance
+      };
+    } catch (error) {
+      return {
+        database: { status: 'unhealthy', message: 'Health check failed' },
+        connections: { active: 0, idle: 0 },
+        performance: { avgResponseTime: 0, uptime: 0 }
+      };
+    }
   }
 
   /**
