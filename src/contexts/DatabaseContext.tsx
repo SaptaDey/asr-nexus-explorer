@@ -83,11 +83,19 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
       // Initialize core database service
       await db.initialize();
       
-      // Initialize performance optimization
-      await performanceOptimizationService.initialize();
+      // Initialize performance optimization with error handling
+      try {
+        await performanceOptimizationService.initialize();
+      } catch (error) {
+        console.warn('Performance optimization initialization failed:', error);
+      }
       
-      // Initialize data export/import service
-      await dataExportImportService.initialize();
+      // Initialize data export/import service with error handling
+      try {
+        await dataExportImportService.initialize();
+      } catch (error) {
+        console.warn('Data export/import initialization failed:', error);
+      }
       
       setIsInitialized(true);
       setConnectionStatus('connected');
