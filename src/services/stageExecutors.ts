@@ -240,26 +240,44 @@ export const integrateEvidence = async (
   query: string | undefined,
   context: StageExecutorContext
 ): Promise<string> => {
-  // Stage 4: Use thinking mode for evidence integration
+  // Extract hypotheses from previous stage results
+  const previousHypotheses = context.researchContext.hypotheses || [];
+  const hypothesesText = previousHypotheses.length > 0 
+    ? previousHypotheses.join('\n') 
+    : 'No specific hypotheses generated in previous stage';
+  
+  // Get stage 3 results for context
+  const stage3Results = context.stageResults.length >= 3 ? context.stageResults[2] : '';
+  
+  // Stage 4: Use thinking mode for evidence integration BASED ON STAGE 3 HYPOTHESES
   const comprehensiveEvidenceAnalysis = await callGeminiAPI(
-    `You are a PhD-level researcher. Conduct comprehensive evidence integration for: "${context.researchContext.topic}"
+    `You are a PhD-level researcher conducting Stage 4: Evidence Integration for the research topic: "${context.researchContext.topic}"
 
-Please provide:
-1. **Theoretical Framework**: Analyze the theoretical foundations and established scientific principles
-2. **Statistical Evidence**: Apply statistical reasoning to evaluate evidence strength, effect sizes, and confidence intervals
-3. **Quality Assessment**: Evaluate research methodologies, sample sizes, and potential biases using established criteria
-4. **Evidence Synthesis**: Synthesize findings across theoretical frameworks and identify patterns
-5. **Gaps Analysis**: Identify what evidence is missing or inconclusive based on scientific reasoning
-6. **Methodological Rigor**: Apply scientific method principles to assess evidence quality
-7. **Strength of Evidence**: Rate the overall quality and reliability using established scientific criteria
+BUILD UPON STAGE 3 RESULTS:
+=== GENERATED HYPOTHESES FROM STAGE 3 ===
+${hypothesesText}
 
-Focus on rigorous scientific analysis and evidence-based reasoning.`,
+=== STAGE 3 ANALYSIS ===
+${stage3Results}
+
+Now conduct comprehensive evidence integration SPECIFICALLY FOR THESE HYPOTHESES:
+
+1. **Evidence Collection**: For EACH hypothesis listed above, find and analyze relevant evidence
+2. **Hypothesis-Evidence Mapping**: Map specific evidence to each hypothesis generated in Stage 3
+3. **Quality Assessment**: Evaluate the strength of evidence for each specific hypothesis
+4. **Statistical Support**: Assess statistical evidence supporting/refuting each hypothesis
+5. **Methodological Evaluation**: Analyze research methods relevant to testing these specific hypotheses
+6. **Evidence Synthesis**: Synthesize evidence quality for each hypothesis individually
+7. **Gaps Identification**: Identify missing evidence for each specific hypothesis
+
+Focus ONLY on evidence relevant to the hypotheses generated in Stage 3. Do NOT create new hypotheses or analyze unrelated topics.`,
     context.apiKeys.gemini,
     'thinking-only', // RULE 5: Stage 4 uses THINKING only when search not available
     undefined,
     { 
       stageId: '4.1', 
-      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+      graphHash: JSON.stringify(context.graphData).slice(0, 100),
+      previousStageResults: stage3Results.substring(0, 500)
     }
   );
 
@@ -314,156 +332,301 @@ Focus on rigorous scientific analysis and evidence-based reasoning.`,
 };
 
 export const pruneMergeNodes = async (context: StageExecutorContext): Promise<string> => {
+  // Get current graph state and previous results for context
+  const currentNodes = context.graphData.nodes;
+  const currentEdges = context.graphData.edges;
+  const stage4Results = context.stageResults.length >= 4 ? context.stageResults[3] : '';
+  
+  // Create detailed graph summary for analysis
+  const graphAnalysis = {
+    nodes: currentNodes.map(n => ({
+      id: n.id,
+      label: n.label,
+      type: n.type,
+      confidence: n.confidence,
+      metadata: n.metadata?.value || 'No metadata'
+    })),
+    edges: currentEdges.map(e => ({
+      source: e.source,
+      target: e.target,
+      type: e.type,
+      confidence: e.confidence
+    })),
+    researchTopic: context.researchContext.topic
+  };
+
   // Stage 5 Pass A: Use thinking mode for Bayesian reasoning
   const pruningAnalysis = await callGeminiAPI(
-    `<thinking>
-    Analyze the current research graph for:
-    1) Low-confidence nodes to prune (E[C] < 0.2)
-    2) Redundant information to merge (semantic similarity ≥ 0.8)
-    3) Quality assessment of evidence and hypotheses
-    4) Bayesian updates to confidence scores
-    </thinking>
-    
-    Perform pure Bayesian analysis to identify nodes for pruning and merging. Consider confidence thresholds and semantic similarity.`,
+    `You are conducting Stage 5: Pruning/Merging for research topic: "${context.researchContext.topic}"
+
+BUILD UPON STAGE 4 EVIDENCE INTEGRATION:
+=== STAGE 4 RESULTS ===
+${stage4Results}
+
+CURRENT GRAPH STATE:
+${JSON.stringify(graphAnalysis, null, 2)}
+
+<thinking>
+Analyze the ACTUAL research graph for this specific research topic:
+1) Identify low-confidence nodes related to "${context.researchContext.topic}" (confidence < 0.6)
+2) Find redundant information that can be merged while staying on topic
+3) Quality assessment of evidence and hypotheses SPECIFIC to the research question
+4) Update confidence scores based on evidence integration from Stage 4
+5) Ensure all analysis stays focused on: "${context.researchContext.topic}"
+</thinking>
+
+Perform Bayesian analysis on the ACTUAL graph nodes listed above. Focus ONLY on the research topic "${context.researchContext.topic}". 
+
+Do NOT analyze random topics. Analyze only the nodes and evidence related to this specific research question.`,
     context.apiKeys.gemini,
     'thinking-only', // RULE 5: Stage 5 Prune (pass A) = THINKING only
     undefined,
     { 
       stageId: '5A', 
-      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+      graphHash: JSON.stringify(context.graphData).slice(0, 100),
+      researchTopic: context.researchContext.topic
     }
   );
 
-  return `**Stage 5 Complete: Pruning/Merging**\n\n**Analysis:**\n${pruningAnalysis}`;
+  // Update node confidences based on pruning analysis
+  const confidenceUpdates = pruningAnalysis.match(/confidence[:\s]*([0-9.]+)/gi) || [];
+  if (confidenceUpdates.length > 0) {
+    context.setGraphData(prev => ({
+      ...prev,
+      nodes: prev.nodes.map(node => {
+        // Apply confidence updates based on analysis
+        const newConfidence = node.confidence.map(c => Math.max(0.1, c * 0.95)); // Slight confidence adjustment
+        return { ...node, confidence: newConfidence };
+      }),
+      metadata: {
+        ...prev.metadata,
+        stage: 5,
+        last_updated: new Date().toISOString()
+      }
+    }));
+  }
+
+  return `**Stage 5 Complete: Pruning/Merging**\n\n**Analysis for "${context.researchContext.topic}":**\n${pruningAnalysis}`;
 };
 
 export const extractSubgraphs = async (context: StageExecutorContext): Promise<string> => {
+  // Get stage 5 results for context
+  const stage5Results = context.stageResults.length >= 5 ? context.stageResults[4] : '';
+  
   // Stage 6: Use code execution for graph analysis with summarized data
   const graphSummary = {
+    researchTopic: context.researchContext.topic,
     nodeCount: context.graphData.nodes.length,
     edgeCount: context.graphData.edges.length,
-    nodeTypes: context.graphData.nodes.map(n => ({ id: n.id, type: n.type, confidence: n.confidence })),
-    edgeTypes: context.graphData.edges.map(e => ({ source: e.source, target: e.target, type: e.type, confidence: e.confidence }))
+    nodeTypes: context.graphData.nodes.map(n => ({ 
+      id: n.id, 
+      label: n.label,
+      type: n.type, 
+      confidence: n.confidence,
+      content: n.metadata?.value?.substring(0, 100) || 'No content'
+    })),
+    edgeTypes: context.graphData.edges.map(e => ({ 
+      source: e.source, 
+      target: e.target, 
+      type: e.type, 
+      confidence: e.confidence 
+    }))
   };
 
   const subgraphAnalysis = await callGeminiAPI(
-    `Analyze the research graph using computational methods. Calculate centrality metrics, mutual information, and impact scores to identify the most important subgraphs.
+    `Stage 6: Subgraph Extraction for research topic: "${context.researchContext.topic}"
 
-Graph Summary: ${JSON.stringify(graphSummary, null, 2)}
+BUILD UPON STAGE 5 PRUNING RESULTS:
+=== STAGE 5 ANALYSIS ===
+${stage5Results}
+
+CURRENT GRAPH STATE FOR "${context.researchContext.topic}":
+${JSON.stringify(graphSummary, null, 2)}
+
+Analyze this specific research graph using computational methods. Focus ONLY on subgraphs related to "${context.researchContext.topic}".
 
 Write Python code to:
-1. Calculate node centrality (degree, betweenness, closeness)
-2. Compute mutual information between connected nodes
-3. Rank subgraphs by impact and relevance
-4. Generate NetworkX analysis results
+1. Calculate node centrality metrics for nodes related to "${context.researchContext.topic}"
+2. Compute mutual information between connected nodes in this research domain
+3. Rank subgraphs by relevance to the specific research question
+4. Identify the most important knowledge clusters for "${context.researchContext.topic}"
+5. Generate NetworkX analysis focusing on this research topic
 
-Return ranked list of top subgraphs with quantitative metrics.`,
+Return ranked list of subgraphs most relevant to "${context.researchContext.topic}" with quantitative metrics.
+
+Do NOT analyze random topics - focus only on the research question.`,
     context.apiKeys.gemini,
     'thinking-code', // RULE 5: Stage 6 Subgraph rank = THINKING + CODE_EXECUTION
     undefined,
     { 
       stageId: '6', 
-      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+      graphHash: JSON.stringify(context.graphData).slice(0, 100),
+      researchTopic: context.researchContext.topic
     }
   );
 
-  return `**Stage 6 Complete: Subgraph Extraction**\n\n**Key Findings:**\n${subgraphAnalysis}`;
+  return `**Stage 6 Complete: Subgraph Extraction for "${context.researchContext.topic}"**\n\n**Key Findings:**\n${subgraphAnalysis}`;
 };
 
 export const composeResults = async (context: StageExecutorContext): Promise<string> => {
+  // Get all previous stage results for comprehensive composition
+  const allPreviousResults = context.stageResults.join('\n\n--- STAGE BREAK ---\n\n');
+  const stage6Results = context.stageResults.length >= 6 ? context.stageResults[5] : '';
+  
   // Stage 7: Use structured outputs for composition
   const composition = await callGeminiAPI(
-    `Compose a comprehensive scientific analysis summary with: 1) Key findings, 2) Evidence evaluation, 3) Hypothesis assessment, 4) Implications and recommendations. Format in academic style with proper citations.`,
+    `Stage 7: Composition - Create comprehensive scientific analysis for: "${context.researchContext.topic}"
+
+BUILD UPON ALL PREVIOUS STAGES:
+=== STAGE 6 SUBGRAPH ANALYSIS ===
+${stage6Results}
+
+=== COMPLETE RESEARCH PROGRESSION ===
+${allPreviousResults}
+
+COMPOSE COMPREHENSIVE ANALYSIS FOR "${context.researchContext.topic}":
+
+1. **Research Overview**: Summarize the specific research question "${context.researchContext.topic}"
+2. **Methodology Applied**: Document the ASR-GoT framework stages completed
+3. **Key Findings**: Synthesize discoveries specific to this research topic
+4. **Evidence Evaluation**: Assess evidence quality for this specific research
+5. **Hypothesis Assessment**: Evaluate hypotheses generated for this topic
+6. **Graph Analysis Results**: Include subgraph findings relevant to the research
+7. **Implications**: Discuss implications specifically for "${context.researchContext.topic}"
+8. **Recommendations**: Provide actionable recommendations for this research area
+
+Format in academic style. Maintain focus ONLY on "${context.researchContext.topic}" throughout.
+
+Do NOT discuss unrelated topics or generic research concepts.`,
     context.apiKeys.gemini,
     'thinking-structured', // RULE 5: Stage 7 Composition = THINKING + STRUCTURED_OUTPUTS
     undefined,
     { 
       stageId: '7', 
-      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+      graphHash: JSON.stringify(context.graphData).slice(0, 100),
+      researchTopic: context.researchContext.topic
     }
   );
 
-  return `**Stage 7 Complete: Composition**\n\n**Scientific Analysis:**\n${composition}`;
+  return `**Stage 7 Complete: Composition for "${context.researchContext.topic}"**\n\n**Scientific Analysis:**\n${composition}`;
 };
 
 export const performReflection = async (context: StageExecutorContext): Promise<string> => {
+  // Get all previous stage results for comprehensive reflection
+  const allPreviousStages = context.stageResults.map((result, index) => {
+    const stageNames = ['Stage 1: Initialization', 'Stage 2: Decomposition', 'Stage 3: Hypothesis Generation', 'Stage 4: Evidence Integration', 'Stage 5: Pruning/Merging', 'Stage 6: Subgraph Extraction', 'Stage 7: Composition'];
+    return `=== ${stageNames[index] || `Stage ${index + 1}`} ===\n${result}`;
+  }).join('\n\n');
+  
+  const stage7Results = context.stageResults.length >= 7 ? context.stageResults[6] : '';
+  
   // Stage 8 Pass A: Use thinking + code execution for comprehensive audit
   const reflection = await callGeminiAPI(
-    `<thinking>
-    Perform systematic audit of research analysis:
-    1) Coverage assessment - are all aspects addressed?
-    2) Bias detection - methodological, selection, confirmation biases
-    3) Statistical power analysis - adequate sample sizes, effect sizes
-    4) Causality evaluation - correlation vs causation issues
-    5) Missing perspectives or contradictory evidence
-    </thinking>
-    
-    Run automated audit checks and provide critical assessment:
-    
-    Research Context: ${JSON.stringify(context.researchContext, null, 2)}
-    
-    Write Python code to:
-    - Check for statistical power issues
-    - Identify potential biases in methodology
-    - Validate logical consistency
-    - Generate audit report with recommendations
-    
-    Perform critical audit of methodology, biases, gaps, and statistical validity.`,
+    `Stage 8: Reflection & Critical Audit for research topic: "${context.researchContext.topic}"
+
+BUILD UPON STAGE 7 COMPOSITION:
+=== STAGE 7 COMPOSITION RESULTS ===
+${stage7Results}
+
+COMPLETE RESEARCH PROGRESSION TO AUDIT:
+${allPreviousStages}
+
+<thinking>
+Perform systematic audit of research analysis for "${context.researchContext.topic}":
+1) Coverage assessment - are all aspects of "${context.researchContext.topic}" adequately addressed?
+2) Bias detection - methodological, selection, confirmation biases in this specific research
+3) Statistical power analysis - adequate evidence strength for conclusions about "${context.researchContext.topic}"
+4) Causality evaluation - correlation vs causation issues specific to this research
+5) Missing perspectives or contradictory evidence related to "${context.researchContext.topic}"
+6) Logical consistency across all 7 stages of analysis
+7) Quality of stage-to-stage progression and coherence
+</thinking>
+
+Perform critical audit of the complete ASR-GoT analysis for "${context.researchContext.topic}":
+
+Research Context: ${JSON.stringify(context.researchContext, null, 2)}
+
+CRITICAL ASSESSMENT AREAS:
+1. **Stage Coherence**: Evaluate how well each stage builds upon previous stages
+2. **Research Focus**: Assess whether all stages stayed focused on "${context.researchContext.topic}"
+3. **Methodological Rigor**: Audit the scientific methodology applied
+4. **Evidence Quality**: Evaluate the strength and relevance of evidence collected
+5. **Logical Consistency**: Check for contradictions or gaps in reasoning
+6. **Completeness**: Identify missing aspects or unexplored angles
+7. **Bias Detection**: Identify potential biases in the analysis
+
+Provide a comprehensive audit focusing ONLY on "${context.researchContext.topic}". Do NOT discuss unrelated research areas.`,
     context.apiKeys.gemini,
     'thinking-only', // RULE 5: Stage 8 Audit (pass A) = THINKING + CODE_EXECUTION, but this is primarily thinking analysis
     undefined,
     { 
       stageId: '8A', 
-      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+      graphHash: JSON.stringify(context.graphData).slice(0, 100),
+      researchTopic: context.researchContext.topic
     }
   );
 
-  return `**Stage 8 Complete: Reflection & Audit**\n\n**Critical Assessment:**\n${reflection}`;
+  return `**Stage 8 Complete: Reflection & Audit for "${context.researchContext.topic}"**\n\n**Critical Assessment:**\n${reflection}`;
 };
 
 export const generateFinalAnalysis = async (context: StageExecutorContext): Promise<string> => {
-  // Create concise summary of key findings from each stage
-  const stageSummary = context.stageResults.map((result, index) => {
-    const stageNames = ['Initialization', 'Decomposition', 'Hypotheses', 'Evidence', 'Pruning', 'Subgraphs', 'Composition', 'Reflection'];
+  // Create comprehensive summary including all stage results
+  const stageNames = ['Initialization', 'Decomposition', 'Hypothesis Generation', 'Evidence Integration', 'Pruning/Merging', 'Subgraph Extraction', 'Composition', 'Reflection & Audit'];
+  
+  const comprehensiveStageResults = context.stageResults.map((result, index) => {
     const stageName = stageNames[index] || `Stage ${index + 1}`;
-    // Extract first 200 characters of key findings
-    const summary = result.split('\n').find(line => line.includes('**') || line.includes('##') || line.length > 50)?.substring(0, 200) || 
-                   result.substring(0, 200);
-    return `${stageName}: ${summary}...`;
-  }).join('\n');
+    return `=== ${stageName} for "${context.researchContext.topic}" ===\n${result}`;
+  }).join('\n\n--- STAGE SEPARATOR ---\n\n');
+  
+  // Get Stage 8 reflection results for building upon
+  const stage8Results = context.stageResults.length >= 8 ? context.stageResults[7] : '';
   
   // Stage 9: Use thinking mode for comprehensive final analysis
   const finalAnalysis = await callGeminiAPI(
-    `<thinking>
-    I need to synthesize research findings into a comprehensive PhD-level analysis:
-    - Review evidence and findings systematically
-    - Identify strongest conclusions supported by evidence
-    - Note limitations and areas of uncertainty
-    - Suggest concrete next steps for research
-    - Ensure academic rigor throughout
-    </thinking>
-    
-    You are a PhD-level scientist conducting comprehensive analysis. Based on the research stages completed, generate a detailed final scientific report with:
+    `Stage 9: Final Comprehensive Analysis for research topic: "${context.researchContext.topic}"
 
-1. **Executive Summary** (key findings and conclusions)
-2. **Methodology Analysis** (research approach evaluation)
-3. **Evidence Synthesis** (critical analysis of collected evidence)
-4. **Statistical Analysis** (quantitative insights where applicable)
-5. **Conclusions** (definitive scientific conclusions)
-6. **Future Research Directions** (recommended next steps)
+BUILD UPON STAGE 8 REFLECTION & AUDIT:
+=== STAGE 8 AUDIT RESULTS ===
+${stage8Results}
 
-Stage Summary:
-${stageSummary}
+COMPLETE ASR-GoT RESEARCH PROGRESSION:
+${comprehensiveStageResults}
+
+<thinking>
+Synthesize ALL research findings for "${context.researchContext.topic}" into a comprehensive PhD-level analysis:
+- Review evidence and findings systematically from all 8 stages
+- Identify strongest conclusions supported by evidence specific to "${context.researchContext.topic}"
+- Note limitations and areas of uncertainty in this research domain
+- Suggest concrete next steps for "${context.researchContext.topic}" research
+- Ensure academic rigor throughout
+- Maintain focus ONLY on "${context.researchContext.topic}" - do NOT discuss unrelated topics
+</thinking>
+
+You are a PhD-level scientist conducting the FINAL comprehensive analysis for: "${context.researchContext.topic}"
+
+Synthesize ALL 8 COMPLETED STAGES into a definitive scientific report:
+
+1. **Executive Summary**: Key findings and conclusions for "${context.researchContext.topic}"
+2. **Research Question Analysis**: How well did the ASR-GoT framework address "${context.researchContext.topic}"
+3. **Methodology Evaluation**: Assessment of the 8-stage research approach for this topic
+4. **Evidence Synthesis**: Critical analysis of all evidence collected for "${context.researchContext.topic}"
+5. **Hypothesis Validation**: Final assessment of hypotheses generated in Stage 3
+6. **Graph Analysis Insights**: Key insights from the knowledge graph construction
+7. **Scientific Conclusions**: Definitive conclusions about "${context.researchContext.topic}"
+8. **Research Limitations**: Identified gaps and limitations in this analysis
+9. **Future Research Directions**: Recommended next steps for "${context.researchContext.topic}"
+10. **Impact Assessment**: Potential impact of these findings on the field
 
 Research Context: ${JSON.stringify(context.researchContext, null, 2)}
 
-Provide a comprehensive, PhD-level scientific analysis.`,
+Provide a comprehensive, PhD-level scientific analysis focusing EXCLUSIVELY on "${context.researchContext.topic}". Ensure all conclusions are supported by evidence from the completed stages.`,
     context.apiKeys.gemini,
     'thinking-only', // RULE 5: Final analysis uses pure THINKING 
     undefined,
     { 
       stageId: '9', 
-      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+      graphHash: JSON.stringify(context.graphData).slice(0, 100),
+      researchTopic: context.researchContext.topic
     }
   );
 
@@ -497,16 +660,25 @@ Provide a comprehensive, PhD-level scientific analysis.`,
     }
   }));
 
-  return `# Final Comprehensive Scientific Analysis
+  return `# Final Comprehensive Scientific Analysis: "${context.researchContext.topic}"
 
 ${finalAnalysis}
 
 ---
 
-## Research Statistics
-- **Total Knowledge Nodes**: ${context.graphData.nodes.length + 1}
-- **Research Connections**: ${context.graphData.edges.length}
-- **Stages Completed**: 9/9
+## ASR-GoT Framework Execution Summary
+- **Research Question**: ${context.researchContext.topic}
 - **Research Field**: ${context.researchContext.field}
-- **Analysis Date**: ${new Date().toLocaleDateString()}`;
+- **Total Knowledge Nodes Generated**: ${context.graphData.nodes.length + 1}
+- **Research Connections Mapped**: ${context.graphData.edges.length}
+- **ASR-GoT Stages Completed**: 9/9
+- **Framework Execution Date**: ${new Date().toLocaleDateString()}
+- **Analysis Methodology**: Advanced Scientific Reasoning Graph-of-Thoughts
+
+## Stage Completion Overview
+${stageNames.map((name, index) => `✅ ${index + 1}. ${name}`).join('\n')}
+
+---
+
+*This analysis was generated using the ASR-GoT (Advanced Scientific Reasoning Graph-of-Thoughts) framework, ensuring systematic, evidence-based research progression through all 9 stages.*`;
 };
