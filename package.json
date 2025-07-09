@@ -8,7 +8,14 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "test": "echo \"No tests configured\" && exit 0",
+    "deploy": "node scripts/deploy.js",
+    "deploy:validate": "node scripts/deploy.js validate",
+    "deploy:migrate": "node scripts/deploy.js migrate",
+    "deploy:build": "node scripts/deploy.js build",
+    "deploy:verify": "node scripts/deploy.js verify"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
