@@ -1,9 +1,9 @@
 
+@import './styles/TreeStyles.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import './styles/TreeStyles.css';
 
 /* Custom Animations for Enhanced UI */
 @keyframes gradient-text {

@@ -342,7 +342,7 @@ export class AuthService {
       this.updateState({ loading: true });
 
       // Update profile in database
-      const profile = await this.updateProfile(user.id, {
+      const profile = await this.updateProfileDirect(user.id, {
         full_name: data.fullName,
         research_interests: data.researchInterests,
         expertise_areas: data.expertiseAreas,
@@ -390,7 +390,7 @@ export class AuthService {
 
       // Update profile email
       if (data.user) {
-        await this.updateProfile(data.user.id, {
+        await this.updateProfileDirect(data.user.id, {
           email: newEmail
         });
       }
@@ -670,9 +670,9 @@ export class AuthService {
   }
 
   /**
-   * Update user profile
+   * Update user profile directly
    */
-  private async updateProfile(userId: string, updates: Partial<DbProfile>): Promise<DbProfile> {
+  private async updateProfileDirect(userId: string, updates: Partial<DbProfile>): Promise<DbProfile> {
     try {
       const { data, error } = await this.supabase
         .from('profiles')

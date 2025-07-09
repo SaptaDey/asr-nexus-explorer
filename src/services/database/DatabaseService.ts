@@ -286,18 +286,6 @@ export class DatabaseService {
     }
   }
 
-  async getGraphData(sessionId: string): Promise<GraphData | null> {
-    try {
-      const session = await this.getResearchSession(sessionId);
-      if (!session || !session.graph_data) {
-        return null;
-      }
-      return session.graph_data as GraphData;
-    } catch (error) {
-      console.error('Error getting graph data:', error);
-      return null;
-    }
-  }
 
   async saveGraphNodes(sessionId: string, nodes: GraphNode[]): Promise<void> {
     const dbNodes = nodes.map(node => ({
@@ -725,62 +713,7 @@ export class DatabaseService {
     }
   }
 
-  /**
-   * General Stage Executions Retrieval
-   */
-  async getStageExecutions(sessionId: string): Promise<DbStageExecution[]> {
-    try {
-      const { data, error } = await this.supabase
-        .from('stage_executions')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('stage_number', { ascending: true });
 
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error getting stage executions:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Hypotheses Management
-   */
-  async getHypotheses(sessionId: string): Promise<DbHypothesis[]> {
-    try {
-      const { data, error } = await this.supabase
-        .from('hypotheses')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error getting hypotheses:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Knowledge Gaps Management
-   */
-  async getKnowledgeGaps(sessionId: string): Promise<DbKnowledgeGap[]> {
-    try {
-      const { data, error } = await this.supabase
-        .from('knowledge_gaps')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error getting knowledge gaps:', error);
-      throw error;
-    }
-  }
 
   /**
    * System Health Status

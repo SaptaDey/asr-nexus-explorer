@@ -574,8 +574,8 @@ export class HypothesisCompetitionFramework {
   private calculateTheoreticalCoherence(hypothesis: Hypothesis): number {
     // Simplified coherence calculation based on peer evaluations
     const peerScores = hypothesis.metadata.peer_evaluations
-      .filter(eval => eval.criteria === 'theoretical_coherence')
-      .map(eval => eval.score);
+      .filter(evaluation => evaluation.criteria === 'theoretical_coherence')
+      .map(evaluation => evaluation.score);
 
     return peerScores.length > 0 ? 
       peerScores.reduce((sum, score) => sum + score, 0) / peerScores.length : 0.5;
@@ -630,7 +630,7 @@ export class HypothesisCompetitionFramework {
   }
 
   private calculateControversyLevel(hypothesis: Hypothesis): number {
-    const peerScores = hypothesis.metadata.peer_evaluations.map(eval => eval.score);
+    const peerScores = hypothesis.metadata.peer_evaluations.map(evaluation => evaluation.score);
     if (peerScores.length < 2) return 0;
 
     const mean = peerScores.reduce((sum, score) => sum + score, 0) / peerScores.length;
