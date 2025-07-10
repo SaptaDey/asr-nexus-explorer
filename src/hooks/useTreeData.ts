@@ -55,7 +55,7 @@ const calculateBotanicalProps = (node: TreeNode, stage: number): BotanicalProper
   
   // Color based on disciplinary tags or confidence
   const disciplinaryHue = node.metadata?.disciplinary_tags?.[0] ? 
-    getDisciplinaryHue(node.metadata.disciplinary_tags[0]) : 
+    getDisciplinaryHue(node.metadata.disciplinary_tags[0], avgConfidence) : 
     getConfidenceColor(avgConfidence);
   
   return {
@@ -68,18 +68,38 @@ const calculateBotanicalProps = (node: TreeNode, stage: number): BotanicalProper
   };
 };
 
-// Disciplinary tag to hue mapping
-const getDisciplinaryHue = (tag: string): string => {
-  const hueMap: Record<string, string> = {
-    'computer-science': 'hsl(240, 100%, 70%)',
-    'biology': 'hsl(120, 80%, 60%)',
-    'physics': 'hsl(30, 90%, 65%)',
-    'mathematics': 'hsl(280, 85%, 70%)',
-    'psychology': 'hsl(340, 75%, 65%)',
-    'economics': 'hsl(60, 80%, 55%)',
-    'default': 'hsl(var(--primary))'
+// Disciplinary tag to hue mapping with graduated palette
+const getDisciplinaryHue = (tag: string, confidence: number = 0.5): string => {
+  // Base hue values for different disciplines
+  const disciplinaryHues: Record<string, number> = {
+    'computer-science': 240,     // Blue
+    'artificial-intelligence': 260, // Purple-blue
+    'machine-learning': 280,     // Purple
+    'biology': 120,              // Green
+    'medicine': 140,             // Green-cyan
+    'biochemistry': 160,         // Cyan
+    'physics': 30,               // Orange
+    'chemistry': 50,             // Yellow-orange
+    'mathematics': 280,          // Purple
+    'statistics': 300,           // Magenta
+    'psychology': 340,           // Pink-red
+    'neuroscience': 20,          // Red-orange
+    'economics': 60,             // Yellow
+    'finance': 80,               // Yellow-green
+    'sociology': 180,            // Cyan-blue
+    'anthropology': 200,         // Blue-cyan
+    'philosophy': 220,           // Blue
+    'linguistics': 100,          // Green-yellow
+    'default': 190               // Light blue
   };
-  return hueMap[tag] || hueMap.default;
+  
+  const baseHue = disciplinaryHues[tag] || disciplinaryHues.default;
+  
+  // Adjust saturation and lightness based on confidence
+  const saturation = Math.max(40, Math.min(100, confidence * 120 + 20));
+  const lightness = Math.max(30, Math.min(80, confidence * 40 + 40));
+  
+  return `hsl(${baseHue}, ${saturation}%, ${lightness}%)`;
 };
 
 // Confidence to color mapping

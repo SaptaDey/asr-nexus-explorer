@@ -86,39 +86,136 @@ export const BotanicalElement: React.FC<BotanicalElementsProps> = ({
       );
       
     case 'bud':
+      const evidenceCount = metadata?.evidence_count || 1;
+      const deltaC = metadata?.confidence_delta || 0.1;
+      
       return (
-        <animated.ellipse
-          rx="3"
-          ry="6"
-          fill="#90EE90"
-          stroke="#228B22"
-          strokeWidth="1"
+        <animated.g
           style={{
             transform: animations.evidenceSpring.scale.to((s: number) => `scale(${s})`),
-            filter: animations.evidenceSpring.pulse.to((p: number) => 
-              p > 0.5 ? 'drop-shadow(0 0 6px rgba(144, 238, 144, 0.8))' : 'none'
-            )
           }}
-        />
+        >
+          {/* Cambium rings - represent evidence accumulation */}
+          {Array.from({ length: Math.min(evidenceCount, 5) }, (_, i) => (
+            <animated.circle
+              key={`cambium-${i}`}
+              r={3 + i * 1.5}
+              fill="none"
+              stroke="#90EE90"
+              strokeWidth="0.5"
+              opacity={0.6 - i * 0.1}
+              style={{
+                transform: animations.evidenceSpring.pulse.to((p: number) => 
+                  `scale(${1 + p * 0.2})`
+                ),
+                filter: animations.evidenceSpring.pulse.to((p: number) => 
+                  p > 0.5 ? 'drop-shadow(0 0 3px rgba(144, 238, 144, 0.8))' : 'none'
+                )
+              }}
+            />
+          ))}
+          
+          {/* Main evidence bud */}
+          <animated.ellipse
+            rx="3"
+            ry="6"
+            fill="#90EE90"
+            stroke="#228B22"
+            strokeWidth="1"
+            style={{
+              filter: animations.evidenceSpring.pulse.to((p: number) => 
+                p > 0.5 ? 'drop-shadow(0 0 6px rgba(144, 238, 144, 0.8))' : 'none'
+              )
+            }}
+          />
+          
+          {/* Delta C indicator */}
+          {deltaC > 0.2 && (
+            <animated.text
+              x="8"
+              y="2"
+              fontSize="6"
+              fill="#228B22"
+              style={{
+                opacity: animations.evidenceSpring.pulse
+              }}
+            >
+              +{(deltaC * 100).toFixed(0)}%
+            </animated.text>
+          )}
+        </animated.g>
       );
       
     case 'leaf':
+      const impactScore = metadata?.impact_score || 0.5;
+      const leafSize = Math.max(0.5, Math.min(2.0, impactScore * 2));
+      const leafPath = `M0,${-8 * leafSize} Q${-4 * leafSize},${-4 * leafSize} 0,0 Q${4 * leafSize},${-4 * leafSize} 0,${-8 * leafSize}`;
+      
       return (
-        <animated.path
-          d="M0,-8 Q-4,-4 0,0 Q4,-4 0,-8"
-          fill="#32CD32"
-          stroke="#228B22"
-          strokeWidth="1"
+        <animated.g
           style={{
             transform: animations.leafSpring.scale.to((s: number) => `scale(${s})`),
-            filter: animations.leafSpring.jitter.to((j: number) => j > 0 ? 'blur(0.3px)' : 'none')
           }}
-        />
+        >
+          {/* Main leaf with impact-proportional sizing */}
+          <animated.path
+            d={leafPath}
+            fill="#32CD32"
+            stroke="#228B22"
+            strokeWidth="1"
+            style={{
+              filter: animations.leafSpring.jitter.to((j: number) => j > 0 ? 'blur(0.3px)' : 'none')
+            }}
+          />
+          
+          {/* Leaf veins for high-impact nodes */}
+          {impactScore > 0.7 && (
+            <animated.g
+              style={{
+                opacity: animations.leafSpring.scale.to((s: number) => s * 0.6)
+              }}
+            >
+              <path
+                d={`M0,${-2 * leafSize} L0,${-6 * leafSize}`}
+                stroke="#228B22"
+                strokeWidth="0.5"
+                fill="none"
+              />
+              <path
+                d={`M0,${-4 * leafSize} L${-2 * leafSize},${-6 * leafSize}`}
+                stroke="#228B22"
+                strokeWidth="0.3"
+                fill="none"
+              />
+              <path
+                d={`M0,${-4 * leafSize} L${2 * leafSize},${-6 * leafSize}`}
+                stroke="#228B22"
+                strokeWidth="0.3"
+                fill="none"
+              />
+            </animated.g>
+          )}
+          
+          {/* Impact score indicator */}
+          {impactScore > 0.8 && (
+            <animated.text
+              x="6"
+              y="-2"
+              fontSize="5"
+              fill="#228B22"
+              style={{
+                opacity: animations.leafSpring.scale
+              }}
+            >
+              ⭐
+            </animated.text>
+          )}
+        </animated.g>
       );
       
     case 'blossom':
-      const impactScore = metadata?.impact_score || 0;
-      return impactScore > 0.7 ? (
+      const blossomImpactScore = metadata?.impact_score || 0;
+      return blossomImpactScore > 0.7 ? (
         <animated.g
           style={{
             transform: animations.blossomSpring.petals.to((p: number) => `scale(${p})`)
@@ -155,15 +252,75 @@ export const BotanicalElement: React.FC<BotanicalElementsProps> = ({
       );
       
     case 'pollen':
+      const hasBiasFlags = metadata?.bias_flags?.length > 0;
+      const hasQualityIssues = metadata?.quality_issues?.length > 0;
+      const auditPassed = metadata?.audit_passed !== false;
+      
+      // Determine pollen color based on audit results
+      const getPollenColor = () => {
+        if (hasBiasFlags || hasQualityIssues || !auditPassed) {
+          return '#dc2626'; // Crimson for violations
+        }
+        return '#fbbf24'; // Golden for passed checklist items
+      };
+      
+      const pollenColor = getPollenColor();
+      
       return (
-        <animated.circle
-          r="2"
-          fill={metadata?.bias_flags?.length > 0 ? '#dc2626' : '#fbbf24'}
+        <animated.g
           style={{
             opacity: animations.reflectionSpring.particles,
             transform: animations.reflectionSpring.sparkles.to((s: number) => `scale(${s})`)
           }}
-        />
+        >
+          {/* Main pollen particle */}
+          <animated.circle
+            r="2"
+            fill={pollenColor}
+            style={{
+              filter: pollenColor === '#fbbf24' ? 
+                'drop-shadow(0 0 4px rgba(251, 191, 36, 0.8))' : 
+                'drop-shadow(0 0 4px rgba(220, 38, 38, 0.8))'
+            }}
+          />
+          
+          {/* Sparkle effect for golden pollen */}
+          {pollenColor === '#fbbf24' && (
+            <animated.g
+              style={{
+                opacity: animations.reflectionSpring.sparkles.to((s: number) => s * 0.8)
+              }}
+            >
+              <path
+                d="M0,-4 L0,4 M-4,0 L4,0"
+                stroke="#fbbf24"
+                strokeWidth="0.5"
+                fill="none"
+              />
+              <path
+                d="M-3,-3 L3,3 M-3,3 L3,-3"
+                stroke="#fbbf24"
+                strokeWidth="0.3"
+                fill="none"
+              />
+            </animated.g>
+          )}
+          
+          {/* Warning indicator for crimson pollen */}
+          {pollenColor === '#dc2626' && (
+            <animated.text
+              x="4"
+              y="1"
+              fontSize="6"
+              fill="#dc2626"
+              style={{
+                opacity: animations.reflectionSpring.sparkles
+              }}
+            >
+              ⚠
+            </animated.text>
+          )}
+        </animated.g>
       );
       
     default:

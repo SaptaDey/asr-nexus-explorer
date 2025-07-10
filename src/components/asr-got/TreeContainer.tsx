@@ -160,21 +160,59 @@ export const TreeContainer: React.FC<TreeContainerProps> = ({
           const node = link.target.data as any;
           const confidence = node.confidence?.reduce((a: number, b: number) => a + b, 0) / node.confidence?.length || 0;
           
+          // Calculate branch circumference with evidence deltas
+          const evidenceCount = node.metadata?.evidence_count || 0;
+          const confidenceDelta = node.metadata?.confidence_delta || 0;
+          const baseWidth = Math.max(2, confidence * 8);
+          const deltaWidth = evidenceCount * 1.5 + confidenceDelta * 10;
+          const totalWidth = baseWidth + deltaWidth;
+          
           return (
-            <animated.path
-              key={`link-${i}`}
-              id={`branch-${node.id}`}
-              className="branch-path"
-              d={d}
-              stroke={colorBlindMode ? 'url(#branch-pattern)' : getNodeColor(node, colorBlindMode)}
-              strokeWidth={Math.max(2, confidence * 8)}
-              strokeDasharray="5,5"
-              fill="none"
-              opacity={node.metadata?.pruned ? 0.2 : 0.8}
-              style={{
-                strokeDashoffset: treeAnimations.branchSpring.pathLength.to((v: number) => `${(1 - v) * 100}%`)
-              }}
-            />
+            <animated.g key={`branch-group-${i}`}>
+              {/* Main branch path */}
+              <animated.path
+                id={`branch-${node.id}`}
+                className="branch-path"
+                d={d}
+                stroke={colorBlindMode ? 'url(#branch-pattern)' : getNodeColor(node, colorBlindMode)}
+                strokeWidth={totalWidth}
+                strokeDasharray="5,5"
+                fill="none"
+                opacity={node.metadata?.pruned ? 0.2 : 0.8}
+                style={{
+                  strokeDashoffset: treeAnimations.branchSpring.pathLength.to((v: number) => `${(1 - v) * 100}%`)
+                }}
+              />
+              
+              {/* Evidence expansion rings */}
+              {evidenceCount > 0 && (
+                <animated.path
+                  d={d}
+                  stroke={colorBlindMode ? 'url(#branch-pattern)' : getNodeColor(node, colorBlindMode)}
+                  strokeWidth={baseWidth + 2}
+                  fill="none"
+                  opacity="0.3"
+                  style={{
+                    strokeDashoffset: treeAnimations.branchSpring.pathLength.to((v: number) => `${(1 - v) * 100}%`)
+                  }}
+                />
+              )}
+              
+              {/* Confidence delta indicator */}
+              {confidenceDelta > 0.1 && (
+                <animated.text
+                  x={link.target.x + 5}
+                  y={link.target.y - 5}
+                  fontSize="8"
+                  fill={getNodeColor(node, colorBlindMode)}
+                  style={{
+                    opacity: treeAnimations.branchSpring.pathLength.to((v: number) => v * 0.8)
+                  }}
+                >
+                  +{(confidenceDelta * 100).toFixed(0)}%
+                </animated.text>
+              )}
+            </animated.g>
           );
         })}
 
@@ -290,30 +328,111 @@ export const TreeContainer: React.FC<TreeContainerProps> = ({
             {renderTree()}
           </svg>
           
-          {/* Node metadata popover */}
+          {/* Enhanced Node metadata popover */}
           {selectedNode && (
             <Popover open={!!selectedNode} onOpenChange={() => setSelectedNode(null)}>
               <PopoverTrigger asChild>
                 <div className="absolute top-4 right-4 opacity-0" />
               </PopoverTrigger>
-              <PopoverContent className="w-80 max-h-60 overflow-y-auto">
-                <div className="space-y-2">
-                  <h4 className="font-semibold">Node Metadata</h4>
+              <PopoverContent className="w-96 max-h-80 overflow-y-auto">
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-base">Node Metadata</h4>
                   {(() => {
                     const node = animatedNodes.find(n => n.data.id === selectedNode)?.data;
                     if (!node) return null;
                     
                     return (
-                      <div className="text-xs space-y-1">
-                        <div><strong>Label:</strong> {node.label}</div>
-                        <div><strong>Type:</strong> {node.type}</div>
-                        <div><strong>Confidence:</strong> {node.confidence.map((c: number) => c.toFixed(2)).join(', ')}</div>
-                        <div><strong>Stage:</strong> {node.stage}</div>
+                      <div className="text-xs space-y-2">
+                        {/* Basic Information */}
+                        <div className="border-b pb-2">
+                          <div><strong>Label:</strong> {node.label}</div>
+                          <div><strong>Type:</strong> {node.type}</div>
+                          <div><strong>Botanical:</strong> {node.botanicalType}</div>
+                          <div><strong>Stage:</strong> {node.stage}</div>
+                        </div>
+                        
+                        {/* Confidence Vector */}
+                        <div className="border-b pb-2">
+                          <div><strong>Confidence Vector:</strong></div>
+                          <div className="ml-2 grid grid-cols-2 gap-1">
+                            <div>Empirical: {node.confidence[0]?.toFixed(2) || 'N/A'}</div>
+                            <div>Theoretical: {node.confidence[1]?.toFixed(2) || 'N/A'}</div>
+                            <div>Methodological: {node.confidence[2]?.toFixed(2) || 'N/A'}</div>
+                            <div>Consensus: {node.confidence[3]?.toFixed(2) || 'N/A'}</div>
+                          </div>
+                        </div>
+                        
+                        {/* Impact & Quality Metrics */}
                         {node.metadata?.impact_score && (
-                          <div><strong>Impact:</strong> {node.metadata.impact_score.toFixed(2)}</div>
+                          <div className="border-b pb-2">
+                            <div><strong>Impact Score:</strong> {node.metadata.impact_score.toFixed(2)}</div>
+                            {node.metadata?.statistical_power && (
+                              <div><strong>Statistical Power:</strong> {node.metadata.statistical_power.toFixed(2)}</div>
+                            )}
+                            {node.metadata?.evidence_count && (
+                              <div><strong>Evidence Count:</strong> {node.metadata.evidence_count}</div>
+                            )}
+                            {node.metadata?.confidence_delta && (
+                              <div><strong>Confidence Δ:</strong> +{(node.metadata.confidence_delta * 100).toFixed(1)}%</div>
+                            )}
+                          </div>
                         )}
+                        
+                        {/* Disciplinary Tags */}
                         {node.metadata?.disciplinary_tags && (
-                          <div><strong>Tags:</strong> {node.metadata.disciplinary_tags.join(', ')}</div>
+                          <div className="border-b pb-2">
+                            <div><strong>Disciplinary Tags:</strong></div>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {node.metadata.disciplinary_tags.map((tag: string) => (
+                                <span key={tag} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Bias & Quality Issues */}
+                        {(node.metadata?.bias_flags?.length > 0 || node.metadata?.quality_issues?.length > 0) && (
+                          <div className="border-b pb-2">
+                            <div><strong>Quality Issues:</strong></div>
+                            {node.metadata?.bias_flags?.length > 0 && (
+                              <div className="ml-2">
+                                <div className="text-red-600 font-medium">Bias Flags:</div>
+                                {node.metadata.bias_flags.map((flag: string) => (
+                                  <div key={flag} className="ml-2 text-red-600">• {flag}</div>
+                                ))}
+                              </div>
+                            )}
+                            {node.metadata?.quality_issues?.length > 0 && (
+                              <div className="ml-2">
+                                <div className="text-orange-600 font-medium">Quality Issues:</div>
+                                {node.metadata.quality_issues.map((issue: string) => (
+                                  <div key={issue} className="ml-2 text-orange-600">• {issue}</div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Source Attribution */}
+                        {node.metadata?.attribution && (
+                          <div className="border-b pb-2">
+                            <div><strong>Source:</strong> {node.metadata.attribution}</div>
+                            {node.metadata?.url && (
+                              <div><strong>URL:</strong> <a href={node.metadata.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">View Source</a></div>
+                            )}
+                            {node.metadata?.doi && (
+                              <div><strong>DOI:</strong> {node.metadata.doi}</div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Timestamp */}
+                        {node.metadata?.timestamp && (
+                          <div className="text-gray-500">
+                            <strong>Updated:</strong> {new Date(node.metadata.timestamp).toLocaleString()}
+                          </div>
                         )}
                       </div>
                     );
