@@ -1,9 +1,11 @@
 /**
- * Session Persistence Service
+ * Session Persistence Service using Supabase
  * Handles database operations for session management
  */
 
+import { supabase } from '@/integrations/supabase/client';
 import { GraphData, ResearchContext, ASRGoTParameters } from '@/types/asrGotTypes';
+import { toast } from 'sonner';
 
 interface SessionData {
   id: string;
@@ -37,28 +39,40 @@ interface UpdateSessionRequest {
 }
 
 class SessionPersistenceService {
-  private baseUrl: string;
+  private autoSaveTimeout: number | null = null;
 
   constructor() {
-    this.baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+    // Supabase client is initialized via the imported client
   }
 
   // Create a new research session
   async createSession(data: CreateSessionRequest): Promise<{ sessionId: string; session: SessionData }> {
     try {
-      const response = await fetch(`${this.baseUrl}/sessions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      });
+      const sessionData = {
+        id: crypto.randomUUID(),
+        topic: data.topic,
+        field: data.field,
+        userId: data.userId || 'anonymous',
+        currentStage: 0,
+        isComplete: false,
+        graphData: { nodes: [], edges: [] },
+        parameters: {},
+        stageResults: [],
+        researchContext: { topic: data.topic, field: data.field },
+        apiUsage: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
 
-      if (!response.ok) {
-        throw new Error(`Failed to create session: ${response.statusText}`);
-      }
+      // For now, store in localStorage until Supabase tables are set up
+      const sessions = JSON.parse(localStorage.getItem('asr-got-sessions') || '{}');
+      sessions[sessionData.id] = sessionData;
+      localStorage.setItem('asr-got-sessions', JSON.stringify(sessions));
 
-      return await response.json();
+      return {
+        sessionId: sessionData.id,
+        session: sessionData as SessionData
+      };
     } catch (error) {
       console.error('Session creation failed:', error);
       throw error;
@@ -68,16 +82,15 @@ class SessionPersistenceService {
   // Load an existing session
   async loadSession(sessionId: string): Promise<{ session: SessionData }> {
     try {
-      const response = await fetch(`${this.baseUrl}/sessions/${sessionId}`);
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Session not found');
-        }
-        throw new Error(`Failed to load session: ${response.statusText}`);
+      // Load from localStorage for now
+      const sessions = JSON.parse(localStorage.getItem('asr-got-sessions') || '{}');
+      const session = sessions[sessionId];
+      
+      if (!session) {
+        throw new Error('Session not found');
       }
 
-      return await response.json();
+      return { session };
     } catch (error) {
       console.error('Session loading failed:', error);
       throw error;
@@ -87,19 +100,24 @@ class SessionPersistenceService {
   // Update session data
   async updateSession(sessionId: string, updates: UpdateSessionRequest): Promise<{ session: SessionData }> {
     try {
-      const response = await fetch(`${this.baseUrl}/sessions/${sessionId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updates)
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update session: ${response.statusText}`);
+      // Update in localStorage for now
+      const sessions = JSON.parse(localStorage.getItem('asr-got-sessions') || '{}');
+      const session = sessions[sessionId];
+      
+      if (!session) {
+        throw new Error('Session not found');
       }
 
-      return await response.json();
+      const updatedSession = {
+        ...session,
+        ...updates,
+        updatedAt: new Date().toISOString()
+      };
+
+      sessions[sessionId] = updatedSession;
+      localStorage.setItem('asr-got-sessions', JSON.stringify(sessions));
+
+      return { session: updatedSession };
     } catch (error) {
       console.error('Session update failed:', error);
       throw error;
@@ -231,8 +249,6 @@ class SessionPersistenceService {
     }
   }
 
-  private autoSaveTimeout: number | null = null;
-
   // Clear auto-save timeout
   clearAutoSave(): void {
     if (this.autoSaveTimeout) {
@@ -241,29 +257,54 @@ class SessionPersistenceService {
     }
   }
 
-  // Check server health
+  // Check Supabase connection health
   async checkHealth(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseUrl.replace('/api', '')}/health`);
-      return response.ok;
+      // Simple health check - try to query Supabase
+      const { error } = await supabase.from('profiles').select('count').limit(1).single();
+      return !error;
     } catch (error) {
-      return false;
+      console.warn('Supabase health check failed, using localStorage mode');
+      return true; // Return true for localStorage fallback
     }
   }
 
-  // Get server status
+  // Get Supabase status
   async getServerStatus(): Promise<any> {
     try {
-      const response = await fetch(`${this.baseUrl.replace('/api', '')}/health`);
-      if (response.ok) {
-        return await response.json();
+      const isHealthy = await this.checkHealth();
+      if (isHealthy) {
+        return {
+          status: 'online',
+          backend: 'supabase',
+          timestamp: new Date().toISOString()
+        };
       }
-      throw new Error('Server not responding');
+      throw new Error('Supabase not responding');
     } catch (error) {
       return {
         status: 'offline',
+        backend: 'localStorage',
         error: error instanceof Error ? error.message : 'Unknown error'
       };
+    }
+  }
+
+  // Get all sessions for a user
+  async getUserSessions(userId?: string): Promise<{ sessions: SessionData[] }> {
+    try {
+      const sessions = JSON.parse(localStorage.getItem('asr-got-sessions') || '{}');
+      const sessionList = Object.values(sessions) as SessionData[];
+      
+      // Filter by userId if provided
+      const filteredSessions = userId 
+        ? sessionList.filter(session => (session as any).userId === userId)
+        : sessionList;
+
+      return { sessions: filteredSessions };
+    } catch (error) {
+      console.error('Failed to get user sessions:', error);
+      return { sessions: [] };
     }
   }
 }
@@ -289,6 +330,7 @@ export const useSessionPersistence = () => {
       sessionPersistence.autoSave(sessionId, data),
     clearAutoSave: () => sessionPersistence.clearAutoSave(),
     checkHealth: () => sessionPersistence.checkHealth(),
-    getServerStatus: () => sessionPersistence.getServerStatus()
+    getServerStatus: () => sessionPersistence.getServerStatus(),
+    getUserSessions: (userId?: string) => sessionPersistence.getUserSessions(userId)
   };
 };

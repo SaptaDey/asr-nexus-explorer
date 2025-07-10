@@ -4,9 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
-    "dev:frontend": "vite",
-    "dev:backend": "nodemon server/index.js",
+    "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
@@ -17,11 +15,7 @@
     "deploy:validate": "node scripts/deploy.js validate",
     "deploy:migrate": "node scripts/deploy.js migrate",
     "deploy:build": "node scripts/deploy.js build",
-    "deploy:verify": "node scripts/deploy.js verify",
-    "db:migrate": "prisma migrate dev",
-    "db:generate": "prisma generate",
-    "db:studio": "prisma studio",
-    "server": "node server/index.js"
+    "deploy:verify": "node scripts/deploy.js verify"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
