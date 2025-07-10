@@ -7,10 +7,10 @@ import DOMPurify from 'dompurify';
 
 // Input validation schemas
 export const INPUT_VALIDATION = {
-  maxQueryLength: 10000,
-  maxTokens: 200000,
+  maxQueryLength: 1048576, // Updated to Gemini 2.5 Pro max input token limit
+  maxTokens: 1048576, // Updated to Gemini 2.5 Pro max input token limit
   allowedModels: ['sonar-reasoning-pro', 'gemini-2.5-pro'],
-  maxFileSize: 10 * 1024 * 1024, // 10MB
+  maxFileSize: 50 * 1024 * 1024, // 50MB - increased for large research data
 };
 
 /**

@@ -65,6 +65,42 @@ const ASRGoTInterface: React.FC = () => {
       return;
     }
     
+    // Check if we have a comprehensive HTML report from stage 7 or 9
+    const htmlReportStages = [6, 8]; // Stage 7 (index 6) and Stage 9 (index 8)
+    let htmlReport = null;
+    
+    for (const stageIndex of htmlReportStages.reverse()) {
+      if (stageResults[stageIndex] && 
+          (stageResults[stageIndex].includes('<!DOCTYPE html') || 
+           stageResults[stageIndex].includes('<html'))) {
+        htmlReport = stageResults[stageIndex];
+        break;
+      }
+    }
+    
+    if (htmlReport) {
+      // Export the comprehensive HTML report directly
+      const blob = new Blob([htmlReport], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `asr-got-${researchContext.topic.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success('✅ Comprehensive HTML report exported successfully');
+      
+      // Also offer PDF conversion
+      setTimeout(() => {
+        toast.info('💡 Tip: Open the HTML file in Chrome and use Print → Save as PDF for publication-ready PDF');
+      }, 2000);
+      
+      return;
+    }
+    
+    // Fallback to basic report generation if no HTML report available
     const reportContent = stageResults.length > 0 ? stageResults.join('\n\n---\n\n') : 'No analysis completed yet';
     
     // Generate embedded charts and figures

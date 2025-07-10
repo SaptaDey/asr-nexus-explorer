@@ -449,19 +449,19 @@ export class ComputationalBudgetManager {
       {
         id: 'api_calls',
         type: 'api_calls',
-        total: 10000,
+        total: 1048576, // Updated to Gemini 2.5 Pro max input token limit
         used: 0,
-        available: 10000,
-        unit: 'calls',
+        available: 1048576,
+        unit: 'tokens',
         costPerUnit: 0.01,
         priority: 'high'
       },
       {
         id: 'storage',
         type: 'storage',
-        total: 10000,
+        total: 100000, // Increased storage limit for large research data
         used: 0,
-        available: 10000,
+        available: 100000,
         unit: 'GB',
         costPerUnit: 0.02,
         priority: 'medium'

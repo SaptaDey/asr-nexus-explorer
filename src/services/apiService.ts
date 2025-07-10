@@ -76,7 +76,8 @@ export const callGeminiAPI = async (
       ],
       generationConfig: {
         temperature: options.temperature || 0.4,
-        maxOutputTokens: options.maxTokens || 65536
+        maxOutputTokens: options.maxTokens || 65536,
+        maxInputTokens: 1048576 // Max input tokens supported by Gemini 2.5 Pro
       },
       systemInstruction: {
         parts: [

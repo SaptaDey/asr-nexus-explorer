@@ -50,7 +50,7 @@ export const StageManager: React.FC<StageManagerProps> = ({
           <CardTitle className="flex items-center justify-between">
             <span>Overall Progress</span>
             <Badge variant="outline">
-              {currentStage + 1} / {stages.length}
+              {Math.max(1, currentStage + 1)} / {stages.length}
             </Badge>
           </CardTitle>
           <CardDescription>
@@ -59,7 +59,7 @@ export const StageManager: React.FC<StageManagerProps> = ({
         </CardHeader>
         <CardContent>
           <Progress 
-            value={((currentStage + 1) / stages.length) * 100} 
+            value={(currentStage / stages.length) * 100} 
             className="h-3"
           />
           <div className="mt-2 text-sm text-muted-foreground text-center">
