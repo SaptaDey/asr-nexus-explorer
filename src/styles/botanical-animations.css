@@ -26,6 +26,26 @@
     stroke-dashoffset: 100;
     animation: branch-draw var(--growth-duration) ease-out forwards;
   }
+
+  .animate-evidence-pulse {
+    animation: evidence-pulse var(--pulse-duration) ease-in-out infinite;
+  }
+
+  .animate-prune-fade {
+    animation: prune-fade var(--growth-duration) ease-out forwards;
+  }
+
+  .animate-blossom-unfurl {
+    animation: blossom-unfurl var(--bloom-duration) ease-out forwards;
+  }
+
+  .animate-pollen-float {
+    animation: pollen-float var(--particle-duration) ease-out forwards;
+  }
+
+  .animate-rootlet-emerge {
+    animation: rootlet-emerge var(--growth-duration) ease-out forwards;
+  }
 }
 
 /* Keyframe animations */
@@ -100,5 +120,85 @@
   }
   100% {
     opacity: 1;
+  }
+}
+
+@keyframes evidence-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: brightness(1) drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    transform: scale(1.3);
+    filter: brightness(1.4) drop-shadow(0 0 8px rgba(144, 238, 144, 0.8));
+  }
+}
+
+@keyframes prune-fade {
+  0% {
+    opacity: 1;
+    filter: grayscale(0);
+  }
+  100% {
+    opacity: 0.2;
+    filter: grayscale(1);
+  }
+}
+
+@keyframes blossom-unfurl {
+  0% {
+    transform: scale(0) rotate(45deg);
+    opacity: 0;
+  }
+  20% {
+    transform: scale(0.3) rotate(20deg);
+    opacity: 0.6;
+  }
+  60% {
+    transform: scale(1.1) rotate(-5deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes pollen-float {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(var(--float-x, 15px), var(--float-y, -20px)) scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(var(--float-x, 30px), var(--float-y, -40px)) scale(0.7);
+    opacity: 0.6;
+  }
+  75% {
+    transform: translate(var(--float-x, 45px), var(--float-y, -60px)) scale(0.4);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translate(var(--float-x, 60px), var(--float-y, -80px)) scale(0.1);
+    opacity: 0;
+  }
+}
+
+@keyframes rootlet-emerge {
+  0% {
+    stroke-dasharray: 50;
+    stroke-dashoffset: 50;
+    opacity: 0;
+  }
+  50% {
+    stroke-dashoffset: 25;
+    opacity: 0.5;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.8;
   }
 }

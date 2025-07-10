@@ -20,29 +20,58 @@ export const useTreeAnimations = ({
   animatedNodes, 
   svgRef 
 }: TreeAnimationsProps) => {
-  // Animation spring refs for chaining
+  // Animation spring refs for chaining all 9 stages
   const rootSpringRef = useSpringRef();
+  const rootletSpringRef = useSpringRef();
   const branchSpringRef = useSpringRef();
+  const evidenceSpringRef = useSpringRef();
+  const pruneSpringRef = useSpringRef();
   const leafSpringRef = useSpringRef();
   const blossomSpringRef = useSpringRef();
+  const reflectionSpringRef = useSpringRef();
+  const finalSpringRef = useSpringRef();
 
-  // Root bulb animation (Stage 1)
+  // Stage 1: Root bulb animation - instant placement
   const rootSpring = useSpring({
     ref: rootSpringRef,
     from: { scale: 0, opacity: 0 },
     to: currentStage >= 1 ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 },
-    config: { tension: 200, friction: 20 }
+    config: { tension: 300, friction: 30 }
   });
 
-  // Branch growth animation (Stage 3)
+  // Stage 2: Rootlets trail animation - radial emergence
+  const rootletSpring = useSpring({
+    ref: rootletSpringRef,
+    from: { length: 0, opacity: 0 },
+    to: currentStage >= 2 ? { length: 1, opacity: 0.8 } : { length: 0, opacity: 0 },
+    config: { tension: 200, friction: 40 }
+  });
+
+  // Stage 3: Branch growth animation - upward growth with stroke-dash
   const branchSpring = useSpring({
     ref: branchSpringRef,
-    from: { pathLength: 0 },
-    to: currentStage >= 3 ? { pathLength: 1 } : { pathLength: 0 },
-    config: { duration: reducedMotion ? 100 : 1200 }
+    from: { pathLength: 0, thickness: 0 },
+    to: currentStage >= 3 ? { pathLength: 1, thickness: 1 } : { pathLength: 0, thickness: 0 },
+    config: { duration: reducedMotion ? 200 : 1200 }
   });
 
-  // Leaf cluster animation (Stage 6)
+  // Stage 4: Evidence integration - pulse and radius increase
+  const evidenceSpring = useSpring({
+    ref: evidenceSpringRef,
+    from: { scale: 0, pulse: 0 },
+    to: currentStage >= 4 ? { scale: 1, pulse: 1 } : { scale: 0, pulse: 0 },
+    config: { tension: 300, friction: 25 }
+  });
+
+  // Stage 5: Pruning/merging - fade withered branches
+  const pruneSpring = useSpring({
+    ref: pruneSpringRef,
+    from: { opacity: 1, morph: 0 },
+    to: currentStage >= 5 ? { opacity: 0.2, morph: 1 } : { opacity: 1, morph: 0 },
+    config: { duration: reducedMotion ? 100 : 700 }
+  });
+
+  // Stage 6: Leaf emergence - staggered with subtle jitter
   const leafSpring = useSpring({
     ref: leafSpringRef,
     from: { scale: 0, jitter: 0 },
@@ -50,19 +79,45 @@ export const useTreeAnimations = ({
     config: { tension: 180, friction: 80 }
   });
 
-  // Blossom opening animation (Stage 7)
+  // Stage 7: Blossom opening - sequential petal unfurling
   const blossomSpring = useSpring({
     ref: blossomSpringRef,
-    from: { petals: 0 },
-    to: currentStage >= 7 ? { petals: 1 } : { petals: 0 },
+    from: { petals: 0, label: 0 },
+    to: currentStage >= 7 ? { petals: 1, label: 1 } : { petals: 0, label: 0 },
     config: { duration: reducedMotion ? 100 : 800 }
   });
 
-  // Chain animations for staged progression
+  // Stage 8: Reflection - pollen particle system
+  const reflectionSpring = useSpring({
+    ref: reflectionSpringRef,
+    from: { particles: 0, sparkles: 0 },
+    to: currentStage >= 8 ? { particles: 1, sparkles: 1 } : { particles: 0, sparkles: 0 },
+    config: { tension: 150, friction: 25 }
+  });
+
+  // Stage 9: Final analysis - comprehensive display
+  const finalSpring = useSpring({
+    ref: finalSpringRef,
+    from: { completion: 0 },
+    to: currentStage >= 9 ? { completion: 1 } : { completion: 0 },
+    config: { duration: reducedMotion ? 100 : 1000 }
+  });
+
+  // Chain animations for staged progression with proper timing
   useChain(
-    currentStage >= 1 ? [rootSpringRef, branchSpringRef, leafSpringRef, blossomSpringRef] : [],
-    [0, 0.5, 1.5, 2.0],
-    reducedMotion ? 100 : 1000
+    currentStage >= 1 ? [
+      rootSpringRef,
+      rootletSpringRef,
+      branchSpringRef,
+      evidenceSpringRef,
+      pruneSpringRef,
+      leafSpringRef,
+      blossomSpringRef,
+      reflectionSpringRef,
+      finalSpringRef
+    ] : [],
+    [0, 0.3, 0.8, 1.4, 2.0, 2.5, 3.0, 3.5, 4.0],
+    reducedMotion ? 200 : 1000
   );
 
   // CSS-based animation for branch drawing
@@ -104,9 +159,14 @@ export const useTreeAnimations = ({
 
   return {
     rootSpring,
+    rootletSpring,
     branchSpring,
+    evidenceSpring,
+    pruneSpring,
     leafSpring,
-    blossomSpring
+    blossomSpring,
+    reflectionSpring,
+    finalSpring
   };
 };
 

@@ -103,12 +103,25 @@ export const TreeContainer: React.FC<TreeContainerProps> = ({
   // Calculate tree positions
   const treeRoot = treeHierarchy ? treeLayout(treeHierarchy) : null;
 
-  // Timeline scrubber handler
+  // Timeline scrubber handler with performance monitoring
   const handleTimelineChange = useCallback((value: number[]) => {
     const stage = value[0];
+    const startTime = performance.now();
+    
     setTimelineStage(stage);
     onStageSelect?.(stage);
-    measureFrameTime();
+    
+    // Monitor frame time for animation performance
+    requestAnimationFrame(() => {
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+      
+      if (duration > 16) {
+        console.warn(`Stage transition took ${duration.toFixed(2)}ms (target: 16ms)`);
+      }
+      
+      measureFrameTime();
+    });
   }, [onStageSelect, measureFrameTime]);
 
   // Node click handler
@@ -166,22 +179,38 @@ export const TreeContainer: React.FC<TreeContainerProps> = ({
         })}
 
         {/* Tree nodes */}
-        {nodes.map((node, i) => (
-          <g
-            key={`node-${i}`}
-            id={`node-${(node.data as any).id}`}
-            transform={`translate(${node.x},${node.y})`}
-            style={{ cursor: 'pointer' }}
-            onClick={() => handleNodeClick((node.data as any).id)}
-          >
-            <BotanicalElement
-              node={node}
-              animations={treeAnimations}
-              evidenceAnimations={animations}
-              colorBlindMode={colorBlindMode}
-            />
-          </g>
-        ))}
+        {nodes.map((node, i) => {
+          const nodeData = node.data as any;
+          const botanicalType = nodeData.botanicalType || 'unknown';
+          const confidence = nodeData.confidence || [0];
+          const avgConfidence = confidence.reduce((a: number, b: number) => a + b, 0) / confidence.length;
+          
+          return (
+            <g
+              key={`node-${i}`}
+              id={`node-${nodeData.id}`}
+              transform={`translate(${node.x},${node.y})`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => handleNodeClick(nodeData.id)}
+              role="button"
+              tabIndex={0}
+              aria-label={`${botanicalType} node: ${nodeData.label}, confidence: ${(avgConfidence * 100).toFixed(1)}%`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleNodeClick(nodeData.id);
+                }
+              }}
+            >
+              <BotanicalElement
+                node={node}
+                animations={treeAnimations}
+                evidenceAnimations={animations}
+                colorBlindMode={colorBlindMode}
+              />
+            </g>
+          );
+        })}
 
         {/* Pollen particles */}
         {pollenParticles.map(particle => (
@@ -223,7 +252,17 @@ export const TreeContainer: React.FC<TreeContainerProps> = ({
             viewBox="0 0 600 400"
             className="w-full h-[400px]"
             style={{ maxWidth: '100%', height: 'auto' }}
+            role="img"
+            aria-labelledby="tree-title"
+            aria-describedby="tree-desc"
           >
+            <title id="tree-title">ASR-GoT Botanical Tree Visualization</title>
+            <desc id="tree-desc">
+              Interactive botanical tree representing the ASR-GoT research framework. 
+              Each element represents a stage in the research process: root bulb (initialization), 
+              rootlets (decomposition), branches (hypotheses), buds (evidence), leaves (subgraphs), 
+              and blossoms (synthesis). Use arrow keys to navigate between elements.
+            </desc>
             <defs>
               {/* Brand gradient */}
               <linearGradient id="brand-gradient" x1="0%" y1="0%" x2="100%" y2="0%">

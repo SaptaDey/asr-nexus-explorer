@@ -10,9 +10,14 @@ interface BotanicalElementsProps {
   node: any;
   animations: {
     rootSpring: any;
+    rootletSpring: any;
     branchSpring: any;
+    evidenceSpring: any;
+    pruneSpring: any;
     leafSpring: any;
     blossomSpring: any;
+    reflectionSpring: any;
+    finalSpring: any;
   };
   evidenceAnimations: any;
   colorBlindMode: boolean;
@@ -52,6 +57,20 @@ export const BotanicalElement: React.FC<BotanicalElementsProps> = ({
         />
       );
       
+    case 'rootlet':
+      return (
+        <animated.path
+          d={`M0,0 L${avgConfidence * 30},${Math.sin(Math.PI / 4) * avgConfidence * 30}`}
+          stroke="hsl(120, 60%, 40%)"
+          strokeWidth="3"
+          fill="none"
+          style={{
+            pathLength: animations.rootletSpring.length,
+            opacity: animations.rootletSpring.opacity
+          }}
+        />
+      );
+      
     case 'branch':
       return (
         <animated.circle
@@ -60,7 +79,8 @@ export const BotanicalElement: React.FC<BotanicalElementsProps> = ({
           stroke="#4A5D23"
           strokeWidth="1"
           style={{
-            transform: animations.branchSpring.pathLength.to((v: number) => `scale(${v})`)
+            transform: animations.branchSpring.pathLength.to((v: number) => `scale(${v})`),
+            opacity: animations.pruneSpring.opacity
           }}
         />
       );
@@ -74,7 +94,10 @@ export const BotanicalElement: React.FC<BotanicalElementsProps> = ({
           stroke="#228B22"
           strokeWidth="1"
           style={{
-            transform: evidenceAnimations.evidencePulse.scale.to((s: any) => `scale(${s})`)
+            transform: animations.evidenceSpring.scale.to((s: number) => `scale(${s})`),
+            filter: animations.evidenceSpring.pulse.to((p: number) => 
+              p > 0.5 ? 'drop-shadow(0 0 6px rgba(144, 238, 144, 0.8))' : 'none'
+            )
           }}
         />
       );
@@ -113,9 +136,34 @@ export const BotanicalElement: React.FC<BotanicalElementsProps> = ({
             />
           ))}
           <circle r="3" fill="#FFD700" />
+          {/* Label slide-in effect */}
+          <animated.text
+            x="20"
+            y="5"
+            fontSize="8"
+            fill="hsl(var(--foreground))"
+            style={{
+              opacity: animations.blossomSpring.label,
+              transform: animations.blossomSpring.label.to((l: number) => `translateX(${(1 - l) * 20}px)`)
+            }}
+          >
+            {nodeData.label}
+          </animated.text>
         </animated.g>
       ) : (
         <circle r="4" fill={getNodeColor(node.data, colorBlindMode)} />
+      );
+      
+    case 'pollen':
+      return (
+        <animated.circle
+          r="2"
+          fill={metadata?.bias_flags?.length > 0 ? '#dc2626' : '#fbbf24'}
+          style={{
+            opacity: animations.reflectionSpring.particles,
+            transform: animations.reflectionSpring.sparkles.to((s: number) => `scale(${s})`)
+          }}
+        />
       );
       
     default:
