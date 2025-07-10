@@ -1064,25 +1064,27 @@ Make the data realistic and scientifically meaningful for the research domain.
             </Card>
           </TabsContent>
 
-          <TabsContent value="advanced">
-            <Card className="card-gradient">
-              <CardHeader>
+          <TabsContent value="advanced" className="h-full">
+            <Card className="card-gradient h-full flex flex-col">
+              <CardHeader className="flex-shrink-0">
                 <CardTitle className="gradient-text flex items-center gap-2">
                   <Network className="h-5 w-5" />
                   Advanced Multi-Layer Graph Visualization
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-0">
-                <AdvancedGraphVisualization 
-                  graphData={graphData}
-                  showParameters={true}
-                  onNodeSelect={(node) => {
-                    console.log('Selected node:', node);
-                  }}
-                  onEdgeSelect={(edge) => {
-                    console.log('Selected edge:', edge);
-                  }}
-                />
+              <CardContent className="p-0 flex-1 min-h-0">
+                <div className="h-full" style={{ height: '600px' }}>
+                  <AdvancedGraphVisualization 
+                    graphData={graphData}
+                    showParameters={true}
+                    onNodeSelect={(node) => {
+                      console.log('Selected node:', node);
+                    }}
+                    onEdgeSelect={(edge) => {
+                      console.log('Selected edge:', edge);
+                    }}
+                  />
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

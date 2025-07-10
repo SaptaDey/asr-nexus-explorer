@@ -290,28 +290,34 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
       {/* Main Graph Visualization */}
       <div className="flex-1 relative">
         {/* Graph Controls */}
-        <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant={showConfidenceBars ? 'default' : 'outline'}
-            onClick={() => setShowConfidenceBars(!showConfidenceBars)}
-          >
-            <Target className="h-4 w-4 mr-1" />
-            Confidence
-          </Button>
-          <Button
-            size="sm"
-            variant={showImpactScores ? 'default' : 'outline'}
-            onClick={() => setShowImpactScores(!showImpactScores)}
-          >
-            <TrendingUp className="h-4 w-4 mr-1" />
-            Impact
-          </Button>
+        <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 max-w-xs">
+          <Card className="p-2 bg-white/95 backdrop-blur-sm">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant={showConfidenceBars ? 'default' : 'outline'}
+                onClick={() => setShowConfidenceBars(!showConfidenceBars)}
+                className="text-xs"
+              >
+                <Target className="h-3 w-3 mr-1" />
+                Confidence
+              </Button>
+              <Button
+                size="sm"
+                variant={showImpactScores ? 'default' : 'outline'}
+                onClick={() => setShowImpactScores(!showImpactScores)}
+                className="text-xs"
+              >
+                <TrendingUp className="h-3 w-3 mr-1" />
+                Impact
+              </Button>
+            </div>
+          </Card>
         </div>
 
         {/* Layer Controls */}
-        <div className="absolute top-4 right-4 z-10">
-          <Card className="p-2">
+        <div className="absolute top-4 right-4 z-10 max-w-xs">
+          <Card className="p-2 bg-white/95 backdrop-blur-sm">
             <h4 className="text-sm font-medium mb-2">Layers</h4>
             <div className="grid grid-cols-3 gap-1">
               {Object.entries(NODE_TYPES).reduce((acc, [type, config]) => {
@@ -325,10 +331,10 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
                   size="sm"
                   variant={layerVisibility[layer] ? 'default' : 'outline'}
                   onClick={() => toggleLayerVisibility(layer)}
-                  className="text-xs p-1"
+                  className="text-xs p-1 min-w-0"
                 >
                   {layerVisibility[layer] ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                  L{layer}
+                  <span className="ml-1">L{layer}</span>
                 </Button>
               ))}
             </div>
@@ -347,40 +353,39 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
           autounselectify={false}
         />
 
-        {/* Node Legend */}
-        <div className="absolute bottom-4 left-4 z-10">
-          <Card className="p-3 max-w-xs">
+        {/* Legends Container - Positioned to avoid overlap */}
+        <div className="absolute bottom-4 left-4 right-4 z-10 flex flex-wrap gap-4 justify-between">
+          {/* Node Legend */}
+          <Card className="p-3 max-w-sm flex-1 min-w-0">
             <h4 className="text-sm font-medium mb-2">Node Types (P1.10)</h4>
-            <div className="grid grid-cols-2 gap-1 text-xs">
+            <div className="grid grid-cols-2 gap-1 text-xs max-h-32 overflow-y-auto">
               {Object.entries(NODE_TYPES).map(([type, config]) => (
                 <div key={type} className="flex items-center space-x-1">
                   <div 
-                    className="w-3 h-3 rounded"
+                    className="w-3 h-3 rounded flex-shrink-0"
                     style={{ backgroundColor: config.color }}
                   />
-                  <span>{config.icon}</span>
-                  <span className="truncate">{type}</span>
+                  <span className="flex-shrink-0">{config.icon}</span>
+                  <span className="truncate text-xs">{type}</span>
                 </div>
               ))}
             </div>
           </Card>
-        </div>
 
-        {/* Edge Legend */}
-        <div className="absolute bottom-4 right-4 z-10">
-          <Card className="p-3 max-w-xs">
+          {/* Edge Legend */}
+          <Card className="p-3 max-w-sm flex-1 min-w-0">
             <h4 className="text-sm font-medium mb-2">Edge Types (P1.24/P1.25)</h4>
-            <div className="space-y-1 text-xs">
+            <div className="space-y-1 text-xs max-h-32 overflow-y-auto">
               {Object.entries(EDGE_TYPES).slice(0, 8).map(([type, config]) => (
                 <div key={type} className="flex items-center space-x-2">
                   <div 
-                    className="w-4 h-0.5"
+                    className="w-4 h-0.5 flex-shrink-0"
                     style={{ 
                       backgroundColor: config.color,
                       borderStyle: config.style 
                     }}
                   />
-                  <span className="truncate">{type.replace(/_/g, ' ')}</span>
+                  <span className="truncate text-xs">{type.replace(/_/g, ' ')}</span>
                 </div>
               ))}
             </div>
@@ -390,25 +395,25 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
 
       {/* Selection Details Panel */}
       {(selectedNode || selectedEdge) && (
-        <div className="w-80 border-l bg-background">
-          <Card className="h-full rounded-none border-0">
-            <CardHeader>
+        <div className="w-80 border-l bg-background flex flex-col">
+          <Card className="h-full rounded-none border-0 flex flex-col">
+            <CardHeader className="flex-shrink-0">
               <CardTitle className="text-lg flex items-center space-x-2">
                 {selectedNode && (
                   <>
                     <span>{NODE_TYPES[selectedNode.type]?.icon}</span>
-                    <span>{selectedNode.label}</span>
+                    <span className="truncate">{selectedNode.label}</span>
                   </>
                 )}
                 {selectedEdge && (
                   <>
                     <Network className="h-5 w-5" />
-                    <span>{selectedEdge.type.replace(/_/g, ' ')}</span>
+                    <span className="truncate">{selectedEdge.type.replace(/_/g, ' ')}</span>
                   </>
                 )}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 overflow-y-auto flex-1">
               {selectedNode && (
                 <>
                   <div>
