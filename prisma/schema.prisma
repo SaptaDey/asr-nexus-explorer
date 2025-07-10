@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ResearchSession {
+  id            String   @id @default(cuid())
+  userId        String?
+  topic         String
+  field         String
+  currentStage  Int      @default(0)
+  isComplete    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // JSON fields for complex data
+  graphData     Json
+  parameters    Json
+  stageResults  Json
+  researchContext Json
+  apiUsage      Json?
+  
+  // Relations
+  nodes         GraphNode[]
+  edges         GraphEdge[]
+  events        SessionEvent[]
+  
+  @@map("research_sessions")
+}
+
+model GraphNode {
+  id            String   @id
+  sessionId     String
+  type          String
+  label         String
+  confidence    Float[]
+  position      Json?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  session       ResearchSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sourceEdges   GraphEdge[] @relation("SourceNode")
+  targetEdges   GraphEdge[] @relation("TargetNode")
+  
+  @@map("graph_nodes")
+}
+
+model GraphEdge {
+  id            String   @id @default(cuid())
+  sessionId     String
+  sourceId      String
+  targetId      String
+  type          String
+  confidence    Float
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  session       ResearchSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  source        GraphNode @relation("SourceNode", fields: [sourceId], references: [id], onDelete: Cascade)
+  target        GraphNode @relation("TargetNode", fields: [targetId], references: [id], onDelete: Cascade)
+  
+  @@map("graph_edges")
+}
+
+model SessionEvent {
+  id            String   @id @default(cuid())
+  sessionId     String
+  type          String
+  data          Json
+  timestamp     DateTime @default(now())
+  
+  session       ResearchSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@map("session_events")
+}
+
+model ApiUsage {
+  id            String   @id @default(cuid())
+  sessionId     String?
+  userId        String?
+  service       String   // 'gemini' | 'sonar'
+  tokens        Int
+  cost          Float
+  timestamp     DateTime @default(now())
+  endpoint      String?
+  
+  @@map("api_usage")
+}
+
+model BiasAuditResult {
+  id            String   @id @default(cuid())
+  sessionId     String
+  category      String   // 'bias' | 'coverage' | 'statistical' | 'methodological'
+  title         String
+  description   String
+  status        String   // 'pass' | 'fail' | 'warning' | 'pending'
+  details       String
+  impactLevel   String   // 'low' | 'medium' | 'high' | 'critical'
+  recommendation String?
+  relatedNodes  String[] // Array of node IDs
+  createdAt     DateTime @default(now())
+  
+  @@map("bias_audit_results")
+}
+
+model SystemMetrics {
+  id            String   @id @default(cuid())
+  timestamp     DateTime @default(now())
+  activeUsers   Int
+  activeSessions Int
+  totalNodes    Int
+  totalEdges    Int
+  apiCalls      Json     // { gemini: number, sonar: number }
+  systemLoad    Float?
+  
+  @@map("system_metrics")
+}
