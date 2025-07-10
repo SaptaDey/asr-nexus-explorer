@@ -15,6 +15,8 @@ import { Brain, Database, FileText, Download, Zap, Settings, Network, Play, Rota
 import { TreeOfReasoningVisualization } from '@/components/asr-got/TreeOfReasoningVisualization';
 import { ResearchInterface } from '@/components/asr-got/ResearchInterface';
 import { EnhancedGraphVisualization } from '@/components/asr-got/EnhancedGraphVisualization';
+import { AdvancedGraphVisualization } from '@/components/asr-got/AdvancedGraphVisualization';
+import { ParametersPane } from '@/components/asr-got/ParametersPane';
 import { DeveloperMode } from '@/components/asr-got/DeveloperMode';
 import { useASRGoT } from '@/hooks/useASRGoT';
 import { useProcessingMode } from '@/hooks/asr-got/useProcessingMode';
@@ -730,7 +732,7 @@ const ASRGoTInterface: React.FC = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* Clean Tabs Navigation */}
-          <TabsList className="grid w-full grid-cols-5 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-1">
+          <TabsList className="grid w-full grid-cols-7 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-1">
             <TabsTrigger 
               value="research" 
               className="data-[state=active]:bg-blue-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-blue-50 data-[state=active]:shadow-md"
@@ -750,10 +752,22 @@ const ASRGoTInterface: React.FC = () => {
               📊 Graph View
             </TabsTrigger>
             <TabsTrigger 
+              value="advanced" 
+              className="data-[state=active]:bg-cyan-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-cyan-50 data-[state=active]:shadow-md"
+            >
+              🔗 Advanced
+            </TabsTrigger>
+            <TabsTrigger 
+              value="parameters" 
+              className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-teal-50 data-[state=active]:shadow-md"
+            >
+              ⚙️ Parameters
+            </TabsTrigger>
+            <TabsTrigger 
               value="developer" 
               className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-orange-50 data-[state=active]:shadow-md"
             >
-              ⚙️ Developer
+              🔧 Developer
             </TabsTrigger>
             <TabsTrigger 
               value="export" 
@@ -808,6 +822,61 @@ const ASRGoTInterface: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <EnhancedGraphVisualization graphData={graphData} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="advanced">
+            <Card className="card-gradient">
+              <CardHeader>
+                <CardTitle className="gradient-text flex items-center gap-2">
+                  <Network className="h-5 w-5" />
+                  Advanced Multi-Layer Graph Visualization
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <AdvancedGraphVisualization 
+                  graphData={graphData}
+                  showParameters={true}
+                  onNodeSelect={(node) => {
+                    console.log('Selected node:', node);
+                  }}
+                  onEdgeSelect={(edge) => {
+                    console.log('Selected edge:', edge);
+                  }}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="parameters">
+            <Card className="card-gradient">
+              <CardHeader>
+                <CardTitle className="gradient-text flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  ASR-GoT Parameters (P1.0-P1.29)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <ParametersPane 
+                  parameters={parameters}
+                  onParameterChange={(parameterId, updates) => {
+                    setParameters(prev => ({
+                      ...prev,
+                      [parameterId]: {
+                        ...prev[parameterId],
+                        ...updates
+                      }
+                    }));
+                  }}
+                  onParametersReset={() => {
+                    // Reset to default parameters
+                    resetFramework();
+                  }}
+                  onParametersSave={() => {
+                    toast.success('Parameters saved successfully');
+                  }}
+                />
               </CardContent>
             </Card>
           </TabsContent>
