@@ -322,7 +322,7 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
 
       generateAnalysis();
     }
-  }, [currentStage, plotlyLoaded, geminiApiKey, figures.length, hasGenerated, getCacheKey, generateComprehensiveVisualizations, generateEvidenceVisualization]);
+  }, [currentStage, plotlyLoaded, geminiApiKey, hasGenerated, graphData.nodes.length]);
 
   // Render Plotly figure
   const renderPlotlyFigure = useCallback((figure: AnalyticsFigure) => {

@@ -271,65 +271,69 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
                 <h3 className="font-semibold gradient-text">Stage Analysis Results</h3>
                 <ScrollArea className="h-96 w-full">
                   <div className="space-y-4 pr-4">
-                    {stageResults.map((result, index) => (
-                      <Card key={index} className="card-gradient">
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                            <CardTitle className="text-sm">
-                              Stage {index + 1}: {stageNames[index]}
-                            </CardTitle>
-                            <Badge variant="secondary" className="text-xs">
-                              Completed
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <div className="text-sm prose prose-sm max-w-none">
-                            <ReactMarkdown 
-                              remarkPlugins={[remarkGfm]}
-                              components={{
-                                h1: ({children}) => <h1 className="gradient-text text-lg font-bold mb-2">{children}</h1>,
-                                h2: ({children}) => <h2 className="gradient-text text-base font-semibold mb-2">{children}</h2>,
-                                h3: ({children}) => <h3 className="text-purple-700 text-sm font-semibold mb-1">{children}</h3>,
-                                p: ({children}) => <p className="mb-2 text-sm">{children}</p>,
-                                ul: ({children}) => <ul className="list-disc pl-4 mb-2 text-sm">{children}</ul>,
-                                ol: ({children}) => <ol className="list-decimal pl-4 mb-2 text-sm">{children}</ol>,
-                                code: ({children}) => <code className="bg-purple-100 px-1 py-0.5 rounded text-xs">{children}</code>,
-                                pre: ({children}) => <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{children}</pre>,
-                                table: ({children}) => <table className="border-collapse border border-gray-300 text-xs w-full mb-2">{children}</table>,
-                                th: ({children}) => <th className="border border-gray-300 px-2 py-1 bg-purple-50 font-semibold">{children}</th>,
-                                td: ({children}) => <td className="border border-gray-300 px-2 py-1">{children}</td>,
-                              }}
-                            >
-                              {result}
-                            </ReactMarkdown>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                    
-                    {/* Current Processing Stage */}
-                    {isProcessing && (
-                      <Card className="card-gradient border-purple-200 border-2">
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
-                            <CardTitle className="text-sm gradient-text">
-                              Stage {currentStage + 1}: {stageNames[currentStage]}
-                            </CardTitle>
-                            <Badge className="gradient-bg text-white text-xs">
-                              Processing
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <div className="text-sm text-muted-foreground">
-                            AI is analyzing and processing this stage...
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
+                    {stageNames.map((stageName, index) => {
+                      const result = stageResults[index];
+                      const isCompleted = result && result.trim();
+                      const isCurrentStage = index === currentStage;
+                      
+                      if (!isCompleted && !isCurrentStage && index > currentStage) {
+                        // Don't show future stages until they're reached
+                        return null;
+                      }
+                      
+                      return (
+                        <Card key={index} className={`card-gradient ${isCurrentStage ? 'border-purple-200 border-2' : ''}`}>
+                          <CardHeader className="pb-2">
+                            <div className="flex items-center gap-2">
+                              {isCompleted ? (
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              ) : isCurrentStage ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
+                              ) : (
+                                <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
+                              )}
+                              <CardTitle className="text-sm">
+                                Stage {index + 1}: {stageName}
+                              </CardTitle>
+                              <Badge variant={isCompleted ? "secondary" : isCurrentStage ? "default" : "outline"} className="text-xs">
+                                {isCompleted ? "Completed" : isCurrentStage ? "Processing" : "Pending"}
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          {isCompleted && (
+                            <CardContent className="pt-0">
+                              <div className="text-sm prose prose-sm max-w-none">
+                                <ReactMarkdown 
+                                  remarkPlugins={[remarkGfm]}
+                                  components={{
+                                    h1: ({children}) => <h1 className="gradient-text text-lg font-bold mb-2">{children}</h1>,
+                                    h2: ({children}) => <h2 className="gradient-text text-base font-semibold mb-2">{children}</h2>,
+                                    h3: ({children}) => <h3 className="text-purple-700 text-sm font-semibold mb-1">{children}</h3>,
+                                    p: ({children}) => <p className="mb-2 text-sm">{children}</p>,
+                                    ul: ({children}) => <ul className="list-disc pl-4 mb-2 text-sm">{children}</ul>,
+                                    ol: ({children}) => <ol className="list-decimal pl-4 mb-2 text-sm">{children}</ol>,
+                                    code: ({children}) => <code className="bg-purple-100 px-1 py-0.5 rounded text-xs">{children}</code>,
+                                    pre: ({children}) => <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">{children}</pre>,
+                                    table: ({children}) => <table className="border-collapse border border-gray-300 text-xs w-full mb-2">{children}</table>,
+                                    th: ({children}) => <th className="border border-gray-300 px-2 py-1 bg-purple-50 font-semibold">{children}</th>,
+                                    td: ({children}) => <td className="border border-gray-300 px-2 py-1">{children}</td>,
+                                  }}
+                                >
+                                  {result}
+                                </ReactMarkdown>
+                              </div>
+                            </CardContent>
+                          )}
+                          {isCurrentStage && !isCompleted && (
+                            <CardContent className="pt-0">
+                              <div className="text-sm text-muted-foreground">
+                                AI is analyzing and processing this stage...
+                              </div>
+                            </CardContent>
+                          )}
+                        </Card>
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               </div>

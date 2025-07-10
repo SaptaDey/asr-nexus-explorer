@@ -2,7 +2,7 @@
  * ASR-GoT Interface - Integrated Implementation
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,6 +56,18 @@ const ASRGoTInterface: React.FC = () => {
   const [exportContent, setExportContent] = useState<string>('');
   
   const { mode, toggleMode, isAutomatic } = useProcessingMode('manual');
+
+  // Auto-switch to export tab when all 9 stages are completed
+  useEffect(() => {
+    if (currentStage >= 8 && stageResults.length >= 9) {
+      // Check if we have results for all 9 stages
+      const completedStages = stageResults.filter(result => result && result.trim()).length;
+      if (completedStages >= 9) {
+        setActiveTab('export');
+        toast.success('🎉 All 9 stages completed! Switched to Export tab to view your HTML report.');
+      }
+    }
+  }, [currentStage, stageResults]);
 
   const handleTokenSave = () => {
     if (!tempToken) {
@@ -137,22 +149,42 @@ const ASRGoTInterface: React.FC = () => {
           return [];
         }
 
+        const evidenceNodes = graphData.nodes.filter(n => n.type === 'evidence');
+        const evidenceDescriptions = evidenceNodes.slice(0, 5).map(node => 
+          `- ${node.label}: ${node.description || 'Evidence source'}`
+        ).join('\n');
+
         const analysisPrompt = `
-Generate 12-15 publication-ready scientific charts for the research topic "${researchContext.topic}" in the field of ${researchContext.field || 'General Science'}:
+Generate 12-15 publication-ready scientific charts based on the evidence collected for the research topic "${researchContext.topic}" in the field of ${researchContext.field || 'General Science'}:
 
 Research Context: ${researchContext.topic}
 Field: ${researchContext.field || 'General Science'}
-Evidence Collected: ${graphData.nodes.filter(n => n.type === 'evidence').length} pieces of evidence
+Evidence Sources Analyzed: ${evidenceNodes.length} pieces of evidence
 Hypotheses: ${researchContext.hypotheses?.length || 0} hypotheses generated
 
-Generate scientific visualizations that would be appropriate for this research domain. For example:
+Key Evidence Sources:
+${evidenceDescriptions}
+
+Generate scientific visualizations that directly relate to the evidence collected and would be appropriate for this research domain. For example:
 - Medical research: patient outcomes, biomarker correlations, treatment efficacy, survival curves
 - Genetics: mutation frequencies, expression levels, pathway analysis, genetic variants
 - Environmental science: pollution levels, climate data, ecological patterns
 - Psychology: behavioral patterns, cognitive scores, intervention effects
 - Materials science: property measurements, structure-function relationships
 
-Return exactly 12-15 charts in JSON format with realistic scientific data:
+Create charts that explore:
+1. Primary outcome measures from the evidence
+2. Correlations between key variables
+3. Statistical distributions of measured parameters
+4. Comparative analyses between groups/conditions
+5. Temporal trends if applicable
+6. Dose-response relationships if applicable
+7. Subgroup analyses
+8. Effect sizes and confidence intervals
+9. Meta-analysis results if multiple studies
+10. Predictive model outputs
+
+Return exactly 12-15 charts in JSON format with realistic scientific data that reflects the evidence collected:
 
 [
   {
@@ -221,7 +253,25 @@ Make the data realistic and scientifically meaningful for the research domain.
       try {
         const scientificCharts = await generateScientificCharts();
         
-        if (scientificCharts.length > 0) {
+        // Also include cached figures from Analytics tab
+        const getCachedAnalyticsCharts = () => {
+          const cacheKey = `${researchContext.topic}-${currentStage}`;
+          const cached = sessionStorage.getItem(`visual-analytics-${cacheKey}`);
+          if (cached) {
+            try {
+              return JSON.parse(cached);
+            } catch (error) {
+              console.warn('Failed to parse cached analytics charts:', error);
+              return [];
+            }
+          }
+          return [];
+        };
+        
+        const cachedAnalyticsCharts = getCachedAnalyticsCharts();
+        const allCharts = [...scientificCharts, ...cachedAnalyticsCharts];
+        
+        if (allCharts.length > 0) {
           const figureSection = [];
           
           figureSection.push(`
@@ -231,13 +281,14 @@ Make the data realistic and scientifically meaningful for the research domain.
               </h2>
               <p style="color: #6b7280; margin-bottom: 2rem;">
                 Publication-ready figures and statistical analysis for: <strong>${researchContext.topic}</strong>
+                <br><em>Generated ${allCharts.length} scientific visualizations (${scientificCharts.length} new + ${cachedAnalyticsCharts.length} from analytics)</em>
               </p>
               <div class="figures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 2rem;">
           `);
           
           // Create Plotly figures for each chart
-          for (let i = 0; i < scientificCharts.length; i++) {
-            const chart = scientificCharts[i];
+          for (let i = 0; i < allCharts.length; i++) {
+            const chart = allCharts[i];
             try {
               figureSection.push(`
                 <div class="figure-container" style="background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
@@ -287,7 +338,7 @@ Make the data realistic and scientifically meaningful for the research domain.
           <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6;">
             <p style="margin: 0; color: #64748b;">
               This report was generated using the ASR-GoT (Automatic Scientific Research - Graph of Thoughts) framework.
-              The analysis utilized a 9-stage pipeline processing ${graphData.nodes.length} knowledge nodes and ${graphData.edges.length} reasoning connections.
+              The analysis utilized a 9-stage scientific pipeline processing ${graphData.nodes.filter(n => n.type === 'evidence').length} evidence sources, ${graphData.nodes.filter(n => n.type === 'hypothesis').length} hypotheses, and ${allCharts.length} data visualizations.
             </p>
           </div>
         </div>
@@ -537,19 +588,27 @@ Make the data realistic and scientifically meaningful for the research domain.
               </div>
 
               <div class="metadata">
-                <h3 style="margin-top: 0; color: #7E5BEF;">Analysis Overview</h3>
+                <h3 style="margin-top: 0; color: #7E5BEF;">Scientific Analysis Overview</h3>
                 <div class="metadata-grid">
                   <div class="metadata-item">
                     <div class="metadata-value">${stageResults.length}</div>
-                    <div class="metadata-label">Stages Completed</div>
+                    <div class="metadata-label">Analysis Stages</div>
                   </div>
                   <div class="metadata-item">
-                    <div class="metadata-value">${graphData.nodes.length}</div>
-                    <div class="metadata-label">Knowledge Nodes</div>
+                    <div class="metadata-value">${graphData.nodes.filter(n => n.type === 'evidence').length}</div>
+                    <div class="metadata-label">Evidence Sources</div>
                   </div>
                   <div class="metadata-item">
-                    <div class="metadata-value">${graphData.edges.length}</div>
-                    <div class="metadata-label">Connections</div>
+                    <div class="metadata-value">${graphData.nodes.filter(n => n.type === 'hypothesis').length}</div>
+                    <div class="metadata-label">Hypotheses Generated</div>
+                  </div>
+                  <div class="metadata-item">
+                    <div class="metadata-value">${allCharts.length}</div>
+                    <div class="metadata-label">Scientific Figures</div>
+                  </div>
+                  <div class="metadata-item">
+                    <div class="metadata-value">${Math.round(((stageResults.filter(r => r && r.trim()).length / 9) * 100))}%</div>
+                    <div class="metadata-label">Completion Rate</div>
                   </div>
                   <div class="metadata-item">
                     <div class="metadata-value">${new Date().toLocaleDateString()}</div>

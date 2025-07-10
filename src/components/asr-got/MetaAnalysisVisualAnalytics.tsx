@@ -78,7 +78,7 @@ export const MetaAnalysisVisualAnalytics: React.FC<MetaAnalysisVisualAnalyticsPr
 
   // Load cached results
   useEffect(() => {
-    const cacheKey = getCacheKey();
+    const cacheKey = `meta-analysis-${researchContext.topic}-${currentStage}`;
     const cachedExtraction = sessionStorage.getItem(`${cacheKey}-extraction`);
     const cachedMetaAnalysis = sessionStorage.getItem(`${cacheKey}-meta`);
     
@@ -98,22 +98,22 @@ export const MetaAnalysisVisualAnalytics: React.FC<MetaAnalysisVisualAnalyticsPr
         console.warn('Failed to load cached meta-analysis results:', error);
       }
     }
-  }, [getCacheKey]);
+  }, [researchContext.topic, currentStage]);
 
   // Cache results when they change
   useEffect(() => {
     if (extractionResult) {
-      const cacheKey = getCacheKey();
+      const cacheKey = `meta-analysis-${researchContext.topic}-${currentStage}`;
       sessionStorage.setItem(`${cacheKey}-extraction`, JSON.stringify(extractionResult));
     }
-  }, [extractionResult, getCacheKey]);
+  }, [extractionResult, researchContext.topic, currentStage]);
 
   useEffect(() => {
     if (metaAnalysisResult) {
-      const cacheKey = getCacheKey();
+      const cacheKey = `meta-analysis-${researchContext.topic}-${currentStage}`;
       sessionStorage.setItem(`${cacheKey}-meta`, JSON.stringify(metaAnalysisResult));
     }
-  }, [metaAnalysisResult, getCacheKey]);
+  }, [metaAnalysisResult, researchContext.topic, currentStage]);
 
   /**
    * Start comprehensive dataset collection and analysis

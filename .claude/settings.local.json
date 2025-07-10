@@ -19,7 +19,11 @@
       "Bash(git --version)",
       "Bash(claude update)",
       "Bash(sudo:*)",
-      "Bash(git remote set-url:*)"
+      "Bash(git remote set-url:*)",
+      "Bash(git remote get-url:*)",
+      "Bash(GIT_TERMINAL_PROMPT=0 git push origin main)",
+      "Bash(gh auth:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
