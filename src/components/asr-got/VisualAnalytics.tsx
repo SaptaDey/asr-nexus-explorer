@@ -245,12 +245,48 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
     }
   }, []);
 
+  // Create a cache key based on research context to prevent regeneration
+  const getCacheKey = useCallback(() => {
+    return `${researchContext.topic}-${researchContext.field}-${currentStage}-${graphData.nodes.length}`;
+  }, [researchContext.topic, researchContext.field, currentStage, graphData.nodes.length]);
+
+  // Load cached figures from sessionStorage
+  useEffect(() => {
+    const cacheKey = getCacheKey();
+    const cached = sessionStorage.getItem(`visual-analytics-${cacheKey}`);
+    if (cached) {
+      try {
+        const cachedFigures = JSON.parse(cached);
+        setFigures(cachedFigures);
+        console.log('Loaded cached figures:', cachedFigures.length);
+      } catch (error) {
+        console.warn('Failed to load cached figures:', error);
+      }
+    }
+  }, [getCacheKey]);
+
+  // Cache figures when they change
+  useEffect(() => {
+    if (figures.length > 0) {
+      const cacheKey = getCacheKey();
+      sessionStorage.setItem(`visual-analytics-${cacheKey}`, JSON.stringify(figures));
+    }
+  }, [figures, getCacheKey]);
+
   // Trigger comprehensive visualization generation for advanced stages
   useEffect(() => {
     if (currentStage < 4 || !plotlyLoaded || !geminiApiKey) return;
 
-    // Generate comprehensive analysis for stages 6-9
+    // Generate comprehensive analysis for stages 6-9, but only if not cached
     if (currentStage >= 6 && figures.length === 0) {
+      const cacheKey = getCacheKey();
+      const cached = sessionStorage.getItem(`visual-analytics-${cacheKey}`);
+      
+      if (cached) {
+        // Figures are already loaded from cache, no need to regenerate
+        return;
+      }
+
       const generateAnalysis = async () => {
         setIsGenerating(true);
         try {
@@ -283,7 +319,7 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
 
       generateAnalysis();
     }
-  }, [currentStage, graphData, plotlyLoaded, geminiApiKey, figures.length, generateComprehensiveVisualizations, generateEvidenceVisualization]);
+  }, [currentStage, plotlyLoaded, geminiApiKey, figures.length, getCacheKey, generateComprehensiveVisualizations, generateEvidenceVisualization]);
 
   // Render Plotly figure
   const renderPlotlyFigure = useCallback((figure: AnalyticsFigure) => {
@@ -331,6 +367,60 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
     }
   }, []);
 
+  // Export figure as data URL for HTML embedding
+  const exportFigureAsDataURL = useCallback(async (figure: AnalyticsFigure): Promise<string> => {
+    if (!window.Plotly) {
+      throw new Error('Plotly not loaded');
+    }
+    
+    const container = document.getElementById(`plot-${figure.id}`);
+    if (!container) {
+      // Create a temporary container and render the plot
+      const tempContainer = document.createElement('div');
+      tempContainer.style.width = '1200px';
+      tempContainer.style.height = '800px';
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      document.body.appendChild(tempContainer);
+      
+      try {
+        await window.Plotly.newPlot(tempContainer, figure.data, figure.layout, {
+          responsive: false,
+          displayModeBar: false
+        });
+        
+        const dataUrl = await window.Plotly.toImage(tempContainer, {
+          format: 'png',
+          width: 1200,
+          height: 800
+        });
+        
+        document.body.removeChild(tempContainer);
+        return dataUrl;
+      } catch (error) {
+        if (document.body.contains(tempContainer)) {
+          document.body.removeChild(tempContainer);
+        }
+        throw error;
+      }
+    } else {
+      return await window.Plotly.toImage(container, {
+        format: 'png',
+        width: 1200,
+        height: 800
+      });
+    }
+  }, []);
+
+  // Expose figures and export function for external use (HTML export)
+  React.useEffect(() => {
+    // Attach to window for access by export functionality
+    (window as any).visualAnalytics = {
+      figures,
+      exportFigure: exportFigureAsDataURL
+    };
+  }, [figures, exportFigureAsDataURL]);
+
   const getChartIcon = (type: AnalyticsFigure['type']) => {
     const icons = {
       scatter: LineChart,
@@ -367,7 +457,13 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
               <Button 
                 size="sm" 
                 variant="outline"
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  // Clear cache and regenerate
+                  const cacheKey = getCacheKey();
+                  sessionStorage.removeItem(`visual-analytics-${cacheKey}`);
+                  setFigures([]);
+                  toast.info('Clearing cache and regenerating visualizations...');
+                }}
                 disabled={isGenerating}
               >
                 <Play className="h-4 w-4 mr-1" />

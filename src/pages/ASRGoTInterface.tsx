@@ -67,7 +67,7 @@ const ASRGoTInterface: React.FC = () => {
     toast.success('✅ Token saved. ASR-GoT ready.');
   };
 
-  const handleExportHTML = () => {
+  const handleExportHTML = async () => {
     if (!hasResults) {
       toast.error('No results to export yet - run some analysis stages first');
       return;
@@ -126,26 +126,95 @@ const ASRGoTInterface: React.FC = () => {
     // Fallback to basic report generation if no HTML report available
     const reportContent = stageResults.length > 0 ? stageResults.join('\n\n---\n\n') : 'No analysis completed yet';
     
-    // Generate embedded charts and figures
-    const embedCharts = () => {
+    // Generate embedded charts and figures with visual analytics
+    const embedCharts = async () => {
       const charts = [];
       
-      // Node distribution chart
+      // Add visual analytics figures if available
+      const visualAnalytics = (window as any).visualAnalytics;
+      if (visualAnalytics && visualAnalytics.figures && visualAnalytics.figures.length > 0) {
+        const figureSection = [];
+        
+        figureSection.push(`
+          <div class="visual-analytics-section">
+            <h2 style="color: #1e40af; margin: 2rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #e5e7eb;">
+              📊 Scientific Visualizations & Analysis
+            </h2>
+            <p style="color: #6b7280; margin-bottom: 2rem;">
+              Generated figures and statistical analysis relevant to: <strong>${researchContext.topic}</strong>
+            </p>
+            <div class="figures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 2rem;">
+        `);
+        
+        try {
+          // Export each figure as data URL and embed
+          for (let i = 0; i < Math.min(visualAnalytics.figures.length, 8); i++) {
+            const figure = visualAnalytics.figures[i];
+            try {
+              const dataUrl = await visualAnalytics.exportFigure(figure);
+              figureSection.push(`
+                <div class="figure-container" style="background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                  <h4 style="color: #374151; margin: 0 0 1rem 0; font-size: 1.1rem;">${figure.title}</h4>
+                  <div style="text-align: center;">
+                    <img src="${dataUrl}" alt="${figure.title}" style="max-width: 100%; height: auto; border-radius: 5px;" />
+                  </div>
+                  <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f3f4f6;">
+                    <span style="background: #f3f4f6; color: #6b7280; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem;">
+                      ${figure.type.toUpperCase()} • Figure ${i + 1}
+                    </span>
+                  </div>
+                </div>
+              `);
+            } catch (error) {
+              console.warn(`Failed to export figure ${figure.id}:`, error);
+              // Fallback to placeholder
+              figureSection.push(`
+                <div class="figure-container" style="background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                  <h4 style="color: #374151; margin: 0 0 1rem 0;">${figure.title}</h4>
+                  <div style="background: #f9fafb; border: 2px dashed #d1d5db; border-radius: 5px; padding: 2rem; text-align: center; color: #6b7280;">
+                    📊 ${figure.type.toUpperCase()} Visualization<br/>
+                    <small>Figure could not be embedded</small>
+                  </div>
+                </div>
+              `);
+            }
+          }
+        } catch (error) {
+          console.warn('Error processing visual analytics:', error);
+        }
+        
+        figureSection.push(`
+            </div>
+          </div>
+        `);
+        
+        charts.push(figureSection.join(''));
+      }
+      
+      // Add basic analysis charts
       const nodeTypes = graphData.nodes.reduce((acc, node) => {
         acc[node.type] = (acc[node.type] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
       
-      const nodeChartData = Object.entries(nodeTypes).map(([type, count]) => 
-        `<div class="chart-bar" style="width: ${(count / graphData.nodes.length) * 100}%;">${type}: ${count}</div>`
-      ).join('');
-      
-      charts.push(`
-        <div class="chart-container">
-          <h3>Knowledge Node Distribution</h3>
-          <div class="chart">${nodeChartData}</div>
-        </div>
-      `);
+      if (Object.keys(nodeTypes).length > 0) {
+        const nodeChartData = Object.entries(nodeTypes).map(([type, count]) => 
+          `<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6;">
+            <span style="font-weight: 500; text-transform: capitalize;">${type}</span>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <div style="background: #3b82f6; height: 8px; border-radius: 4px; width: ${Math.max(20, (count / graphData.nodes.length) * 200)}px;"></div>
+              <span style="color: #6b7280; font-size: 0.9rem;">${count}</span>
+            </div>
+          </div>`
+        ).join('');
+        
+        charts.push(`
+          <div style="background: white; border-radius: 10px; padding: 1.5rem; margin: 2rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <h3 style="color: #374151; margin: 0 0 1rem 0;">Knowledge Graph Composition</h3>
+            <div>${nodeChartData}</div>
+          </div>
+        `);
+      }
       
       // Confidence analysis
       const confidences = graphData.nodes
@@ -155,10 +224,11 @@ const ASRGoTInterface: React.FC = () => {
       if (confidences.length > 0) {
         const avgConfidence = confidences.reduce((a, b) => a + b, 0) / confidences.length;
         charts.push(`
-          <div class="stat-container">
-            <h3>Analysis Confidence</h3>
-            <div class="confidence-meter">
-              <div class="confidence-bar" style="width: ${avgConfidence * 100}%;">
+          <div style="background: white; border-radius: 10px; padding: 1.5rem; margin: 2rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <h3 style="color: #374151; margin: 0 0 1rem 0;">Analysis Confidence Level</h3>
+            <div style="background: #f3f4f6; border-radius: 10px; height: 30px; position: relative; overflow: hidden;">
+              <div style="background: linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e); height: 100%; border-radius: 10px; width: ${avgConfidence * 100}%; transition: width 0.3s ease;"></div>
+              <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: ${avgConfidence > 0.5 ? 'white' : '#374151'};">
                 ${(avgConfidence * 100).toFixed(1)}%
               </div>
             </div>
@@ -169,13 +239,17 @@ const ASRGoTInterface: React.FC = () => {
       return charts.join('');
     };
     
+    // Generate charts asynchronously
+    const chartsContent = await embedCharts();
+    
     const htmlContent = `
       <!DOCTYPE html>
       <html lang="en">
         <head>
-          <title>Scientific Reasoning Analysis Report</title>
+          <title>Scientific Analysis Report: ${researchContext.topic || 'Research Analysis'}</title>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta name="description" content="Comprehensive scientific analysis report generated using advanced reasoning framework">
           <style>
             * { box-sizing: border-box; }
             body { 
@@ -387,19 +461,21 @@ const ASRGoTInterface: React.FC = () => {
         <body>
           <div class="container">
             <header class="header">
-              <h1>Scientific Reasoning Analysis</h1>
-              <p>Advanced AI-Powered Research Framework Report</p>
+              <h1>${researchContext.topic || 'Scientific Research Analysis'}</h1>
+              <p>Comprehensive Analysis in ${researchContext.field || 'Interdisciplinary Research'}</p>
               <div style="font-size: 1rem; margin-top: 20px; opacity: 0.9;">
-                Generated on ${new Date().toLocaleDateString()} • 
-                Research Topic: ${researchContext.topic || 'Not specified'}
+                Report Generated: ${new Date().toLocaleDateString()} • 
+                Analysis Framework: Advanced Scientific Reasoning
               </div>
             </header>
 
             <div class="content">
               <div class="executive-summary">
-                <h2>Executive Summary</h2>
-                <p>This comprehensive analysis was generated using the Scientific Reasoning framework, implementing 
-                Graph of Thoughts methodology for systematic scientific inquiry and evidence synthesis.</p>
+                <h2>Research Overview</h2>
+                <p><strong>Research Question:</strong> ${researchContext.topic || 'Not specified'}</p>
+                <p><strong>Field of Study:</strong> ${researchContext.field || 'Interdisciplinary'}</p>
+                <p><strong>Analysis Scope:</strong> This report presents a systematic scientific analysis using advanced reasoning methodologies, 
+                integrating evidence from multiple sources to provide comprehensive insights and data-driven conclusions.</p>
               </div>
 
               <div class="metadata">
@@ -424,30 +500,30 @@ const ASRGoTInterface: React.FC = () => {
                 </div>
               </div>
 
-              ${embedCharts()}
+              ${chartsContent}
 
               <div class="stage">
-                <h2>Detailed Analysis Results</h2>
-                <pre>${reportContent}</pre>
+                <h2>Research Findings & Analysis</h2>
+                <div style="background: white; border-radius: 10px; padding: 2rem; margin: 1rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                  <pre style="background: none; border: none; padding: 0; margin: 0;">${reportContent}</pre>
+                </div>
               </div>
 
               <div class="creator-info">
-                <h3>Framework Creator</h3>
-                <p><strong>Dr. Sapta Dey</strong> - Biomedical Researcher & AI Developer</p>
-                <p>Department of Dermatology, Medical University of Graz, Austria</p>
-                <p><strong>Specializations:</strong> Computational Immunology, AI-Powered Research, Biomedical Data Science</p>
-                <p><strong>Contact:</strong> saptaswa.dey@medunigraz.at | 
-                <a href="https://github.com/SaptaDey">GitHub</a> | 
-                <a href="https://orcid.org/0000-0001-7532-7858">ORCID</a></p>
+                <h3>Report Details</h3>
+                <p><strong>Analysis Method:</strong> Advanced Scientific Reasoning Framework</p>
+                <p><strong>Data Integration:</strong> Multi-source evidence synthesis with bias detection</p>
+                <p><strong>Quality Assurance:</strong> Automated fact-checking and confidence scoring</p>
+                <p><strong>Generated by:</strong> ASR-GoT Framework | 
+                <a href="https://scientific-research.online" target="_blank">Scientific Research Platform</a></p>
               </div>
             </div>
 
             <footer class="footer">
-              <p><strong>Scientific Reasoning Framework</strong> - Graph of Thoughts Implementation</p>
-              <p>Advanced AI methodology for systematic scientific research and evidence synthesis</p>
+              <p><strong>${researchContext.topic || 'Scientific Analysis'}</strong> - Comprehensive Research Report</p>
+              <p>Generated using advanced AI reasoning methodologies for evidence-based scientific inquiry</p>
               <p style="font-size: 0.9rem; margin-top: 15px;">
-                This report combines automated reasoning, evidence integration, and bias detection 
-                for comprehensive scientific analysis.
+                Report Date: ${new Date().toLocaleDateString()} | Field: ${researchContext.field || 'Interdisciplinary Research'}
               </p>
             </footer>
           </div>
