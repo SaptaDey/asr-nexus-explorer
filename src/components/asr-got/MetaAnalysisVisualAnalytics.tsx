@@ -41,6 +41,7 @@ export const MetaAnalysisVisualAnalytics: React.FC<MetaAnalysisVisualAnalyticsPr
   const [metaAnalysisResult, setMetaAnalysisResult] = useState<MetaAnalysisResult | null>(null);
   const [selectedVisualization, setSelectedVisualization] = useState<string | null>(null);
   const [plotlyLoaded, setPlotlyLoaded] = useState(false);
+  const [hasPerformedAnalysis, setHasPerformedAnalysis] = useState(false);
 
   // Load Plotly.js dynamically
   useEffect(() => {
@@ -70,6 +71,50 @@ export const MetaAnalysisVisualAnalytics: React.FC<MetaAnalysisVisualAnalyticsPr
     }
   }, [geminiApiKey, perplexityApiKey]);
 
+  // Cache key for meta-analysis results
+  const getCacheKey = useCallback(() => {
+    return `meta-analysis-${researchContext.topic}-${currentStage}`;
+  }, [researchContext.topic, currentStage]);
+
+  // Load cached results
+  useEffect(() => {
+    const cacheKey = getCacheKey();
+    const cachedExtraction = sessionStorage.getItem(`${cacheKey}-extraction`);
+    const cachedMetaAnalysis = sessionStorage.getItem(`${cacheKey}-meta`);
+    
+    if (cachedExtraction) {
+      try {
+        setExtractionResult(JSON.parse(cachedExtraction));
+        setHasPerformedAnalysis(true);
+      } catch (error) {
+        console.warn('Failed to load cached extraction results:', error);
+      }
+    }
+    
+    if (cachedMetaAnalysis) {
+      try {
+        setMetaAnalysisResult(JSON.parse(cachedMetaAnalysis));
+      } catch (error) {
+        console.warn('Failed to load cached meta-analysis results:', error);
+      }
+    }
+  }, [getCacheKey]);
+
+  // Cache results when they change
+  useEffect(() => {
+    if (extractionResult) {
+      const cacheKey = getCacheKey();
+      sessionStorage.setItem(`${cacheKey}-extraction`, JSON.stringify(extractionResult));
+    }
+  }, [extractionResult, getCacheKey]);
+
+  useEffect(() => {
+    if (metaAnalysisResult) {
+      const cacheKey = getCacheKey();
+      sessionStorage.setItem(`${cacheKey}-meta`, JSON.stringify(metaAnalysisResult));
+    }
+  }, [metaAnalysisResult, getCacheKey]);
+
   /**
    * Start comprehensive dataset collection and analysis
    */
@@ -81,6 +126,12 @@ export const MetaAnalysisVisualAnalytics: React.FC<MetaAnalysisVisualAnalyticsPr
 
     if (!researchContext.topic) {
       toast.error('Research topic required for dataset collection');
+      return;
+    }
+
+    // Check if analysis has already been performed
+    if (hasPerformedAnalysis && extractionResult) {
+      toast.info('📊 Analysis already completed. Results are cached.');
       return;
     }
 
@@ -129,6 +180,7 @@ export const MetaAnalysisVisualAnalytics: React.FC<MetaAnalysisVisualAnalyticsPr
 
       setMetaAnalysisResult(metaResult);
       setIsAnalyzing(false);
+      setHasPerformedAnalysis(true);
 
       toast.success(`✅ Meta-analysis complete! Generated ${metaResult.visualizations.length} advanced visualizations from ${metaResult.summary.datasetCount} datasets.`);
 
@@ -138,7 +190,7 @@ export const MetaAnalysisVisualAnalytics: React.FC<MetaAnalysisVisualAnalyticsPr
       setIsCollecting(false);
       setIsAnalyzing(false);
     }
-  }, [geminiApiKey, perplexityApiKey, researchContext.topic]);
+  }, [geminiApiKey, perplexityApiKey, researchContext.topic, hasPerformedAnalysis, extractionResult]);
 
   /**
    * Render individual visualization

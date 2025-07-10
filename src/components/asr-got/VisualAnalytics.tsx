@@ -51,6 +51,7 @@ export const VisualAnalytics: React.FC<VisualAnalyticsProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedFigure, setSelectedFigure] = useState<string | null>(null);
   const [plotlyLoaded, setPlotlyLoaded] = useState(false);
+  const [hasGenerated, setHasGenerated] = useState(false);
   const plotContainerRefs = useRef<Record<string, HTMLDivElement>>({});
 
   // Load Plotly.js dynamically
@@ -258,6 +259,7 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
       try {
         const cachedFigures = JSON.parse(cached);
         setFigures(cachedFigures);
+        setHasGenerated(true);
         console.log('Loaded cached figures:', cachedFigures.length);
       } catch (error) {
         console.warn('Failed to load cached figures:', error);
@@ -275,10 +277,10 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
 
   // Trigger comprehensive visualization generation for advanced stages
   useEffect(() => {
-    if (currentStage < 4 || !plotlyLoaded || !geminiApiKey) return;
+    if (currentStage < 4 || !plotlyLoaded || !geminiApiKey || hasGenerated) return;
 
-    // Generate comprehensive analysis for stages 6-9, but only if not cached
-    if (currentStage >= 6 && figures.length === 0) {
+    // Generate comprehensive analysis for stages 6-9, but only if not already generated
+    if (currentStage >= 6 && figures.length === 0 && !hasGenerated) {
       const cacheKey = getCacheKey();
       const cached = sessionStorage.getItem(`visual-analytics-${cacheKey}`);
       
@@ -308,6 +310,7 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
           
           const allFigures = [...comprehensiveFigures, ...evidenceFigures];
           setFigures(allFigures);
+          setHasGenerated(true);
           
           toast.success(`Generated ${allFigures.length} comprehensive visualizations`);
         } catch (error) {
@@ -319,7 +322,7 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
 
       generateAnalysis();
     }
-  }, [currentStage, plotlyLoaded, geminiApiKey, figures.length, getCacheKey, generateComprehensiveVisualizations, generateEvidenceVisualization]);
+  }, [currentStage, plotlyLoaded, geminiApiKey, figures.length, hasGenerated, getCacheKey, generateComprehensiveVisualizations, generateEvidenceVisualization]);
 
   // Render Plotly figure
   const renderPlotlyFigure = useCallback((figure: AnalyticsFigure) => {

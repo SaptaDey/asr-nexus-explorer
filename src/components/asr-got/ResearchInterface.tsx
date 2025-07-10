@@ -46,6 +46,7 @@ interface ResearchInterfaceProps {
   };
   processingMode?: 'automatic' | 'manual';
   onShowApiModal?: () => void;
+  onSwitchToExport?: () => void;
 }
 
 export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
@@ -57,7 +58,8 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
   researchContext,
   apiKeys = { gemini: '' },
   processingMode = 'manual',
-  onShowApiModal
+  onShowApiModal,
+  onSwitchToExport
 }) => {
   const [researchQuery, setResearchQuery] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
@@ -349,12 +351,12 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
               </div>
 
               {/* Continue Button - Enhanced */}
-              {!isProcessing && currentStage < 8 && processingMode === 'manual' && (
+              {!isProcessing && currentStage < 9 && processingMode === 'manual' && (
                 <div className="space-y-2">
                   <Button 
                     onClick={handleContinueToNext}
                     className="w-full gradient-bg"
-                    disabled={currentStage >= 8}
+                    disabled={currentStage >= 9}
                   >
                     <Zap className="h-4 w-4 mr-2" />
                     Execute Stage {currentStage + 1}: {stageNames[currentStage]}
@@ -366,7 +368,7 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
               )}
               
               {/* Automatic Mode Indicator */}
-              {processingMode === 'automatic' && currentStage < 8 && (
+              {processingMode === 'automatic' && currentStage < 9 && (
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="animate-spin text-blue-500">
@@ -434,79 +436,20 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
                     <h3 className="font-semibold text-green-800">Analysis Complete!</h3>
                   </div>
                   <p className="text-sm text-green-700 mb-3">
-                    Comprehensive PhD-level scientific analysis has been generated.
+                    Comprehensive PhD-level scientific analysis has been generated with embedded scientific charts.
                   </p>
                   <Button 
                     onClick={() => {
-                      // Export HTML with final report content
-                      const finalStageResult = stageResults[8] || stageResults[stageResults.length - 1] || 'No final analysis available';
-                      const htmlContent = `
-                        <!DOCTYPE html>
-                        <html>
-                          <head>
-                            <title>ASR-GoT Final Analysis Report</title>
-                            <meta charset="UTF-8">
-                            <style>
-                              body { 
-                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; 
-                                margin: 2rem; 
-                                line-height: 1.6;
-                                max-width: 1200px;
-                                margin: 0 auto;
-                                padding: 2rem;
-                              }
-                              .header { 
-                                color: #7E5BEF; 
-                                border-bottom: 3px solid #7E5BEF;
-                                padding-bottom: 1rem;
-                                margin-bottom: 2rem;
-                              }
-                              .content { 
-                                background: #f8f9fa; 
-                                padding: 2rem; 
-                                border-radius: 8px;
-                                white-space: pre-wrap;
-                              }
-                              .metadata {
-                                background: #e9ecef;
-                                padding: 1rem;
-                                margin: 1rem 0;
-                                border-radius: 4px;
-                                font-family: monospace;
-                                font-size: 0.9em;
-                              }
-                            </style>
-                          </head>
-                          <body>
-                            <h1 class="header">ASR-GoT Final Analysis Report</h1>
-                            <div class="metadata">
-                              <strong>Generated:</strong> ${new Date().toISOString()}<br>
-                              <strong>Research Topic:</strong> ${researchContext?.topic || 'Not specified'}<br>
-                              <strong>Field:</strong> ${researchContext?.field || 'Not specified'}<br>
-                              <strong>Stages Completed:</strong> ${stageResults.length}/9<br>
-                              <strong>Knowledge Nodes:</strong> ${graphData.nodes.length}<br>
-                              <strong>Reasoning Connections:</strong> ${graphData.edges.length}
-                            </div>
-                            <div class="content">${finalStageResult}</div>
-                          </body>
-                        </html>
-                      `;
-                      
-                      const blob = new Blob([htmlContent], { type: 'text/html' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `asr-got-final-report-${new Date().toISOString().split('T')[0]}.html`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                      toast.success('Final report exported successfully');
+                      // Automatically switch to Export tab to show the HTML report
+                      if (onSwitchToExport) {
+                        onSwitchToExport();
+                        toast.success('📊 View your comprehensive scientific report in the Export tab');
+                      }
                     }}
                     className="w-full bg-green-600 hover:bg-green-700 text-white"
                   >
                     <FileText className="h-4 w-4 mr-2" />
-                    Export Final Report (HTML)
+                    View Final Report with Scientific Charts
                   </Button>
                 </div>
               )}

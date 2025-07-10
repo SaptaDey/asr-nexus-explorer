@@ -127,115 +127,171 @@ const ASRGoTInterface: React.FC = () => {
     // Fallback to basic report generation if no HTML report available
     const reportContent = stageResults.length > 0 ? stageResults.join('\n\n---\n\n') : 'No analysis completed yet';
     
-    // Generate embedded charts and figures with visual analytics
+    // Generate embedded charts and figures with scientific visualizations
     const embedCharts = async () => {
       const charts = [];
       
-      // Add visual analytics figures if available
-      const visualAnalytics = (window as any).visualAnalytics;
-      if (visualAnalytics && visualAnalytics.figures && visualAnalytics.figures.length > 0) {
-        const figureSection = [];
-        
-        figureSection.push(`
-          <div class="visual-analytics-section">
-            <h2 style="color: #1e40af; margin: 2rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #e5e7eb;">
-              📊 Scientific Visualizations & Analysis
-            </h2>
-            <p style="color: #6b7280; margin-bottom: 2rem;">
-              Generated figures and statistical analysis relevant to: <strong>${researchContext.topic}</strong>
-            </p>
-            <div class="figures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 2rem;">
-        `);
-        
+      // Generate scientific charts based on research context
+      const generateScientificCharts = async () => {
+        if (!apiKeys.gemini || !researchContext.topic) {
+          return [];
+        }
+
+        const analysisPrompt = `
+Generate 12-15 publication-ready scientific charts for the research topic "${researchContext.topic}" in the field of ${researchContext.field || 'General Science'}:
+
+Research Context: ${researchContext.topic}
+Field: ${researchContext.field || 'General Science'}
+Evidence Collected: ${graphData.nodes.filter(n => n.type === 'evidence').length} pieces of evidence
+Hypotheses: ${researchContext.hypotheses?.length || 0} hypotheses generated
+
+Generate scientific visualizations that would be appropriate for this research domain. For example:
+- Medical research: patient outcomes, biomarker correlations, treatment efficacy, survival curves
+- Genetics: mutation frequencies, expression levels, pathway analysis, genetic variants
+- Environmental science: pollution levels, climate data, ecological patterns
+- Psychology: behavioral patterns, cognitive scores, intervention effects
+- Materials science: property measurements, structure-function relationships
+
+Return exactly 12-15 charts in JSON format with realistic scientific data:
+
+[
+  {
+    "title": "Specific scientific chart name relevant to ${researchContext.topic}",
+    "type": "bar|scatter|histogram|box|heatmap|line",
+    "data": [{"x": [realistic_labels], "y": [realistic_values], "type": "bar", "name": "Dataset name"}],
+    "layout": {
+      "title": "Publication-ready title",
+      "xaxis": {"title": "X-axis label with units"},
+      "yaxis": {"title": "Y-axis label with units"},
+      "font": {"size": 12}
+    }
+  }
+]
+
+Focus on generating charts that show:
+1. Primary outcome measures
+2. Correlation analyses
+3. Distribution patterns
+4. Comparative analyses
+5. Temporal trends (if applicable)
+6. Dose-response relationships (if applicable)
+7. Statistical significance tests
+8. Effect sizes and confidence intervals
+9. Multi-variable analyses
+10. Subgroup analyses
+11. Meta-analysis results (if applicable)
+12. Predictive models (if applicable)
+
+Make the data realistic and scientifically meaningful for the research domain.
+`;
+
         try {
-          // Export each figure as data URL and embed
-          for (let i = 0; i < Math.min(visualAnalytics.figures.length, 8); i++) {
-            const figure = visualAnalytics.figures[i];
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKeys.gemini}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: analysisPrompt }] }],
+              generationConfig: { 
+                maxOutputTokens: 8000,
+                temperature: 0.2
+              }
+            })
+          });
+
+          if (!response.ok) throw new Error('Failed to generate scientific charts');
+          
+          const data = await response.json();
+          const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          
+          if (!responseText) {
+            throw new Error('No response from Gemini API');
+          }
+          
+          // Extract JSON from response
+          const jsonMatch = responseText.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/) || responseText.match(/(\[[\s\S]*?\])/);
+          const extractedJson = jsonMatch ? jsonMatch[1] : responseText;
+          
+          return JSON.parse(extractedJson);
+        } catch (error) {
+          console.error('Failed to generate scientific charts:', error);
+          return [];
+        }
+      };
+
+      try {
+        const scientificCharts = await generateScientificCharts();
+        
+        if (scientificCharts.length > 0) {
+          const figureSection = [];
+          
+          figureSection.push(`
+            <div class="scientific-visualizations-section">
+              <h2 style="color: #1e40af; margin: 2rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #e5e7eb;">
+                📊 Scientific Visualizations & Statistical Analysis
+              </h2>
+              <p style="color: #6b7280; margin-bottom: 2rem;">
+                Publication-ready figures and statistical analysis for: <strong>${researchContext.topic}</strong>
+              </p>
+              <div class="figures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 2rem;">
+          `);
+          
+          // Create Plotly figures for each chart
+          for (let i = 0; i < scientificCharts.length; i++) {
+            const chart = scientificCharts[i];
             try {
-              const dataUrl = await visualAnalytics.exportFigure(figure);
               figureSection.push(`
                 <div class="figure-container" style="background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                  <h4 style="color: #374151; margin: 0 0 1rem 0; font-size: 1.1rem;">${figure.title}</h4>
-                  <div style="text-align: center;">
-                    <img src="${dataUrl}" alt="${figure.title}" style="max-width: 100%; height: auto; border-radius: 5px;" />
-                  </div>
+                  <h4 style="color: #374151; margin: 0 0 1rem 0; font-size: 1.1rem;">${chart.title}</h4>
+                  <div id="scientific-chart-${i}" style="width: 100%; height: 400px;"></div>
                   <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f3f4f6;">
                     <span style="background: #f3f4f6; color: #6b7280; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem;">
-                      ${figure.type.toUpperCase()} • Figure ${i + 1}
+                      ${chart.type.toUpperCase()} • Figure ${i + 1}
                     </span>
                   </div>
+                  <script>
+                    if (typeof Plotly !== 'undefined') {
+                      Plotly.newPlot('scientific-chart-${i}', ${JSON.stringify(chart.data)}, ${JSON.stringify(chart.layout)}, {responsive: true});
+                    }
+                  </script>
                 </div>
               `);
             } catch (error) {
-              console.warn(`Failed to export figure ${figure.id}:`, error);
+              console.warn(`Failed to render chart ${i}:`, error);
               // Fallback to placeholder
               figureSection.push(`
                 <div class="figure-container" style="background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                  <h4 style="color: #374151; margin: 0 0 1rem 0;">${figure.title}</h4>
+                  <h4 style="color: #374151; margin: 0 0 1rem 0;">${chart.title}</h4>
                   <div style="background: #f9fafb; border: 2px dashed #d1d5db; border-radius: 5px; padding: 2rem; text-align: center; color: #6b7280;">
-                    📊 ${figure.type.toUpperCase()} Visualization<br/>
+                    📊 ${chart.type.toUpperCase()} Visualization<br/>
                     <small>Figure could not be embedded</small>
                   </div>
                 </div>
               `);
             }
           }
-        } catch (error) {
-          console.warn('Error processing visual analytics:', error);
-        }
-        
-        figureSection.push(`
-            </div>
-          </div>
-        `);
-        
-        charts.push(figureSection.join(''));
-      }
-      
-      // Add basic analysis charts
-      const nodeTypes = graphData.nodes.reduce((acc, node) => {
-        acc[node.type] = (acc[node.type] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      
-      if (Object.keys(nodeTypes).length > 0) {
-        const nodeChartData = Object.entries(nodeTypes).map(([type, count]) => 
-          `<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6;">
-            <span style="font-weight: 500; text-transform: capitalize;">${type}</span>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <div style="background: #3b82f6; height: 8px; border-radius: 4px; width: ${Math.max(20, (count / graphData.nodes.length) * 200)}px;"></div>
-              <span style="color: #6b7280; font-size: 0.9rem;">${count}</span>
-            </div>
-          </div>`
-        ).join('');
-        
-        charts.push(`
-          <div style="background: white; border-radius: 10px; padding: 1.5rem; margin: 2rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-            <h3 style="color: #374151; margin: 0 0 1rem 0;">Knowledge Graph Composition</h3>
-            <div>${nodeChartData}</div>
-          </div>
-        `);
-      }
-      
-      // Confidence analysis
-      const confidences = graphData.nodes
-        .filter(n => n.confidence && n.confidence.length > 0)
-        .map(n => n.confidence.reduce((a, b) => a + b, 0) / n.confidence.length);
-      
-      if (confidences.length > 0) {
-        const avgConfidence = confidences.reduce((a, b) => a + b, 0) / confidences.length;
-        charts.push(`
-          <div style="background: white; border-radius: 10px; padding: 1.5rem; margin: 2rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-            <h3 style="color: #374151; margin: 0 0 1rem 0;">Analysis Confidence Level</h3>
-            <div style="background: #f3f4f6; border-radius: 10px; height: 30px; position: relative; overflow: hidden;">
-              <div style="background: linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e); height: 100%; border-radius: 10px; width: ${avgConfidence * 100}%; transition: width 0.3s ease;"></div>
-              <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: ${avgConfidence > 0.5 ? 'white' : '#374151'};">
-                ${(avgConfidence * 100).toFixed(1)}%
+          figureSection.push(`
               </div>
             </div>
-          </div>
-        `);
+          `);
+          
+          charts.push(figureSection.join(''));
+        }
+      } catch (error) {
+        console.warn('Error generating scientific charts:', error);
       }
+      
+      // Add methodology summary at the end
+      charts.push(`
+        <div style="background: white; border-radius: 10px; padding: 1.5rem; margin: 2rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+          <h3 style="color: #374151; margin: 0 0 1rem 0;">🔬 Methodology Summary</h3>
+          <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6;">
+            <p style="margin: 0; color: #64748b;">
+              This report was generated using the ASR-GoT (Automatic Scientific Research - Graph of Thoughts) framework.
+              The analysis utilized a 9-stage pipeline processing ${graphData.nodes.length} knowledge nodes and ${graphData.edges.length} reasoning connections.
+            </p>
+          </div>
+        </div>
+      `);
       
       return charts.join('');
     };
@@ -251,6 +307,7 @@ const ASRGoTInterface: React.FC = () => {
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <meta name="description" content="Comprehensive scientific analysis report generated using advanced reasoning framework">
+          <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
           <style>
             * { box-sizing: border-box; }
             body { 
@@ -909,6 +966,7 @@ const ASRGoTInterface: React.FC = () => {
               apiKeys={apiKeys}
               processingMode={mode}
               onShowApiModal={() => setShowTokenModal(true)}
+              onSwitchToExport={() => setActiveTab('export')}
             />
           </TabsContent>
 

@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git config:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint)",
+      "Bash(grep:*)",
+      "Bash(claude --version)",
+      "Bash(claude auth status)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(git --version)",
+      "Bash(claude update)",
+      "Bash(sudo:*)",
+      "Bash(git remote set-url:*)"
+    ],
+    "deny": []
+  }
+}
