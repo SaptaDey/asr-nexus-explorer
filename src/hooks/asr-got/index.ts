@@ -19,6 +19,7 @@ export const useASRGoT = () => {
   const stateHook = useASRGoTState();
   const credentialsHook = useAPICredentials();
   const [stageEngine, setStageEngine] = useState<AsrGotStageEngine | null>(null);
+  const [autoMode, setAutoMode] = useState(false);
 
   const stageExecutionHook = useStageExecution({
     apiKeys: credentialsHook.apiKeys,
@@ -34,6 +35,31 @@ export const useASRGoT = () => {
     advanceStage: stateHook.advanceStage,
     currentStage: stateHook.currentStage
   });
+
+  // Auto-execute next stage in auto mode
+  useEffect(() => {
+    if (autoMode && 
+        !stateHook.isProcessing && 
+        stateHook.currentStage > 0 && 
+        stateHook.currentStage < 9 &&
+        credentialsHook.apiKeys.gemini) {
+      
+      // Auto-execute next stage after 2 second delay
+      const timer = setTimeout(() => {
+        stageExecutionHook.executeStage(stateHook.currentStage);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [autoMode, stateHook.isProcessing, stateHook.currentStage, credentialsHook.apiKeys.gemini]);
+
+  // Enhanced executeStage with auto mode support
+  const executeStageWithAutoMode = async (stageIndex: number, input?: any, enableAutoMode = false) => {
+    if (enableAutoMode) {
+      setAutoMode(true);
+    }
+    return stageExecutionHook.executeStage(stageIndex, input);
+  };
 
   const exportHook = useExportFunctionality({
     stageResults: stateHook.stageResults,
@@ -51,6 +77,12 @@ export const useASRGoT = () => {
     }
   }, [credentialsHook.apiKeys, stateHook.graphData, stageEngine]);
 
+  // Reset auto mode when framework is reset
+  const resetFrameworkWithAutoMode = () => {
+    setAutoMode(false);
+    stateHook.resetFramework();
+  };
+
   return {
     // State
     currentStage: stateHook.currentStage,
@@ -62,14 +94,16 @@ export const useASRGoT = () => {
     stageResults: stateHook.stageResults,
     researchContext: stateHook.researchContext,
     finalReport: stateHook.finalReport,
+    autoMode,
     
     // Actions
-    executeStage: stageExecutionHook.executeStage,
-    resetFramework: stateHook.resetFramework,
+    executeStage: executeStageWithAutoMode,
+    resetFramework: resetFrameworkWithAutoMode,
     setParameters: stateHook.setParameters,
     updateApiKeys: credentialsHook.updateApiKeys,
     exportResults: exportHook.exportResults,
     advanceStage: stateHook.advanceStage,
+    setAutoMode,
     
     // Computed
     isComplete: stateHook.isComplete,

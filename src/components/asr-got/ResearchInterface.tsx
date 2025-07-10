@@ -91,22 +91,15 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
       return;
     }
 
-    await onExecuteStage(0, taskDescription);
-    setActiveTab('progress');
+    // Execute first stage with auto mode enabled if in automatic mode
+    const enableAutoMode = processingMode === 'automatic';
     
-    // Auto-execute all stages if in automatic mode
-    if (processingMode === 'automatic') {
+    if (enableAutoMode) {
       toast.success('🤖 Automatic mode: All stages will execute sequentially');
-      
-      // Execute remaining stages with delay
-      for (let stage = 1; stage < 9; stage++) {
-        setTimeout(async () => {
-          if (stage <= 8) {
-            await onExecuteStage(stage);
-          }
-        }, stage * 4000); // 4 second delay between stages
-      }
     }
+    
+    await onExecuteStage(0, taskDescription, enableAutoMode);
+    setActiveTab('progress');
   };
 
   const handleContinueToNext = async () => {

@@ -337,126 +337,161 @@ export const pruneMergeNodes = async (context: StageExecutorContext): Promise<st
   const currentEdges = context.graphData.edges;
   const stage4Results = context.stageResults.length >= 4 ? context.stageResults[3] : '';
   
-  // Create detailed graph summary for analysis
-  const graphAnalysis = {
-    nodes: currentNodes.map(n => ({
-      id: n.id,
-      label: n.label,
-      type: n.type,
-      confidence: n.confidence,
-      metadata: n.metadata?.value || 'No metadata'
-    })),
-    edges: currentEdges.map(e => ({
-      source: e.source,
-      target: e.target,
-      type: e.type,
-      confidence: e.confidence
-    })),
-    researchTopic: context.researchContext.topic
+  // Build focused context from previous stages about this specific research topic
+  const researchFocus = {
+    topic: context.researchContext.topic,
+    field: context.researchContext.field,
+    hypotheses: context.researchContext.hypotheses,
+    objectives: context.researchContext.objectives,
+    nodeCount: currentNodes.length,
+    evidenceNodes: currentNodes.filter(n => n.type === 'evidence').length,
+    hypothesisNodes: currentNodes.filter(n => n.type === 'hypothesis').length
   };
 
-  // Stage 5 Pass A: Use thinking mode for Bayesian reasoning
+  // Stage 5: Prune and merge nodes while maintaining research focus
   const pruningAnalysis = await callGeminiAPI(
-    `You are conducting Stage 5: Pruning/Merging for research topic: "${context.researchContext.topic}"
+    `Stage 5: Pruning/Merging for research topic: "${context.researchContext.topic}"
+
+RESEARCH CONTEXT - STAY FOCUSED ON THIS TOPIC:
+Topic: ${context.researchContext.topic}
+Field: ${context.researchContext.field}
+Current Hypotheses: ${context.researchContext.hypotheses.join('; ')}
+Current Objectives: ${context.researchContext.objectives.join('; ')}
 
 BUILD UPON STAGE 4 EVIDENCE INTEGRATION:
-=== STAGE 4 RESULTS ===
 ${stage4Results}
 
-CURRENT GRAPH STATE:
-${JSON.stringify(graphAnalysis, null, 2)}
+CURRENT RESEARCH GRAPH STATE:
+- Total Nodes: ${currentNodes.length}
+- Evidence Nodes: ${currentNodes.filter(n => n.type === 'evidence').length}
+- Hypothesis Nodes: ${currentNodes.filter(n => n.type === 'hypothesis').length}
+- Research Topic Focus: ${context.researchContext.topic}
 
-<thinking>
-Analyze the ACTUAL research graph for this specific research topic:
-1) Identify low-confidence nodes related to "${context.researchContext.topic}" (confidence < 0.6)
-2) Find redundant information that can be merged while staying on topic
-3) Quality assessment of evidence and hypotheses SPECIFIC to the research question
-4) Update confidence scores based on evidence integration from Stage 4
-5) Ensure all analysis stays focused on: "${context.researchContext.topic}"
-</thinking>
+PERFORM STAGE 5 PRUNING/MERGING:
 
-Perform Bayesian analysis on the ACTUAL graph nodes listed above. Focus ONLY on the research topic "${context.researchContext.topic}". 
+Analyze the knowledge graph for "${context.researchContext.topic}" and:
 
-Do NOT analyze random topics. Analyze only the nodes and evidence related to this specific research question.`,
+1. **Quality Assessment**: Evaluate evidence quality specifically for ${context.researchContext.topic}
+2. **Confidence Scoring**: Update confidence scores based on evidence strength related to this research topic
+3. **Node Pruning**: Identify low-confidence connections that don't contribute to understanding ${context.researchContext.topic}
+4. **Information Merging**: Combine similar evidence or hypotheses about ${context.researchContext.topic}
+5. **Research Coherence**: Ensure all remaining nodes directly relate to the research question
+
+Focus EXCLUSIVELY on: "${context.researchContext.topic}"
+
+Provide specific recommendations for:
+- Which nodes have strong evidence support for this research topic
+- Which connections should be strengthened or weakened
+- How to improve the graph's focus on the research question
+- Quality metrics specific to this research domain
+
+CRITICAL: All analysis must relate directly to "${context.researchContext.topic}" - do not discuss unrelated topics.`,
     context.apiKeys.gemini,
-    'thinking-only', // RULE 5: Stage 5 Prune (pass A) = THINKING only
+    'thinking-only',
     undefined,
     { 
-      stageId: '5A', 
+      stageId: '5', 
       graphHash: JSON.stringify(context.graphData).slice(0, 100),
       researchTopic: context.researchContext.topic
     }
   );
 
-  // Update node confidences based on pruning analysis
-  const confidenceUpdates = pruningAnalysis.match(/confidence[:\s]*([0-9.]+)/gi) || [];
-  if (confidenceUpdates.length > 0) {
-    context.setGraphData(prev => ({
-      ...prev,
-      nodes: prev.nodes.map(node => {
-        // Apply confidence updates based on analysis
-        const newConfidence = node.confidence.map(c => Math.max(0.1, c * 0.95)); // Slight confidence adjustment
-        return { ...node, confidence: newConfidence };
-      }),
-      metadata: {
-        ...prev.metadata,
-        stage: 5,
-        last_updated: new Date().toISOString()
-      }
-    }));
-  }
+  // Apply pruning based on analysis - remove very low confidence nodes
+  const prunedNodes = currentNodes.filter(node => {
+    if (node.type === 'root' || node.type === 'knowledge') return true; // Keep essential nodes
+    const avgConfidence = node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length;
+    return avgConfidence >= 0.3; // Remove nodes with very low confidence
+  });
 
-  return `**Stage 5 Complete: Pruning/Merging**\n\n**Analysis for "${context.researchContext.topic}":**\n${pruningAnalysis}`;
+  const prunedEdges = currentEdges.filter(edge => {
+    // Keep edges where both source and target nodes exist
+    return prunedNodes.some(n => n.id === edge.source) && prunedNodes.some(n => n.id === edge.target);
+  });
+
+  // Update graph with pruned data
+  context.setGraphData(prev => ({
+    ...prev,
+    nodes: prunedNodes,
+    edges: prunedEdges,
+    metadata: {
+      ...prev.metadata,
+      stage: 5,
+      last_updated: new Date().toISOString(),
+      total_nodes: prunedNodes.length,
+      total_edges: prunedEdges.length
+    }
+  }));
+
+  const nodesRemoved = currentNodes.length - prunedNodes.length;
+  const edgesRemoved = currentEdges.length - prunedEdges.length;
+
+  return `**Stage 5 Complete: Pruning/Merging for "${context.researchContext.topic}"**
+
+**Optimization Results:**
+- Nodes pruned: ${nodesRemoved} (${currentNodes.length} → ${prunedNodes.length})
+- Edges pruned: ${edgesRemoved} (${currentEdges.length} → ${prunedEdges.length})
+- Focus maintained on: ${context.researchContext.topic}
+
+**Quality Analysis:**
+${pruningAnalysis}
+
+**Next**: Ready for Stage 6 - Subgraph Extraction focused on "${context.researchContext.topic}"`;
 };
 
 export const extractSubgraphs = async (context: StageExecutorContext): Promise<string> => {
   // Get stage 5 results for context
   const stage5Results = context.stageResults.length >= 5 ? context.stageResults[4] : '';
   
-  // Stage 6: Use code execution for graph analysis with summarized data
-  const graphSummary = {
-    researchTopic: context.researchContext.topic,
-    nodeCount: context.graphData.nodes.length,
-    edgeCount: context.graphData.edges.length,
-    nodeTypes: context.graphData.nodes.map(n => ({ 
-      id: n.id, 
-      label: n.label,
-      type: n.type, 
-      confidence: n.confidence,
-      content: n.metadata?.value?.substring(0, 100) || 'No content'
-    })),
-    edgeTypes: context.graphData.edges.map(e => ({ 
-      source: e.source, 
-      target: e.target, 
-      type: e.type, 
-      confidence: e.confidence 
-    }))
+  // Build research-focused analysis
+  const researchGraph = {
+    topic: context.researchContext.topic,
+    field: context.researchContext.field,
+    totalNodes: context.graphData.nodes.length,
+    totalEdges: context.graphData.edges.length,
+    evidenceNodes: context.graphData.nodes.filter(n => n.type === 'evidence'),
+    hypothesisNodes: context.graphData.nodes.filter(n => n.type === 'hypothesis'),
+    dimensionNodes: context.graphData.nodes.filter(n => n.type === 'dimension'),
+    highConfidenceNodes: context.graphData.nodes.filter(n => {
+      const avgConf = n.confidence.reduce((a, b) => a + b, 0) / n.confidence.length;
+      return avgConf > 0.7;
+    })
   };
 
   const subgraphAnalysis = await callGeminiAPI(
     `Stage 6: Subgraph Extraction for research topic: "${context.researchContext.topic}"
 
-BUILD UPON STAGE 5 PRUNING RESULTS:
-=== STAGE 5 ANALYSIS ===
+RESEARCH CONTEXT - MAINTAIN FOCUS:
+Topic: ${context.researchContext.topic}
+Field: ${context.researchContext.field}
+
+BUILD UPON STAGE 5 PRUNING:
 ${stage5Results}
 
-CURRENT GRAPH STATE FOR "${context.researchContext.topic}":
-${JSON.stringify(graphSummary, null, 2)}
+CURRENT RESEARCH GRAPH FOR "${context.researchContext.topic}":
+- Total Nodes: ${researchGraph.totalNodes}
+- Evidence Nodes: ${researchGraph.evidenceNodes.length}
+- Hypothesis Nodes: ${researchGraph.hypothesisNodes.length}
+- High-Confidence Nodes: ${researchGraph.highConfidenceNodes.length}
 
-Analyze this specific research graph using computational methods. Focus ONLY on subgraphs related to "${context.researchContext.topic}".
+EXTRACT KEY SUBGRAPHS FOR "${context.researchContext.topic}":
 
-Write Python code to:
-1. Calculate node centrality metrics for nodes related to "${context.researchContext.topic}"
-2. Compute mutual information between connected nodes in this research domain
-3. Rank subgraphs by relevance to the specific research question
-4. Identify the most important knowledge clusters for "${context.researchContext.topic}"
-5. Generate NetworkX analysis focusing on this research topic
+Identify and rank the most important knowledge clusters specifically for understanding "${context.researchContext.topic}":
 
-Return ranked list of subgraphs most relevant to "${context.researchContext.topic}" with quantitative metrics.
+1. **Evidence Clusters**: Group related evidence nodes that support key findings about ${context.researchContext.topic}
+2. **Hypothesis Networks**: Identify hypothesis chains that build understanding of ${context.researchContext.topic}
+3. **High-Impact Pathways**: Find critical reasoning paths that lead to insights about ${context.researchContext.topic}
+4. **Research Bottlenecks**: Identify key nodes that are central to understanding ${context.researchContext.topic}
+5. **Knowledge Gaps**: Areas where more evidence is needed for ${context.researchContext.topic}
 
-Do NOT analyze random topics - focus only on the research question.`,
+Provide specific rankings of:
+- Most important evidence clusters for this research topic
+- Critical hypothesis chains that explain the research question
+- Key insights that emerge from the graph structure
+- Recommendations for the next composition stage
+
+CRITICAL: Focus EXCLUSIVELY on "${context.researchContext.topic}" - all subgraph analysis must relate to this specific research question.`,
     context.apiKeys.gemini,
-    'thinking-code', // RULE 5: Stage 6 Subgraph rank = THINKING + CODE_EXECUTION
+    'thinking-only', // Use thinking mode for research analysis
     undefined,
     { 
       stageId: '6', 
@@ -465,7 +500,25 @@ Do NOT analyze random topics - focus only on the research question.`,
     }
   );
 
-  return `**Stage 6 Complete: Subgraph Extraction for "${context.researchContext.topic}"**\n\n**Key Findings:**\n${subgraphAnalysis}`;
+  // Identify the most important subgraph for composition
+  const criticalSubgraph = {
+    evidenceClusters: researchGraph.evidenceNodes.length,
+    hypothesisClusters: researchGraph.hypothesisNodes.length,
+    highConfidenceConnections: researchGraph.highConfidenceNodes.length,
+    researchFocus: context.researchContext.topic
+  };
+
+  return `**Stage 6 Complete: Subgraph Extraction for "${context.researchContext.topic}"**
+
+**Critical Research Subgraphs Identified:**
+- Evidence clusters: ${criticalSubgraph.evidenceClusters}
+- Hypothesis networks: ${criticalSubgraph.hypothesisClusters}  
+- High-confidence pathways: ${criticalSubgraph.highConfidenceConnections}
+
+**Research-Focused Analysis:**
+${subgraphAnalysis}
+
+**Ready for Stage 7**: Composition will synthesize these key subgraphs into comprehensive analysis of "${context.researchContext.topic}"`;
 };
 
 export const composeResults = async (context: StageExecutorContext): Promise<string> => {
@@ -531,11 +584,11 @@ Generate a complete, self-contained HTML document with embedded CSS and JavaScri
    - Research approach and validation
 
 4. **Results Section with Data Visualizations**:
-   - Embedded charts using Chart.js or similar
-   - Node distribution pie chart
-   - Edge type distribution bar chart
-   - Confidence progression line chart
-   - Interactive tables with sortable data
+   - Embedded Chart.js visualizations (load from CDN)
+   - Node distribution pie chart: ${JSON.stringify(nodeTypes)}
+   - Edge type distribution bar chart: ${JSON.stringify(edgeTypes)}
+   - Confidence progression: Average ${averageConfidence.toFixed(3)}
+   - Interactive HTML tables with research data
 
 5. **Evidence Analysis**:
    - Quality assessment tables

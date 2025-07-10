@@ -92,10 +92,25 @@ const ASRGoTInterface: React.FC = () => {
       
       toast.success('✅ Comprehensive HTML report exported successfully');
       
-      // Also offer PDF conversion
+      // Also offer PDF conversion using browser print
       setTimeout(() => {
-        toast.info('💡 Tip: Open the HTML file in Chrome and use Print → Save as PDF for publication-ready PDF');
-      }, 2000);
+        const userWantsPdf = window.confirm('Would you like to generate a PDF version now?\n\nClick OK to open the report in a new window where you can print to PDF.');
+        if (userWantsPdf) {
+          // Open HTML in new window for PDF printing
+          const newWindow = window.open('', '_blank');
+          if (newWindow) {
+            newWindow.document.write(htmlReport);
+            newWindow.document.close();
+            
+            // Wait for content to load then trigger print dialog
+            setTimeout(() => {
+              newWindow.print();
+            }, 1000);
+            
+            toast.info('💡 In the print dialog, select "Save as PDF" as your destination');
+          }
+        }
+      }, 1000);
       
       return;
     }
