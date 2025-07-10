@@ -17,6 +17,10 @@ import { ResearchInterface } from '@/components/asr-got/ResearchInterface';
 import { EnhancedGraphVisualization } from '@/components/asr-got/EnhancedGraphVisualization';
 import { AdvancedGraphVisualization } from '@/components/asr-got/AdvancedGraphVisualization';
 import { ParametersPane } from '@/components/asr-got/ParametersPane';
+import { InAppPreview } from '@/components/asr-got/InAppPreview';
+import { BiasAuditingSidebar } from '@/components/asr-got/BiasAuditingSidebar';
+import { VisualAnalytics } from '@/components/asr-got/VisualAnalytics';
+import { CostMonitor } from '@/components/asr-got/CostMonitor';
 import { DeveloperMode } from '@/components/asr-got/DeveloperMode';
 import { useASRGoT } from '@/hooks/useASRGoT';
 import { useProcessingMode } from '@/hooks/asr-got/useProcessingMode';
@@ -47,6 +51,8 @@ const ASRGoTInterface: React.FC = () => {
   const [showTokenModal, setShowTokenModal] = useState(false);
   const [tempToken, setTempToken] = useState('');
   const [activeTab, setActiveTab] = useState('research');
+  const [showBiasAudit, setShowBiasAudit] = useState(false);
+  const [exportContent, setExportContent] = useState<string>('');
   
   const { mode, toggleMode, isAutomatic } = useProcessingMode('manual');
 
@@ -449,6 +455,9 @@ const ASRGoTInterface: React.FC = () => {
       </html>
     `;
     
+    // Store content for preview
+    setExportContent(htmlContent);
+    
     const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -573,8 +582,23 @@ const ASRGoTInterface: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Bias Auditing Sidebar */}
+      {showBiasAudit && (
+        <div className="fixed right-0 top-0 bottom-0 z-20 bg-background border-l shadow-lg">
+          <BiasAuditingSidebar
+            graphData={graphData}
+            researchContext={researchContext}
+            currentStage={currentStage}
+            geminiApiKey={apiKeys.gemini}
+            onRefreshAudit={() => {
+              toast.info('Refreshing bias audit...');
+            }}
+          />
+        </div>
+      )}
+
       {/* Main Interface */}
-      <div className="container mx-auto px-4 py-6">
+      <div className={`container mx-auto px-4 py-6 transition-all duration-300 ${showBiasAudit ? 'mr-96' : ''}`}>
         {/* Spectacular Hero Section with Multiple Images */}
         <div className="text-center mb-8">
           {/* Hero Section with Prominent Logo */}
@@ -717,22 +741,36 @@ const ASRGoTInterface: React.FC = () => {
               </div>
             </div>
             
-            {/* Contact Button */}
-            <Link to="/contact">
-              <Button 
-                size="lg" 
-                className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg transition-all duration-200 rounded-lg px-6 py-3 font-semibold"
-              >
-                <Mail className="h-5 w-5 mr-2" />
-                Contact Us
-              </Button>
-            </Link>
+            {/* Action Buttons */}
+            <div className="flex items-center gap-4">
+              <Link to="/contact">
+                <Button 
+                  size="lg" 
+                  className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg transition-all duration-200 rounded-lg px-6 py-3 font-semibold"
+                >
+                  <Mail className="h-5 w-5 mr-2" />
+                  Contact Us
+                </Button>
+              </Link>
+              
+              {currentStage >= 8 && (
+                <Button
+                  size="lg"
+                  variant={showBiasAudit ? "default" : "outline"}
+                  onClick={() => setShowBiasAudit(!showBiasAudit)}
+                  className="shadow-lg transition-all duration-200 rounded-lg px-6 py-3 font-semibold"
+                >
+                  <Zap className="h-5 w-5 mr-2" />
+                  {showBiasAudit ? 'Hide' : 'Show'} Bias Audit
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* Clean Tabs Navigation */}
-          <TabsList className="grid w-full grid-cols-7 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-1">
+          <TabsList className="grid w-full grid-cols-8 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-1">
             <TabsTrigger 
               value="research" 
               className="data-[state=active]:bg-blue-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-blue-50 data-[state=active]:shadow-md"
@@ -756,6 +794,12 @@ const ASRGoTInterface: React.FC = () => {
               className="data-[state=active]:bg-cyan-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-cyan-50 data-[state=active]:shadow-md"
             >
               🔗 Advanced
+            </TabsTrigger>
+            <TabsTrigger 
+              value="analytics" 
+              className="data-[state=active]:bg-pink-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-pink-50 data-[state=active]:shadow-md"
+            >
+              📈 Analytics
             </TabsTrigger>
             <TabsTrigger 
               value="parameters" 
@@ -849,6 +893,15 @@ const ASRGoTInterface: React.FC = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="analytics">
+            <VisualAnalytics
+              graphData={graphData}
+              currentStage={currentStage}
+              geminiApiKey={apiKeys.gemini}
+              researchContext={researchContext}
+            />
+          </TabsContent>
+
           <TabsContent value="parameters">
             <Card className="card-gradient">
               <CardHeader>
@@ -882,10 +935,13 @@ const ASRGoTInterface: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="developer">
-            <DeveloperMode 
-              parameters={parameters}
-              onParametersChange={setParameters}
-            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <CostMonitor />
+              <DeveloperMode 
+                parameters={parameters}
+                onParametersChange={setParameters}
+              />
+            </div>
           </TabsContent>
 
           <TabsContent value="export">
@@ -927,6 +983,19 @@ const ASRGoTInterface: React.FC = () => {
                     Reset Framework
                   </Button>
                 </div>
+                
+                {/* In-App Preview */}
+                {exportContent && (
+                  <div className="mt-4">
+                    <InAppPreview
+                      content={exportContent}
+                      title={`ASR-GoT Report - ${researchContext.topic || 'Analysis'}`}
+                      type="html"
+                      onDownload={handleExportHTML}
+                      className="w-full"
+                    />
+                  </div>
+                )}
                 
                 {isComplete && (
                   <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
