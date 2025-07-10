@@ -20,6 +20,7 @@ import { ParametersPane } from '@/components/asr-got/ParametersPane';
 import { InAppPreview } from '@/components/asr-got/InAppPreview';
 import { BiasAuditingSidebar } from '@/components/asr-got/BiasAuditingSidebar';
 import { VisualAnalytics } from '@/components/asr-got/VisualAnalytics';
+import { MetaAnalysisVisualAnalytics } from '@/components/asr-got/MetaAnalysisVisualAnalytics';
 import { CostMonitor } from '@/components/asr-got/CostMonitor';
 import { DeveloperMode } from '@/components/asr-got/DeveloperMode';
 import { useASRGoT } from '@/hooks/useASRGoT';
@@ -970,12 +971,34 @@ const ASRGoTInterface: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="analytics">
-            <VisualAnalytics
-              graphData={graphData}
-              currentStage={currentStage}
-              geminiApiKey={apiKeys.gemini}
-              researchContext={researchContext}
-            />
+            <Tabs defaultValue="standard" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="standard" className="flex items-center gap-2">
+                  📊 Standard Analytics
+                </TabsTrigger>
+                <TabsTrigger value="meta" className="flex items-center gap-2">
+                  🧬 Meta-Analysis & Advanced Visualizations
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="standard">
+                <VisualAnalytics
+                  graphData={graphData}
+                  currentStage={currentStage}
+                  geminiApiKey={apiKeys.gemini}
+                  researchContext={researchContext}
+                />
+              </TabsContent>
+
+              <TabsContent value="meta">
+                <MetaAnalysisVisualAnalytics
+                  researchContext={researchContext}
+                  geminiApiKey={apiKeys.gemini}
+                  perplexityApiKey={apiKeys.perplexity}
+                  currentStage={currentStage}
+                />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           <TabsContent value="parameters">
