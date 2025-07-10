@@ -449,7 +449,7 @@ export class ComputationalBudgetManager {
       {
         id: 'api_calls',
         type: 'api_calls',
-        total: 1048576, // Updated to Gemini 2.5 Pro max input token limit
+        total: 1048576, // Gemini 2.5 Pro input limit: 1,048,576 tokens
         used: 0,
         available: 1048576,
         unit: 'tokens',

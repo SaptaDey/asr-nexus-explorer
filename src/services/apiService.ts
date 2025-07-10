@@ -61,7 +61,7 @@ export const callGeminiAPI = async (
 
   try {
     // RULE 4: Auto-cache for large prompts (>200k tokens)
-    // Note: Max input token limit is 1,048,576 - no artificial limiting
+    // Gemini 2.5 Pro limits: Input 1,048,576 tokens | Output 65,536 tokens
     const promptSize = new TextEncoder().encode(sanitizedPrompt).length;
     const shouldCache = promptSize > 200000;
 
