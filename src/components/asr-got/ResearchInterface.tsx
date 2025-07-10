@@ -208,10 +208,19 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 bg-white/50">
-          <TabsTrigger value="input" className="data-[state=active]:gradient-bg data-[state=active]:text-white">Research Input</TabsTrigger>
-          <TabsTrigger value="progress" className="data-[state=active]:gradient-bg data-[state=active]:text-white">AI Analysis</TabsTrigger>
-          <TabsTrigger value="results" className="data-[state=active]:gradient-bg data-[state=active]:text-white">Results</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 bg-white/50 gap-1">
+          <TabsTrigger value="input" className="data-[state=active]:gradient-bg data-[state=active]:text-white text-xs sm:text-sm p-2 sm:p-3">
+            <span className="hidden sm:inline">Research Input</span>
+            <span className="sm:hidden">Input</span>
+          </TabsTrigger>
+          <TabsTrigger value="progress" className="data-[state=active]:gradient-bg data-[state=active]:text-white text-xs sm:text-sm p-2 sm:p-3">
+            <span className="hidden sm:inline">AI Analysis</span>
+            <span className="sm:hidden">Analysis</span>
+          </TabsTrigger>
+          <TabsTrigger value="results" className="data-[state=active]:gradient-bg data-[state=active]:text-white text-xs sm:text-sm p-2 sm:p-3">
+            <span className="hidden sm:inline">Results</span>
+            <span className="sm:hidden">Results</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="input" className="space-y-6">

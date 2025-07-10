@@ -777,7 +777,7 @@ Make the data realistic and scientifically meaningful for the research domain.
 
       {/* Bias Auditing Sidebar */}
       {showBiasAudit && (
-        <div className="fixed right-0 top-0 bottom-0 z-20 bg-background border-l shadow-lg">
+        <div className="fixed right-0 top-0 bottom-0 z-20 bg-background border-l shadow-lg w-full sm:w-96">
           <BiasAuditingSidebar
             graphData={graphData}
             researchContext={researchContext}
@@ -791,11 +791,11 @@ Make the data realistic and scientifically meaningful for the research domain.
       )}
 
       {/* Main Interface */}
-      <div className={`container mx-auto px-4 py-6 transition-all duration-300 ${showBiasAudit ? 'mr-96' : ''}`}>
+      <div className={`container mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 transition-all duration-300 ${showBiasAudit ? 'sm:mr-96' : ''}`}>
         {/* Spectacular Hero Section with Multiple Images */}
         <div className="text-center mb-8">
           {/* Hero Section with Prominent Logo */}
-          <div className="relative mb-8 overflow-hidden rounded-3xl" style={{ minHeight: '500px' }}>
+          <div className="relative mb-4 sm:mb-8 overflow-hidden rounded-xl sm:rounded-3xl" style={{ minHeight: 'clamp(300px, 50vh, 500px)' }}>
             {/* Hero Background Image */}
             <div 
               className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -904,19 +904,19 @@ Make the data realistic and scientifically meaningful for the research domain.
           </div>
           
           {/* Clean Interactive Controls */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-6 sm:mb-8">
             {/* Mode Toggle */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-lg px-6 py-3 shadow-lg border border-gray-200">
-              <div className="flex items-center gap-4">
+            <div className="w-full sm:w-auto bg-white/90 backdrop-blur-sm rounded-lg px-4 sm:px-6 py-3 shadow-lg border border-gray-200">
+              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
                 <div className={`transition-all duration-300 ${isAutomatic ? 'text-green-600' : 'text-blue-600'}`}>
                   {isAutomatic ? 
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm font-semibold">AUTO MODE</span>
+                      <span className="text-xs sm:text-sm font-semibold">AUTO MODE</span>
                     </div> :
                     <div className="flex items-center gap-2">
                       <ToggleLeft className="h-4 w-4" />
-                      <span className="text-sm font-semibold">MANUAL MODE</span>
+                      <span className="text-xs sm:text-sm font-semibold">MANUAL MODE</span>
                     </div>
                   }
                 </div>
@@ -926,35 +926,38 @@ Make the data realistic and scientifically meaningful for the research domain.
                     isAutomatic 
                       ? 'bg-green-500 hover:bg-green-600' 
                       : 'bg-blue-500 hover:bg-blue-600'
-                  } text-white font-medium rounded-md px-4 py-2`}
+                  } text-white font-medium rounded-md px-3 sm:px-4 py-2 text-xs sm:text-sm`}
                   size="sm"
                 >
-                  Switch to {isAutomatic ? 'Manual' : 'Auto'}
+                  <span className="hidden sm:inline">Switch to {isAutomatic ? 'Manual' : 'Auto'}</span>
+                  <span className="sm:hidden">{isAutomatic ? 'Manual' : 'Auto'}</span>
                 </Button>
               </div>
             </div>
             
             {/* Action Buttons */}
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
               <Link to="/contact">
                 <Button 
-                  size="lg" 
-                  className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg transition-all duration-200 rounded-lg px-6 py-3 font-semibold"
+                  size="sm"
+                  className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto"
                 >
-                  <Mail className="h-5 w-5 mr-2" />
-                  Contact Us
+                  <Mail className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Contact Us</span>
+                  <span className="sm:hidden">Contact</span>
                 </Button>
               </Link>
               
               {currentStage >= 8 && (
                 <Button
-                  size="lg"
+                  size="sm"
                   variant={showBiasAudit ? "default" : "outline"}
                   onClick={() => setShowBiasAudit(!showBiasAudit)}
-                  className="shadow-lg transition-all duration-200 rounded-lg px-6 py-3 font-semibold"
+                  className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto"
                 >
-                  <Zap className="h-5 w-5 mr-2" />
-                  {showBiasAudit ? 'Hide' : 'Show'} Bias Audit
+                  <Zap className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">{showBiasAudit ? 'Hide' : 'Show'} Bias Audit</span>
+                  <span className="sm:hidden">{showBiasAudit ? 'Hide' : 'Show'} Audit</span>
                 </Button>
               )}
             </div>
@@ -963,54 +966,62 @@ Make the data realistic and scientifically meaningful for the research domain.
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* Clean Tabs Navigation */}
-          <TabsList className="grid w-full grid-cols-8 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-1 gap-1">
             <TabsTrigger 
               value="research" 
-              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-blue-50 data-[state=active]:shadow-md"
+              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-blue-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
             >
-              🔬 Research
+              <span className="hidden sm:inline">🔬 Research</span>
+              <span className="sm:hidden">🔬</span>
             </TabsTrigger>
             <TabsTrigger 
               value="tree" 
-              className="data-[state=active]:bg-green-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-green-50 data-[state=active]:shadow-md"
+              className="data-[state=active]:bg-green-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-green-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
             >
-              🌳 Tree View
+              <span className="hidden sm:inline">🌳 Tree View</span>
+              <span className="sm:hidden">🌳</span>
             </TabsTrigger>
             <TabsTrigger 
               value="graph" 
-              className="data-[state=active]:bg-purple-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-purple-50 data-[state=active]:shadow-md"
+              className="data-[state=active]:bg-purple-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-purple-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
             >
-              📊 Graph View
+              <span className="hidden sm:inline">📊 Graph View</span>
+              <span className="sm:hidden">📊</span>
             </TabsTrigger>
             <TabsTrigger 
               value="advanced" 
-              className="data-[state=active]:bg-cyan-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-cyan-50 data-[state=active]:shadow-md"
+              className="data-[state=active]:bg-cyan-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-cyan-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
             >
-              🔗 Advanced
+              <span className="hidden sm:inline">🔗 Advanced</span>
+              <span className="sm:hidden">🔗</span>
             </TabsTrigger>
             <TabsTrigger 
               value="analytics" 
-              className="data-[state=active]:bg-pink-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-pink-50 data-[state=active]:shadow-md"
+              className="data-[state=active]:bg-pink-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-pink-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
             >
-              📈 Analytics
+              <span className="hidden sm:inline">📈 Analytics</span>
+              <span className="sm:hidden">📈</span>
             </TabsTrigger>
             <TabsTrigger 
               value="parameters" 
-              className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-teal-50 data-[state=active]:shadow-md"
+              className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-teal-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
             >
-              ⚙️ Parameters
+              <span className="hidden sm:inline">⚙️ Parameters</span>
+              <span className="sm:hidden">⚙️</span>
             </TabsTrigger>
             <TabsTrigger 
               value="developer" 
-              className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-orange-50 data-[state=active]:shadow-md"
+              className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-orange-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
             >
-              🔧 Developer
+              <span className="hidden sm:inline">🔧 Developer</span>
+              <span className="sm:hidden">🔧</span>
             </TabsTrigger>
             <TabsTrigger 
               value="export" 
-              className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-indigo-50 data-[state=active]:shadow-md"
+              className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-indigo-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
             >
-              📤 Export
+              <span className="hidden sm:inline">📤 Export</span>
+              <span className="sm:hidden">📤</span>
             </TabsTrigger>
           </TabsList>
 
@@ -1091,12 +1102,14 @@ Make the data realistic and scientifically meaningful for the research domain.
 
           <TabsContent value="analytics">
             <Tabs defaultValue="standard" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="standard" className="flex items-center gap-2">
-                  📊 Standard Analytics
+              <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 mb-6 gap-1">
+                <TabsTrigger value="standard" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
+                  📊 <span className="hidden sm:inline">Standard Analytics</span>
+                  <span className="sm:hidden">Standard</span>
                 </TabsTrigger>
-                <TabsTrigger value="meta" className="flex items-center gap-2">
-                  🧬 Meta-Analysis & Advanced Visualizations
+                <TabsTrigger value="meta" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
+                  🧬 <span className="hidden sm:inline">Meta-Analysis & Advanced Visualizations</span>
+                  <span className="sm:hidden">Meta-Analysis</span>
                 </TabsTrigger>
               </TabsList>
 
