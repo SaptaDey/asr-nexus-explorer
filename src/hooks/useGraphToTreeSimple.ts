@@ -1,13 +1,11 @@
 /**
- * useGraphToTree.ts - D3 hierarchy → spring-bound R3F graph conversion
- * Transforms ASR-GoT graph data into 3D botanical tree structure
+ * useGraphToTreeSimple.ts - Simplified D3 hierarchy conversion
+ * Basic version without complex animations to avoid errors
  */
 
-import { useMemo, useEffect, useState } from 'react';
-import { useSpring, config } from '@react-spring/three';
-import { hierarchy, stratify } from 'd3-hierarchy';
+import { useMemo, useState } from 'react';
+import { stratify } from 'd3-hierarchy';
 import { GraphData, GraphNode, GraphEdge } from '@/types/asrGotTypes';
-import * as THREE from 'three';
 
 export interface BotanicalElement {
   id: string;
@@ -22,22 +20,7 @@ export interface BotanicalElement {
   metadata: any;
 }
 
-export interface TreeAnimations {
-  rootBulb: any;
-  rootlets: any[];
-  branches: any[];
-  buds: any[];
-  leaves: any[];
-  blossoms: any[];
-}
-
-export interface TreeData {
-  hierarchy: any;
-  botanicalElements: BotanicalElement[];
-  auditResults?: any;
-}
-
-export const useGraphToTree = (graphData: GraphData | null, currentStage: number) => {
+export const useGraphToTreeSimple = (graphData: GraphData | null, currentStage: number) => {
   const [treeVersion, setTreeVersion] = useState(0);
 
   // Transform graph data into D3 hierarchy
@@ -74,19 +57,19 @@ export const useGraphToTree = (graphData: GraphData | null, currentStage: number
 
       const root = stratifyFunc(stratifyNodes);
       
-      // Calculate tree layout positions
-      const tree = require('d3-hierarchy').tree()
-        .size([20, 15]) // Spread out for 3D space
-        .separation((a: any, b: any) => a.parent === b.parent ? 2 : 3);
-
-      tree(root);
-
-      // Transform to 3D coordinates
+      // Simple layout - no d3-hierarchy tree layout to avoid complex dependencies
       root.each((d: any) => {
-        // Convert 2D layout to 3D botanical positions
-        d.botanicalPosition = calculateBotanicalPosition(d, root);
-        d.botanicalType = determineBotanicalType(d.data, d.depth);
-        d.botanicalScale = calculateBotanicalScale(d.data, currentStage);
+        const depth = d.depth;
+        const angle = Math.random() * Math.PI * 2; // Simple random positioning
+        const radius = depth * 2;
+        
+        d.botanicalPosition = [
+          Math.sin(angle) * radius,
+          depth * 3,
+          Math.cos(angle) * radius
+        ];
+        d.botanicalType = determineBotanicalType(d.data, depth);
+        d.botanicalScale = [1, 1, 1]; // Simple fixed scale
       });
 
       return root;
@@ -123,55 +106,10 @@ export const useGraphToTree = (graphData: GraphData | null, currentStage: number
     return elements;
   }, [hierarchyData]);
 
-  // Create stage-based animations
-  const animations = useSpring({
-    stageProgress: currentStage / 9,
-    config: config.gentle
-  });
-
-  // Basic animation spring
-  const rootAnimation = useSpring({
-    scale: currentStage >= 1 ? [1, 1, 1] : [0, 0, 0],
-    opacity: currentStage >= 1 ? 1 : 0,
-    config: { ...config.wobbly, duration: 200 }
-  });
-
-  // Simple stage animations (no conditional hooks)
-  const stageAnimations = useMemo(() => {
-    const rootElements = botanicalElements?.filter(e => e?.type === 'root') || [];
-    const rootletElements = botanicalElements?.filter(e => e?.type === 'rootlet') || [];
-    const branchElements = botanicalElements?.filter(e => e?.type === 'branch') || [];
-    const budElements = botanicalElements?.filter(e => e?.type === 'bud') || [];
-    const leafElements = botanicalElements?.filter(e => e?.type === 'leaf') || [];
-    const blossomElements = botanicalElements?.filter(e => e?.type === 'blossom') || [];
-
-    return {
-      rootBulb: rootAnimation,
-      rootlets: rootletElements.length,
-      branches: branchElements.length,
-      buds: budElements.length, 
-      leaves: leafElements.length,
-      blossoms: blossomElements.length,
-      elements: {
-        rootElements,
-        rootletElements,
-        branchElements,
-        budElements,
-        leafElements,
-        blossomElements
-      }
-    };
-  }, [botanicalElements, currentStage, rootAnimation]);
-
-  // Update tree version when stage changes significantly
-  useEffect(() => {
-    setTreeVersion(prev => prev + 1);
-  }, [currentStage]);
-
   return {
     treeData: hierarchyData,
     botanicalElements,
-    animations: stageAnimations,
+    animations: null, // No animations to avoid complexity
     treeVersion
   };
 };
@@ -193,33 +131,6 @@ function determineBotanicalType(nodeData: GraphNode, depth: number): BotanicalEl
     case 'reflection': return 'blossom';
     default: return depth === 1 ? 'rootlet' : 'branch';
   }
-}
-
-function calculateBotanicalPosition(node: any, root: any): [number, number, number] {
-  const baseX = node.x || 0;
-  const baseY = node.y || 0;
-  const depth = node.depth;
-  
-  // Create organic tree spread
-  const angle = (baseX / 10) * Math.PI * 2;
-  const radius = depth * 2;
-  const height = depth * 3;
-  
-  return [
-    Math.sin(angle) * radius,
-    height,
-    Math.cos(angle) * radius
-  ];
-}
-
-function calculateBotanicalScale(nodeData: GraphNode, currentStage: number): [number, number, number] {
-  const confidence = nodeData.confidence?.[0] || 0.5;
-  const impactScore = nodeData.metadata?.impact_score || 0.5;
-  
-  const baseScale = 0.5 + confidence * 0.5;
-  const impactMultiplier = 0.7 + impactScore * 0.6;
-  
-  return [baseScale * impactMultiplier, baseScale * impactMultiplier, baseScale * impactMultiplier];
 }
 
 function getBotanicalColor(type: BotanicalElement['type'], disciplinary?: string): string {
@@ -248,13 +159,4 @@ function getBotanicalColor(type: BotanicalElement['type'], disciplinary?: string
   }
 
   return baseColors[type];
-}
-
-// easeInOutBack easing function for rootlets
-function easeInOutBack(t: number): number {
-  const c1 = 1.70158;
-  const c2 = c1 * 1.525;
-  return t < 0.5
-    ? (Math.pow(2 * t, 2) * ((c2 + 1) * 2 * t - c2)) / 2
-    : (Math.pow(2 * t - 2, 2) * ((c2 + 1) * (t * 2 - 2) + c2) + 2) / 2;
 }

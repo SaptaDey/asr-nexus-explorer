@@ -9,7 +9,7 @@ import { useSpring, animated } from '@react-spring/three';
 import * as THREE from 'three';
 import { gsap } from 'gsap';
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
-import { BotanicalElement } from '@/hooks/useGraphToTree';
+import { BotanicalElement } from '@/hooks/useGraphToTreeSimple';
 
 // Register GSAP plugin
 gsap.registerPlugin(MotionPathPlugin);

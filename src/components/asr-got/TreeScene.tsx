@@ -8,7 +8,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment, Stats, PerformanceMonitor } from '@react-three/drei';
 import { useSpring, animated, config } from '@react-spring/three';
 import * as THREE from 'three';
-import { useGraphToTree } from '@/hooks/useGraphToTree';
+import { useGraphToTreeSimple } from '@/hooks/useGraphToTreeSimple';
 import { ProceduralTree } from './ProceduralTree';
 import { PollenSystem } from './PollenSystem';
 import { BotanicalElements } from './BotanicalElements';
@@ -45,7 +45,7 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
   });
 
   // Transform graph data to tree hierarchy
-  const { treeData, botanicalElements, animations } = useGraphToTree(graphData, currentStage);
+  const { treeData, botanicalElements, animations } = useGraphToTreeSimple(graphData, currentStage);
 
   // Handle performance monitoring
   const handlePerformanceChange = (api: any) => {
