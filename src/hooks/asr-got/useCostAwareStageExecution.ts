@@ -76,26 +76,28 @@ export const useCostAwareStageExecution = ({
       graphData,
       researchContext,
       stageResults,
+      setGraphData,
+      setResearchContext,
       routeApiCall: async (prompt: string, additionalParams?: any) => {
-      const stageName = stageMapping[currentStage as keyof typeof stageMapping];
-      if (!stageName) {
-        throw new Error(`Unknown stage: ${currentStage}`);
-      }
-      
-      // Check if Perplexity key is needed for evidence harvest stages
-      if (stageName.includes('evidence_harvest') && !apiKeys.perplexity) {
-        throw new Error('PERPLEXITY_KEY_REQUIRED');
-      }
-      
-      return await costAwareOrchestration.routeApiCall(
-        stageName,
-        prompt,
-        apiKeys,
-        additionalParams
-      );
+        const stageName = stageMapping[currentStage as keyof typeof stageMapping];
+        if (!stageName) {
+          throw new Error(`Unknown stage: ${currentStage}`);
+        }
+        
+        // Check if Perplexity key is needed for evidence harvest stages
+        if (stageName.includes('evidence_harvest') && !apiKeys.perplexity) {
+          throw new Error('PERPLEXITY_KEY_REQUIRED');
+        }
+        
+        return await costAwareOrchestration.routeApiCall(
+          stageName,
+          prompt,
+          apiKeys,
+          additionalParams
+        );
       }
     };
-  }, [apiKeys, graphData, researchContext, stageResults, currentStage]);
+  }, [apiKeys, graphData, researchContext, stageResults, currentStage, setGraphData, setResearchContext]);
 
   // Enhanced stage execution with cost-aware routing
   const executeStage = useCallback(async (stageIndex: number) => {

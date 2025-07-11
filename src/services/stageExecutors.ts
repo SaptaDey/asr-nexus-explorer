@@ -11,9 +11,9 @@ export interface StageExecutorContext {
   graphData: GraphData;
   researchContext: ResearchContext;
   stageResults: string[];
+  setGraphData: (updater: (prev: GraphData) => GraphData) => void;
+  setResearchContext: (updater: (prev: ResearchContext) => ResearchContext) => void;
   routeApiCall?: (prompt: string, additionalParams?: any) => Promise<any>;
-  setGraphData?: (updater: (prev: GraphData) => GraphData) => void;
-  setResearchContext?: (updater: (prev: ResearchContext) => ResearchContext) => void;
 }
 
 export const initializeGraph = async (
@@ -77,7 +77,8 @@ Provide a comprehensive foundation for research planning.`;
     position: { x: 400, y: 200 }
   };
 
-  context.setGraphData(prev => ({
+  if (context.setGraphData) {
+    context.setGraphData(prev => ({
     ...prev,
     nodes: [rootNode],
     edges: [],
@@ -88,7 +89,8 @@ Provide a comprehensive foundation for research planning.`;
       total_edges: 0,
       stage: 1
     }
-  }));
+    }));
+  }
 
   // Update research context - extract field from comprehensive analysis
   const fieldMatch = comprehensiveAnalysis.match(/\*\*Field Analysis\*\*[\s\S]*?(\w+[\w\s]+)/);
@@ -100,7 +102,9 @@ Provide a comprehensive foundation for research planning.`;
     topic: taskDescription,
     objectives: comprehensiveAnalysis.split('\n').filter(line => line.includes('objective')).slice(0, 3)
   };
-  context.setResearchContext(() => newContext);
+  if (context.setResearchContext) {
+    context.setResearchContext(() => newContext);
+  }
 
   return `**Stage 1 Complete: Initialization**\n\n${comprehensiveAnalysis}`;
 };
@@ -151,7 +155,8 @@ export const decomposeTask = async (
     }
   }));
 
-  context.setGraphData(prev => ({
+  if (context.setGraphData) {
+    context.setGraphData(prev => ({
     ...prev,
     nodes: [...prev.nodes, ...dimensionNodes],
     edges: [...prev.edges, ...dimensionEdges],
@@ -162,7 +167,8 @@ export const decomposeTask = async (
       total_edges: prev.edges.length + dimensionEdges.length,
       stage: 2
     }
-  }));
+    }));
+  }
 
   return `**Stage 2 Complete: Decomposition**\n\n**AI Analysis:**\n${decompositionAnalysis}`;
 };
@@ -234,7 +240,8 @@ Generate hypotheses grounded in current scientific understanding and established
     });
   });
 
-  context.setGraphData(prev => ({
+  if (context.setGraphData) {
+    context.setGraphData(prev => ({
     ...prev,
     nodes: [...prev.nodes, ...hypothesisNodes],
     edges: [...prev.edges, ...hypothesisEdges],
@@ -245,12 +252,15 @@ Generate hypotheses grounded in current scientific understanding and established
       total_edges: prev.edges.length + hypothesisEdges.length,
       stage: 3
     }
-  }));
+    }));
+  }
 
-  context.setResearchContext(prev => ({
+  if (context.setResearchContext) {
+    context.setResearchContext(prev => ({
     ...prev,
     hypotheses: generatedHypotheses
   }));
+  }
 
   return `**Stage 3 Complete: Hypothesis Generation**\n\n${comprehensiveHypothesisAnalysis}`;
 };
@@ -334,7 +344,8 @@ Focus ONLY on evidence relevant to the hypotheses generated in Stage 3. Do NOT c
     });
   });
 
-  context.setGraphData(prev => ({
+  if (context.setGraphData) {
+    context.setGraphData(prev => ({
     ...prev,
     nodes: [...prev.nodes, ...evidenceNodes],
     edges: [...prev.edges, ...evidenceEdges],
@@ -345,7 +356,8 @@ Focus ONLY on evidence relevant to the hypotheses generated in Stage 3. Do NOT c
       total_edges: prev.edges.length + evidenceEdges.length,
       stage: 4
     }
-  }));
+    }));
+  }
 
   return `**Stage 4 Complete: Evidence Integration**\n\n${comprehensiveEvidenceAnalysis}`;
 };
@@ -429,7 +441,8 @@ CRITICAL: All analysis must relate directly to "${context.researchContext.topic}
   });
 
   // Update graph with pruned data
-  context.setGraphData(prev => ({
+  if (context.setGraphData) {
+    context.setGraphData(prev => ({
     ...prev,
     nodes: prunedNodes,
     edges: prunedEdges,
@@ -440,7 +453,8 @@ CRITICAL: All analysis must relate directly to "${context.researchContext.topic}
       total_nodes: prunedNodes.length,
       total_edges: prunedEdges.length
     }
-  }));
+    }));
+  }
 
   const nodesRemoved = currentNodes.length - prunedNodes.length;
   const edgesRemoved = currentEdges.length - prunedEdges.length;
@@ -917,7 +931,8 @@ Generate the complete HTML document with all sections, embedded styling, and int
     position: { x: 400, y: 800 }
   };
 
-  context.setGraphData(prev => ({
+  if (context.setGraphData) {
+    context.setGraphData(prev => ({
     ...prev,
     nodes: [...prev.nodes, finalNode],
     edges: [...prev.edges],
@@ -928,7 +943,8 @@ Generate the complete HTML document with all sections, embedded styling, and int
       total_edges: prev.edges.length,
       stage: 9
     }
-  }));
+    }));
+  }
 
   // Return the complete HTML report directly for export functionality
   return finalComprehensiveReport;
