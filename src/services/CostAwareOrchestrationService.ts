@@ -391,8 +391,11 @@ export class CostAwareOrchestrationService {
     console.log(`Batching ${batchedPrompts.length} prompts for ${stage} with ${model}`);
 
     if (model === 'sonar-deep-research') {
+      if (!apiKeys.perplexity) {
+        throw new Error('PERPLEXITY_KEY_REQUIRED');
+      }
       // Sonar handles batching differently (100-query bundles)
-      return await this.callSonarBatchSearch(batchedPrompts, apiKeys.perplexity!, additionalParams);
+      return await this.callSonarBatchSearch(batchedPrompts, apiKeys.perplexity, additionalParams);
     } else {
       // Gemini batch processing
       return await this.callGeminiBatch(batchedPrompts, model, apiKeys.gemini, capability, maxTokens, thinkingBudget, additionalParams);
@@ -408,6 +411,11 @@ export class CostAwareOrchestrationService {
     apiKeys: APICredentials,
     additionalParams?: any
   ): Promise<any> {
+    // Defensive check for apiKeys
+    if (!apiKeys) {
+      throw new Error('API credentials are required but not provided');
+    }
+    
     const assignment = this.getStageModelAssignment(stage);
     if (!assignment) {
       throw new Error(`No model assignment found for stage: ${stage}`);
@@ -415,9 +423,13 @@ export class CostAwareOrchestrationService {
 
     const { model, capability, maxTokens, thinkingBudget } = assignment.modelCapability;
 
-    // Check if we need Perplexity key for Sonar
+    // Check API key requirements
     if (model === 'sonar-deep-research' && !apiKeys.perplexity) {
       throw new Error('Perplexity API key required for Sonar Deep Research');
+    }
+    
+    if (model.includes('gemini') && !apiKeys.gemini) {
+      throw new Error('Gemini API key required for Gemini models');
     }
 
     // Track cost before API call
@@ -428,7 +440,7 @@ export class CostAwareOrchestrationService {
       
       switch (model) {
         case 'sonar-deep-research':
-          result = await this.callSonarDeepResearch(prompt, apiKeys.perplexity!, capability, maxTokens, additionalParams);
+          result = await this.callSonarDeepResearch(prompt, apiKeys.perplexity, capability, maxTokens, additionalParams);
           break;
         case 'gemini-2.5-flash':
           result = await this.callGeminiFlash(prompt, apiKeys.gemini, capability, maxTokens, thinkingBudget, additionalParams);

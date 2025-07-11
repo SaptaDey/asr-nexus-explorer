@@ -5,7 +5,7 @@ import { loadApiKeysFromStorage, saveApiKeysToStorage } from '@/utils/asrGotUtil
 import { toast } from "sonner";
 
 export const useAPICredentials = () => {
-  const [apiKeys, setApiKeys] = useState<APICredentials>({ gemini: '' });
+  const [apiKeys, setApiKeys] = useState<APICredentials>({ gemini: '', perplexity: '' });
 
   // Load cached credentials on mount
   useEffect(() => {

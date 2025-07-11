@@ -100,10 +100,10 @@ export const loadApiKeysFromStorage = (): APICredentials => {
       return JSON.parse(cached);
     } catch (error) {
       console.warn('Failed to load cached credentials');
-      return { gemini: '' };
+      return { gemini: '', perplexity: '' };
     }
   }
-  return { gemini: '' };
+  return { gemini: '', perplexity: '' };
 };
 
 export const saveApiKeysToStorage = (apiKeys: APICredentials) => {
