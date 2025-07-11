@@ -10,8 +10,8 @@ export const useAPICredentials = () => {
   // Load cached credentials on mount
   useEffect(() => {
     // First try to load from environment variables
-    const envGemini = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.Gemini_API_Key;
-    const envPerplexity = import.meta.env.VITE_PERPLEXITY_API_KEY || import.meta.env.Perplexity_API_Key;
+    const envGemini = import.meta.env.VITE_GEMINI_API_KEY;
+    const envPerplexity = import.meta.env.VITE_PERPLEXITY_API_KEY;
     
     if (envGemini || envPerplexity) {
       const envCredentials: APICredentials = {
