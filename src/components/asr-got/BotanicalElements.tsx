@@ -82,7 +82,7 @@ export const BotanicalElements: React.FC<BotanicalElementsProps> = ({
       {currentStage >= 4 && (
         <group name="evidence-buds">
           {lodSettings.instancedBuds ? (
-            <InstancedLeaves
+            <InstancedBuds
               elements={elementsByType.buds}
               animations={animations.buds}
               performanceLevel={performanceLevel}
@@ -333,6 +333,139 @@ const InstancedLeaves: React.FC<{
       ref={instancedMeshRef}
       args={[leafGeometry, leafMaterial, Math.min(elements.length, maxInstances)]}
       onClick={() => onElementClick?.(6)}
+    />
+  );
+};
+
+// Instanced Buds Component for Performance
+const InstancedBuds: React.FC<{
+  elements: BotanicalElement[];
+  animations: unknown[] | undefined;
+  performanceLevel: 'high' | 'medium' | 'low';
+  reducedMotion: boolean;
+  maxInstances: number;
+  onElementClick?: (stage: number) => void;
+}> = ({ elements, animations, performanceLevel, reducedMotion, maxInstances, onElementClick }) => {
+  const instancedMeshRef = useRef<THREE.InstancedMesh>(null);
+  const [budData, setBudData] = useState<Float32Array[]>([]);
+
+  // Create bud geometry based on performance
+  const budGeometry = useMemo(() => {
+    const segments = performanceLevel === 'high' ? 12 : performanceLevel === 'medium' ? 8 : 6;
+    return new THREE.SphereGeometry(0.2, segments, segments);
+  }, [performanceLevel]);
+
+  // Setup instanced matrices
+  useEffect(() => {
+    if (!instancedMeshRef.current || elements.length === 0) return;
+
+    const instanceCount = Math.min(elements.length, maxInstances);
+    const dummy = new THREE.Object3D();
+    const colorArray = new Float32Array(instanceCount * 3);
+    const scaleArray = new Float32Array(instanceCount);
+
+    for (let i = 0; i < instanceCount; i++) {
+      const element = elements[i];
+      
+      // Position with slight randomization
+      dummy.position.set(
+        element.position[0] + (Math.random() - 0.5) * 0.1,
+        element.position[1] + (Math.random() - 0.5) * 0.1,
+        element.position[2] + (Math.random() - 0.5) * 0.1
+      );
+
+      // Random orientation
+      dummy.rotation.set(
+        Math.random() * Math.PI,
+        Math.random() * Math.PI,
+        Math.random() * Math.PI
+      );
+
+      // Scale based on confidence
+      const scale = 0.8 + element.confidence * 0.4;
+      dummy.scale.set(scale, scale, scale);
+      scaleArray[i] = scale;
+
+      dummy.updateMatrix();
+      instancedMeshRef.current.setMatrixAt(i, dummy.matrix);
+
+      // Color based on element color with evidence quality
+      const color = new THREE.Color(element.color);
+      const evidenceMultiplier = 0.7 + element.evidenceCount * 0.1;
+      color.multiplyScalar(evidenceMultiplier);
+      
+      colorArray[i * 3] = color.r;
+      colorArray[i * 3 + 1] = color.g;
+      colorArray[i * 3 + 2] = color.b;
+    }
+
+    instancedMeshRef.current.instanceMatrix.needsUpdate = true;
+    
+    // Set attributes
+    const colorAttribute = new THREE.InstancedBufferAttribute(colorArray, 3);
+    const scaleAttribute = new THREE.InstancedBufferAttribute(scaleArray, 1);
+    instancedMeshRef.current.geometry.setAttribute('instanceColor', colorAttribute);
+    instancedMeshRef.current.geometry.setAttribute('instanceScale', scaleAttribute);
+    
+    setBudData([colorArray, scaleArray]);
+  }, [elements, maxInstances]);
+
+  // Pulse animation for evidence arrival
+  useFrame(({ clock }) => {
+    if (!instancedMeshRef.current || reducedMotion) return;
+
+    const time = clock.getElapsedTime();
+    const dummy = new THREE.Object3D();
+    
+    for (let i = 0; i < Math.min(elements.length, maxInstances); i++) {
+      const element = elements[i];
+      
+      // Evidence pulse effect
+      const pulsePhase = time * 2 + i * 0.3;
+      const pulse = Math.sin(pulsePhase) * 0.1 + 1;
+      const evidencePulse = element.evidenceCount > 0 ? pulse : 1;
+      
+      dummy.position.set(
+        element.position[0],
+        element.position[1],
+        element.position[2]
+      );
+      
+      dummy.rotation.set(
+        Math.sin(time * 0.3 + i * 0.1) * 0.1,
+        time * 0.2 + i * 0.05,
+        Math.cos(time * 0.25 + i * 0.08) * 0.1
+      );
+      
+      const baseScale = 0.8 + element.confidence * 0.4;
+      const finalScale = baseScale * evidencePulse;
+      dummy.scale.set(finalScale, finalScale, finalScale);
+      
+      dummy.updateMatrix();
+      instancedMeshRef.current.setMatrixAt(i, dummy.matrix);
+    }
+    
+    instancedMeshRef.current.instanceMatrix.needsUpdate = true;
+  });
+
+  const budMaterial = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: '#32CD32',
+      roughness: 0.6,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.9,
+      vertexColors: true,
+      emissive: '#228B22',
+      emissiveIntensity: 0.2
+    });
+  }, []);
+
+  return (
+    <instancedMesh
+      ref={instancedMeshRef}
+      args={[budGeometry, budMaterial, Math.min(elements.length, maxInstances)]}
+      onClick={() => onElementClick?.(4)}
     />
   );
 };

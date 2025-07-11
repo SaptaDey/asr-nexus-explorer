@@ -144,17 +144,26 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
           </Suspense>
         )}
 
-        {/* Camera Controls */}
+        {/* Camera Controls with Keyboard Support */}
         <OrbitControls
           enablePan={true}
           enableZoom={true}
           enableRotate={true}
+          enableKeys={true}
+          keys={{
+            LEFT: 'ArrowLeft',
+            UP: 'ArrowUp', 
+            RIGHT: 'ArrowRight',
+            BOTTOM: 'ArrowDown'
+          }}
+          keyPanSpeed={7.0}
           minDistance={5}
           maxDistance={50}
           minPolarAngle={0}
           maxPolarAngle={Math.PI / 2}
           autoRotate={!isProcessing && !reducedMotion}
           autoRotateSpeed={0.5}
+          makeDefault
         />
 
         {/* Debug Stats (dev mode only) */}
@@ -169,24 +178,52 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
         <div>Stage: {currentStage}/9</div>
       </div>
 
-      {/* Stage Progress Indicator */}
+      {/* Stage Progress Indicator with Accessibility */}
       <div className="absolute bottom-4 left-4 right-4">
         <div className="bg-black/60 text-white px-4 py-2 rounded-lg">
           <div className="flex justify-between items-center">
-            <span className="font-semibold">
+            <span className="font-semibold" id="stage-label">
               {getStageLabel(currentStage)}
             </span>
-            <span className="text-sm opacity-75">
+            <span className="text-sm opacity-75" aria-live="polite">
               {isProcessing ? 'Growing...' : 'Complete'}
             </span>
           </div>
-          <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+          <div 
+            className="w-full bg-gray-700 rounded-full h-2 mt-2"
+            role="progressbar"
+            aria-labelledby="stage-label"
+            aria-valuenow={currentStage}
+            aria-valuemin={1}
+            aria-valuemax={9}
+            aria-valuetext={`Stage ${currentStage} of 9: ${getStageLabel(currentStage)}`}
+          >
             <div
               className="bg-green-500 h-2 rounded-full transition-all duration-500"
               style={{ width: `${(currentStage / 9) * 100}%` }}
             />
           </div>
         </div>
+      </div>
+
+      {/* Screen Reader Announcements */}
+      <div 
+        className="sr-only" 
+        aria-live="assertive" 
+        aria-atomic="true"
+        role="status"
+      >
+        {isProcessing && `Research tree is growing. Currently at ${getStageLabel(currentStage)}.`}
+        {!isProcessing && `Research tree visualization complete at ${getStageLabel(currentStage)}.`}
+      </div>
+
+      {/* Keyboard Navigation Instructions */}
+      <div className="absolute top-4 left-4 bg-black/80 text-white px-3 py-2 rounded-lg text-xs max-w-xs">
+        <div className="font-semibold mb-1">Navigation:</div>
+        <div>Mouse: Drag to orbit, scroll to zoom</div>
+        <div>Keyboard: Arrow keys to rotate, +/- to zoom</div>
+        <div>Click elements for stage details</div>
+        {reducedMotion && <div className="text-yellow-300 mt-1">⚡ Reduced motion active</div>}
       </div>
     </div>
   );
