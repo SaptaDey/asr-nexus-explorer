@@ -125,23 +125,23 @@ export const useCostAwareStageExecution = ({
 
       switch (stageIndex) {
         case 0: // Initialization
-          result = await initializeGraph(context);
+          result = await initializeGraph(researchContext.topic, context);
           setGraphData(prev => ({ ...prev, stage: 'initialization' }));
           break;
           
         case 1: // Decomposition
-          result = await decomposeTask(context);
+          result = await decomposeTask(undefined, context);
           setGraphData(prev => ({ ...prev, stage: 'decomposition' }));
           break;
           
         case 2: // Hypothesis Generation
-          result = await generateHypotheses(context);
+          result = await generateHypotheses(undefined, context);
           setGraphData(prev => ({ ...prev, stage: 'hypothesis_generation' }));
           break;
           
         case 3: // Evidence Integration
           try {
-            result = await integrateEvidence(context);
+            result = await integrateEvidence(undefined, context);
             setGraphData(prev => ({ ...prev, stage: 'evidence_integration' }));
           } catch (error: any) {
             if (error.message === 'PERPLEXITY_KEY_REQUIRED') {
