@@ -9,8 +9,26 @@ export const useAPICredentials = () => {
 
   // Load cached credentials on mount
   useEffect(() => {
-    const credentials = loadApiKeysFromStorage();
-    setApiKeys(credentials);
+    // First try to load from environment variables
+    const envGemini = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.Gemini_API_Key;
+    const envPerplexity = import.meta.env.VITE_PERPLEXITY_API_KEY || import.meta.env.Perplexity_API_Key;
+    
+    if (envGemini || envPerplexity) {
+      const envCredentials: APICredentials = {
+        gemini: envGemini || '',
+        perplexity: envPerplexity || ''
+      };
+      setApiKeys(envCredentials);
+      // Save to storage for consistency
+      if (envGemini && envPerplexity) {
+        saveApiKeysToStorage(envCredentials);
+        toast.success('API credentials loaded from environment variables');
+      }
+    } else {
+      // Fallback to cached credentials
+      const credentials = loadApiKeysFromStorage();
+      setApiKeys(credentials);
+    }
   }, []);
 
   const updateApiKeys = useCallback((newKeys: APICredentials) => {

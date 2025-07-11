@@ -537,7 +537,12 @@ export class CostAwareOrchestrationService {
       generationConfig: {
         maxOutputTokens: enforcedMaxTokens,
         temperature: 0.1,
-        ...additionalParams
+        // Only include valid Gemini generation config parameters
+        ...(additionalParams?.temperature !== undefined && { temperature: additionalParams.temperature }),
+        ...(additionalParams?.topP !== undefined && { topP: additionalParams.topP }),
+        ...(additionalParams?.topK !== undefined && { topK: additionalParams.topK }),
+        ...(additionalParams?.candidateCount !== undefined && { candidateCount: additionalParams.candidateCount }),
+        ...(additionalParams?.stopSequences !== undefined && { stopSequences: additionalParams.stopSequences })
       },
       tools: this.getToolsForCapability(tools),
       systemInstruction: {
@@ -545,10 +550,7 @@ export class CostAwareOrchestrationService {
       }
     };
 
-    // Always add thinking_budget for Flash stages (per document: 2048)
-    if (thinkingBudget) {
-      body.generationConfig.thinking_budget = thinkingBudget;
-    }
+    // Note: thinking_budget is not a valid Gemini API parameter - removed
 
     const response = await fetch(url, {
       method: 'POST',
@@ -598,7 +600,12 @@ export class CostAwareOrchestrationService {
       generationConfig: {
         maxOutputTokens: enforcedMaxTokens,
         temperature: 0.1,
-        ...additionalParams
+        // Only include valid Gemini generation config parameters
+        ...(additionalParams?.temperature !== undefined && { temperature: additionalParams.temperature }),
+        ...(additionalParams?.topP !== undefined && { topP: additionalParams.topP }),
+        ...(additionalParams?.topK !== undefined && { topK: additionalParams.topK }),
+        ...(additionalParams?.candidateCount !== undefined && { candidateCount: additionalParams.candidateCount }),
+        ...(additionalParams?.stopSequences !== undefined && { stopSequences: additionalParams.stopSequences })
       },
       tools: this.getToolsForCapability(tools),
       systemInstruction: {
@@ -606,10 +613,7 @@ export class CostAwareOrchestrationService {
       }
     };
 
-    // Add thinking_budget for Pro stages (per document: 4096-16384)
-    if (thinkingBudget) {
-      body.generationConfig.thinking_budget = thinkingBudget;
-    }
+    // Note: thinking_budget is not a valid Gemini API parameter - removed
 
     // Add CODE_EXECUTION enhancements for figure generation (per document)
     if (capability === 'CODE_EXECUTION') {
@@ -704,8 +708,12 @@ plt.savefig('figure_name.png', dpi=300, bbox_inches='tight')`;
       generationConfig: {
         maxOutputTokens: enforcedMaxTokens,
         temperature: 0.1,
-        thinking_budget: thinkingBudget,
-        ...additionalParams
+        // Only include valid Gemini generation config parameters
+        ...(additionalParams?.temperature !== undefined && { temperature: additionalParams.temperature }),
+        ...(additionalParams?.topP !== undefined && { topP: additionalParams.topP }),
+        ...(additionalParams?.topK !== undefined && { topK: additionalParams.topK }),
+        ...(additionalParams?.candidateCount !== undefined && { candidateCount: additionalParams.candidateCount }),
+        ...(additionalParams?.stopSequences !== undefined && { stopSequences: additionalParams.stopSequences })
       },
       tools: this.getToolsForCapability(tools),
       systemInstruction: {
