@@ -663,41 +663,6 @@ Make the data realistic and scientifically meaningful for the research domain.
     toast.success('HTML report downloaded successfully');
   };
 
-  const handleExportSVG = () => {
-    // Look for SVG in the tree visualization area
-    const treeContainer = document.querySelector('[data-testid="tree-scene"], .tree-scene');
-    const svg = treeContainer?.querySelector('svg') || document.querySelector('svg');
-    
-    if (!svg) {
-      toast.error('No visualization found to export. Try switching to Tree View tab first.');
-      return;
-    }
-    
-    try {
-      // Clone the SVG to avoid modifying the original
-      const svgClone = svg.cloneNode(true) as SVGElement;
-      
-      // Set proper dimensions and viewBox
-      svgClone.setAttribute('width', '800');
-      svgClone.setAttribute('height', '600');
-      svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-      
-      const svgData = new XMLSerializer().serializeToString(svgClone);
-      const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `asr-got-tree-${new Date().toISOString().split('T')[0]}.svg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast.success('Tree visualization exported as SVG');
-    } catch (error) {
-      console.error('SVG export error:', error);
-      toast.error('Failed to export SVG - please try again');
-    }
-  };
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -982,13 +947,6 @@ Make the data realistic and scientifically meaningful for the research domain.
               <span className="sm:hidden">🌳</span>
             </TabsTrigger>
             <TabsTrigger 
-              value="graph" 
-              className="data-[state=active]:bg-purple-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-purple-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
-            >
-              <span className="hidden sm:inline">📊 Graph View</span>
-              <span className="sm:hidden">📊</span>
-            </TabsTrigger>
-            <TabsTrigger 
               value="advanced" 
               className="data-[state=active]:bg-cyan-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-cyan-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
             >
@@ -1061,43 +1019,53 @@ Make the data realistic and scientifically meaningful for the research domain.
             </Card>
           </TabsContent>
 
-          <TabsContent value="graph">
-            <Card className="card-gradient">
-              <CardHeader>
-                <CardTitle className="gradient-text flex items-center gap-2">
-                  <Network className="h-5 w-5" />
-                  Enhanced Graph Visualization
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <EnhancedGraphVisualization graphData={graphData} />
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="advanced" className="h-full">
-            <Card className="card-gradient h-full flex flex-col">
-              <CardHeader className="flex-shrink-0">
-                <CardTitle className="gradient-text flex items-center gap-2">
-                  <Network className="h-5 w-5" />
-                  Advanced Multi-Layer Graph Visualization
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0 flex-1 min-h-0">
-                <div className="h-full" style={{ height: '600px' }}>
-                  <AdvancedGraphVisualization 
-                    graphData={graphData}
-                    showParameters={true}
-                    onNodeSelect={(node) => {
-                      console.log('Selected node:', node);
-                    }}
-                    onEdgeSelect={(edge) => {
-                      console.log('Selected edge:', edge);
-                    }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <Card className="card-gradient">
+                <CardHeader>
+                  <CardTitle className="gradient-text flex items-center gap-2">
+                    <Network className="h-5 w-5" />
+                    Advanced Graph Visualization & Analysis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Tabs defaultValue="multi-layer" className="w-full">
+                    <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 mb-6 gap-1">
+                      <TabsTrigger value="multi-layer" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
+                        🔗 <span className="hidden sm:inline">Multi-Layer Network</span>
+                        <span className="sm:hidden">Multi-Layer</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="enhanced" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
+                        🌐 <span className="hidden sm:inline">Enhanced Graph View</span>
+                        <span className="sm:hidden">Enhanced</span>
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="multi-layer">
+                      <div className="h-full" style={{ height: '600px' }}>
+                        <AdvancedGraphVisualization 
+                          graphData={graphData}
+                          showParameters={true}
+                          onNodeSelect={(node) => {
+                            console.log('Selected node:', node);
+                          }}
+                          onEdgeSelect={(edge) => {
+                            console.log('Selected edge:', edge);
+                          }}
+                        />
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="enhanced">
+                      <div className="h-full" style={{ height: '600px' }}>
+                        <EnhancedGraphVisualization graphData={graphData} />
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="analytics">
@@ -1192,14 +1160,6 @@ Make the data realistic and scientifically meaningful for the research domain.
                   >
                     <FileText className="h-4 w-4 mr-2" />
                     Export HTML Report
-                  </Button>
-                  <Button 
-                    onClick={handleExportSVG} 
-                    className="gradient-bg"
-                    disabled={graphData.nodes.length === 0}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Export Tree SVG
                   </Button>
                   <Button 
                     onClick={() => exportResults('json')} 

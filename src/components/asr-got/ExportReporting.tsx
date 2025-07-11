@@ -102,6 +102,7 @@ export const ExportReporting: React.FC<ExportReportingProps> = ({
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASR-GoT Analysis Report: ${researchQuestion}</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -260,6 +261,63 @@ export const ExportReporting: React.FC<ExportReportingProps> = ({
                     </div>
                 </div>
             `).join('')}
+
+            <h2>Visual Analytics & Figures</h2>
+            <div id="visual-analytics-section">
+                <script>
+                    // Embed Plotly figures from Visual Analytics
+                    document.addEventListener('DOMContentLoaded', function() {
+                        if (window.visualAnalytics && window.visualAnalytics.figures) {
+                            const figures = window.visualAnalytics.figures;
+                            const container = document.getElementById('visual-analytics-section');
+                            
+                            figures.forEach(async (figure, index) => {
+                                const figureDiv = document.createElement('div');
+                                figureDiv.className = 'figure-container';
+                                figureDiv.innerHTML = \`
+                                    <h3>\${figure.title}</h3>
+                                    <div id="plot-\${figure.id}" class="plotly-figure"></div>
+                                    <p class="figure-caption">Figure \${index + 1}: \${figure.title}</p>
+                                \`;
+                                container.appendChild(figureDiv);
+                                
+                                // Render the Plotly figure
+                                if (window.Plotly) {
+                                    setTimeout(() => {
+                                        window.Plotly.newPlot(\`plot-\${figure.id}\`, figure.data, figure.layout, {
+                                            responsive: true,
+                                            displayModeBar: false
+                                        });
+                                    }, 100);
+                                }
+                            });
+                        }
+                    });
+                </script>
+                <style>
+                    .figure-container {
+                        margin: 30px 0;
+                        padding: 20px;
+                        background: #f8f9fa;
+                        border-radius: 10px;
+                        border: 1px solid #e1e5e9;
+                    }
+                    .plotly-figure {
+                        width: 100%;
+                        height: 400px;
+                        border: 1px solid #ddd;
+                        border-radius: 5px;
+                        background: white;
+                        margin: 10px 0;
+                    }
+                    .figure-caption {
+                        font-style: italic;
+                        color: #666;
+                        text-align: center;
+                        margin-top: 10px;
+                    }
+                </style>
+            </div>
 
             <h2>Evidence Analysis</h2>
             <p>This analysis incorporated ${evidenceNodes.length} evidence sources through the ASR-GoT methodology:</p>

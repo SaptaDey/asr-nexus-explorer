@@ -121,6 +121,7 @@ export const useGraphToTree = (graphData: GraphData | null | undefined, currentS
 
     const elements: BotanicalElement[] = [];
 
+    // Add elements from actual graph data
     hierarchyData.each((node: any) => {
       const data = node.data;
       const position = node.botanicalPosition || [0, 0, 0];
@@ -139,8 +140,99 @@ export const useGraphToTree = (graphData: GraphData | null | undefined, currentS
       });
     });
 
+    // Add demo elements based on current stage to show growth
+    if (currentStage >= 2 && elements.filter(e => e.type === 'rootlet').length === 0) {
+      // Add demo rootlets
+      for (let i = 0; i < 3; i++) {
+        elements.push({
+          id: `demo-rootlet-${i}`,
+          type: 'rootlet',
+          position: [Math.sin(i * 2) * 2, -1, Math.cos(i * 2) * 2],
+          scale: [1, 1, 1],
+          color: getBotanicalColor('rootlet'),
+          confidence: 0.7,
+          impactScore: 0.3,
+          disciplinaryTag: 'demo',
+          evidenceCount: 1,
+          metadata: { demo: true }
+        });
+      }
+    }
+
+    if (currentStage >= 3 && elements.filter(e => e.type === 'branch').length === 0) {
+      // Add demo branches
+      for (let i = 0; i < 2; i++) {
+        elements.push({
+          id: `demo-branch-${i}`,
+          type: 'branch',
+          position: [Math.sin(i * 3) * 3, 2 + i, Math.cos(i * 3) * 3],
+          scale: [1, 1, 1],
+          color: getBotanicalColor('branch'),
+          confidence: 0.8,
+          impactScore: 0.5,
+          disciplinaryTag: 'demo',
+          evidenceCount: 2,
+          metadata: { demo: true }
+        });
+      }
+    }
+
+    if (currentStage >= 4 && elements.filter(e => e.type === 'bud').length === 0) {
+      // Add demo buds
+      for (let i = 0; i < 4; i++) {
+        elements.push({
+          id: `demo-bud-${i}`,
+          type: 'bud',
+          position: [Math.sin(i * 1.5) * 4, 3 + i * 0.5, Math.cos(i * 1.5) * 4],
+          scale: [0.8, 0.8, 0.8],
+          color: getBotanicalColor('bud'),
+          confidence: 0.6,
+          impactScore: 0.4,
+          disciplinaryTag: 'demo',
+          evidenceCount: 3,
+          metadata: { demo: true }
+        });
+      }
+    }
+
+    if (currentStage >= 6 && elements.filter(e => e.type === 'leaf').length === 0) {
+      // Add demo leaves
+      for (let i = 0; i < 6; i++) {
+        elements.push({
+          id: `demo-leaf-${i}`,
+          type: 'leaf',
+          position: [Math.sin(i) * 5, 4 + i * 0.3, Math.cos(i) * 5],
+          scale: [1.2, 1.2, 1.2],
+          color: getBotanicalColor('leaf'),
+          confidence: 0.9,
+          impactScore: 0.7,
+          disciplinaryTag: 'demo',
+          evidenceCount: 4,
+          metadata: { demo: true }
+        });
+      }
+    }
+
+    if (currentStage >= 7 && elements.filter(e => e.type === 'blossom').length === 0) {
+      // Add demo blossoms
+      for (let i = 0; i < 3; i++) {
+        elements.push({
+          id: `demo-blossom-${i}`,
+          type: 'blossom',
+          position: [Math.sin(i * 2.1) * 6, 6 + i * 0.5, Math.cos(i * 2.1) * 6],
+          scale: [1.5, 1.5, 1.5],
+          color: getBotanicalColor('blossom'),
+          confidence: 0.95,
+          impactScore: 0.9,
+          disciplinaryTag: 'demo',
+          evidenceCount: 5,
+          metadata: { demo: true }
+        });
+      }
+    }
+
     return elements;
-  }, [hierarchyData]);
+  }, [hierarchyData, currentStage]);
 
   // Create stage-based animations
   const animations = {
@@ -206,13 +298,26 @@ function findParentId(nodeId: string, edges: GraphEdge[]): string | null {
 function determineBotanicalType(nodeData: GraphNode, depth: number): BotanicalElement['type'] {
   if (depth === 0) return 'root';
   
+  // Map ASR-GoT types to botanical elements
   switch (nodeData.type) {
     case 'dimension': return 'rootlet';
     case 'hypothesis': return 'branch';
     case 'evidence': return 'bud';
     case 'synthesis': return 'leaf';
     case 'reflection': return 'blossom';
-    default: return depth === 1 ? 'rootlet' : 'branch';
+    case 'knowledge': return 'rootlet';
+    case 'bridge': return 'branch';
+    case 'gap': return 'bud';
+    case 'temporal': return 'leaf';
+    case 'causal': return 'branch';
+    default: {
+      // Use depth and stage to determine type
+      if (depth === 1) return 'rootlet';
+      if (depth === 2) return 'branch';
+      if (depth === 3) return 'bud';
+      if (depth === 4) return 'leaf';
+      return 'blossom';
+    }
   }
 }
 

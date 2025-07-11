@@ -86,19 +86,36 @@ export const VisualAnalytics: React.FC<VisualAnalyticsProps> = ({
     }
 
     const analysisPrompt = `
-Based on the research topic "${researchContext.topic}" in the field of ${researchContext.field}, generate 4 scientific charts relevant to this research:
+Based on the research topic "${researchContext.topic}" in the field of ${researchContext.field}, generate 15 comprehensive scientific charts relevant to this research:
 
 Research Context: ${researchContext.topic}
 Field: ${researchContext.field}
 
-Generate charts that would be appropriate for this scientific topic (e.g., for medical research: patient outcomes, biomarker correlations, treatment efficacy; for genetics: mutation frequencies, expression levels, pathway analysis; etc.):
+Generate charts that would be appropriate for this scientific topic with realistic data:
 
-1. Primary data visualization (bar/scatter based on topic)
-2. Correlation analysis (scatter plot)  
-3. Distribution analysis (histogram/box plot)
-4. Comparative analysis (bar chart)
+1. Primary data visualization (bar chart)
+2. Correlation analysis (scatter plot)
+3. Distribution analysis (histogram)
+4. Comparative analysis (grouped bar chart)
+5. Time series analysis (line chart)
+6. Statistical power analysis (box plot)
+7. Confidence intervals (error bars)
+8. Heatmap correlation matrix
+9. Pie chart categorical breakdown
+10. Multi-dimensional scatter plot
+11. Statistical significance testing (bar chart)
+12. Trend analysis (line chart)
+13. Classification accuracy (bar chart)
+14. Regression analysis (scatter with trend)
+15. Meta-analysis forest plot (horizontal bar with error bars)
 
-JSON format: [{"title": "Name", "type": "bar|scatter|heatmap|histogram", "data": [{"x": [realistic_labels], "y": [realistic_values], "type": "bar"}], "layout": {"title": "Title", "xaxis": {"title": "X"}, "yaxis": {"title": "Y"}}}]
+Each chart should have realistic data relevant to the research field. For example:
+- Medical research: patient outcomes, biomarker levels, treatment efficacy
+- Genetics: gene expression, mutation frequencies, pathway analysis
+- Physics: measurements, experimental results, theoretical predictions
+- Psychology: survey responses, behavioral data, cognitive assessments
+
+JSON format: [{"title": "Descriptive Title", "type": "bar|scatter|heatmap|histogram|pie|box", "data": [{"x": [realistic_labels], "y": [realistic_values], "type": "bar"}], "layout": {"title": "Chart Title", "xaxis": {"title": "X Label"}, "yaxis": {"title": "Y Label"}}}]
 `;
 
     try {
@@ -108,7 +125,7 @@ JSON format: [{"title": "Name", "type": "bar|scatter|heatmap|histogram", "data":
         body: JSON.stringify({
           contents: [{ parts: [{ text: analysisPrompt }] }],
           generationConfig: { 
-            maxOutputTokens: 8000,
+            maxOutputTokens: 30000,
             temperature: 0.2
           }
         })
@@ -296,7 +313,7 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
           const comprehensiveFigures = await generateComprehensiveVisualizations();
           
           // Generate evidence-specific visualizations
-          const evidenceNodes = graphData.nodes.filter(node => node.type === 'evidence').slice(0, 3);
+          const evidenceNodes = graphData.nodes.filter(node => node.type === 'evidence').slice(0, 8);
           const evidenceFigures: AnalyticsFigure[] = [];
           
           for (const node of evidenceNodes) {

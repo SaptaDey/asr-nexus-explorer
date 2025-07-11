@@ -4,6 +4,7 @@
  */
 
 import { validateInput, validateAPIKey, apiRateLimiter } from '@/utils/securityUtils';
+import { costGuardrails } from '@/services/CostGuardrails';
 
 export interface APICredentials {
   gemini: string;
@@ -16,9 +17,17 @@ export const callPerplexitySonarAPI = async (
   apiKey?: string,
   options: { recency?: boolean; focus?: string } = {}
 ): Promise<string> => {
+  // Check cost guardrails for Sonar call
+  if (!costGuardrails.canMakeCall('sonar', 1000)) {
+    throw new Error('Cost guardrails exceeded for Sonar API');
+  }
+
   // Placeholder implementation - currently using Gemini with web search
   // In production, this would call Perplexity Sonar API
   console.log('Perplexity Sonar API call (placeholder):', query);
+  
+  // Record Sonar usage (placeholder cost - in production this would be actual usage)
+  costGuardrails.recordUsage('sonar', 1000);
   
   // Fallback to Gemini with web search grounding
   return await callGeminiAPI(
@@ -57,6 +66,16 @@ export const callGeminiAPI = async (
   // Rate limiting
   if (!apiRateLimiter.isAllowed('gemini')) {
     throw new Error('Rate limit exceeded for Gemini API');
+  }
+
+  // Estimate token count (rough approximation: 1 token ≈ 4 characters)
+  const estimatedInputTokens = Math.ceil(sanitizedPrompt.length / 4);
+  const estimatedOutputTokens = Math.ceil((options.maxTokens || 65536) / 2); // Assume half max output
+  const totalEstimatedTokens = estimatedInputTokens + estimatedOutputTokens;
+
+  // Check cost guardrails
+  if (!costGuardrails.canMakeCall('gemini', totalEstimatedTokens)) {
+    throw new Error('Cost guardrails exceeded for Gemini API');
   }
 
   try {
@@ -154,6 +173,13 @@ export const callGeminiAPI = async (
     if (!content || typeof content !== 'string') {
       throw new Error('Invalid response from Gemini API');
     }
+    
+    // Record actual usage - estimate output tokens from response
+    const actualOutputTokens = Math.ceil(content.length / 4);
+    const actualTotalTokens = estimatedInputTokens + actualOutputTokens;
+    
+    // Record the usage for cost monitoring
+    costGuardrails.recordUsage('gemini', actualTotalTokens);
     
     return content;
   } catch (error) {
