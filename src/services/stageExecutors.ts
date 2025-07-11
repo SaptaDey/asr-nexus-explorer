@@ -20,6 +20,17 @@ export const initializeGraph = async (
   taskDescription: string,
   context: StageExecutorContext
 ): Promise<string> => {
+  // Defensive checks
+  if (!context) {
+    throw new Error('StageExecutorContext is undefined');
+  }
+  if (!context.apiKeys) {
+    throw new Error('API credentials are missing from context');
+  }
+  if (!context.apiKeys.gemini) {
+    throw new Error('Gemini API key is missing. Please configure your API credentials first.');
+  }
+  
   // RULE 5 COMPLIANCE: Stage 1 Initialization = THINKING + STRUCTURED_OUTPUTS
   const analysisPrompt = `You are a PhD-level researcher. Perform a comprehensive analysis of this research question:
 

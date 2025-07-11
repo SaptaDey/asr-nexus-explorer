@@ -112,7 +112,20 @@ export const useCostAwareStageExecution = ({
     setIsProcessing(true);
     
     try {
+      console.log('Creating stage context with apiKeys:', { 
+        hasApiKeys: !!apiKeys, 
+        hasGemini: !!apiKeys?.gemini,
+        hasPerplexity: !!apiKeys?.perplexity 
+      });
+      
       const context = createStageContext();
+      
+      console.log('Stage context created:', {
+        hasContext: !!context,
+        hasApiKeys: !!context?.apiKeys,
+        hasGemini: !!context?.apiKeys?.gemini
+      });
+      
       let result = '';
       
       // Get estimated cost for this stage
