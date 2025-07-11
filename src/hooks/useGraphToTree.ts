@@ -47,9 +47,44 @@ export const useGraphToTree = (graphData: GraphData | null | undefined, currentS
       // Prepare nodes for stratify
       const stratifyNodes = graphData.nodes.map(node => ({
         id: node.id,
-        parentId: findParentId(node.id, graphData.edges),
+        parentId: findParentId(node.id, graphData.edges || []),
         ...node
       }));
+
+      // Ensure we have exactly one root node
+      const nodesWithoutParent = stratifyNodes.filter(n => !n.parentId);
+      if (nodesWithoutParent.length === 0) {
+        // Create a synthetic root if none exists
+        stratifyNodes.unshift({
+          id: 'synthetic-root',
+          parentId: null,
+          type: 'root',
+          label: 'Research Root',
+          confidence: [1, 1, 1, 1],
+          metadata: { stage: 1, botanicalType: 'root' }
+        });
+        // Make the first original node a child of the synthetic root
+        if (stratifyNodes.length > 1) {
+          stratifyNodes[1].parentId = 'synthetic-root';
+        }
+      } else if (nodesWithoutParent.length > 1) {
+        // If multiple roots exist, create a synthetic parent and make others its children
+        const syntheticRoot = {
+          id: 'synthetic-root',
+          parentId: null,
+          type: 'root',
+          label: 'Research Root',
+          confidence: [1, 1, 1, 1],
+          metadata: { stage: 1, botanicalType: 'root' }
+        };
+        
+        // Make all orphaned nodes children of the synthetic root
+        nodesWithoutParent.forEach(node => {
+          node.parentId = 'synthetic-root';
+        });
+        
+        stratifyNodes.unshift(syntheticRoot);
+      }
 
       // Create hierarchy using D3
       const stratifyFunc = stratify<any>()
@@ -112,55 +147,39 @@ export const useGraphToTree = (graphData: GraphData | null | undefined, currentS
     stageProgress: currentStage / 9
   };
 
-  // Stage-specific animation springs
+  // Simple animation configuration (no hooks)
   const stageAnimations = useMemo(() => {
-    const rootElements = botanicalElements.filter(e => e.type === 'root');
-    const rootletElements = botanicalElements.filter(e => e.type === 'rootlet');
-    const branchElements = botanicalElements.filter(e => e.type === 'branch');
-    const budElements = botanicalElements.filter(e => e.type === 'bud');
-    const leafElements = botanicalElements.filter(e => e.type === 'leaf');
-    const blossomElements = botanicalElements.filter(e => e.type === 'blossom');
-
+    const safeElements = botanicalElements || [];
+    
     return {
       rootBulb: {
         scale: currentStage >= 1 ? [1, 1, 1] : [0, 0, 0],
         opacity: currentStage >= 1 ? 1 : 0
       },
       
-      rootlets: rootletElements.map((_, index) => ({
-        length: currentStage >= 2 ? 1 : 0,
-        opacity: currentStage >= 2 ? 0.8 : 0,
-        delay: index * 150
-      })),
+      buds: safeElements
+        .filter(e => e.type === 'bud')
+        .map((_, index) => ({
+          scale: currentStage >= 4 ? [1, 1, 1] : [0, 0, 0],
+          pulse: currentStage === 4 ? 1 : 0,
+          delay: index * 100
+        })),
       
-      branches: branchElements.map((element, index) => ({
-        thickness: currentStage >= 3 ? element.confidence : 0,
-        opacity: currentStage >= 3 ? 1 : 0,
-        delay: index * 200
-      })),
+      leaves: safeElements
+        .filter(e => e.type === 'leaf')
+        .map((element, index) => ({
+          scale: currentStage >= 6 ? [element.impactScore, element.impactScore, element.impactScore] : [0, 0, 0],
+          opacity: currentStage >= 6 ? 1 : 0,
+          delay: index * 100
+        })),
       
-      buds: budElements.map((_, index) => ({
-        scale: currentStage >= 4 ? [1, 1, 1] : [0, 0, 0],
-        pulse: currentStage === 4 ? 1 : 0,
-        delay: index * 100
-      })),
-      
-      leaves: leafElements.map((element, index) => ({
-        scale: currentStage >= 6 ? [element.impactScore, element.impactScore, element.impactScore] : [0, 0, 0],
-        opacity: currentStage >= 6 ? 1 : 0,
-        jitter: currentStage >= 6 ? [
-          (Math.random() - 0.5) * 0.1,
-          (Math.random() - 0.5) * 0.1,
-          (Math.random() - 0.5) * 0.1
-        ] : [0, 0, 0],
-        delay: index * 100
-      })),
-      
-      blossoms: blossomElements.map((_, index) => ({
-        scale: currentStage >= 7 ? [1, 1, 1] : [0, 0, 0],
-        petalSpread: currentStage >= 7 ? 1 : 0,
-        delay: index * 200
-      }))
+      blossoms: safeElements
+        .filter(e => e.type === 'blossom')
+        .map((_, index) => ({
+          scale: currentStage >= 7 ? [1, 1, 1] : [0, 0, 0],
+          petalSpread: currentStage >= 7 ? 1 : 0,
+          delay: index * 200
+        }))
     };
   }, [botanicalElements, currentStage]);
 
@@ -179,6 +198,7 @@ export const useGraphToTree = (graphData: GraphData | null | undefined, currentS
 
 // Helper functions
 function findParentId(nodeId: string, edges: GraphEdge[]): string | null {
+  if (!edges || edges.length === 0) return null;
   const parentEdge = edges.find(edge => edge.target === nodeId);
   return parentEdge?.source || null;
 }

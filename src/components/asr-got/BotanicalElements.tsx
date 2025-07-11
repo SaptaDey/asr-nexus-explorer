@@ -157,7 +157,7 @@ export const BotanicalElements: React.FC<BotanicalElementsProps> = ({
 const EvidenceBud: React.FC<{
   element: BotanicalElement;
   index: number;
-  animation: { scale?: [number, number, number] } | undefined;
+  animation: { scale?: [number, number, number]; pulse?: number } | undefined;
   performanceLevel: 'high' | 'medium' | 'low';
   reducedMotion: boolean;
   isHovered: boolean;
@@ -167,9 +167,9 @@ const EvidenceBud: React.FC<{
   const meshRef = useRef<THREE.Mesh>(null);
   const [pulsePhase, setPulsePhase] = useState(Math.random() * Math.PI * 2);
 
-  // Base bud animation
+  // Base bud animation with safe defaults
   const { scale, emissiveIntensity } = useSpring({
-    scale: animation?.scale || [1, 1, 1],
+    scale: animation?.scale || [0.8, 0.8, 0.8],
     emissiveIntensity: isHovered ? 0.4 : 0.2,
     config: config.wobbly
   });
