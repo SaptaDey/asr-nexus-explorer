@@ -23,7 +23,8 @@
       "Bash(git remote get-url:*)",
       "Bash(GIT_TERMINAL_PROMPT=0 git push origin main)",
       "Bash(gh auth:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

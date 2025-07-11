@@ -13,6 +13,7 @@ import { useTreeScene, useStageAnimation, usePerformanceMonitor } from '@/hooks/
 import { useTreeAnimations, usePollenParticles } from './TreeAnimations';
 import { BotanicalElement, getNodeColor } from './BotanicalElements';
 import { TreeControls } from './TreeControls';
+import { AlgorithmicAnimationTimeline } from './AlgorithmicAnimationTimeline';
 
 interface TreeContainerProps {
   graphData: GraphData;
@@ -46,6 +47,17 @@ export const TreeContainer: React.FC<TreeContainerProps> = ({
     reducedMotion,
     animatedNodes,
     svgRef
+  });
+
+  // Algorithmic animation timeline
+  const algorithmicTimeline = AlgorithmicAnimationTimeline({
+    currentStage,
+    graphData,
+    svgRef,
+    reducedMotion,
+    onAnimationComplete: (stage) => {
+      console.log(`Stage ${stage} animation completed`);
+    }
   });
 
   // Check for reduced motion preference

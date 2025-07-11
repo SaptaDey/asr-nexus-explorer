@@ -1,11 +1,13 @@
 /**
  * TreeAnimations.tsx - Animation logic for botanical tree visualization
  * Handles spring animations, chaining, and stage-based effects
+ * Now integrates with AlgorithmicAnimationTimeline for precise control
  */
 
 import { useEffect } from 'react';
 import { useSpring, useChain, useSpringRef } from '@react-spring/web';
 import { GraphNode } from '@/types/asrGotTypes';
+import { AlgorithmicAnimationTimeline } from './AlgorithmicAnimationTimeline';
 
 interface TreeAnimationsProps {
   currentStage: number;
