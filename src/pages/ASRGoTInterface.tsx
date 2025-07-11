@@ -21,10 +21,12 @@ import { InAppPreview } from '@/components/asr-got/InAppPreview';
 import { BiasAuditingSidebar } from '@/components/asr-got/BiasAuditingSidebar';
 import { VisualAnalytics } from '@/components/asr-got/VisualAnalytics';
 import { MetaAnalysisVisualAnalytics } from '@/components/asr-got/MetaAnalysisVisualAnalytics';
-import { CostMonitor } from '@/components/asr-got/CostMonitor';
+import { CostAwareDashboard } from '@/components/asr-got/CostAwareDashboard';
 import { DeveloperMode } from '@/components/asr-got/DeveloperMode';
+import { PerplexityApiKeyDialog } from '@/components/asr-got/PerplexityApiKeyDialog';
 import { useASRGoT } from '@/hooks/useASRGoT';
 import { useProcessingMode } from '@/hooks/asr-got/useProcessingMode';
+import { costAwareOrchestration } from '@/services/CostAwareOrchestrationService';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 
@@ -50,6 +52,7 @@ const ASRGoTInterface: React.FC = () => {
   } = useASRGoT();
 
   const [showTokenModal, setShowTokenModal] = useState(false);
+  const [showPerplexityModal, setShowPerplexityModal] = useState(false);
   const [tempToken, setTempToken] = useState('');
   const [activeTab, setActiveTab] = useState('research');
   const [showBiasAudit, setShowBiasAudit] = useState(false);
@@ -75,9 +78,23 @@ const ASRGoTInterface: React.FC = () => {
       return;
     }
 
-    updateApiKeys({ gemini: tempToken });
+    updateApiKeys({ ...apiKeys, gemini: tempToken });
     setShowTokenModal(false);
     toast.success('✅ Token saved. ASR-GoT ready.');
+  };
+
+  const handlePerplexityApiKeySave = (perplexityKey: string) => {
+    updateApiKeys({ ...apiKeys, perplexity: perplexityKey });
+    toast.success('✅ Perplexity API key saved. Sonar Deep Research enabled.');
+  };
+
+  const handleSonarDeepResearchRequest = () => {
+    if (!apiKeys.perplexity) {
+      setShowPerplexityModal(true);
+      return;
+    }
+    
+    toast.info('Sonar Deep Research is enabled and ready for use!');
   };
 
   const handleExportHTML = async () => {
@@ -740,6 +757,14 @@ Make the data realistic and scientifically meaningful for the research domain.
         </DialogContent>
       </Dialog>
 
+      {/* Perplexity API Key Modal */}
+      <PerplexityApiKeyDialog
+        open={showPerplexityModal}
+        onOpenChange={setShowPerplexityModal}
+        onApiKeySubmit={handlePerplexityApiKeySave}
+        currentApiKey={apiKeys.perplexity}
+      />
+
       {/* Bias Auditing Sidebar */}
       {showBiasAudit && (
         <div className="fixed right-0 top-0 bottom-0 z-20 bg-background border-l shadow-lg w-full sm:w-96">
@@ -912,6 +937,26 @@ Make the data realistic and scientifically meaningful for the research domain.
                   <span className="sm:hidden">Contact</span>
                 </Button>
               </Link>
+              
+              {/* Sonar Deep Research Button */}
+              <Button
+                size="sm"
+                variant={apiKeys.perplexity ? "default" : "outline"}
+                onClick={handleSonarDeepResearchRequest}
+                className={`shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto ${
+                  apiKeys.perplexity 
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                    : 'border-purple-300 text-purple-600 hover:bg-purple-50'
+                }`}
+              >
+                <Database className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">
+                  {apiKeys.perplexity ? 'Sonar Ready' : 'Enable Sonar'}
+                </span>
+                <span className="sm:hidden">
+                  {apiKeys.perplexity ? 'Sonar' : 'Enable'}
+                </span>
+              </Button>
               
               {currentStage >= 8 && (
                 <Button
@@ -1135,7 +1180,7 @@ Make the data realistic and scientifically meaningful for the research domain.
 
           <TabsContent value="developer">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <CostMonitor />
+              <CostAwareDashboard />
               <DeveloperMode 
                 parameters={parameters}
                 onParametersChange={setParameters}

@@ -3,12 +3,12 @@ import { useEffect, useState } from 'react';
 import { AsrGotStageEngine } from '@/services/AsrGotStageEngine';
 import { useASRGoTState } from './useASRGoTState';
 import { useAPICredentials } from './useAPICredentials';
-import { useStageExecution } from './useStageExecution';
+import { useCostAwareStageExecution } from './useCostAwareStageExecution';
 import { useExportFunctionality } from './useExportFunctionality';
 
 // Export all hooks for external use
 export * from './useASRGoTState';
-export * from './useStageExecution';
+export * from './useCostAwareStageExecution';
 export * from './useAPICredentials';
 export * from './useProcessingMode';
 
@@ -21,7 +21,7 @@ export const useASRGoT = () => {
   const [stageEngine, setStageEngine] = useState<AsrGotStageEngine | null>(null);
   const [autoMode, setAutoMode] = useState(false);
 
-  const stageExecutionHook = useStageExecution({
+  const stageExecutionHook = useCostAwareStageExecution({
     apiKeys: credentialsHook.apiKeys,
     graphData: stateHook.graphData,
     researchContext: stateHook.researchContext,

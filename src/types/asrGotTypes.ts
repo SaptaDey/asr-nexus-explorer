@@ -129,6 +129,7 @@ export interface ASRGoTParameters {
 
 export interface APICredentials {
   gemini: string;
+  perplexity?: string;
   mcp_servers?: string[];
 }
 
@@ -166,4 +167,71 @@ export interface BackgroundTask {
   completed_at?: string;
   result?: any;
   error?: string;
+}
+
+// Cost-Aware Orchestration Types
+export type AIModel = 'sonar-deep-research' | 'gemini-2.5-flash' | 'gemini-2.5-pro';
+
+export type CapabilityFlag = 
+  | 'STRUCTURED_OUTPUTS'
+  | 'SEARCH_GROUNDING'
+  | 'FUNCTION_CALLING'
+  | 'CODE_EXECUTION'
+  | 'THINKING'
+  | 'CACHING';
+
+export interface ModelCapability {
+  model: AIModel;
+  capability: CapabilityFlag;
+  batchSize: number;
+  purpose: string;
+  outputType: string;
+  maxTokens: number;
+  thinkingBudget?: number;
+}
+
+export interface StageModelAssignment {
+  stage: string;
+  microPass?: string;
+  modelCapability: ModelCapability;
+  costEstimate: {
+    inputTokens: number;
+    outputTokens: number;
+    priceUSD: number;
+  };
+}
+
+export interface CostDashboardEntry {
+  stage: string;
+  model: AIModel;
+  promptTokens: number;
+  outputTokens: number;
+  priceUSD: number;
+  timestamp: string;
+  batchSize?: number;
+}
+
+export interface TokenBudget {
+  promptSizeEnvelope: number;
+  thinkingBudget: number;
+  outputLimit: number;
+}
+
+export interface BatchRequest {
+  requests: Array<{
+    prompt: string;
+    model: AIModel;
+    capability: CapabilityFlag;
+    maxTokens: number;
+    thinkingBudget?: number;
+  }>;
+  batchId: string;
+  estimatedCost: number;
+}
+
+export interface SonarSearchRequest {
+  queries: string[];
+  maxDocs: number;
+  batch: boolean;
+  costPerQuery: number;
 }

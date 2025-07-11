@@ -22,6 +22,7 @@ export const useAPICredentials = () => {
   return {
     apiKeys,
     updateApiKeys,
-    hasValidKeys: Boolean(apiKeys.gemini)
+    hasValidKeys: Boolean(apiKeys.gemini),
+    hasPerplexityKey: Boolean(apiKeys.perplexity)
   };
 };
