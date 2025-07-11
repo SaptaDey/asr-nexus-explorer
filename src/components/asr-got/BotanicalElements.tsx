@@ -23,6 +23,22 @@ interface BotanicalElementsProps {
   colorBlindMode: boolean;
 }
 
+// Disciplinary color mapping with hue graduation
+const getDisciplinaryColor = (disciplinary: string): string => {
+  const colors = {
+    biology: '#2D8B2D',
+    chemistry: '#4169E1',
+    physics: '#DC143C',
+    medicine: '#FF69B4',
+    engineering: '#FF8C00',
+    computer_science: '#9370DB',
+    mathematics: '#B22222',
+    psychology: '#20B2AA',
+    general: '#4A5D23'
+  };
+  return colors[disciplinary as keyof typeof colors] || colors.general;
+};
+
 export const getNodeColor = (node: any, colorBlindMode: boolean) => {
   if (colorBlindMode) return 'hsl(var(--foreground))';
   
@@ -45,16 +61,30 @@ export const BotanicalElement: React.FC<BotanicalElementsProps> = ({
   switch (botanicalType) {
     case 'root-bulb':
       return (
-        <animated.circle
-          r={15}
-          fill="hsl(25, 70%, 55%)" // terracotta
-          stroke="#8B4513"
-          strokeWidth="2"
-          style={{
-            transform: animations.rootSpring.scale.to((s: number) => `scale(${s})`),
-            opacity: animations.rootSpring.opacity
-          }}
-        />
+        <animated.g>
+          {/* Terracotta root bulb */}
+          <animated.circle
+            r={20}
+            fill="#8B4513" // Terracotta brown
+            stroke="#CD853F"
+            strokeWidth={2}
+            style={{
+              transform: animations.rootSpring.scale.to((s: number) => `scale(${s})`),
+              opacity: animations.rootSpring.opacity
+            }}
+          />
+          {/* Root texture lines */}
+          <animated.path
+            d="M-10,-5 Q0,0 10,-5 M-8,3 Q0,5 8,3 M-6,8 Q0,10 6,8"
+            stroke="#654321"
+            strokeWidth="1"
+            fill="none"
+            opacity="0.6"
+            style={{
+              opacity: animations.rootSpring.opacity
+            }}
+          />
+        </animated.g>
       );
       
     case 'rootlet':
@@ -72,17 +102,46 @@ export const BotanicalElement: React.FC<BotanicalElementsProps> = ({
       );
       
     case 'branch':
+      const branchColor = getDisciplinaryColor(metadata?.disciplinary_tags?.[0] || 'general');
+      const branchRadius = Math.max(8, avgConfidence * 15);
       return (
-        <animated.circle
-          r={Math.max(4, avgConfidence * 8)}
-          fill={getNodeColor(node.data, colorBlindMode)}
-          stroke="#4A5D23"
-          strokeWidth="1"
-          style={{
-            transform: animations.branchSpring.pathLength.to((v: number) => `scale(${v})`),
-            opacity: animations.pruneSpring.opacity
-          }}
-        />
+        <animated.g>
+          {/* Main branch node */}
+          <animated.circle
+            r={branchRadius}
+            fill={branchColor}
+            stroke={branchColor}
+            strokeWidth={2}
+            style={{
+              transform: animations.branchSpring.pathLength.to((v: number) => `scale(${v})`),
+              opacity: animations.pruneSpring.opacity
+            }}
+          />
+          {/* Cambium rings for evidence */}
+          {metadata?.evidence_count > 0 && (
+            <animated.circle
+              r={branchRadius + 3}
+              fill="none"
+              stroke={branchColor}
+              strokeWidth={1}
+              opacity="0.4"
+              style={{
+                opacity: animations.pruneSpring.opacity
+              }}
+            />
+          )}
+          {/* Branch texture */}
+          <animated.path
+            d={`M-${branchRadius/2},-2 Q0,0 ${branchRadius/2},-2 M-${branchRadius/3},2 Q0,3 ${branchRadius/3},2`}
+            stroke={branchColor}
+            strokeWidth="0.5"
+            fill="none"
+            opacity="0.5"
+            style={{
+              opacity: animations.pruneSpring.opacity
+            }}
+          />
+        </animated.g>
       );
       
     case 'bud':

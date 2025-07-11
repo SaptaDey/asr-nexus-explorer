@@ -1122,7 +1122,7 @@ Graph Statistics:
 Provide a comprehensive, PhD-level scientific analysis with quantitative insights and evidence-based conclusions.
 `;
 
-      const taskId = await queueGeminiCall(finalAnalysisPrompt, 'Comprehensive Final Analysis');
+      const taskId = queueGeminiCall(finalAnalysisPrompt, this.credentials, 'high');
       stageContext.api_calls_made++;
       
       const finalAnalysis = await getTaskResult(taskId);
@@ -1416,7 +1416,7 @@ Return analysis in structured format with confidence score (0-1).
 `;
 
     try {
-      const taskId = await queueGeminiCall(causalPrompt, 'Causal Analysis');
+      const taskId = queueGeminiCall(causalPrompt, this.credentials, 'high');
       const analysis = await getTaskResult(taskId);
       
       // Extract causal classification from analysis

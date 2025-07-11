@@ -107,13 +107,20 @@ export const TreeContainer: React.FC<TreeContainerProps> = ({
     }
   }, [currentStage, animatedNodes, reducedMotion]);
 
-  // D3 tree layout
+  // D3 tree layout with proper botanical orientation (growing upward)
   const treeLayout = tree()
     .size([400, 300])
-    .separation((a, b) => a.parent === b.parent ? 1 : 2);
+    .separation((a, b) => a.parent === b.parent ? 1.2 : 2.5);
 
-  // Calculate tree positions
-  const treeRoot = treeHierarchy ? treeLayout(treeHierarchy) : null;
+  // Calculate tree positions and invert Y to grow upward
+  const treeRoot = treeHierarchy ? (() => {
+    const root = treeLayout(treeHierarchy);
+    // Invert Y coordinates to make tree grow upward
+    root.each(d => {
+      d.y = 300 - d.y; // Flip Y coordinate
+    });
+    return root;
+  })() : null;
 
   // Timeline scrubber handler with performance monitoring
   const handleTimelineChange = useCallback((value: number[]) => {
@@ -147,7 +154,7 @@ export const TreeContainer: React.FC<TreeContainerProps> = ({
     if (!treeRoot && hierarchyData.length === 0) {
       // Show placeholder tree structure when no data
       return (
-        <g transform="translate(200, 50)">
+        <g transform="translate(200, 350)"> {/* Position root at bottom */}
           <text x="100" y="150" textAnchor="middle" className="fill-muted-foreground text-sm">
             🌱 Start your research analysis to grow the tree
           </text>
@@ -165,10 +172,16 @@ export const TreeContainer: React.FC<TreeContainerProps> = ({
     const links = treeRoot.links();
 
     return (
-      <g transform="translate(200, 50)">
-        {/* Branch links */}
+      <g transform="translate(200, 350)"> {/* Position root at bottom */}
+        {/* Branch links - organic curved branches */}
         {links.map((link, i) => {
-          const d = `M${link.source.x},${link.source.y}L${link.target.x},${link.target.y}`;
+          // Create organic curved path instead of straight line
+          const dx = link.target.x - link.source.x;
+          const dy = link.target.y - link.source.y;
+          const cx = link.source.x + dx * 0.5;
+          const cy = link.source.y + dy * 0.3; // Slight upward curve
+          const d = `M${link.source.x},${link.source.y} Q${cx},${cy} ${link.target.x},${link.target.y}`;
+          
           const node = link.target.data as any;
           const confidence = node.confidence?.reduce((a: number, b: number) => a + b, 0) / node.confidence?.length || 0;
           
@@ -188,7 +201,7 @@ export const TreeContainer: React.FC<TreeContainerProps> = ({
                 d={d}
                 stroke={colorBlindMode ? 'url(#branch-pattern)' : getNodeColor(node, colorBlindMode)}
                 strokeWidth={totalWidth}
-                strokeDasharray="5,5"
+                strokeLinecap="round"
                 fill="none"
                 opacity={node.metadata?.pruned ? 0.2 : 0.8}
                 style={{
@@ -333,8 +346,9 @@ export const TreeContainer: React.FC<TreeContainerProps> = ({
               </linearGradient>
             </defs>
             
-            {/* Soil base */}
-            <rect x="0" y="350" width="600" height="50" fill="url(#soil-gradient)" />
+            {/* Soil base with proper terracotta color */}
+            <rect x="0" y="350" width="600" height="50" fill="#8B4513" opacity="0.3" />
+            <rect x="0" y="375" width="600" height="25" fill="#CD853F" opacity="0.2" />
             
             {/* Tree visualization */}
             {renderTree()}
