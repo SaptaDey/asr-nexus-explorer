@@ -37,35 +37,20 @@ export interface TreeData {
   auditResults?: any;
 }
 
-export const useGraphToTree = (graphData: GraphData | null, currentStage: number) => {
+export const useGraphToTree = (graphData: GraphData, currentStage: number) => {
   const [treeVersion, setTreeVersion] = useState(0);
 
   // Transform graph data into D3 hierarchy
   const hierarchyData = useMemo(() => {
-    if (!graphData?.nodes?.length) return null;
+    if (!graphData.nodes.length) return null;
 
     try {
       // Prepare nodes for stratify
       const stratifyNodes = graphData.nodes.map(node => ({
         id: node.id,
-        parentId: findParentId(node.id, graphData.edges || []),
+        parentId: findParentId(node.id, graphData.edges),
         ...node
       }));
-
-      // Ensure we have exactly one root node
-      const nodesWithoutParent = stratifyNodes.filter(node => !node.parentId);
-      if (nodesWithoutParent.length === 0) {
-        // If no root found, make the first node the root
-        if (stratifyNodes.length > 0) {
-          stratifyNodes[0].parentId = null;
-        }
-      } else if (nodesWithoutParent.length > 1) {
-        // If multiple roots, keep only the first one and make others children of it
-        const mainRoot = nodesWithoutParent[0];
-        for (let i = 1; i < nodesWithoutParent.length; i++) {
-          nodesWithoutParent[i].parentId = mainRoot.id;
-        }
-      }
 
       // Create hierarchy using D3
       const stratifyFunc = stratify<any>()
@@ -129,39 +114,73 @@ export const useGraphToTree = (graphData: GraphData | null, currentStage: number
     config: config.gentle
   });
 
-  // Basic animation spring
-  const rootAnimation = useSpring({
-    scale: currentStage >= 1 ? [1, 1, 1] : [0, 0, 0],
-    opacity: currentStage >= 1 ? 1 : 0,
-    config: { ...config.wobbly, duration: 200 }
-  });
-
-  // Simple stage animations (no conditional hooks)
+  // Stage-specific animation springs
   const stageAnimations = useMemo(() => {
-    const rootElements = botanicalElements?.filter(e => e?.type === 'root') || [];
-    const rootletElements = botanicalElements?.filter(e => e?.type === 'rootlet') || [];
-    const branchElements = botanicalElements?.filter(e => e?.type === 'branch') || [];
-    const budElements = botanicalElements?.filter(e => e?.type === 'bud') || [];
-    const leafElements = botanicalElements?.filter(e => e?.type === 'leaf') || [];
-    const blossomElements = botanicalElements?.filter(e => e?.type === 'blossom') || [];
+    const rootElements = botanicalElements.filter(e => e.type === 'root');
+    const rootletElements = botanicalElements.filter(e => e.type === 'rootlet');
+    const branchElements = botanicalElements.filter(e => e.type === 'branch');
+    const budElements = botanicalElements.filter(e => e.type === 'bud');
+    const leafElements = botanicalElements.filter(e => e.type === 'leaf');
+    const blossomElements = botanicalElements.filter(e => e.type === 'blossom');
 
     return {
-      rootBulb: rootAnimation,
-      rootlets: rootletElements.length,
-      branches: branchElements.length,
-      buds: budElements.length, 
-      leaves: leafElements.length,
-      blossoms: blossomElements.length,
-      elements: {
-        rootElements,
-        rootletElements,
-        branchElements,
-        budElements,
-        leafElements,
-        blossomElements
-      }
+      rootBulb: useSpring({
+        scale: currentStage >= 1 ? [1, 1, 1] : [0, 0, 0],
+        opacity: currentStage >= 1 ? 1 : 0,
+        config: { ...config.wobbly, duration: 200 }
+      }),
+      
+      rootlets: rootletElements.map((_, index) => 
+        useSpring({
+          length: currentStage >= 2 ? 1 : 0,
+          opacity: currentStage >= 2 ? 0.8 : 0,
+          delay: index * 150,
+          config: { ...config.slow, easing: easeInOutBack }
+        })
+      ),
+      
+      branches: branchElements.map((element, index) => 
+        useSpring({
+          thickness: currentStage >= 3 ? element.confidence : 0,
+          opacity: currentStage >= 3 ? 1 : 0,
+          delay: index * 200,
+          config: config.default
+        })
+      ),
+      
+      buds: budElements.map((_, index) => 
+        useSpring({
+          scale: currentStage >= 4 ? [1, 1, 1] : [0, 0, 0],
+          pulse: currentStage === 4 ? 1 : 0,
+          delay: index * 100,
+          config: config.wobbly
+        })
+      ),
+      
+      leaves: leafElements.map((element, index) => 
+        useSpring({
+          scale: currentStage >= 6 ? [element.impactScore, element.impactScore, element.impactScore] : [0, 0, 0],
+          opacity: currentStage >= 6 ? 1 : 0,
+          jitter: currentStage >= 6 ? [
+            (Math.random() - 0.5) * 0.1,
+            (Math.random() - 0.5) * 0.1,
+            (Math.random() - 0.5) * 0.1
+          ] : [0, 0, 0],
+          delay: index * 100,
+          config: { ...config.default, friction: 80 } // Friction 80 as specified
+        })
+      ),
+      
+      blossoms: blossomElements.map((_, index) => 
+        useSpring({
+          scale: currentStage >= 7 ? [1, 1, 1] : [0, 0, 0],
+          petalSpread: currentStage >= 7 ? 1 : 0,
+          delay: index * 200,
+          config: { duration: 800 } // 800ms as specified
+        })
+      )
     };
-  }, [botanicalElements, currentStage, rootAnimation]);
+  }, [botanicalElements, currentStage]);
 
   // Update tree version when stage changes significantly
   useEffect(() => {

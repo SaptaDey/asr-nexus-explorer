@@ -1,96 +1,499 @@
 /**
- * BotanicalTreeScene.tsx - Simplified tree scene without complex animations
+ * BotanicalTreeScene.tsx - Proper botanical tree visualization using D3.js hierarchical layout
+ * Implements the complete Tree_Visualisation.md specification
  */
 
-import React, { useMemo } from 'react';
-import { useSpring, animated } from '@react-spring/web';
-import { GraphData, GraphNode } from '@/types/asrGotTypes';
+import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import * as d3 from 'd3';
+import { useSpring, useTrail, animated, config } from '@react-spring/web';
+import { animate as anime } from 'animejs';
+import { GraphData, GraphNode, GraphEdge } from '@/types/asrGotTypes';
 
 interface BotanicalTreeSceneProps {
   graphData: GraphData;
   currentStage: number;
-  onStageChange?: (stage: number) => void;
+  isProcessing: boolean;
+  width?: number;
+  height?: number;
+  onNodeClick?: (node: GraphNode) => void;
+  onBranchClick?: (branch: any) => void;
+  reducedMotion?: boolean;
+}
+
+interface TreeNode extends d3.HierarchyNode<GraphNode> {
+  id: string;
+  botanicalType: 'root' | 'rootlet' | 'branch' | 'bud' | 'leaf' | 'blossom';
+  confidence: number;
+  impactScore: number;
+  disciplinaryTag: string;
+  evidenceCount: number;
+  x: number;
+  y: number;
+  radius: number;
+  color: string;
+  children?: TreeNode[];
+}
+
+interface BranchPath {
+  id: string;
+  source: TreeNode;
+  target: TreeNode;
+  path: string;
+  thickness: number;
+  color: string;
+  length: number;
 }
 
 export const BotanicalTreeScene: React.FC<BotanicalTreeSceneProps> = ({
   graphData,
   currentStage,
-  onStageChange
+  isProcessing,
+  width = 800,
+  height = 600,
+  onNodeClick,
+  onBranchClick,
+  reducedMotion = false
 }) => {
-  // Simple animation
-  const { opacity } = useSpring({
-    opacity: currentStage > 0 ? 1 : 0,
-    config: { tension: 200, friction: 20 }
+  const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Transform graph data into D3 hierarchy
+  const hierarchyData = useMemo(() => {
+    if (!graphData.nodes.length) return null;
+
+    // Find root node (Task Understanding)
+    const rootNode = graphData.nodes.find(n => n.type === 'task' || n.id === 'root') || graphData.nodes[0];
+    
+    // Build hierarchy tree structure
+    const buildHierarchy = (nodeId: string, visited = new Set<string>()): any => {
+      if (visited.has(nodeId)) return null;
+      visited.add(nodeId);
+
+      const node = graphData.nodes.find(n => n.id === nodeId);
+      if (!node) return null;
+
+      // Find children based on edges
+      const childEdges = graphData.edges.filter(e => e.source === nodeId);
+      const children = childEdges
+        .map(e => buildHierarchy(e.target, visited))
+        .filter(Boolean);
+
+      return {
+        ...node,
+        children: children.length > 0 ? children : undefined
+      };
+    };
+
+    const hierarchy = buildHierarchy(rootNode.id);
+    
+    // Create D3 hierarchy
+    const root = d3.hierarchy(hierarchy);
+    
+    // Create tree layout (grows upward)
+    const treeLayout = d3.tree<GraphNode>()
+      .size([width - 100, height - 100])
+      .separation((a, b) => {
+        // Wider separation for different parent nodes
+        return a.parent === b.parent ? 1 : 2;
+      });
+
+    // Apply layout
+    const treeData = treeLayout(root);
+
+    // Transform coordinates to grow upward (invert Y)
+    treeData.each(d => {
+      d.y = height - 100 - d.y; // Invert Y to grow upward
+      d.x = d.x + 50; // Add margin
+    });
+
+    return treeData;
+  }, [graphData, width, height]);
+
+  // Extract tree nodes and branches
+  const { treeNodes, branches } = useMemo(() => {
+    if (!hierarchyData) return { treeNodes: [], branches: [] };
+
+    const nodes: TreeNode[] = [];
+    const branchPaths: BranchPath[] = [];
+
+    // Extract all nodes
+    hierarchyData.each((d: any) => {
+      const node = d.data;
+      const botanicalType = getBotanicalType(node, d.depth);
+      
+      nodes.push({
+        ...d,
+        id: node.id,
+        botanicalType,
+        confidence: node.confidence?.[0] || 0.5,
+        impactScore: node.metadata?.impact_score || 0,
+        disciplinaryTag: node.metadata?.disciplinary_tags?.[0] || 'general',
+        evidenceCount: node.metadata?.evidence_count || 0,
+        x: d.x,
+        y: d.y,
+        radius: calculateRadius(botanicalType, node.confidence?.[0] || 0.5),
+        color: getNodeColor(botanicalType, node.metadata?.disciplinary_tags?.[0] || 'general')
+      });
+    });
+
+    // Extract branches (links between nodes)
+    hierarchyData.links().forEach((link: any) => {
+      const source = link.source;
+      const target = link.target;
+      
+      branchPaths.push({
+        id: `branch-${source.data.id}-${target.data.id}`,
+        source: source,
+        target: target,
+        path: createBranchPath(source, target),
+        thickness: calculateBranchThickness(source.data.confidence?.[0] || 0.5),
+        color: getBranchColor(source.data.metadata?.disciplinary_tags?.[0] || 'general'),
+        length: Math.sqrt(Math.pow(target.x - source.x, 2) + Math.pow(target.y - source.y, 2))
+      });
+    });
+
+    return { treeNodes: nodes, branches: branchPaths };
+  }, [hierarchyData]);
+
+  // Helper functions
+  const getBotanicalType = (node: GraphNode, depth: number): TreeNode['botanicalType'] => {
+    if (depth === 0) return 'root';
+    if (node.type === 'dimension') return 'rootlet';
+    if (node.type === 'hypothesis') return 'branch';
+    if (node.type === 'evidence') return 'bud';
+    if (node.type === 'synthesis') return 'leaf';
+    if (node.type === 'reflection') return 'blossom';
+    return 'branch';
+  };
+
+  const calculateRadius = (type: TreeNode['botanicalType'], confidence: number): number => {
+    const baseRadius = {
+      root: 25,
+      rootlet: 8,
+      branch: 12,
+      bud: 6,
+      leaf: 10,
+      blossom: 18
+    };
+    return baseRadius[type] * (0.5 + confidence * 0.5);
+  };
+
+  const getNodeColor = (type: TreeNode['botanicalType'], disciplinary: string): string => {
+    const colors = {
+      root: '#8B4513', // Terracotta brown
+      rootlet: '#CD853F', // Sandy brown
+      branch: getDisciplinaryColor(disciplinary),
+      bud: '#32CD32', // Lime green
+      leaf: '#228B22', // Forest green
+      blossom: '#FFB6C1' // Light pink
+    };
+    return colors[type];
+  };
+
+  const getDisciplinaryColor = (disciplinary: string): string => {
+    const disciplinaryColors = {
+      biology: '#2D8B2D',
+      chemistry: '#4169E1',
+      physics: '#DC143C',
+      medicine: '#FF69B4',
+      engineering: '#FF8C00',
+      computer_science: '#9370DB',
+      mathematics: '#B22222',
+      psychology: '#20B2AA',
+      general: '#4A5D23'
+    };
+    return disciplinaryColors[disciplinary as keyof typeof disciplinaryColors] || disciplinaryColors.general;
+  };
+
+  const calculateBranchThickness = (confidence: number): number => {
+    return 2 + (confidence * 8); // 2-10px thickness
+  };
+
+  const getBranchColor = (disciplinary: string): string => {
+    return getDisciplinaryColor(disciplinary);
+  };
+
+  const createBranchPath = (source: any, target: any): string => {
+    // Create organic curved path
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const dr = Math.sqrt(dx * dx + dy * dy);
+    
+    // Control point for organic curve
+    const cx = source.x + dx * 0.5 + (Math.random() - 0.5) * 20;
+    const cy = source.y + dy * 0.5 + (Math.random() - 0.5) * 20;
+    
+    return `M${source.x},${source.y} Q${cx},${cy} ${target.x},${target.y}`;
+  };
+
+  // Animation springs
+  const rootSpring = useSpring({
+    opacity: currentStage >= 1 ? 1 : 0,
+    transform: currentStage >= 1 ? 'scale(1)' : 'scale(0)',
+    config: config.gentle
   });
 
-  // Process nodes into simple tree structure
-  const treeElements = useMemo(() => {
-    if (!graphData?.nodes?.length) return [];
+  // Rootlet trail animation
+  const rootletNodes = treeNodes.filter(n => n.botanicalType === 'rootlet');
+  const rootletTrail = useTrail(rootletNodes.length, {
+    from: { opacity: 0, pathLength: 0 },
+    to: currentStage >= 2 ? { opacity: 1, pathLength: 1 } : { opacity: 0, pathLength: 0 },
+    config: { tension: 200, friction: 40 },
+    delay: (index: number) => reducedMotion ? 0 : index * 200
+  });
 
-    return graphData.nodes.map((node: GraphNode, index) => ({
-      id: node.id,
-      type: node.type,
-      level: index % 3, // Simple level assignment
-      position: {
-        x: (index % 5) * 100 + 50,
-        y: Math.floor(index / 5) * 80 + 50
-      }
-    }));
-  }, [graphData]);
+  // Branch growth animation
+  const branchNodes = treeNodes.filter(n => n.botanicalType === 'branch');
+  const branchTrail = useTrail(branchNodes.length, {
+    from: { opacity: 0, strokeDasharray: '0,1000' },
+    to: currentStage >= 3 ? { opacity: 1, strokeDasharray: '1000,0' } : { opacity: 0, strokeDasharray: '0,1000' },
+    config: { tension: 120, friction: 20 },
+    delay: (index: number) => reducedMotion ? 0 : index * 300
+  });
 
+  // Leaf animation
+  const leafNodes = treeNodes.filter(n => n.botanicalType === 'leaf');
+  const leafTrail = useTrail(leafNodes.length, {
+    from: { opacity: 0, scale: 0, rotate: 0 },
+    to: currentStage >= 6 ? { 
+      opacity: 1, 
+      scale: 1, 
+      rotate: Math.random() * 20 - 10 // Subtle rotation
+    } : { opacity: 0, scale: 0, rotate: 0 },
+    config: { tension: 150, friction: 80 }, // Friction 80 as specified
+    delay: (index: number) => reducedMotion ? 0 : index * 150
+  });
+
+  // Blossom animation
+  const blossomNodes = treeNodes.filter(n => n.botanicalType === 'blossom');
+  const blossomTrail = useTrail(blossomNodes.length, {
+    from: { opacity: 0, scale: 0 },
+    to: currentStage >= 7 ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 },
+    config: { duration: reducedMotion ? 100 : 800 }, // 800ms as specified
+    delay: (index: number) => reducedMotion ? 0 : index * 200
+  });
+
+  // Handle node interactions
+  const handleNodeClick = useCallback((node: TreeNode) => {
+    if (onNodeClick) {
+      onNodeClick(node.data);
+    }
+  }, [onNodeClick]);
+
+  const handleBranchClick = useCallback((branch: BranchPath) => {
+    if (onBranchClick) {
+      onBranchClick(branch);
+    }
+  }, [onBranchClick]);
+
+  // Evidence pulse animation for Stage 4
+  useEffect(() => {
+    if (currentStage === 4 && !reducedMotion) {
+      const evidenceNodes = treeNodes.filter(n => n.botanicalType === 'bud');
+      
+      evidenceNodes.forEach((node, index) => {
+        const element = svgRef.current?.querySelector(`#node-${node.id}`);
+        if (element) {
+          anime({
+            targets: element,
+            scale: [1, 1.3, 1],
+            opacity: [0.8, 1, 0.8],
+            duration: 1000,
+            delay: index * 300,
+            easing: 'easeInOutQuad',
+            loop: true
+          });
+        }
+      });
+    }
+  }, [currentStage, treeNodes, reducedMotion]);
+
+  // Render the botanical tree
   return (
-    <animated.div
-      style={{
-        opacity,
-        width: '100%',
-        height: '400px',
-        position: 'relative',
-        border: '1px solid #ddd',
-        borderRadius: '8px',
-        overflow: 'hidden'
-      }}
-    >
-      <div className="tree-container" style={{ position: 'relative', width: '100%', height: '100%' }}>
-        {treeElements.map((element, index) => (
-          <div
-            key={element.id}
-            className={`tree-node tree-node-${element.type}`}
+    <div ref={containerRef} className="w-full h-full relative">
+      <svg
+        ref={svgRef}
+        width={width}
+        height={height}
+        className="botanical-tree-svg"
+        style={{ background: 'linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%)' }}
+      >
+        {/* Branches */}
+        {branches.map((branch, index) => (
+          <animated.path
+            key={branch.id}
+            d={branch.path}
+            fill="none"
+            stroke={branch.color}
+            strokeWidth={branch.thickness}
+            strokeLinecap="round"
+            className="branch-path cursor-pointer"
+            onClick={() => handleBranchClick(branch)}
             style={{
-              position: 'absolute',
-              left: element.position.x,
-              top: element.position.y,
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              backgroundColor: getNodeColor(element.type),
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: '12px',
-              transform: currentStage > element.level ? 'scale(1)' : 'scale(0)',
-              transition: 'transform 0.5s ease-in-out'
+              opacity: currentStage >= 3 ? 1 : 0,
+              strokeDasharray: currentStage >= 3 ? '1000,0' : '0,1000',
+              transition: reducedMotion ? 'none' : 'all 0.5s ease-in-out'
             }}
-          >
-            {index + 1}
-          </div>
+          />
         ))}
-      </div>
-    </animated.div>
+
+        {/* Root node */}
+        <animated.g style={rootSpring}>
+          {treeNodes.filter(n => n.botanicalType === 'root').map(node => (
+            <circle
+              key={node.id}
+              cx={node.x}
+              cy={node.y}
+              r={node.radius}
+              fill={node.color}
+              stroke="#8B4513"
+              strokeWidth="3"
+              className="root-node cursor-pointer"
+              onClick={() => handleNodeClick(node)}
+            />
+          ))}
+        </animated.g>
+
+        {/* Rootlets */}
+        {rootletTrail.map((style, index) => {
+          const node = rootletNodes[index];
+          if (!node) return null;
+          
+          return (
+            <animated.circle
+              key={node.id}
+              cx={node.x}
+              cy={node.y}
+              r={node.radius}
+              fill={node.color}
+              stroke="#CD853F"
+              strokeWidth="2"
+              className="rootlet-node cursor-pointer"
+              style={style}
+              onClick={() => handleNodeClick(node)}
+            />
+          );
+        })}
+
+        {/* Branches */}
+        {branchTrail.map((style, index) => {
+          const node = branchNodes[index];
+          if (!node) return null;
+          
+          return (
+            <animated.circle
+              key={node.id}
+              cx={node.x}
+              cy={node.y}
+              r={node.radius}
+              fill={node.color}
+              stroke="#2D4A2D"
+              strokeWidth="2"
+              className="branch-node cursor-pointer"
+              style={style}
+              onClick={() => handleNodeClick(node)}
+            />
+          );
+        })}
+
+        {/* Buds (Evidence nodes) */}
+        {treeNodes.filter(n => n.botanicalType === 'bud').map(node => (
+          <circle
+            key={node.id}
+            id={`node-${node.id}`}
+            cx={node.x}
+            cy={node.y}
+            r={node.radius}
+            fill={node.color}
+            stroke="#228B22"
+            strokeWidth="1"
+            className="bud-node cursor-pointer"
+            style={{
+              opacity: currentStage >= 4 ? 1 : 0,
+              transition: reducedMotion ? 'none' : 'all 0.3s ease-in-out'
+            }}
+            onClick={() => handleNodeClick(node)}
+          />
+        ))}
+
+        {/* Leaves */}
+        {leafTrail.map((style, index) => {
+          const node = leafNodes[index];
+          if (!node) return null;
+          
+          return (
+            <animated.ellipse
+              key={node.id}
+              cx={node.x}
+              cy={node.y}
+              rx={node.radius}
+              ry={node.radius * 1.5}
+              fill={node.color}
+              stroke="#2D4A2D"
+              strokeWidth="1"
+              className="leaf-node cursor-pointer"
+              style={style}
+              onClick={() => handleNodeClick(node)}
+            />
+          );
+        })}
+
+        {/* Blossoms */}
+        {blossomTrail.map((style, index) => {
+          const node = blossomNodes[index];
+          if (!node) return null;
+          
+          return (
+            <animated.g key={node.id} style={style}>
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r={node.radius}
+                fill={node.color}
+                stroke="#FFB6C1"
+                strokeWidth="2"
+                className="blossom-node cursor-pointer"
+                onClick={() => handleNodeClick(node)}
+              />
+              {/* Blossom petals */}
+              {[0, 1, 2, 3, 4].map(petal => (
+                <ellipse
+                  key={petal}
+                  cx={node.x + Math.cos(petal * Math.PI * 2 / 5) * node.radius * 0.8}
+                  cy={node.y + Math.sin(petal * Math.PI * 2 / 5) * node.radius * 0.8}
+                  rx={node.radius * 0.4}
+                  ry={node.radius * 0.8}
+                  fill="#FFB6C1"
+                  opacity="0.7"
+                  transform={`rotate(${petal * 72} ${node.x + Math.cos(petal * Math.PI * 2 / 5) * node.radius * 0.8} ${node.y + Math.sin(petal * Math.PI * 2 / 5) * node.radius * 0.8})`}
+                />
+              ))}
+            </animated.g>
+          );
+        })}
+
+        {/* Stage indicators */}
+        {currentStage >= 1 && (
+          <text x={20} y={30} fill="#333" fontSize="14" fontWeight="bold">
+            Stage {currentStage}: {getStageLabel(currentStage)}
+          </text>
+        )}
+      </svg>
+    </div>
   );
 };
 
-function getNodeColor(type: string): string {
-  const colors: Record<string, string> = {
-    root: '#8B4513',
-    dimension: '#CD853F',
-    hypothesis: '#4A5D23',
-    evidence: '#32CD32',
-    synthesis: '#228B22',
-    reflection: '#FFB6C1',
-    gap: '#FF6B6B',
-    bridge: '#4ECDC4',
-    knowledge: '#45B7D1'
+const getStageLabel = (stage: number): string => {
+  const labels = {
+    1: 'Root Formation',
+    2: 'Rootlet Growth',
+    3: 'Branch Development',
+    4: 'Evidence Collection',
+    5: 'Pruning & Merging',
+    6: 'Leaf Canopy',
+    7: 'Blossom Opening',
+    8: 'Pollen Release',
+    9: 'Fruit Formation'
   };
-  return colors[type] || '#666';
-}
+  return labels[stage as keyof typeof labels] || 'Growing';
+};

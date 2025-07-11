@@ -7,7 +7,7 @@ import React, { useRef, useMemo, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useSpring, animated, config } from '@react-spring/three';
 import * as THREE from 'three';
-import { BotanicalElement } from '@/hooks/useGraphToTreeSimple';
+import { BotanicalElement } from '@/hooks/useGraphToTree';
 
 interface BotanicalElementsProps {
   elements: BotanicalElement[];
@@ -166,9 +166,12 @@ const EvidenceBud: React.FC<{
   const meshRef = useRef<THREE.Mesh>(null);
   const [pulsePhase, setPulsePhase] = useState(Math.random() * Math.PI * 2);
 
-  // Base bud animation - use simple values to avoid spring value errors
-  const budScale = animation?.scale || [1, 1, 1];
-  const emissiveValue = isHovered ? 0.4 : 0.2;
+  // Base bud animation
+  const { scale, emissiveIntensity } = useSpring({
+    scale: animation?.scale || [1, 1, 1],
+    emissiveIntensity: isHovered ? 0.4 : 0.2,
+    config: config.wobbly
+  });
 
   // Pulse animation for evidence arrival
   useFrame(({ clock }) => {
@@ -194,7 +197,7 @@ const EvidenceBud: React.FC<{
     <animated.mesh
       ref={meshRef}
       position={element.position}
-      scale={budScale}
+      scale={scale}
       geometry={geometry}
       onPointerOver={() => onHover(element.id)}
       onPointerOut={() => onHover(null)}
@@ -203,7 +206,7 @@ const EvidenceBud: React.FC<{
       <meshStandardMaterial
         color={element.color}
         emissive={element.color}
-        emissiveIntensity={emissiveValue}
+        emissiveIntensity={emissiveIntensity}
         roughness={0.6}
         metalness={0.1}
       />
@@ -348,10 +351,13 @@ const SynthesisBlossom: React.FC<{
   const groupRef = useRef<THREE.Group>(null);
   const [bloomPhase, setBloomPhase] = useState(0);
 
-  // Blossom opening animation - use simple values
-  const blossomScale = animation?.scale || [1, 1, 1];
-  const blossomSpread = animation?.petalSpread || 1;
-  const centerGlowValue = isHovered ? 0.6 : 0.3;
+  // Blossom opening animation
+  const { scale, petalSpread, centerGlow } = useSpring({
+    scale: animation?.scale || [1, 1, 1],
+    petalSpread: animation?.petalSpread || 1,
+    centerGlow: isHovered ? 0.6 : 0.3,
+    config: { duration: 800 }
+  });
 
   // Bloom progression
   useFrame(({ clock }) => {
@@ -379,7 +385,7 @@ const SynthesisBlossom: React.FC<{
     <animated.group
       ref={groupRef}
       position={element.position}
-      scale={blossomScale}
+      scale={scale}
       onPointerOver={() => onHover(element.id)}
       onPointerOut={() => onHover(null)}
       onClick={() => onClick?.(7)}
@@ -390,7 +396,7 @@ const SynthesisBlossom: React.FC<{
         <meshStandardMaterial
           color="#FFD700"
           emissive="#FFA500"
-          emissiveIntensity={centerGlowValue}
+          emissiveIntensity={centerGlow}
           roughness={0.4}
         />
       </mesh>
@@ -401,16 +407,16 @@ const SynthesisBlossom: React.FC<{
           key={i}
           geometry={petalGeometry}
           position={[
-            Math.cos(petal.angle) * 0.3 * blossomSpread,
+            Math.cos(petal.angle) * 0.3 * petalSpread,
             0.1,
-            Math.sin(petal.angle) * 0.3 * blossomSpread
+            Math.sin(petal.angle) * 0.3 * petalSpread
           ]}
           rotation={[
             -Math.PI / 6,
             petal.angle,
             Math.sin(bloomPhase * Math.PI + petal.offset) * 0.1
           ]}
-          scale={[blossomSpread * petal.scale, blossomSpread * petal.scale, blossomSpread]}
+          scale={petalSpread.to(s => [s * petal.scale, s * petal.scale, s])}
         >
           <meshStandardMaterial
             color={element.color}
