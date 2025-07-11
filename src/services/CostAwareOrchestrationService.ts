@@ -15,6 +15,7 @@ import {
   SonarSearchRequest,
   APICredentials 
 } from '@/types/asrGotTypes';
+import { PerplexityClient } from './PerplexityClient';
 
 export class CostAwareOrchestrationService {
   private costHistory: CostDashboardEntry[] = [];
@@ -387,7 +388,7 @@ export class CostAwareOrchestrationService {
   }
 
   /**
-   * Call Sonar Deep Research API
+   * Call Sonar Deep Research API using the proper client
    */
   private async callSonarDeepResearch(
     prompt: string,
@@ -396,40 +397,36 @@ export class CostAwareOrchestrationService {
     maxTokens: number,
     additionalParams?: any
   ): Promise<any> {
-    const url = 'https://api.perplexity.ai/chat/completions';
+    const client = new PerplexityClient(apiKey);
     
-    const body = {
-      model: 'sonar-online',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are Sonar Deep Research, an AI assistant specialized in comprehensive literature review and evidence collection. Search academic databases, PubMed, arXiv, and other scientific sources to gather high-quality research evidence.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
+    // Determine search mode based on capability and additional params
+    let searchMode: 'web' | 'academic' | 'sec' = 'web';
+    if (additionalParams?.searchMode) {
+      searchMode = additionalParams.searchMode;
+    } else if (prompt.toLowerCase().includes('academic') || prompt.toLowerCase().includes('research')) {
+      searchMode = 'academic';
+    }
+
+    const options = {
       max_tokens: maxTokens,
       temperature: 0.1,
+      search_mode: searchMode,
+      web_search_options: {
+        search_context_size: 'high' as const
+      },
+      return_related_questions: true,
       ...additionalParams
     };
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-      throw new Error(`Sonar API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
+    const response = await client.deepResearch(prompt, options);
+    
+    // Return enhanced response with metadata for cost tracking
+    return {
+      content: response.choices[0].message.content,
+      usage: response.usage,
+      citations: response.citations,
+      searchResults: response.search_results
+    };
   }
 
   /**

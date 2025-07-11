@@ -46,23 +46,31 @@ export const PerplexityApiKeyDialog: React.FC<PerplexityApiKeyDialogProps> = ({
     setIsValidating(true);
     
     try {
-      // Validate API key with a simple test call
+      // Validate API key with a simple test call using the correct model
       const response = await fetch('https://api.perplexity.ai/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${tempApiKey}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
-          model: 'sonar-online',
+          model: 'sonar-deep-research',
           messages: [
+            {
+              role: 'system',
+              content: 'You are an expert researcher.'
+            },
             {
               role: 'user',
               content: 'Test connection'
             }
           ],
           max_tokens: 10,
-          temperature: 0.1
+          temperature: 0.1,
+          web_search_options: {
+            search_context_size: 'low'
+          }
         })
       });
 
@@ -71,7 +79,7 @@ export const PerplexityApiKeyDialog: React.FC<PerplexityApiKeyDialogProps> = ({
         onOpenChange(false);
         toast.success('✅ Perplexity API key validated and saved');
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         toast.error(`API key validation failed: ${errorData.error?.message || 'Invalid key'}`);
       }
     } catch (error) {
