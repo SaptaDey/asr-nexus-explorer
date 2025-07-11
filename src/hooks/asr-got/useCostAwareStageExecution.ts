@@ -50,17 +50,17 @@ export const useCostAwareStageExecution = ({
   currentStage
 }: UseCostAwareStageExecutionProps) => {
   
-  // Map stage numbers to stage names for cost orchestration
+  // Map stage numbers to detailed stage names for cost orchestration (per Cost-Aware-Orchestration.md)
   const stageMapping = {
-    0: 'initialization',
-    1: 'decomposition',
-    2: 'hypothesis_generation',
-    3: 'evidence_harvest_web',
-    4: 'evidence_analysis',
-    5: 'prune_merge_reasoning',
-    6: 'narrative_composition',
-    7: 'audit_script',
-    8: 'audit_outputs'
+    0: '1_initialization',
+    1: '2_decomposition', 
+    2: '3A_hypothesis_generation', // Will also trigger 3B and 3C
+    3: '4_1_evidence_harvest_web', // Will also trigger 4.2, 4.3, 4.4
+    4: '5A_prune_merge_reasoning', // Will also trigger 5B
+    5: '6A_subgraph_metrics', // Will also trigger 6B
+    6: '7_narrative_composition',
+    7: '8A_audit_script', // Will also trigger 8B
+    8: 'final_analysis_complete'
   };
 
   // Create enhanced context with cost-aware orchestration

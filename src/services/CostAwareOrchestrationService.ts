@@ -22,15 +22,16 @@ export class CostAwareOrchestrationService {
   private currentSessionCost = 0;
   private cacheStorage = new Map<string, any>();
 
-  // Stage-by-Stage Model Assignment Matrix (from document)
+  // Stage-by-Stage Model Assignment Matrix (exact from Cost-Aware-Orchestration.md)
   private stageModelMatrix: Record<string, StageModelAssignment> = {
-    'initialization': {
-      stage: 'Initialization',
+    '1_initialization': {
+      stage: 'Initialisation',
+      microPass: undefined,
       modelCapability: {
         model: 'gemini-2.5-flash',
         capability: 'STRUCTURED_OUTPUTS',
         batchSize: 50,
-        purpose: 'Emit root n₀ and parameter inventory',
+        purpose: 'Emit root n₀ and parameter inventory.',
         outputType: 'RootNode JSON',
         maxTokens: 5000,
         thinkingBudget: 2048
@@ -41,13 +42,14 @@ export class CostAwareOrchestrationService {
         priceUSD: 0.073
       }
     },
-    'decomposition': {
+    '2_decomposition': {
       stage: 'Decomposition',
+      microPass: undefined,
       modelCapability: {
         model: 'gemini-2.5-flash',
         capability: 'STRUCTURED_OUTPUTS',
         batchSize: 50,
-        purpose: 'Create dimension nodes + bias flags',
+        purpose: 'Create dimension nodes + bias flags.',
         outputType: 'DimensionArray',
         maxTokens: 10000,
         thinkingBudget: 2048
@@ -58,30 +60,32 @@ export class CostAwareOrchestrationService {
         priceUSD: 0.115
       }
     },
-    'hypothesis_generation': {
-      stage: 'Hypothesis Generation - Pass A',
+    '3A_hypothesis_generation': {
+      stage: 'Hypothesis Generation',
+      microPass: 'pass A',
       modelCapability: {
         model: 'gemini-2.5-flash',
         capability: 'STRUCTURED_OUTPUTS',
         batchSize: 25,
-        purpose: 'Draft 3-5 hypotheses per dimension w/ metadata',
+        purpose: 'Draft 3-5 hypotheses per dimension w/ metadata.',
         outputType: 'HypothesisBatch',
-        maxTokens: 8000,
+        maxTokens: 10000,
         thinkingBudget: 2048
       },
       costEstimate: {
-        inputTokens: 25000,
-        outputTokens: 8000,
-        priceUSD: 0.111
+        inputTokens: 30000,
+        outputTokens: 10000,
+        priceUSD: 0.115
       }
     },
-    'hypothesis_planning': {
-      stage: 'Hypothesis Planning - Pass B',
+    '3B_hypothesis_planning': {
+      stage: 'Hypothesis Planning',
+      microPass: 'pass B',
       modelCapability: {
         model: 'gemini-2.5-pro',
         capability: 'SEARCH_GROUNDING',
         batchSize: 10,
-        purpose: 'Rapid facts & review snippets',
+        purpose: 'Rapid facts & review snippets.',
         outputType: 'SearchResultSet',
         maxTokens: 8000,
         thinkingBudget: 4096
@@ -92,13 +96,14 @@ export class CostAwareOrchestrationService {
         priceUSD: 0.111
       }
     },
-    'micro_service_decision': {
+    '3C_micro_service_decision': {
       stage: 'Micro-service Decision',
+      microPass: undefined,
       modelCapability: {
         model: 'gemini-2.5-pro',
         capability: 'FUNCTION_CALLING',
         batchSize: 1,
-        purpose: 'Select next back-end fn (run_lit_review, queue_lab_protocol)',
+        purpose: 'Select next back-end fn (run_lit_review, queue_lab_protocol).',
         outputType: 'CallSpec',
         maxTokens: 4000,
         thinkingBudget: 4096
@@ -109,13 +114,14 @@ export class CostAwareOrchestrationService {
         priceUSD: 0.058
       }
     },
-    'evidence_harvest_web': {
+    '4_1_evidence_harvest_web': {
       stage: 'Evidence Harvest - Web Search',
+      microPass: undefined,
       modelCapability: {
         model: 'sonar-deep-research',
         capability: 'SEARCH_GROUNDING',
         batchSize: 100,
-        purpose: 'Crawl PubMed / arXiv; return up to 1M tokens of docs',
+        purpose: 'Crawl PubMed / arXiv; return up to 1 M tokens of docs.',
         outputType: 'EvidenceCorpus',
         maxTokens: 1000000,
         thinkingBudget: 0
@@ -126,13 +132,14 @@ export class CostAwareOrchestrationService {
         priceUSD: 1.0
       }
     },
-    'evidence_harvest_citations': {
-      stage: 'Evidence Harvest - Citation Batch',
+    '4_2_evidence_harvest_citations': {
+      stage: 'Evidence Harvest → Citation Batch',
+      microPass: undefined,
       modelCapability: {
         model: 'sonar-deep-research',
         capability: 'STRUCTURED_OUTPUTS',
         batchSize: 1,
-        purpose: 'Generate structured citations & DOIs',
+        purpose: 'Generate structured citations & DOIs.',
         outputType: 'CitationBatch',
         maxTokens: 100000,
         thinkingBudget: 0
@@ -143,13 +150,14 @@ export class CostAwareOrchestrationService {
         priceUSD: 0.8
       }
     },
-    'evidence_analysis': {
+    '4_3_evidence_analysis': {
       stage: 'Evidence Analysis',
+      microPass: undefined,
       modelCapability: {
         model: 'gemini-2.5-pro',
         capability: 'CODE_EXECUTION',
         batchSize: 10,
-        purpose: 'Compute effect sizes, CI, power (P1.26), produce figs',
+        purpose: 'Compute effect sizes, CI, power (P1.26), produce figs.',
         outputType: 'StatsBundle + PNGs',
         maxTokens: 15000,
         thinkingBudget: 16384
@@ -160,13 +168,14 @@ export class CostAwareOrchestrationService {
         priceUSD: 0.2
       }
     },
-    'graph_update': {
+    '4_4_graph_update': {
       stage: 'Graph Update',
+      microPass: undefined,
       modelCapability: {
         model: 'gemini-2.5-pro',
         capability: 'STRUCTURED_OUTPUTS',
         batchSize: 200,
-        purpose: 'Attach Evidence nodes & typed edges (causal, temporal)',
+        purpose: 'Attach Evidence nodes & typed edges (causal, temporal).',
         outputType: 'EvidenceBatch',
         maxTokens: 20000,
         thinkingBudget: 8192
@@ -177,13 +186,14 @@ export class CostAwareOrchestrationService {
         priceUSD: 0.262
       }
     },
-    'prune_merge_reasoning': {
+    '5A_prune_merge_reasoning': {
       stage: 'Prune / Merge Reasoning',
+      microPass: undefined,
       modelCapability: {
         model: 'gemini-2.5-flash',
         capability: 'THINKING',
         batchSize: 1,
-        purpose: 'Bayesian filter: mark prune_list & merge_map',
+        purpose: 'Bayesian filter: mark prune_list & merge_map.',
         outputType: 'internal list',
         maxTokens: 5000,
         thinkingBudget: 2048
@@ -194,13 +204,14 @@ export class CostAwareOrchestrationService {
         priceUSD: 0.1
       }
     },
-    'graph_mutation_persist': {
+    '5B_graph_mutation_persist': {
       stage: 'Graph Mutation Persist',
+      microPass: undefined,
       modelCapability: {
         model: 'gemini-2.5-flash',
         capability: 'STRUCTURED_OUTPUTS',
         batchSize: 1,
-        purpose: 'Apply prune_list / merge_map',
+        purpose: 'Apply prune_list / merge_map.',
         outputType: 'PruneMergeSet',
         maxTokens: 8000,
         thinkingBudget: 2048
@@ -211,13 +222,14 @@ export class CostAwareOrchestrationService {
         priceUSD: 0.095
       }
     },
-    'subgraph_metrics': {
+    '6A_subgraph_metrics': {
       stage: 'Sub-graph Metrics Calc',
+      microPass: undefined,
       modelCapability: {
         model: 'gemini-2.5-pro',
         capability: 'CODE_EXECUTION',
         batchSize: 1,
-        purpose: 'Run NetworkX / GraphML centrality + MI scores',
+        purpose: 'Run NetworkX / GraphML centrality + MI scores.',
         outputType: 'MetricsJSON',
         maxTokens: 10000,
         thinkingBudget: 16384
@@ -228,13 +240,14 @@ export class CostAwareOrchestrationService {
         priceUSD: 0.175
       }
     },
-    'subgraph_emit': {
+    '6B_subgraph_emit': {
       stage: 'Sub-graph Emit',
+      microPass: undefined,
       modelCapability: {
         model: 'gemini-2.5-flash',
         capability: 'STRUCTURED_OUTPUTS',
         batchSize: 10,
-        purpose: 'Send ranked SubgraphSet',
+        purpose: 'Send ranked SubgraphSet.',
         outputType: 'SubgraphSet',
         maxTokens: 8000,
         thinkingBudget: 2048
@@ -245,16 +258,17 @@ export class CostAwareOrchestrationService {
         priceUSD: 0.08
       }
     },
-    'narrative_composition': {
+    '7_narrative_composition': {
       stage: 'Narrative Composition',
+      microPass: undefined,
       modelCapability: {
         model: 'gemini-2.5-pro',
         capability: 'STRUCTURED_OUTPUTS',
         batchSize: 1,
-        purpose: 'Write HTML blocks with embedded figs & Vancouver refs',
+        purpose: 'Write HTML blocks with embedded figs & Vancouver refs.',
         outputType: 'ReportChunk[]',
         maxTokens: 25000,
-        thinkingBudget: 8192
+        thinkingBudget: 2048
       },
       costEstimate: {
         inputTokens: 60000,
@@ -262,13 +276,14 @@ export class CostAwareOrchestrationService {
         priceUSD: 0.325
       }
     },
-    'audit_script': {
+    '8A_audit_script': {
       stage: 'Audit Script',
+      microPass: undefined,
       modelCapability: {
         model: 'gemini-2.5-pro',
         capability: 'CODE_EXECUTION',
         batchSize: 1,
-        purpose: 'Auto-check coverage, bias, power; produce scorecard',
+        purpose: 'Auto-check coverage, bias, power; produce scorecard.',
         outputType: 'AuditBundle',
         maxTokens: 10000,
         thinkingBudget: 8192
@@ -279,13 +294,14 @@ export class CostAwareOrchestrationService {
         priceUSD: 0.162
       }
     },
-    'audit_outputs': {
+    '8B_audit_outputs': {
       stage: 'Audit Outputs',
+      microPass: undefined,
       modelCapability: {
         model: 'gemini-2.5-pro',
         capability: 'STRUCTURED_OUTPUTS',
         batchSize: 1,
-        purpose: 'Persist AuditReport + next-step recs',
+        purpose: 'Persist AuditReport + next-step recs.',
         outputType: 'AuditReport',
         maxTokens: 8000,
         thinkingBudget: 4096
@@ -294,6 +310,24 @@ export class CostAwareOrchestrationService {
         inputTokens: 40000,
         outputTokens: 8000,
         priceUSD: 0.13
+      }
+    },
+    'S_session_cache': {
+      stage: 'Session-wide Cache',
+      microPass: undefined,
+      modelCapability: {
+        model: 'gemini-2.5-flash',
+        capability: 'CACHING',
+        batchSize: 1,
+        purpose: 'Context slices ≥200 k tokens cached for 60 min.',
+        outputType: 'n/a',
+        maxTokens: 0,
+        thinkingBudget: 0
+      },
+      costEstimate: {
+        inputTokens: 0,
+        outputTokens: 0,
+        priceUSD: 0.4
       }
     }
   };
@@ -332,6 +366,37 @@ export class CostAwareOrchestrationService {
    */
   getStageModelAssignment(stage: string): StageModelAssignment | null {
     return this.stageModelMatrix[stage] || null;
+  }
+
+  /**
+   * Batch API Strategy: Send up to 5 prompts in one HTTP call for Gemini (per document)
+   */
+  async routeBatchApiCall(
+    stage: string,
+    prompts: string[],
+    apiKeys: APICredentials,
+    additionalParams?: any
+  ): Promise<any[]> {
+    const assignment = this.getStageModelAssignment(stage);
+    if (!assignment) {
+      throw new Error(`No model assignment found for stage: ${stage}`);
+    }
+
+    const { model, capability, maxTokens, thinkingBudget, batchSize } = assignment.modelCapability;
+
+    // Enforce batch size limits (max 5 prompts per HTTP call for Gemini as per document)
+    const maxBatchSize = model.includes('gemini') ? Math.min(5, batchSize) : batchSize;
+    const batchedPrompts = prompts.slice(0, maxBatchSize);
+
+    console.log(`Batching ${batchedPrompts.length} prompts for ${stage} with ${model}`);
+
+    if (model === 'sonar-deep-research') {
+      // Sonar handles batching differently (100-query bundles)
+      return await this.callSonarBatchSearch(batchedPrompts, apiKeys.perplexity!, additionalParams);
+    } else {
+      // Gemini batch processing
+      return await this.callGeminiBatch(batchedPrompts, model, apiKeys.gemini, capability, maxTokens, thinkingBudget, additionalParams);
+    }
   }
 
   /**
@@ -430,7 +495,7 @@ export class CostAwareOrchestrationService {
   }
 
   /**
-   * Call Gemini 2.5 Flash API
+   * Call Gemini 2.5 Flash API with THINKING + ONE capability flag rule
    */
   private async callGeminiFlash(
     prompt: string,
@@ -442,7 +507,14 @@ export class CostAwareOrchestrationService {
   ): Promise<any> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
-    const tools = this.getToolsForCapability(capability);
+    // Enforce 65536 token limit as per document
+    const enforcedMaxTokens = Math.min(maxTokens, 65536);
+    
+    // THINKING + exactly ONE capability flag per request (as per document rule)
+    const tools = ['THINKING'];
+    if (capability !== 'THINKING') {
+      tools.push(capability);
+    }
     
     const body = {
       contents: [
@@ -451,18 +523,19 @@ export class CostAwareOrchestrationService {
         }
       ],
       generationConfig: {
-        maxOutputTokens: maxTokens,
+        maxOutputTokens: enforcedMaxTokens,
         temperature: 0.1,
         ...additionalParams
       },
-      tools: tools.length > 0 ? tools : undefined,
+      tools: this.getToolsForCapability(tools),
       systemInstruction: {
         parts: [{ text: 'You are Gemini 2.5 Flash, optimized for fast, cost-efficient processing with structured outputs.' }]
       }
     };
 
-    if (thinkingBudget && capability === 'THINKING') {
-      body.generationConfig.thinkingBudget = thinkingBudget;
+    // Always add thinking_budget for Flash stages (per document: 2048)
+    if (thinkingBudget) {
+      body.generationConfig.thinking_budget = thinkingBudget;
     }
 
     const response = await fetch(url, {
@@ -474,7 +547,8 @@ export class CostAwareOrchestrationService {
     });
 
     if (!response.ok) {
-      throw new Error(`Gemini Flash API error: ${response.status} ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Gemini Flash API error: ${response.status} ${errorData.error?.message || response.statusText}`);
     }
 
     const data = await response.json();
@@ -482,7 +556,7 @@ export class CostAwareOrchestrationService {
   }
 
   /**
-   * Call Gemini 2.5 Pro API
+   * Call Gemini 2.5 Pro API with THINKING + ONE capability flag rule
    */
   private async callGeminiPro(
     prompt: string,
@@ -494,7 +568,14 @@ export class CostAwareOrchestrationService {
   ): Promise<any> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`;
     
-    const tools = this.getToolsForCapability(capability);
+    // Enforce 65536 token limit as per document
+    const enforcedMaxTokens = Math.min(maxTokens, 65536);
+    
+    // THINKING + exactly ONE capability flag per request (as per document rule)
+    const tools = ['THINKING'];
+    if (capability !== 'THINKING') {
+      tools.push(capability);
+    }
     
     const body = {
       contents: [
@@ -503,18 +584,33 @@ export class CostAwareOrchestrationService {
         }
       ],
       generationConfig: {
-        maxOutputTokens: maxTokens,
+        maxOutputTokens: enforcedMaxTokens,
         temperature: 0.1,
         ...additionalParams
       },
-      tools: tools.length > 0 ? tools : undefined,
+      tools: this.getToolsForCapability(tools),
       systemInstruction: {
         parts: [{ text: 'You are Gemini 2.5 Pro, optimized for advanced reasoning, code execution, and premium scientific analysis.' }]
       }
     };
 
-    if (thinkingBudget && capability === 'THINKING') {
-      body.generationConfig.thinkingBudget = thinkingBudget;
+    // Add thinking_budget for Pro stages (per document: 4096-16384)
+    if (thinkingBudget) {
+      body.generationConfig.thinking_budget = thinkingBudget;
+    }
+
+    // Add CODE_EXECUTION enhancements for figure generation (per document)
+    if (capability === 'CODE_EXECUTION') {
+      const codeExecutionPrompt = `${prompt}
+
+IMPORTANT: When generating statistical figures, use matplotlib, plotly, or ggplot2 to create publication-ready visualizations. Save figures as PNG/SVG and include proper legends, axis labels, and titles. Each figure should be saved to the working directory for incorporation into HTML reports.
+
+Available libraries: matplotlib, plotly, seaborn, ggplot2, pandas, numpy, scipy.stats
+Example: 
+import matplotlib.pyplot as plt
+plt.savefig('figure_name.png', dpi=300, bbox_inches='tight')`;
+      
+      body.contents[0].parts[0].text = codeExecutionPrompt;
     }
 
     const response = await fetch(url, {
@@ -526,7 +622,8 @@ export class CostAwareOrchestrationService {
     });
 
     if (!response.ok) {
-      throw new Error(`Gemini Pro API error: ${response.status} ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Gemini Pro API error: ${response.status} ${errorData.error?.message || response.statusText}`);
     }
 
     const data = await response.json();
@@ -534,25 +631,158 @@ export class CostAwareOrchestrationService {
   }
 
   /**
-   * Get tools configuration for specific capability
+   * Get tools configuration for specific capability or array of capabilities
    */
-  private getToolsForCapability(capability: CapabilityFlag): any[] {
-    switch (capability) {
-      case 'STRUCTURED_OUTPUTS':
-        return [{ 'function_declarations': [] }];
-      case 'SEARCH_GROUNDING':
-        return [{ 'google_search_retrieval': {} }];
-      case 'CODE_EXECUTION':
-        return [{ 'code_execution': {} }];
-      case 'FUNCTION_CALLING':
-        return [{ 'function_declarations': [] }];
-      default:
-        return [];
+  private getToolsForCapability(capability: CapabilityFlag | CapabilityFlag[] | string[]): any[] {
+    const capabilities = Array.isArray(capability) ? capability : [capability];
+    const tools: any[] = [];
+    
+    for (const cap of capabilities) {
+      switch (cap) {
+        case 'THINKING':
+          // THINKING is always included by default in Gemini calls
+          break;
+        case 'STRUCTURED_OUTPUTS':
+          tools.push({ 'function_declarations': [] });
+          break;
+        case 'SEARCH_GROUNDING':
+          tools.push({ 'google_search_retrieval': {} });
+          break;
+        case 'CODE_EXECUTION':
+          tools.push({ 'code_execution': {} });
+          break;
+        case 'FUNCTION_CALLING':
+          tools.push({ 'function_declarations': [] });
+          break;
+        case 'CACHING':
+          // Caching is handled at the orchestration level
+          break;
+      }
     }
+    
+    return tools;
   }
 
   /**
-   * Handle fallback scenarios
+   * Call Gemini Batch API (up to 5 prompts per HTTP call as per document)
+   */
+  private async callGeminiBatch(
+    prompts: string[],
+    model: AIModel,
+    apiKey: string,
+    capability: CapabilityFlag,
+    maxTokens: number,
+    thinkingBudget?: number,
+    additionalParams?: any
+  ): Promise<any[]> {
+    const modelName = model === 'gemini-2.5-flash' ? 'gemini-2.5-flash' : 'gemini-2.5-pro';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+    
+    // Enforce 65536 token limit as per document
+    const enforcedMaxTokens = Math.min(maxTokens, 65536);
+    
+    // THINKING + exactly ONE capability flag per request (as per document rule)
+    const tools = ['THINKING'];
+    if (capability !== 'THINKING') {
+      tools.push(capability);
+    }
+
+    const batchRequests = prompts.map(prompt => ({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: enforcedMaxTokens,
+        temperature: 0.1,
+        thinking_budget: thinkingBudget,
+        ...additionalParams
+      },
+      tools: this.getToolsForCapability(tools),
+      systemInstruction: {
+        parts: [{ text: `You are ${modelName}, optimized for ${model.includes('flash') ? 'fast, cost-efficient processing' : 'advanced reasoning and premium analysis'}.` }]
+      }
+    }));
+
+    // For now, process sequentially since Gemini batch API might need different endpoint
+    // TODO: Use actual batch endpoint when available
+    const results = [];
+    for (const request of batchRequests) {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Gemini Batch API error: ${response.status} ${errorData.error?.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      results.push(data.candidates[0].content.parts[0].text);
+    }
+
+    return results;
+  }
+
+  /**
+   * Call Sonar Batch Search (100-query bundles @ $0.50 per 100 as per document)
+   */
+  private async callSonarBatchSearch(
+    queries: string[],
+    apiKey: string,
+    additionalParams?: any
+  ): Promise<any[]> {
+    const client = new PerplexityClient(apiKey);
+    
+    // Process in batches of 100 queries for optimal cost ($5 per 1000 queries = $0.50 per 100)
+    const batchSize = 100;
+    const results = [];
+    
+    for (let i = 0; i < queries.length; i += batchSize) {
+      const batch = queries.slice(i, i + batchSize);
+      console.log(`Processing Sonar batch ${Math.floor(i / batchSize) + 1}: ${batch.length} queries`);
+      
+      const batchResults = await Promise.all(
+        batch.map(query => client.deepResearch(query, {
+          search_mode: 'academic',
+          web_search_options: { search_context_size: 'high' },
+          return_related_questions: true,
+          max_tokens: 100000, // Up to 1M tokens per document
+          ...additionalParams
+        }))
+      );
+      
+      results.push(...batchResults);
+    }
+    
+    return results;
+  }
+
+  /**
+   * Implement hallucination detection and Flash→Pro escalation (per document)
+   */
+  private async detectHallucination(response: string, originalPrompt: string): Promise<boolean> {
+    // Simple heuristic-based hallucination detection
+    const hallucinationIndicators = [
+      /I don't have access/i,
+      /I cannot access/i,
+      /I'm not able to browse/i,
+      /I don't have real-time/i,
+      /fictional/i,
+      /made up/i,
+      /hypothetical/i
+    ];
+    
+    const hallucinationCount = hallucinationIndicators.filter(indicator => 
+      indicator.test(response)
+    ).length;
+    
+    // If ≥10% hallucination indicators, escalate to Pro (per document)
+    const hallucinationRate = hallucinationCount / hallucinationIndicators.length;
+    return hallucinationRate >= 0.1;
+  }
+
+  /**
+   * Handle fallback scenarios with hallucination detection and escalation (per document)
    */
   private async handleFallback(
     stage: string,
@@ -560,18 +790,29 @@ export class CostAwareOrchestrationService {
     apiKeys: APICredentials,
     error: any
   ): Promise<any> {
-    console.log(`Implementing fallback for stage: ${stage}`);
+    console.log(`Implementing fallback for stage: ${stage}`, error.message);
     
-    // If Sonar rate-limits, downgrade to Gemini Pro with SEARCH_GROUNDING
-    if (stage.includes('evidence_harvest') && error.message.includes('rate')) {
+    // If Sonar rate-limits → auto-downgrade to Gemini Pro SEARCH_GROUNDING batch (per document)
+    if (stage.includes('evidence_harvest') && (error.message.includes('rate') || error.message.includes('429'))) {
       console.log('Sonar rate limited, falling back to Gemini Pro with search grounding');
       return this.callGeminiPro(prompt, apiKeys.gemini, 'SEARCH_GROUNDING', 15000, 8192);
     }
     
-    // If Flash output has high hallucination, escalate to Pro
-    if (stage.includes('flash') && error.message.includes('hallucination')) {
-      console.log('Flash hallucination detected, escalating to Pro');
-      return this.callGeminiPro(prompt, apiKeys.gemini, 'STRUCTURED_OUTPUTS', 15000, 8192);
+    // If Flash output ≥10% hallucination → escalate stage to Pro (per document)
+    if (stage.includes('flash') || error.message.includes('hallucination')) {
+      console.log('Flash hallucination detected or Flash stage failed, escalating to Pro');
+      const assignment = this.getStageModelAssignment(stage);
+      if (assignment) {
+        return this.callGeminiPro(prompt, apiKeys.gemini, assignment.modelCapability.capability, 
+          assignment.modelCapability.maxTokens, assignment.modelCapability.thinkingBudget);
+      }
+    }
+
+    // Cache slice when aggregated prompt ≥200k; purge after 24h (per document)
+    if (prompt.length > 200000) {
+      console.log('Large prompt detected, implementing caching strategy');
+      const cacheKey = `large_prompt_${Date.now()}`;
+      this.cacheContext(cacheKey, prompt, 1440); // 24 hours = 1440 minutes
     }
 
     throw error;
