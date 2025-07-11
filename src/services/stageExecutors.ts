@@ -3,16 +3,17 @@
  * Implements all 9 stages of the ASR-GoT framework
  */
 
-import { GraphData, GraphNode, GraphEdge, ResearchContext } from '@/types/asrGotTypes';
+import { GraphData, GraphNode, GraphEdge, ResearchContext, APICredentials } from '@/types/asrGotTypes';
 import { callGeminiAPI } from './apiService';
 
 export interface StageExecutorContext {
-  apiKeys: { gemini: string };
+  apiKeys: APICredentials;
   graphData: GraphData;
   researchContext: ResearchContext;
   stageResults: string[];
-  setGraphData: (updater: (prev: GraphData) => GraphData) => void;
-  setResearchContext: (updater: (prev: ResearchContext) => ResearchContext) => void;
+  routeApiCall?: (prompt: string, additionalParams?: any) => Promise<any>;
+  setGraphData?: (updater: (prev: GraphData) => GraphData) => void;
+  setResearchContext?: (updater: (prev: ResearchContext) => ResearchContext) => void;
 }
 
 export const initializeGraph = async (
@@ -20,8 +21,7 @@ export const initializeGraph = async (
   context: StageExecutorContext
 ): Promise<string> => {
   // RULE 5 COMPLIANCE: Stage 1 Initialization = THINKING + STRUCTURED_OUTPUTS
-  const comprehensiveAnalysis = await callGeminiAPI(
-    `You are a PhD-level researcher. Perform a comprehensive analysis of this research question:
+  const analysisPrompt = `You are a PhD-level researcher. Perform a comprehensive analysis of this research question:
 
 Research Question: "${taskDescription}"
 
@@ -32,15 +32,23 @@ Please provide a structured analysis with:
 4. **Methodological Approaches**: Common research methodologies used in this field
 5. **Recent Breakthroughs**: Latest significant findings or innovations (within last 2 years)
 
-Provide a comprehensive foundation for research planning.`,
-    context.apiKeys.gemini,
-    'thinking-structured', // RULE 5: Stage 1 = THINKING + STRUCTURED_OUTPUTS
-    undefined,
-    { 
-      stageId: '1', 
-      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
-    }
-  );
+Provide a comprehensive foundation for research planning.`;
+
+  const comprehensiveAnalysis = context.routeApiCall 
+    ? await context.routeApiCall(analysisPrompt, { 
+        stageId: '1', 
+        graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+      })
+    : await callGeminiAPI(
+        analysisPrompt,
+        context.apiKeys.gemini,
+        'thinking-structured', // RULE 5: Stage 1 = THINKING + STRUCTURED_OUTPUTS
+        undefined,
+        { 
+          stageId: '1', 
+          graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+        }
+      );
 
   const rootNode: GraphNode = {
     id: '1.0',

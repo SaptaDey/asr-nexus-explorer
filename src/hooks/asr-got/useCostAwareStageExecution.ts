@@ -64,12 +64,19 @@ export const useCostAwareStageExecution = ({
   };
 
   // Create enhanced context with cost-aware orchestration
-  const createStageContext = useCallback((): StageExecutorContext => ({
-    apiKeys,
-    graphData,
-    researchContext,
-    stageResults,
-    routeApiCall: async (prompt: string, additionalParams?: any) => {
+  const createStageContext = useCallback((): StageExecutorContext => {
+    // Defensive check for apiKeys
+    if (!apiKeys) {
+      console.error('createStageContext: apiKeys is undefined!', { apiKeys });
+      throw new Error('API credentials are not available. Please configure your API keys first.');
+    }
+    
+    return {
+      apiKeys,
+      graphData,
+      researchContext,
+      stageResults,
+      routeApiCall: async (prompt: string, additionalParams?: any) => {
       const stageName = stageMapping[currentStage as keyof typeof stageMapping];
       if (!stageName) {
         throw new Error(`Unknown stage: ${currentStage}`);
@@ -86,8 +93,9 @@ export const useCostAwareStageExecution = ({
         apiKeys,
         additionalParams
       );
-    }
-  }), [apiKeys, graphData, researchContext, stageResults, currentStage]);
+      }
+    };
+  }, [apiKeys, graphData, researchContext, stageResults, currentStage]);
 
   // Enhanced stage execution with cost-aware routing
   const executeStage = useCallback(async (stageIndex: number) => {
