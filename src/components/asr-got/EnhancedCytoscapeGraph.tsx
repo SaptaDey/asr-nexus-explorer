@@ -33,8 +33,10 @@ export const EnhancedCytoscapeGraph: React.FC<EnhancedCytoscapeGraphProps> = ({
 
   // Enhanced node styling with confidence-based colors
   const getNodeStyle = useCallback((node: GraphNode) => {
-    const avgConfidence = node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length;
-    const impactScore = node.metadata.impact_score || 0.5;
+    const avgConfidence = node.confidence && Array.isArray(node.confidence) && node.confidence.length > 0 
+      ? node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length 
+      : 0.5;
+    const impactScore = node.metadata?.impact_score || 0.5;
     
     let color = '#94A3B8'; // default gray
     if (avgConfidence >= 0.8) color = '#00857C'; // high confidence - teal

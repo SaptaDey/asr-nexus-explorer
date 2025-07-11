@@ -88,7 +88,9 @@ ${Object.entries(graphData.nodes.reduce((acc, node) => {
 }, {} as Record<string, number>)).map(([type, count]) => `- ${type}: ${count}`).join('\n')}
 
 Average Node Confidence: ${(graphData.nodes.reduce((sum, node) => {
-  const avgConf = node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length;
+  const avgConf = node.confidence && Array.isArray(node.confidence) && node.confidence.length > 0 
+    ? node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length 
+    : 0;
   return sum + avgConf;
 }, 0) / graphData.nodes.length * 100).toFixed(1)}%
 

@@ -42,7 +42,9 @@ const getBotanicalType = (nodeType: string, stage: number): TreeNode['botanicalT
 
 // Calculate botanical properties from ASR-GoT metadata
 const calculateBotanicalProps = (node: TreeNode, stage: number): BotanicalProperties => {
-  const avgConfidence = node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length;
+  const avgConfidence = node.confidence && Array.isArray(node.confidence) && node.confidence.length > 0 
+    ? node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length 
+    : 0.5;
   const impactScore = node.metadata?.impact_score || 0.5;
   
   // Length proportional to confidence for rootlets (Stage 2)

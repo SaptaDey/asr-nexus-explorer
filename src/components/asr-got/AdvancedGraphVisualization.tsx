@@ -85,7 +85,9 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
       .filter(node => layerVisibility[NODE_TYPES[node.type]?.layer || 0])
       .map(node => {
         const nodeType = NODE_TYPES[node.type] || NODE_TYPES.root;
-        const avgConfidence = node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length;
+        const avgConfidence = node.confidence && Array.isArray(node.confidence) && node.confidence.length > 0 
+          ? node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length 
+          : 0.5;
         const impactScore = node.metadata?.impact_score || 0;
         
         return {

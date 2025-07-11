@@ -1361,6 +1361,7 @@ ${finalAnalysis}
     
     // Create complex relationship hyperedges based on confidence patterns
     const highConfidenceNodes = evidenceNodes.filter(node => 
+      node.confidence && Array.isArray(node.confidence) && node.confidence.length > 0 &&
       node.confidence.reduce((sum, c) => sum + c, 0) / node.confidence.length > 0.8
     );
     

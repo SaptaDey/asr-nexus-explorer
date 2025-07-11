@@ -399,6 +399,7 @@ CRITICAL: All analysis must relate directly to "${context.researchContext.topic}
   // Apply pruning based on analysis - remove very low confidence nodes
   const prunedNodes = currentNodes.filter(node => {
     if (node.type === 'root' || node.type === 'knowledge') return true; // Keep essential nodes
+    if (!node.confidence || !Array.isArray(node.confidence) || node.confidence.length === 0) return false;
     const avgConfidence = node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length;
     return avgConfidence >= 0.3; // Remove nodes with very low confidence
   });
@@ -452,6 +453,7 @@ export const extractSubgraphs = async (context: StageExecutorContext): Promise<s
     hypothesisNodes: context.graphData.nodes.filter(n => n.type === 'hypothesis'),
     dimensionNodes: context.graphData.nodes.filter(n => n.type === 'dimension'),
     highConfidenceNodes: context.graphData.nodes.filter(n => {
+      if (!n.confidence || !Array.isArray(n.confidence) || n.confidence.length === 0) return false;
       const avgConf = n.confidence.reduce((a, b) => a + b, 0) / n.confidence.length;
       return avgConf > 0.7;
     })

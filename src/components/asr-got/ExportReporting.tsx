@@ -72,7 +72,9 @@ export const ExportReporting: React.FC<ExportReportingProps> = ({
     const hypotheses = graphData.nodes
       .filter(node => node.type === 'hypothesis')
       .map(node => {
-        const avgConfidence = node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length;
+        const avgConfidence = node.confidence && Array.isArray(node.confidence) && node.confidence.length > 0 
+          ? node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length 
+          : 0.5;
         return {
           label: node.label,
           confidence: avgConfidence,
@@ -87,7 +89,9 @@ export const ExportReporting: React.FC<ExportReportingProps> = ({
       .map((node, index) => ({
         id: index + 1,
         label: node.label,
-        confidence: node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length,
+        confidence: node.confidence && Array.isArray(node.confidence) && node.confidence.length > 0 
+          ? node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length 
+          : 0.5,
         metadata: node.metadata
       }));
 
@@ -321,7 +325,9 @@ ${htmlSynthesis || '*Analysis synthesis will be available after Stage 7 completi
 ## Key Hypotheses
 
 ${hypotheses.map((hyp, index) => {
-  const confidence = hyp.confidence.reduce((a, b) => a + b, 0) / hyp.confidence.length;
+  const confidence = hyp.confidence && Array.isArray(hyp.confidence) && hyp.confidence.length > 0 
+    ? hyp.confidence.reduce((a, b) => a + b, 0) / hyp.confidence.length 
+    : 0.5;
   return `### ${index + 1}. ${hyp.label}
 
 **Confidence:** ${(confidence * 100).toFixed(1)}%  
@@ -335,7 +341,9 @@ ${hypotheses.map((hyp, index) => {
 
 ${evidenceNodes.length > 0 ? 
   evidenceNodes.map((evidence, index) => {
-    const confidence = evidence.confidence.reduce((a, b) => a + b, 0) / evidence.confidence.length;
+    const confidence = evidence.confidence && Array.isArray(evidence.confidence) && evidence.confidence.length > 0 
+      ? evidence.confidence.reduce((a, b) => a + b, 0) / evidence.confidence.length 
+      : 0.5;
     return `${index + 1}. **${evidence.label}** - Confidence: ${(confidence * 100).toFixed(1)}%`;
   }).join('\n') 
   : '*No evidence sources processed yet.*'}
