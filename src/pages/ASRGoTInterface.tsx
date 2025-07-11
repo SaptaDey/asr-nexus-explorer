@@ -23,12 +23,13 @@ import { VisualAnalytics } from '@/components/asr-got/VisualAnalytics';
 import { MetaAnalysisVisualAnalytics } from '@/components/asr-got/MetaAnalysisVisualAnalytics';
 import { CostAwareDashboard } from '@/components/asr-got/CostAwareDashboard';
 import { DeveloperMode } from '@/components/asr-got/DeveloperMode';
-import { PerplexityApiKeyDialog } from '@/components/asr-got/PerplexityApiKeyDialog';
+import { UnifiedAPICredentialsModal } from '@/components/asr-got/UnifiedAPICredentialsModal';
 import { useASRGoT } from '@/hooks/useASRGoT';
 import { useProcessingMode } from '@/hooks/asr-got/useProcessingMode';
 import { costAwareOrchestration } from '@/services/CostAwareOrchestrationService';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { APICredentials } from '@/types/asrGotTypes';
 
 const ASRGoTInterface: React.FC = () => {
   const {
@@ -51,9 +52,7 @@ const ASRGoTInterface: React.FC = () => {
     canExportHtml
   } = useASRGoT();
 
-  const [showTokenModal, setShowTokenModal] = useState(false);
-  const [showPerplexityModal, setShowPerplexityModal] = useState(false);
-  const [tempToken, setTempToken] = useState('');
+  const [showAPICredentialsModal, setShowAPICredentialsModal] = useState(false);
   const [activeTab, setActiveTab] = useState('research');
   const [showBiasAudit, setShowBiasAudit] = useState(false);
   const [exportContent, setExportContent] = useState<string>('');
@@ -72,30 +71,12 @@ const ASRGoTInterface: React.FC = () => {
     }
   }, [currentStage, stageResults]);
 
-  const handleTokenSave = () => {
-    if (!tempToken) {
-      toast.error('Gemini API token is required');
-      return;
-    }
 
-    updateApiKeys({ ...apiKeys, gemini: tempToken });
-    setShowTokenModal(false);
-    toast.success('✅ Token saved. ASR-GoT ready.');
+  const handleAPICredentialsSave = (credentials: APICredentials) => {
+    updateApiKeys(credentials);
+    toast.success('✅ API credentials saved successfully.');
   };
 
-  const handlePerplexityApiKeySave = (perplexityKey: string) => {
-    updateApiKeys({ ...apiKeys, perplexity: perplexityKey });
-    toast.success('✅ Perplexity API key saved. Sonar Deep Research enabled.');
-  };
-
-  const handleSonarDeepResearchRequest = () => {
-    if (!apiKeys.perplexity) {
-      setShowPerplexityModal(true);
-      return;
-    }
-    
-    toast.info('Sonar Deep Research is enabled and ready for use!');
-  };
 
   const handleExportHTML = async () => {
     if (!hasResults) {
@@ -698,71 +679,13 @@ Make the data realistic and scientifically meaningful for the research domain.
       
       {/* Main Content */}
       <div className="relative z-10">
-      {/* API Token Modal */}
-      <Dialog open={showTokenModal} onOpenChange={setShowTokenModal}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              API Configuration Required
-            </DialogTitle>
-            <DialogDescription>
-              To start ASR-GoT analysis, you need a Gemini API key. Don't have one? We'll show you how to get it!
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6">
-            {/* API Key Input */}
-            <div>
-              <Label htmlFor="gemini-token">Gemini API Key</Label>
-              <Input
-                id="gemini-token"
-                type="password"
-                placeholder="AIza..."
-                value={tempToken}
-                onChange={(e) => setTempToken(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-            
-            {/* Instructions */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-800 mb-2">🔑 How to Get Your Gemini API Key:</h4>
-              <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
-                <li>Visit <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-900">Google AI Studio</a></li>
-                <li>Sign in with your Google account</li>
-                <li>Click "Create API Key" button</li>
-                <li>Select your Google Cloud project (or create a new one)</li>
-                <li>Copy the generated API key and paste it above</li>
-              </ol>
-              <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-                <strong>Note:</strong> The API key is stored locally in your browser and never sent to our servers.
-              </div>
-            </div>
-            
-            {/* Buttons */}
-            <div className="flex gap-3">
-              <Button 
-                onClick={() => setShowTokenModal(false)} 
-                variant="outline" 
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleTokenSave} className="flex-1 gradient-bg">
-                <Zap className="h-4 w-4 mr-2" />
-                Save & Continue
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Perplexity API Key Modal */}
-      <PerplexityApiKeyDialog
-        open={showPerplexityModal}
-        onOpenChange={setShowPerplexityModal}
-        onApiKeySubmit={handlePerplexityApiKeySave}
-        currentApiKey={apiKeys.perplexity}
+      {/* Unified API Credentials Modal */}
+      <UnifiedAPICredentialsModal
+        open={showAPICredentialsModal}
+        onOpenChange={setShowAPICredentialsModal}
+        onCredentialsSave={handleAPICredentialsSave}
+        existingCredentials={apiKeys}
       />
 
       {/* Bias Auditing Sidebar */}
@@ -938,23 +861,23 @@ Make the data realistic and scientifically meaningful for the research domain.
                 </Button>
               </Link>
               
-              {/* Sonar Deep Research Button */}
+              {/* API Configuration Button */}
               <Button
                 size="sm"
-                variant={apiKeys.perplexity ? "default" : "outline"}
-                onClick={handleSonarDeepResearchRequest}
+                variant={(apiKeys.gemini && apiKeys.perplexity) ? "default" : "outline"}
+                onClick={() => setShowAPICredentialsModal(true)}
                 className={`shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto ${
-                  apiKeys.perplexity 
-                    ? 'bg-purple-600 hover:bg-purple-700 text-white' 
-                    : 'border-purple-300 text-purple-600 hover:bg-purple-50'
+                  (apiKeys.gemini && apiKeys.perplexity)
+                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                    : 'border-blue-300 text-blue-600 hover:bg-blue-50'
                 }`}
               >
-                <Database className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                <Settings className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">
-                  {apiKeys.perplexity ? 'Sonar Ready' : 'Enable Sonar'}
+                  {(apiKeys.gemini && apiKeys.perplexity) ? 'API Setup ✓' : 'Configure APIs'}
                 </span>
                 <span className="sm:hidden">
-                  {apiKeys.perplexity ? 'Sonar' : 'Enable'}
+                  {(apiKeys.gemini && apiKeys.perplexity) ? 'APIs ✓' : 'APIs'}
                 </span>
               </Button>
               
@@ -1038,7 +961,7 @@ Make the data realistic and scientifically meaningful for the research domain.
               researchContext={researchContext}
               apiKeys={apiKeys}
               processingMode={mode}
-              onShowApiModal={() => setShowTokenModal(true)}
+              onShowApiModal={() => setShowAPICredentialsModal(true)}
               onSwitchToExport={() => setActiveTab('export')}
             />
           </TabsContent>
