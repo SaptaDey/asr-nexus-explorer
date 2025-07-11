@@ -24,7 +24,9 @@
       "Bash(GIT_TERMINAL_PROMPT=0 git push origin main)",
       "Bash(gh auth:*)",
       "Bash(rm:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ],
     "deny": []
   }

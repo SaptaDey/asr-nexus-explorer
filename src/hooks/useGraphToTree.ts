@@ -4,7 +4,6 @@
  */
 
 import { useMemo, useEffect, useState } from 'react';
-import { useSpring, config } from '@react-spring/three';
 import { hierarchy, stratify } from 'd3-hierarchy';
 import { GraphData, GraphNode, GraphEdge } from '@/types/asrGotTypes';
 import * as THREE from 'three';
@@ -37,12 +36,12 @@ export interface TreeData {
   auditResults?: any;
 }
 
-export const useGraphToTree = (graphData: GraphData, currentStage: number) => {
+export const useGraphToTree = (graphData: GraphData | null | undefined, currentStage: number) => {
   const [treeVersion, setTreeVersion] = useState(0);
 
   // Transform graph data into D3 hierarchy
   const hierarchyData = useMemo(() => {
-    if (!graphData.nodes.length) return null;
+    if (!graphData?.nodes?.length) return null;
 
     try {
       // Prepare nodes for stratify
@@ -109,10 +108,9 @@ export const useGraphToTree = (graphData: GraphData, currentStage: number) => {
   }, [hierarchyData]);
 
   // Create stage-based animations
-  const animations = useSpring({
-    stageProgress: currentStage / 9,
-    config: config.gentle
-  });
+  const animations = {
+    stageProgress: currentStage / 9
+  };
 
   // Stage-specific animation springs
   const stageAnimations = useMemo(() => {
@@ -124,61 +122,45 @@ export const useGraphToTree = (graphData: GraphData, currentStage: number) => {
     const blossomElements = botanicalElements.filter(e => e.type === 'blossom');
 
     return {
-      rootBulb: useSpring({
+      rootBulb: {
         scale: currentStage >= 1 ? [1, 1, 1] : [0, 0, 0],
-        opacity: currentStage >= 1 ? 1 : 0,
-        config: { ...config.wobbly, duration: 200 }
-      }),
+        opacity: currentStage >= 1 ? 1 : 0
+      },
       
-      rootlets: rootletElements.map((_, index) => 
-        useSpring({
-          length: currentStage >= 2 ? 1 : 0,
-          opacity: currentStage >= 2 ? 0.8 : 0,
-          delay: index * 150,
-          config: { ...config.slow, easing: easeInOutBack }
-        })
-      ),
+      rootlets: rootletElements.map((_, index) => ({
+        length: currentStage >= 2 ? 1 : 0,
+        opacity: currentStage >= 2 ? 0.8 : 0,
+        delay: index * 150
+      })),
       
-      branches: branchElements.map((element, index) => 
-        useSpring({
-          thickness: currentStage >= 3 ? element.confidence : 0,
-          opacity: currentStage >= 3 ? 1 : 0,
-          delay: index * 200,
-          config: config.default
-        })
-      ),
+      branches: branchElements.map((element, index) => ({
+        thickness: currentStage >= 3 ? element.confidence : 0,
+        opacity: currentStage >= 3 ? 1 : 0,
+        delay: index * 200
+      })),
       
-      buds: budElements.map((_, index) => 
-        useSpring({
-          scale: currentStage >= 4 ? [1, 1, 1] : [0, 0, 0],
-          pulse: currentStage === 4 ? 1 : 0,
-          delay: index * 100,
-          config: config.wobbly
-        })
-      ),
+      buds: budElements.map((_, index) => ({
+        scale: currentStage >= 4 ? [1, 1, 1] : [0, 0, 0],
+        pulse: currentStage === 4 ? 1 : 0,
+        delay: index * 100
+      })),
       
-      leaves: leafElements.map((element, index) => 
-        useSpring({
-          scale: currentStage >= 6 ? [element.impactScore, element.impactScore, element.impactScore] : [0, 0, 0],
-          opacity: currentStage >= 6 ? 1 : 0,
-          jitter: currentStage >= 6 ? [
-            (Math.random() - 0.5) * 0.1,
-            (Math.random() - 0.5) * 0.1,
-            (Math.random() - 0.5) * 0.1
-          ] : [0, 0, 0],
-          delay: index * 100,
-          config: { ...config.default, friction: 80 } // Friction 80 as specified
-        })
-      ),
+      leaves: leafElements.map((element, index) => ({
+        scale: currentStage >= 6 ? [element.impactScore, element.impactScore, element.impactScore] : [0, 0, 0],
+        opacity: currentStage >= 6 ? 1 : 0,
+        jitter: currentStage >= 6 ? [
+          (Math.random() - 0.5) * 0.1,
+          (Math.random() - 0.5) * 0.1,
+          (Math.random() - 0.5) * 0.1
+        ] : [0, 0, 0],
+        delay: index * 100
+      })),
       
-      blossoms: blossomElements.map((_, index) => 
-        useSpring({
-          scale: currentStage >= 7 ? [1, 1, 1] : [0, 0, 0],
-          petalSpread: currentStage >= 7 ? 1 : 0,
-          delay: index * 200,
-          config: { duration: 800 } // 800ms as specified
-        })
-      )
+      blossoms: blossomElements.map((_, index) => ({
+        scale: currentStage >= 7 ? [1, 1, 1] : [0, 0, 0],
+        petalSpread: currentStage >= 7 ? 1 : 0,
+        delay: index * 200
+      }))
     };
   }, [botanicalElements, currentStage]);
 

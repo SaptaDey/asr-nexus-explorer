@@ -10,8 +10,8 @@ import * as THREE from 'three';
 import { BotanicalElement } from '@/hooks/useGraphToTree';
 
 interface BotanicalElementsProps {
-  elements: BotanicalElement[];
-  animations: {
+  elements?: BotanicalElement[];
+  animations?: {
     buds?: unknown[];
     leaves?: unknown[];
     blossoms?: unknown[];
@@ -35,12 +35,13 @@ export const BotanicalElements: React.FC<BotanicalElementsProps> = ({
 
   // Filter elements by type for organized rendering
   const elementsByType = useMemo(() => {
+    const safeElements = elements || [];
     return {
-      buds: elements.filter(e => e.type === 'bud'),
-      leaves: elements.filter(e => e.type === 'leaf'),
-      blossoms: elements.filter(e => e.type === 'blossom'),
-      rootlets: elements.filter(e => e.type === 'rootlet'),
-      branches: elements.filter(e => e.type === 'branch')
+      buds: safeElements.filter(e => e?.type === 'bud'),
+      leaves: safeElements.filter(e => e?.type === 'leaf'),
+      blossoms: safeElements.filter(e => e?.type === 'blossom'),
+      rootlets: safeElements.filter(e => e?.type === 'rootlet'),
+      branches: safeElements.filter(e => e?.type === 'branch')
     };
   }, [elements]);
 
@@ -84,7 +85,7 @@ export const BotanicalElements: React.FC<BotanicalElementsProps> = ({
           {lodSettings.instancedBuds ? (
             <InstancedBuds
               elements={elementsByType.buds}
-              animations={animations.buds}
+              animations={animations?.buds}
               performanceLevel={performanceLevel}
               reducedMotion={reducedMotion}
               maxInstances={lodSettings.maxElements}
@@ -96,7 +97,7 @@ export const BotanicalElements: React.FC<BotanicalElementsProps> = ({
                 key={element.id}
                 element={element}
                 index={index}
-                animation={animations.buds?.[index]}
+                animation={animations?.buds?.[index]}
                 performanceLevel={performanceLevel}
                 reducedMotion={reducedMotion}
                 isHovered={hoveredElement === element.id}
@@ -113,7 +114,7 @@ export const BotanicalElements: React.FC<BotanicalElementsProps> = ({
         <group name="knowledge-leaves">
           <InstancedLeaves
             elements={elementsByType.leaves}
-            animations={animations.leaves}
+            animations={animations?.leaves}
             performanceLevel={performanceLevel}
             reducedMotion={reducedMotion}
             maxInstances={lodSettings.maxElements}
@@ -130,7 +131,7 @@ export const BotanicalElements: React.FC<BotanicalElementsProps> = ({
               key={element.id}
               element={element}
               index={index}
-              animation={animations.blossoms?.[index]}
+              animation={animations?.blossoms?.[index]}
               performanceLevel={performanceLevel}
               reducedMotion={reducedMotion}
               isHovered={hoveredElement === element.id}
