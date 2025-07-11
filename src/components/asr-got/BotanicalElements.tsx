@@ -1,388 +1,479 @@
 /**
- * BotanicalElements.tsx - Renders botanical elements for tree visualization
- * Handles different node types: root-bulb, branch, bud, leaf, blossom
+ * BotanicalElements.tsx - Individual botanical element rendering with animations
+ * Handles detailed rendering of leaves, buds, blossoms with interactions
  */
 
-import React from 'react';
-import { animated } from '@react-spring/web';
+import React, { useRef, useMemo, useEffect, useState } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { useSpring, animated, config } from '@react-spring/three';
+import * as THREE from 'three';
+import { BotanicalElement } from '@/hooks/useGraphToTree';
 
 interface BotanicalElementsProps {
-  node: any;
+  elements: BotanicalElement[];
   animations: {
-    rootSpring: any;
-    rootletSpring: any;
-    branchSpring: any;
-    evidenceSpring: any;
-    pruneSpring: any;
-    leafSpring: any;
-    blossomSpring: any;
-    reflectionSpring: any;
-    finalSpring: any;
+    buds?: unknown[];
+    leaves?: unknown[];
+    blossoms?: unknown[];
   };
-  evidenceAnimations: any;
-  colorBlindMode: boolean;
+  currentStage: number;
+  performanceLevel: 'high' | 'medium' | 'low';
+  reducedMotion: boolean;
+  onElementClick?: (stage: number) => void;
 }
 
-// Disciplinary color mapping with hue graduation
-const getDisciplinaryColor = (disciplinary: string): string => {
-  const colors = {
-    biology: '#2D8B2D',
-    chemistry: '#4169E1',
-    physics: '#DC143C',
-    medicine: '#FF69B4',
-    engineering: '#FF8C00',
-    computer_science: '#9370DB',
-    mathematics: '#B22222',
-    psychology: '#20B2AA',
-    general: '#4A5D23'
-  };
-  return colors[disciplinary as keyof typeof colors] || colors.general;
-};
-
-export const getNodeColor = (node: any, colorBlindMode: boolean) => {
-  if (colorBlindMode) return 'hsl(var(--foreground))';
-  
-  const confidence = node.confidence?.reduce((a: number, b: number) => a + b, 0) / node.confidence?.length || 0;
-  if (confidence >= 0.8) return 'hsl(160, 100%, 40%)';
-  if (confidence >= 0.5) return 'hsl(45, 100%, 50%)';
-  return 'hsl(0, 100%, 45%)';
-};
-
-export const BotanicalElement: React.FC<BotanicalElementsProps> = ({
-  node,
+export const BotanicalElements: React.FC<BotanicalElementsProps> = ({
+  elements,
   animations,
-  evidenceAnimations,
-  colorBlindMode
+  currentStage,
+  performanceLevel,
+  reducedMotion,
+  onElementClick
 }) => {
-  const nodeData = node.data as any;
-  const { botanicalType, confidence, metadata } = nodeData;
-  const avgConfidence = confidence?.reduce((a: number, b: number) => a + b, 0) / confidence?.length || 0;
-  
-  switch (botanicalType) {
-    case 'root-bulb':
-      return (
-        <animated.g>
-          {/* Terracotta root bulb */}
-          <animated.circle
-            r={20}
-            fill="#8B4513" // Terracotta brown
-            stroke="#CD853F"
-            strokeWidth={2}
-            style={{
-              transform: animations.rootSpring.scale.to((s: number) => `scale(${s})`),
-              opacity: animations.rootSpring.opacity
-            }}
-          />
-          {/* Root texture lines */}
-          <animated.path
-            d="M-10,-5 Q0,0 10,-5 M-8,3 Q0,5 8,3 M-6,8 Q0,10 6,8"
-            stroke="#654321"
-            strokeWidth="1"
-            fill="none"
-            opacity="0.6"
-            style={{
-              opacity: animations.rootSpring.opacity
-            }}
-          />
-        </animated.g>
-      );
-      
-    case 'rootlet':
-      return (
-        <animated.path
-          d={`M0,0 L${avgConfidence * 30},${Math.sin(Math.PI / 4) * avgConfidence * 30}`}
-          stroke="hsl(120, 60%, 40%)"
-          strokeWidth="3"
-          fill="none"
-          style={{
-            pathLength: animations.rootletSpring.length,
-            opacity: animations.rootletSpring.opacity
-          }}
-        />
-      );
-      
-    case 'branch':
-      const branchColor = getDisciplinaryColor(metadata?.disciplinary_tags?.[0] || 'general');
-      const branchRadius = Math.max(8, avgConfidence * 15);
-      return (
-        <animated.g>
-          {/* Main branch node */}
-          <animated.circle
-            r={branchRadius}
-            fill={branchColor}
-            stroke={branchColor}
-            strokeWidth={2}
-            style={{
-              transform: animations.branchSpring.pathLength.to((v: number) => `scale(${v})`),
-              opacity: animations.pruneSpring.opacity
-            }}
-          />
-          {/* Cambium rings for evidence */}
-          {metadata?.evidence_count > 0 && (
-            <animated.circle
-              r={branchRadius + 3}
-              fill="none"
-              stroke={branchColor}
-              strokeWidth={1}
-              opacity="0.4"
-              style={{
-                opacity: animations.pruneSpring.opacity
-              }}
+  const groupRef = useRef<THREE.Group>(null);
+  const [hoveredElement, setHoveredElement] = useState<string | null>(null);
+
+  // Filter elements by type for organized rendering
+  const elementsByType = useMemo(() => {
+    return {
+      buds: elements.filter(e => e.type === 'bud'),
+      leaves: elements.filter(e => e.type === 'leaf'),
+      blossoms: elements.filter(e => e.type === 'blossom'),
+      rootlets: elements.filter(e => e.type === 'rootlet'),
+      branches: elements.filter(e => e.type === 'branch')
+    };
+  }, [elements]);
+
+  // Performance-based LOD calculations with device capability detection
+  const lodSettings = useMemo(() => {
+    const deviceMemory = (navigator as { deviceMemory?: number }).deviceMemory || 4;
+    const isLowEndDevice = deviceMemory < 4;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    const settings = {
+      high: { 
+        maxElements: isLowEndDevice ? 200 : 500, 
+        detailLevel: 16, 
+        enableShadows: true,
+        instancedBuds: true,
+        instancedBlossoms: true
+      },
+      medium: { 
+        maxElements: isLowEndDevice ? 100 : 300, 
+        detailLevel: 12, 
+        enableShadows: !isMobile,
+        instancedBuds: true,
+        instancedBlossoms: false
+      },
+      low: { 
+        maxElements: isLowEndDevice ? 50 : 150, 
+        detailLevel: 8, 
+        enableShadows: false,
+        instancedBuds: false,
+        instancedBlossoms: false
+      }
+    };
+    return settings[performanceLevel];
+  }, [performanceLevel]);
+
+  return (
+    <group ref={groupRef}>
+      {/* Evidence Buds - Stage 4+ */}
+      {currentStage >= 4 && (
+        <group name="evidence-buds">
+          {lodSettings.instancedBuds ? (
+            <InstancedLeaves
+              elements={elementsByType.buds}
+              animations={animations.buds}
+              performanceLevel={performanceLevel}
+              reducedMotion={reducedMotion}
+              maxInstances={lodSettings.maxElements}
+              onElementClick={onElementClick}
             />
+          ) : (
+            elementsByType.buds.slice(0, lodSettings.maxElements).map((element, index) => (
+              <EvidenceBud
+                key={element.id}
+                element={element}
+                index={index}
+                animation={animations.buds?.[index]}
+                performanceLevel={performanceLevel}
+                reducedMotion={reducedMotion}
+                isHovered={hoveredElement === element.id}
+                onHover={setHoveredElement}
+                onClick={onElementClick}
+              />
+            ))
           )}
-          {/* Branch texture */}
-          <animated.path
-            d={`M-${branchRadius/2},-2 Q0,0 ${branchRadius/2},-2 M-${branchRadius/3},2 Q0,3 ${branchRadius/3},2`}
-            stroke={branchColor}
-            strokeWidth="0.5"
-            fill="none"
-            opacity="0.5"
-            style={{
-              opacity: animations.pruneSpring.opacity
-            }}
+        </group>
+      )}
+
+      {/* Knowledge Leaves - Stage 6+ */}
+      {currentStage >= 6 && (
+        <group name="knowledge-leaves">
+          <InstancedLeaves
+            elements={elementsByType.leaves}
+            animations={animations.leaves}
+            performanceLevel={performanceLevel}
+            reducedMotion={reducedMotion}
+            maxInstances={lodSettings.maxElements}
+            onElementClick={onElementClick}
           />
-        </animated.g>
-      );
-      
-    case 'bud':
-      const evidenceCount = metadata?.evidence_count || 1;
-      const deltaC = metadata?.confidence_delta || 0.1;
-      
-      return (
-        <animated.g
-          style={{
-            transform: animations.evidenceSpring.scale.to((s: number) => `scale(${s})`),
-          }}
-        >
-          {/* Cambium rings - represent evidence accumulation */}
-          {Array.from({ length: Math.min(evidenceCount, 5) }, (_, i) => (
-            <animated.circle
-              key={`cambium-${i}`}
-              r={3 + i * 1.5}
-              fill="none"
-              stroke="#90EE90"
-              strokeWidth="0.5"
-              opacity={0.6 - i * 0.1}
-              style={{
-                transform: animations.evidenceSpring.pulse.to((p: number) => 
-                  `scale(${1 + p * 0.2})`
-                ),
-                filter: animations.evidenceSpring.pulse.to((p: number) => 
-                  p > 0.5 ? 'drop-shadow(0 0 3px rgba(144, 238, 144, 0.8))' : 'none'
-                )
-              }}
+        </group>
+      )}
+
+      {/* Synthesis Blossoms - Stage 7+ */}
+      {currentStage >= 7 && (
+        <group name="synthesis-blossoms">
+          {elementsByType.blossoms.slice(0, lodSettings.maxElements).map((element, index) => (
+            <SynthesisBlossom
+              key={element.id}
+              element={element}
+              index={index}
+              animation={animations.blossoms?.[index]}
+              performanceLevel={performanceLevel}
+              reducedMotion={reducedMotion}
+              isHovered={hoveredElement === element.id}
+              onHover={setHoveredElement}
+              onClick={onElementClick}
             />
           ))}
-          
-          {/* Main evidence bud */}
-          <animated.ellipse
-            rx="3"
-            ry="6"
-            fill="#90EE90"
-            stroke="#228B22"
-            strokeWidth="1"
-            style={{
-              filter: animations.evidenceSpring.pulse.to((p: number) => 
-                p > 0.5 ? 'drop-shadow(0 0 6px rgba(144, 238, 144, 0.8))' : 'none'
-              )
-            }}
-          />
-          
-          {/* Delta C indicator */}
-          {deltaC > 0.2 && (
-            <animated.text
-              x="8"
-              y="2"
-              fontSize="6"
-              fill="#228B22"
-              style={{
-                opacity: animations.evidenceSpring.pulse
-              }}
-            >
-              +{(deltaC * 100).toFixed(0)}%
-            </animated.text>
-          )}
-        </animated.g>
-      );
-      
-    case 'leaf':
-      const impactScore = metadata?.impact_score || 0.5;
-      const leafSize = Math.max(0.5, Math.min(2.0, impactScore * 2));
-      const leafPath = `M0,${-8 * leafSize} Q${-4 * leafSize},${-4 * leafSize} 0,0 Q${4 * leafSize},${-4 * leafSize} 0,${-8 * leafSize}`;
-      
-      return (
-        <animated.g
-          style={{
-            transform: animations.leafSpring.scale.to((s: number) => `scale(${s})`),
-          }}
-        >
-          {/* Main leaf with impact-proportional sizing */}
-          <animated.path
-            d={leafPath}
-            fill="#32CD32"
-            stroke="#228B22"
-            strokeWidth="1"
-            style={{
-              filter: animations.leafSpring.jitter.to((j: number) => j > 0 ? 'blur(0.3px)' : 'none')
-            }}
-          />
-          
-          {/* Leaf veins for high-impact nodes */}
-          {impactScore > 0.7 && (
-            <animated.g
-              style={{
-                opacity: animations.leafSpring.scale.to((s: number) => s * 0.6)
-              }}
-            >
-              <path
-                d={`M0,${-2 * leafSize} L0,${-6 * leafSize}`}
-                stroke="#228B22"
-                strokeWidth="0.5"
-                fill="none"
-              />
-              <path
-                d={`M0,${-4 * leafSize} L${-2 * leafSize},${-6 * leafSize}`}
-                stroke="#228B22"
-                strokeWidth="0.3"
-                fill="none"
-              />
-              <path
-                d={`M0,${-4 * leafSize} L${2 * leafSize},${-6 * leafSize}`}
-                stroke="#228B22"
-                strokeWidth="0.3"
-                fill="none"
-              />
-            </animated.g>
-          )}
-          
-          {/* Impact score indicator */}
-          {impactScore > 0.8 && (
-            <animated.text
-              x="6"
-              y="-2"
-              fontSize="5"
-              fill="#228B22"
-              style={{
-                opacity: animations.leafSpring.scale
-              }}
-            >
-              ⭐
-            </animated.text>
-          )}
-        </animated.g>
-      );
-      
-    case 'blossom':
-      const blossomImpactScore = metadata?.impact_score || 0;
-      return blossomImpactScore > 0.7 ? (
-        <animated.g
-          style={{
-            transform: animations.blossomSpring.petals.to((p: number) => `scale(${p})`)
-          }}
-        >
-          {[0, 72, 144, 216, 288].map(angle => (
-            <ellipse
-              key={angle}
-              rx="8"
-              ry="3"
-              fill="#FFB6C1"
-              stroke="#FF69B4"
-              strokeWidth="1"
-              transform={`rotate(${angle})`}
-            />
-          ))}
-          <circle r="3" fill="#FFD700" />
-          {/* Label slide-in effect */}
-          <animated.text
-            x="20"
-            y="5"
-            fontSize="8"
-            fill="hsl(var(--foreground))"
-            style={{
-              opacity: animations.blossomSpring.label,
-              transform: animations.blossomSpring.label.to((l: number) => `translateX(${(1 - l) * 20}px)`)
-            }}
-          >
-            {nodeData.label}
-          </animated.text>
-        </animated.g>
-      ) : (
-        <circle r="4" fill={getNodeColor(node.data, colorBlindMode)} />
-      );
-      
-    case 'pollen':
-      const hasBiasFlags = metadata?.bias_flags?.length > 0;
-      const hasQualityIssues = metadata?.quality_issues?.length > 0;
-      const auditPassed = metadata?.audit_passed !== false;
-      
-      // Determine pollen color based on audit results
-      const getPollenColor = () => {
-        if (hasBiasFlags || hasQualityIssues || !auditPassed) {
-          return '#dc2626'; // Crimson for violations
-        }
-        return '#fbbf24'; // Golden for passed checklist items
-      };
-      
-      const pollenColor = getPollenColor();
-      
-      return (
-        <animated.g
-          style={{
-            opacity: animations.reflectionSpring.particles,
-            transform: animations.reflectionSpring.sparkles.to((s: number) => `scale(${s})`)
-          }}
-        >
-          {/* Main pollen particle */}
-          <animated.circle
-            r="2"
-            fill={pollenColor}
-            style={{
-              filter: pollenColor === '#fbbf24' ? 
-                'drop-shadow(0 0 4px rgba(251, 191, 36, 0.8))' : 
-                'drop-shadow(0 0 4px rgba(220, 38, 38, 0.8))'
-            }}
-          />
-          
-          {/* Sparkle effect for golden pollen */}
-          {pollenColor === '#fbbf24' && (
-            <animated.g
-              style={{
-                opacity: animations.reflectionSpring.sparkles.to((s: number) => s * 0.8)
-              }}
-            >
-              <path
-                d="M0,-4 L0,4 M-4,0 L4,0"
-                stroke="#fbbf24"
-                strokeWidth="0.5"
-                fill="none"
-              />
-              <path
-                d="M-3,-3 L3,3 M-3,3 L3,-3"
-                stroke="#fbbf24"
-                strokeWidth="0.3"
-                fill="none"
-              />
-            </animated.g>
-          )}
-          
-          {/* Warning indicator for crimson pollen */}
-          {pollenColor === '#dc2626' && (
-            <animated.text
-              x="4"
-              y="1"
-              fontSize="6"
-              fill="#dc2626"
-              style={{
-                opacity: animations.reflectionSpring.sparkles
-              }}
-            >
-              ⚠
-            </animated.text>
-          )}
-        </animated.g>
-      );
-      
-    default:
-      return <circle r="4" fill={getNodeColor(node.data, colorBlindMode)} />;
-  }
+        </group>
+      )}
+
+      {/* Interactive Hotspots */}
+      <InteractiveHotspots
+        elements={elements}
+        currentStage={currentStage}
+        hoveredElement={hoveredElement}
+        onElementClick={onElementClick}
+      />
+    </group>
+  );
 };
+
+// Evidence Bud Component
+const EvidenceBud: React.FC<{
+  element: BotanicalElement;
+  index: number;
+  animation: { scale?: [number, number, number] } | undefined;
+  performanceLevel: 'high' | 'medium' | 'low';
+  reducedMotion: boolean;
+  isHovered: boolean;
+  onHover: (id: string | null) => void;
+  onClick?: (stage: number) => void;
+}> = ({ element, index, animation, performanceLevel, reducedMotion, isHovered, onHover, onClick }) => {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const [pulsePhase, setPulsePhase] = useState(Math.random() * Math.PI * 2);
+
+  // Base bud animation
+  const { scale, emissiveIntensity } = useSpring({
+    scale: animation?.scale || [1, 1, 1],
+    emissiveIntensity: isHovered ? 0.4 : 0.2,
+    config: config.wobbly
+  });
+
+  // Pulse animation for evidence arrival
+  useFrame(({ clock }) => {
+    if (meshRef.current && !reducedMotion) {
+      const time = clock.getElapsedTime();
+      const pulse = Math.sin(time * 2 + pulsePhase) * 0.1 + 1;
+      meshRef.current.scale.setScalar(pulse);
+      
+      // Evidence quality glow
+      const evidenceQuality = element.confidence;
+      const glowIntensity = evidenceQuality * 0.3 + 0.1;
+      (meshRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = glowIntensity;
+    }
+  });
+
+  // Geometry based on performance level
+  const geometry = useMemo(() => {
+    const segments = performanceLevel === 'high' ? 12 : performanceLevel === 'medium' ? 8 : 6;
+    return new THREE.SphereGeometry(0.2, segments, segments);
+  }, [performanceLevel]);
+
+  return (
+    <animated.mesh
+      ref={meshRef}
+      position={element.position}
+      scale={scale}
+      geometry={geometry}
+      onPointerOver={() => onHover(element.id)}
+      onPointerOut={() => onHover(null)}
+      onClick={() => onClick?.(4)}
+    >
+      <meshStandardMaterial
+        color={element.color}
+        emissive={element.color}
+        emissiveIntensity={emissiveIntensity}
+        roughness={0.6}
+        metalness={0.1}
+      />
+    </animated.mesh>
+  );
+};
+
+// Instanced Leaves Component for Performance
+const InstancedLeaves: React.FC<{
+  elements: BotanicalElement[];
+  animations: unknown[] | undefined;
+  performanceLevel: 'high' | 'medium' | 'low';
+  reducedMotion: boolean;
+  maxInstances: number;
+  onElementClick?: (stage: number) => void;
+}> = ({ elements, animations, performanceLevel, reducedMotion, maxInstances, onElementClick }) => {
+  const instancedMeshRef = useRef<THREE.InstancedMesh>(null);
+  const [leafData, setLeafData] = useState<Float32Array[]>([]);
+
+  // Create leaf geometry based on performance
+  const leafGeometry = useMemo(() => {
+    return new THREE.PlaneGeometry(0.6, 0.9, 1, 1);
+  }, []);
+
+  // Setup instanced matrices
+  useEffect(() => {
+    if (!instancedMeshRef.current || elements.length === 0) return;
+
+    const instanceCount = Math.min(elements.length, maxInstances);
+    const dummy = new THREE.Object3D();
+    const colorArray = new Float32Array(instanceCount * 3);
+
+    for (let i = 0; i < instanceCount; i++) {
+      const element = elements[i];
+      
+      // Position with wind sway
+      dummy.position.set(
+        element.position[0] + Math.sin(i * 0.1) * 0.2,
+        element.position[1] + Math.cos(i * 0.15) * 0.1,
+        element.position[2] + Math.sin(i * 0.08) * 0.3
+      );
+
+      // Natural leaf orientation
+      dummy.rotation.set(
+        Math.random() * 0.3 - 0.15,
+        Math.random() * Math.PI,
+        Math.random() * 0.2 - 0.1
+      );
+
+      // Scale based on impact score
+      const scale = 0.5 + element.impactScore * 0.8;
+      dummy.scale.set(scale, scale, scale);
+
+      dummy.updateMatrix();
+      instancedMeshRef.current.setMatrixAt(i, dummy.matrix);
+
+      // Color based on element color
+      const color = new THREE.Color(element.color);
+      colorArray[i * 3] = color.r;
+      colorArray[i * 3 + 1] = color.g;
+      colorArray[i * 3 + 2] = color.b;
+    }
+
+    instancedMeshRef.current.instanceMatrix.needsUpdate = true;
+    
+    // Set color attribute
+    const colorAttribute = new THREE.InstancedBufferAttribute(colorArray, 3);
+    instancedMeshRef.current.geometry.setAttribute('instanceColor', colorAttribute);
+    
+    setLeafData([colorArray]);
+  }, [elements, maxInstances]);
+
+  // Wind animation
+  useFrame(({ clock }) => {
+    if (!instancedMeshRef.current || reducedMotion) return;
+
+    const time = clock.getElapsedTime();
+    const dummy = new THREE.Object3D();
+    
+    for (let i = 0; i < Math.min(elements.length, maxInstances); i++) {
+      const element = elements[i];
+      
+      // Wind sway
+      const windStrength = 0.02;
+      const windX = Math.sin(time * 0.5 + i * 0.1) * windStrength;
+      const windZ = Math.cos(time * 0.3 + i * 0.08) * windStrength;
+      
+      dummy.position.set(
+        element.position[0] + windX,
+        element.position[1],
+        element.position[2] + windZ
+      );
+      
+      dummy.rotation.set(
+        windX * 2,
+        Math.random() * Math.PI,
+        windZ * 3
+      );
+      
+      const scale = 0.5 + element.impactScore * 0.8;
+      dummy.scale.set(scale, scale, scale);
+      
+      dummy.updateMatrix();
+      instancedMeshRef.current.setMatrixAt(i, dummy.matrix);
+    }
+    
+    instancedMeshRef.current.instanceMatrix.needsUpdate = true;
+  });
+
+  const leafMaterial = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: '#228B22',
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.9,
+      roughness: 0.8,
+      metalness: 0.1,
+      vertexColors: true
+    });
+  }, []);
+
+  return (
+    <instancedMesh
+      ref={instancedMeshRef}
+      args={[leafGeometry, leafMaterial, Math.min(elements.length, maxInstances)]}
+      onClick={() => onElementClick?.(6)}
+    />
+  );
+};
+
+// Synthesis Blossom Component
+const SynthesisBlossom: React.FC<{
+  element: BotanicalElement;
+  index: number;
+  animation: { scale?: [number, number, number]; petalSpread?: number } | undefined;
+  performanceLevel: 'high' | 'medium' | 'low';
+  reducedMotion: boolean;
+  isHovered: boolean;
+  onHover: (id: string | null) => void;
+  onClick?: (stage: number) => void;
+}> = ({ element, index, animation, performanceLevel, reducedMotion, isHovered, onHover, onClick }) => {
+  const groupRef = useRef<THREE.Group>(null);
+  const [bloomPhase, setBloomPhase] = useState(0);
+
+  // Blossom opening animation
+  const { scale, petalSpread, centerGlow } = useSpring({
+    scale: animation?.scale || [1, 1, 1],
+    petalSpread: animation?.petalSpread || 1,
+    centerGlow: isHovered ? 0.6 : 0.3,
+    config: { duration: 800 }
+  });
+
+  // Bloom progression
+  useFrame(({ clock }) => {
+    if (!reducedMotion && groupRef.current) {
+      const time = clock.getElapsedTime();
+      setBloomPhase(Math.sin(time * 0.5 + index * 0.3) * 0.5 + 0.5);
+    }
+  });
+
+  // Petal geometry
+  const petalGeometry = useMemo(() => {
+    const segments = performanceLevel === 'high' ? 12 : 8;
+    return new THREE.PlaneGeometry(0.4, 0.7, 1, segments);
+  }, [performanceLevel]);
+
+  const petals = useMemo(() => {
+    return Array.from({ length: 6 }, (_, i) => ({
+      angle: (i / 6) * Math.PI * 2,
+      offset: i * 0.05,
+      scale: 0.8 + (i % 2) * 0.2
+    }));
+  }, []);
+
+  return (
+    <animated.group
+      ref={groupRef}
+      position={element.position}
+      scale={scale}
+      onPointerOver={() => onHover(element.id)}
+      onPointerOut={() => onHover(null)}
+      onClick={() => onClick?.(7)}
+    >
+      {/* Flower center */}
+      <mesh>
+        <sphereGeometry args={[0.15, 8, 8]} />
+        <meshStandardMaterial
+          color="#FFD700"
+          emissive="#FFA500"
+          emissiveIntensity={centerGlow}
+          roughness={0.4}
+        />
+      </mesh>
+
+      {/* Petals */}
+      {petals.map((petal, i) => (
+        <animated.mesh
+          key={i}
+          geometry={petalGeometry}
+          position={[
+            Math.cos(petal.angle) * 0.3 * petalSpread,
+            0.1,
+            Math.sin(petal.angle) * 0.3 * petalSpread
+          ]}
+          rotation={[
+            -Math.PI / 6,
+            petal.angle,
+            Math.sin(bloomPhase * Math.PI + petal.offset) * 0.1
+          ]}
+          scale={petalSpread.to(s => [s * petal.scale, s * petal.scale, s])}
+        >
+          <meshStandardMaterial
+            color={element.color}
+            side={THREE.DoubleSide}
+            transparent={true}
+            opacity={0.8}
+            roughness={0.6}
+          />
+        </animated.mesh>
+      ))}
+
+      {/* Synthesis insight particles */}
+      {performanceLevel === 'high' && (
+        <mesh position={[0, 0.5, 0]}>
+          <sphereGeometry args={[0.05, 6, 6]} />
+          <meshBasicMaterial
+            color="#FFFFFF"
+            transparent
+            opacity={bloomPhase * 0.8}
+          />
+        </mesh>
+      )}
+    </animated.group>
+  );
+};
+
+// Interactive Hotspots for Accessibility
+const InteractiveHotspots: React.FC<{
+  elements: BotanicalElement[];
+  currentStage: number;
+  hoveredElement: string | null;
+  onElementClick?: (stage: number) => void;
+}> = ({ elements, currentStage, hoveredElement, onElementClick }) => {
+  const hotspotElements = useMemo(() => {
+    return elements.filter(e => e.evidenceCount > 0 || e.impactScore > 0.7);
+  }, [elements]);
+
+  return (
+    <group name="interactive-hotspots">
+      {hotspotElements.map((element) => (
+        <mesh
+          key={`hotspot-${element.id}`}
+          position={element.position}
+          visible={hoveredElement === element.id}
+          onClick={() => onElementClick?.(currentStage)}
+        >
+          <ringGeometry args={[0.3, 0.4, 8]} />
+          <meshBasicMaterial
+            color="#FFFFFF"
+            transparent
+            opacity={0.5}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+};
+
+export default BotanicalElements;
