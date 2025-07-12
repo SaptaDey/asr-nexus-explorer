@@ -710,18 +710,25 @@ ${subgraphAssessments.map((assessment, index) =>
 };
 
 export const composeResults = async (context: StageExecutorContext): Promise<string> => {
-  // Get all previous stage results for comprehensive composition
-  const allPreviousResults = context.stageResults.join('\n\n--- STAGE BREAK ---\n\n');
+  // Get high-priority subgraphs from Stage 6 to compose sections for
   const stage6Results = context.stageResults.length >= 6 ? context.stageResults[5] : '';
   
-  // Generate comprehensive statistics for the report
+  // Define composition sections for batch processing
+  const compositionSections = [
+    'Executive Summary',
+    'Research Methodology', 
+    'Key Findings',
+    'Evidence Analysis',
+    'Discussion & Implications',
+    'Conclusions & Future Work'
+  ];
+
+  const allCompositionResults: string[] = [];
+  const sectionAssessments: any[] = [];
+
+  // Generate comprehensive statistics for context
   const nodeTypes = context.graphData.nodes.reduce((acc, node) => {
     acc[node.type] = (acc[node.type] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const edgeTypes = context.graphData.edges.reduce((acc, edge) => {
-    acc[edge.type] = (acc[edge.type] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -730,375 +737,403 @@ export const composeResults = async (context: StageExecutorContext): Promise<str
     .map(n => n.confidence.reduce((a, b) => a + b, 0) / n.confidence.length)
     .reduce((sum, conf) => sum + conf, 0) / Math.max(1, context.graphData.nodes.length);
 
-  // Stage 7: Generate comprehensive HTML report with embedded visualizations
-  const htmlComposition = await callGeminiAPI(
-    `Stage 7: Composition - Create comprehensive HTML scientific analysis report for: "${context.researchContext.topic}"
+  // **BATCH API IMPLEMENTATION**: Process each composition section individually
+  const compositionBatchPrompts = compositionSections.map((section, i) => {
+    const relevantStageResults = context.stageResults.slice(0, 6).join('\n--- STAGE BREAK ---\n');
+    
+    return `You are a PhD-level researcher conducting Stage 7: Composition.
 
-BUILD UPON ALL PREVIOUS STAGES:
-=== STAGE 6 SUBGRAPH ANALYSIS ===
+RESEARCH TOPIC: "${context.researchContext.topic}"
+
+SPECIFIC SECTION TO COMPOSE: "${section}"
+
+RESEARCH CONTEXT:
+- Field: ${context.researchContext.field}
+- Total Knowledge Nodes: ${context.graphData.nodes.length}
+- Average Confidence: ${averageConfidence.toFixed(3)}
+- Hypotheses Generated: ${context.researchContext.hypotheses.length}
+
+STAGE 6 SUBGRAPH ANALYSIS:
 ${stage6Results}
 
-=== COMPLETE RESEARCH PROGRESSION ===
-${allPreviousResults}
+RELEVANT RESEARCH PROGRESSION:
+${relevantStageResults}
 
-=== RESEARCH STATISTICS ===
-Research Topic: ${context.researchContext.topic}
-Field: ${context.researchContext.field}
-Total Knowledge Nodes: ${context.graphData.nodes.length}
-Total Connections: ${context.graphData.edges.length}
-Node Types Distribution: ${JSON.stringify(nodeTypes, null, 2)}
-Edge Types Distribution: ${JSON.stringify(edgeTypes, null, 2)}
-Average Confidence Score: ${averageConfidence.toFixed(3)}
-Hypotheses Generated: ${context.researchContext.hypotheses.length}
+Compose the "${section}" section of the scientific report:
 
-CREATE COMPREHENSIVE HTML REPORT:
+1. **Section-Specific Content**: Create comprehensive content specifically for "${section}"
+2. **Research Integration**: Integrate findings from all previous stages relevant to this section
+3. **Academic Quality**: Maintain PhD-level academic rigor and scientific methodology
+4. **Evidence Citations**: Reference specific evidence and hypotheses where applicable
+5. **Professional Formatting**: Use proper academic structure and formatting
+6. **Research Coherence**: Ensure alignment with overall research objectives
 
-Generate a complete, self-contained HTML document with embedded CSS and JavaScript that includes:
+Focus ONLY on the "${section}" section content.
+Provide complete, publication-ready content for this specific section.
 
-1. **HTML Structure with Professional Styling**:
-   - Professional academic formatting with CSS
-   - Proper document structure (DOCTYPE, head, body)
-   - Responsive design that works across devices
-   - Academic journal-style layout
+BATCH_INDEX: ${i}
+SECTION_ID: ${section.toLowerCase().replace(/ /g, '_')}`
+  });
 
-2. **Executive Summary Section**:
-   - Research question and objectives
-   - Key findings and conclusions
-   - Significance and impact
+  // Execute batch API call for all composition sections
+  const batchCompositionResults = context.routeApiCall 
+    ? await context.routeApiCall(compositionBatchPrompts, { 
+        batch: true,
+        stageId: '7_composition_batch', 
+        graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+      })
+    : await Promise.all(compositionBatchPrompts.map(prompt => 
+        callGeminiAPI(prompt, context.apiKeys.gemini, 'thinking-structured')
+      ));
 
-3. **Methodology Section**:
-   - ASR-GoT framework overview
-   - 9-stage process description
-   - Research approach and validation
+  // Process batch results and compile sections
+  for (let i = 0; i < compositionSections.length; i++) {
+    const section = compositionSections[i];
+    const sectionContent = Array.isArray(batchCompositionResults) 
+      ? batchCompositionResults[i] 
+      : batchCompositionResults;
+    
+    allCompositionResults.push(`## ${section}\n\n${sectionContent}\n`);
 
-4. **Results Section with Data Visualizations**:
-   - Embedded Chart.js visualizations (load from CDN)
-   - Node distribution pie chart: ${JSON.stringify(nodeTypes)}
-   - Edge type distribution bar chart: ${JSON.stringify(edgeTypes)}
-   - Confidence progression: Average ${averageConfidence.toFixed(3)}
-   - Interactive HTML tables with research data
+    sectionAssessments.push({
+      sectionName: section,
+      contentLength: sectionContent.length,
+      hasEvidence: sectionContent.toLowerCase().includes('evidence'),
+      hasHypotheses: sectionContent.toLowerCase().includes('hypothesis'),
+      content: sectionContent
+    });
+  }
 
-5. **Evidence Analysis**:
-   - Quality assessment tables
-   - Source credibility analysis
-   - Statistical significance reporting
+  // Compile final HTML document
+  const finalHtmlReport = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Research Analysis: ${context.researchContext.topic}</title>
+    <style>
+        body { font-family: 'Times New Roman', serif; line-height: 1.6; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px; margin-top: 30px; }
+        .metadata { background: #f8f9fa; padding: 15px; border-left: 4px solid #3498db; margin: 20px 0; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .stat-box { background: #ffffff; border: 1px solid #dee2e6; padding: 15px; border-radius: 5px; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>Scientific Research Analysis: ${context.researchContext.topic}</h1>
+    
+    <div class="metadata">
+        <strong>Research Field:</strong> ${context.researchContext.field}<br>
+        <strong>Analysis Date:</strong> ${new Date().toLocaleDateString()}<br>
+        <strong>Framework:</strong> ASR-GoT (Automatic Scientific Research - Graph of Thoughts)
+    </div>
 
-6. **Hypothesis Evaluation**:
-   - Hypothesis testing results
-   - Support/contradiction analysis
-   - Confidence intervals and p-values where applicable
+    <div class="stats">
+        <div class="stat-box"><h3>${context.graphData.nodes.length}</h3>Knowledge Nodes</div>
+        <div class="stat-box"><h3>${context.graphData.edges.length}</h3>Connections</div>
+        <div class="stat-box"><h3>${averageConfidence.toFixed(2)}</h3>Avg Confidence</div>
+        <div class="stat-box"><h3>${context.researchContext.hypotheses.length}</h3>Hypotheses</div>
+    </div>
 
-7. **Graph Analysis Insights**:
-   - Network topology analysis
-   - Critical pathway identification
-   - Centrality measures and clustering
+    ${allCompositionResults.join('\n')}
 
-8. **Discussion and Implications**:
-   - Scientific implications
-   - Practical applications
-   - Future research directions
+    <hr>
+    <p><em>Generated by ASR-GoT Framework • ${new Date().toISOString()}</em></p>
+</body>
+</html>`;
 
-9. **Conclusions and Recommendations**:
-   - Summary of findings
-   - Actionable recommendations
-   - Limitations and caveats
+  return `**Stage 7 Complete: Batch Composition for "${context.researchContext.topic}"**
 
-10. **References and Citations**:
-    - Vancouver citation style
-    - Proper academic formatting
+**Composition Results:**
+- Sections composed: ${compositionSections.length}
+- Total content length: ${allCompositionResults.join('').length} characters
+- HTML report generated with embedded styling and statistics
 
-11. **Appendices**:
-    - Raw data tables
-    - Detailed statistical analyses
-    - Supplementary figures
+**Section Analysis:**
+${sectionAssessments.map((assessment, index) => 
+  `${index + 1}. ${assessment.sectionName}: ${assessment.contentLength} chars (Evidence: ${assessment.hasEvidence ? 'YES' : 'NO'}, Hypotheses: ${assessment.hasHypotheses ? 'YES' : 'NO'})`
+).join('\n')}
 
-Format as complete, production-ready HTML with:
-- Embedded CSS for professional styling
-- JavaScript for interactive elements
-- Charts and visualizations using Chart.js CDN
-- Proper HTML5 semantic structure
-- Print-friendly CSS media queries
-- Professional color scheme and typography
+**Final HTML Report:**
+${finalHtmlReport}
 
-Focus EXCLUSIVELY on "${context.researchContext.topic}" throughout. Generate publication-quality scientific report.`,
-    context.apiKeys.gemini,
-    'thinking-structured', // RULE 5: Stage 7 Composition = THINKING + STRUCTURED_OUTPUTS
-    undefined,
-    { 
-      stageId: '7', 
-      graphHash: JSON.stringify(context.graphData).slice(0, 100),
-      researchTopic: context.researchContext.topic,
-      maxTokens: 65536 // Allow for comprehensive HTML generation
-    }
-  );
-
-  return htmlComposition; // Return the HTML directly instead of wrapped in markdown
+**Ready for Stage 8**: Reflection will audit each composition section for quality and coherence.`
 };
 
 export const performReflection = async (context: StageExecutorContext): Promise<string> => {
-  // Get all previous stage results for comprehensive reflection
-  const allPreviousStages = context.stageResults.map((result, index) => {
-    const stageNames = ['Stage 1: Initialization', 'Stage 2: Decomposition', 'Stage 3: Hypothesis Generation', 'Stage 4: Evidence Integration', 'Stage 5: Pruning/Merging', 'Stage 6: Subgraph Extraction', 'Stage 7: Composition'];
-    return `=== ${stageNames[index] || `Stage ${index + 1}`} ===\n${result}`;
-  }).join('\n\n');
-  
-  const stage7Results = context.stageResults.length >= 7 ? context.stageResults[6] : '';
-  
-  // Stage 8 Pass A: Use thinking + code execution for comprehensive audit
-  const reflection = await callGeminiAPI(
-    `Stage 8: Reflection & Critical Audit for research topic: "${context.researchContext.topic}"
+  // Define reflection aspects for batch processing
+  const reflectionAspects = [
+    'Stage Coherence & Flow',
+    'Research Focus & Scope',
+    'Methodological Rigor',
+    'Evidence Quality Assessment',
+    'Logical Consistency',
+    'Bias Detection',
+    'Completeness & Coverage'
+  ];
 
-BUILD UPON STAGE 7 COMPOSITION:
-=== STAGE 7 COMPOSITION RESULTS ===
+  const allReflectionResults: string[] = [];
+  const reflectionAssessments: any[] = [];
+
+  // Get previous stage results for context
+  const stage7Results = context.stageResults.length >= 7 ? context.stageResults[6] : '';
+  const allPreviousStages = context.stageResults.slice(0, 7).join('\n--- STAGE BREAK ---\n');
+
+  // **BATCH API IMPLEMENTATION**: Process each reflection aspect individually
+  const reflectionBatchPrompts = reflectionAspects.map((aspect, i) => {
+    return `You are a PhD-level researcher conducting Stage 8: Critical Reflection.
+
+RESEARCH TOPIC: "${context.researchContext.topic}"
+
+SPECIFIC REFLECTION ASPECT: "${aspect}"
+
+STAGE 7 COMPOSITION RESULTS:
 ${stage7Results}
 
-COMPLETE RESEARCH PROGRESSION TO AUDIT:
+COMPLETE RESEARCH PROGRESSION:
 ${allPreviousStages}
 
-<thinking>
-Perform systematic audit of research analysis for "${context.researchContext.topic}":
-1) Coverage assessment - are all aspects of "${context.researchContext.topic}" adequately addressed?
-2) Bias detection - methodological, selection, confirmation biases in this specific research
-3) Statistical power analysis - adequate evidence strength for conclusions about "${context.researchContext.topic}"
-4) Causality evaluation - correlation vs causation issues specific to this research
-5) Missing perspectives or contradictory evidence related to "${context.researchContext.topic}"
-6) Logical consistency across all 7 stages of analysis
-7) Quality of stage-to-stage progression and coherence
-</thinking>
+RESEARCH CONTEXT:
+${JSON.stringify(context.researchContext, null, 2)}
 
-Perform critical audit of the complete ASR-GoT analysis for "${context.researchContext.topic}":
+Perform critical audit specifically for "${aspect}":
 
-Research Context: ${JSON.stringify(context.researchContext, null, 2)}
+1. **Specific Assessment**: Focus ONLY on "${aspect}" in the context of "${context.researchContext.topic}"
+2. **Quality Evaluation**: Rate the quality of this aspect (0.0-1.0) with justification
+3. **Strengths Identification**: What worked well in this aspect?
+4. **Weaknesses Detection**: What issues or gaps exist in this aspect?
+5. **Improvement Recommendations**: Specific recommendations for enhancing this aspect
+6. **Risk Assessment**: What risks does this aspect pose to research validity?
 
-CRITICAL ASSESSMENT AREAS:
-1. **Stage Coherence**: Evaluate how well each stage builds upon previous stages
-2. **Research Focus**: Assess whether all stages stayed focused on "${context.researchContext.topic}"
-3. **Methodological Rigor**: Audit the scientific methodology applied
-4. **Evidence Quality**: Evaluate the strength and relevance of evidence collected
-5. **Logical Consistency**: Check for contradictions or gaps in reasoning
-6. **Completeness**: Identify missing aspects or unexplored angles
-7. **Bias Detection**: Identify potential biases in the analysis
+Focus ONLY on the "${aspect}" aspect of the research analysis.
+Provide specific, actionable feedback for this reflection area.
 
-Provide a comprehensive audit focusing ONLY on "${context.researchContext.topic}". Do NOT discuss unrelated research areas.`,
-    context.apiKeys.gemini,
-    'thinking-only', // RULE 5: Stage 8 Audit (pass A) = THINKING + CODE_EXECUTION, but this is primarily thinking analysis
-    undefined,
-    { 
-      stageId: '8A', 
-      graphHash: JSON.stringify(context.graphData).slice(0, 100),
-      researchTopic: context.researchContext.topic
-    }
-  );
+BATCH_INDEX: ${i}
+ASPECT_ID: ${aspect.toLowerCase().replace(/ /g, '_')}`
+  });
 
-  return `**Stage 8 Complete: Reflection & Audit for "${context.researchContext.topic}"**\n\n**Critical Assessment:**\n${reflection}`;
+  // Execute batch API call for all reflection aspects
+  const batchReflectionResults = context.routeApiCall 
+    ? await context.routeApiCall(reflectionBatchPrompts, { 
+        batch: true,
+        stageId: '8_reflection_batch', 
+        graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+      })
+    : await Promise.all(reflectionBatchPrompts.map(prompt => 
+        callGeminiAPI(prompt, context.apiKeys.gemini, 'thinking-only')
+      ));
+
+  // Process batch results and extract assessments
+  for (let i = 0; i < reflectionAspects.length; i++) {
+    const aspect = reflectionAspects[i];
+    const reflectionAnalysis = Array.isArray(batchReflectionResults) 
+      ? batchReflectionResults[i] 
+      : batchReflectionResults;
+    
+    allReflectionResults.push(`### ${aspect}\n\n${reflectionAnalysis}\n`);
+
+    // Extract quality score from analysis
+    const qualityMatch = reflectionAnalysis.match(/quality.*?(\d\.\d+)/i);
+    const qualityScore = qualityMatch ? parseFloat(qualityMatch[1]) : 0.7;
+    
+    // Extract key issues
+    const hasIssues = reflectionAnalysis.toLowerCase().includes('weakness') || 
+                     reflectionAnalysis.toLowerCase().includes('gap') ||
+                     reflectionAnalysis.toLowerCase().includes('issue');
+
+    reflectionAssessments.push({
+      aspectName: aspect,
+      qualityScore,
+      hasIssues,
+      analysisLength: reflectionAnalysis.length,
+      analysis: reflectionAnalysis
+    });
+  }
+
+  // Calculate overall reflection metrics
+  const averageQuality = reflectionAssessments.reduce((sum, assessment) => sum + assessment.qualityScore, 0) / reflectionAssessments.length;
+  const issueCount = reflectionAssessments.filter(assessment => assessment.hasIssues).length;
+  const highQualityCount = reflectionAssessments.filter(assessment => assessment.qualityScore >= 0.8).length;
+
+  return `**Stage 8 Complete: Batch Critical Reflection for "${context.researchContext.topic}"**
+
+**Reflection Overview:**
+- Aspects analyzed: ${reflectionAspects.length}
+- Average quality score: ${averageQuality.toFixed(2)}
+- Aspects with issues identified: ${issueCount}
+- High-quality aspects (≥0.8): ${highQualityCount}
+
+**Aspect-by-Aspect Analysis:**
+${allReflectionResults.join('\n')}
+
+**Quality Summary:**
+${reflectionAssessments.map((assessment, index) => 
+  `${index + 1}. ${assessment.aspectName}: Quality ${assessment.qualityScore.toFixed(2)} (${assessment.hasIssues ? 'ISSUES FOUND' : 'No Issues'})`
+).join('\n')}
+
+**Ready for Stage 9**: Final analysis will synthesize these reflection insights into comprehensive conclusions.`
 };
 
 export const generateFinalAnalysis = async (context: StageExecutorContext): Promise<string> => {
-  // Create comprehensive summary including all stage results
-  const stageNames = ['Initialization', 'Decomposition', 'Hypothesis Generation', 'Evidence Integration', 'Pruning/Merging', 'Subgraph Extraction', 'Composition', 'Reflection & Audit'];
-  
-  const comprehensiveStageResults = context.stageResults.map((result, index) => {
-    const stageName = stageNames[index] || `Stage ${index + 1}`;
-    return `=== ${stageName} for "${context.researchContext.topic}" ===\n${result}`;
-  }).join('\n\n--- STAGE SEPARATOR ---\n\n');
-  
-  // Get Stage 8 reflection results for building upon
+  // Define final analysis components for batch processing
+  const analysisComponents = [
+    'Executive Summary',
+    'Key Findings & Discoveries',
+    'Research Implications',
+    'Future Research Directions',
+    'Practical Applications',
+    'Limitations & Caveats'
+  ];
+
+  const allFinalResults: string[] = [];
+  const componentAssessments: any[] = [];
+
+  // Get previous stage results for context
   const stage8Results = context.stageResults.length >= 8 ? context.stageResults[7] : '';
-  const stage7HtmlReport = context.stageResults.length >= 7 ? context.stageResults[6] : '';
-  
+  const stage7Results = context.stageResults.length >= 7 ? context.stageResults[6] : '';
+  const allPreviousStages = context.stageResults.slice(0, 8).join('\n--- STAGE BREAK ---\n');
+
   // Generate comprehensive statistics
   const nodeTypes = context.graphData.nodes.reduce((acc, node) => {
     acc[node.type] = (acc[node.type] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const edgeTypes = context.graphData.edges.reduce((acc, edge) => {
-    acc[edge.type] = (acc[edge.type] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
   const averageConfidence = context.graphData.nodes
     .filter(n => n.confidence && n.confidence.length > 0)
     .map(n => n.confidence.reduce((a, b) => a + b, 0) / n.confidence.length)
     .reduce((sum, conf) => sum + conf, 0) / Math.max(1, context.graphData.nodes.length);
 
-  // Stage 9: Generate comprehensive, publication-ready HTML+PDF report
-  const finalComprehensiveReport = await callGeminiAPI(
-    `Stage 9: Final Comprehensive Analysis - Generate COMPLETE publication-ready HTML report for: "${context.researchContext.topic}"
+  // **BATCH API IMPLEMENTATION**: Process each final analysis component individually
+  const finalAnalysisBatchPrompts = analysisComponents.map((component, i) => {
+    return `You are a PhD-level researcher conducting Stage 9: Final Analysis.
 
-BUILD UPON STAGE 8 REFLECTION & AUDIT:
-=== STAGE 8 AUDIT RESULTS ===
+RESEARCH TOPIC: "${context.researchContext.topic}"
+
+SPECIFIC COMPONENT TO ANALYZE: "${component}"
+
+STAGE 8 REFLECTION RESULTS:
 ${stage8Results}
 
-=== STAGE 7 HTML COMPOSITION ===
-${stage7HtmlReport}
+STAGE 7 COMPOSITION RESULTS:
+${stage7Results}
 
-COMPLETE ASR-GoT RESEARCH PROGRESSION:
-${comprehensiveStageResults}
+COMPLETE RESEARCH PROGRESSION:
+${allPreviousStages}
 
-=== COMPREHENSIVE RESEARCH STATISTICS ===
-Research Topic: ${context.researchContext.topic}
-Field: ${context.researchContext.field}
-Total Knowledge Nodes: ${context.graphData.nodes.length}
-Total Connections: ${context.graphData.edges.length}
-Node Types Distribution: ${JSON.stringify(nodeTypes, null, 2)}
-Edge Types Distribution: ${JSON.stringify(edgeTypes, null, 2)}
-Average Confidence Score: ${averageConfidence.toFixed(3)}
-Hypotheses Generated: ${context.researchContext.hypotheses.length}
-Framework Stages Completed: 9/9
-Analysis Date: ${new Date().toLocaleDateString()}
+RESEARCH STATISTICS:
+- Total Knowledge Nodes: ${context.graphData.nodes.length}
+- Average Confidence: ${averageConfidence.toFixed(3)}
+- Node Types: ${JSON.stringify(nodeTypes)}
+- Hypotheses Generated: ${context.researchContext.hypotheses.length}
 
-CREATE FINAL PUBLICATION-READY HTML SCIENTIFIC REPORT:
+Create comprehensive "${component}" for the final analysis:
 
-Generate a COMPLETE, self-contained HTML document (minimum 5000 words) that serves as the definitive scientific publication for this research. Include:
+1. **Component-Specific Content**: Focus exclusively on "${component}" aspects
+2. **Research Integration**: Synthesize insights from all 8 previous stages
+3. **Academic Rigor**: Maintain PhD-level analysis and conclusions
+4. **Evidence-Based**: Ground all statements in the evidence collected
+5. **Future-Oriented**: Consider implications and future directions where applicable
+6. **Practical Value**: Emphasize actionable insights and applications
 
-1. **Complete HTML Document Structure**:
-   - Professional academic formatting with embedded CSS
-   - Responsive design optimized for both web and print
-   - Academic journal-style layout with proper typography
-   - Interactive elements and navigation
+Focus ONLY on the "${component}" component of the final analysis.
+Provide comprehensive, publication-ready content for this specific component.
 
-2. **Title Page and Abstract**:
-   - Research title, authors, affiliations
-   - Comprehensive abstract (250-300 words)
-   - Keywords and subject classification
+BATCH_INDEX: ${i}
+COMPONENT_ID: ${component.toLowerCase().replace(/ /g, '_')}`
+  });
 
-3. **Executive Summary** (500+ words):
-   - Research objectives and significance
-   - Key findings and breakthrough discoveries
-   - Scientific impact and implications
+  // Execute batch API call for all final analysis components
+  const batchFinalResults = context.routeApiCall 
+    ? await context.routeApiCall(finalAnalysisBatchPrompts, { 
+        batch: true,
+        stageId: '9_final_analysis_batch', 
+        graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+      })
+    : await Promise.all(finalAnalysisBatchPrompts.map(prompt => 
+        callGeminiAPI(prompt, context.apiKeys.gemini, 'thinking-structured')
+      ));
 
-4. **Introduction and Background** (800+ words):
-   - Research context and motivation
-   - Literature review and theoretical framework
-   - Research questions and hypotheses
+  // Process batch results and compile final analysis
+  for (let i = 0; i < analysisComponents.length; i++) {
+    const component = analysisComponents[i];
+    const componentContent = Array.isArray(batchFinalResults) 
+      ? batchFinalResults[i] 
+      : batchFinalResults;
+    
+    allFinalResults.push(`### ${component}\n\n${componentContent}\n`);
 
-5. **Methodology Section** (600+ words):
-   - ASR-GoT framework detailed description
-   - 9-stage process methodology
-   - Validation and quality control measures
-
-6. **Results and Data Analysis** (1000+ words):
-   - Comprehensive findings presentation
-   - Embedded interactive charts and visualizations:
-     * Node distribution pie charts
-     * Edge type distribution bar charts
-     * Confidence progression line charts
-     * Network topology diagrams
-     * Statistical correlation matrices
-   - Statistical significance testing
-   - Data tables with sortable columns
-
-7. **Evidence Analysis and Evaluation** (600+ words):
-   - Quality assessment of all evidence
-   - Source credibility analysis
-   - Bias detection results
-   - Confidence interval calculations
-
-8. **Hypothesis Testing and Validation** (500+ words):
-   - Detailed hypothesis evaluation
-   - Support/contradiction analysis
-   - P-values and statistical significance
-   - Effect size calculations
-
-9. **Graph Analysis and Network Insights** (400+ words):
-   - Network topology analysis
-   - Critical pathway identification
-   - Centrality measures and clustering
-   - Subgraph extraction results
-
-10. **Discussion and Scientific Implications** (800+ words):
-    - Interpretation of findings
-    - Scientific significance and breakthrough aspects
-    - Comparison with existing literature
-    - Theoretical contributions
-
-11. **Limitations and Future Research** (300+ words):
-    - Study limitations and constraints
-    - Areas for future investigation
-    - Recommended research directions
-
-12. **Conclusions** (400+ words):
-    - Summary of key findings
-    - Scientific contributions
-    - Practical applications and recommendations
-
-13. **References and Citations**:
-    - Vancouver citation style
-    - Comprehensive bibliography
-    - Proper academic formatting
-
-14. **Appendices**:
-    - Raw data tables
-    - Detailed statistical analyses
-    - Supplementary figures and charts
-    - Complete stage-by-stage results
-
-15. **Technical Specifications**:
-    - Embedded CSS for professional styling
-    - JavaScript for interactive charts (Chart.js/D3.js)
-    - Print-friendly media queries
-    - Export buttons for PDF generation
-    - Mobile-responsive design
-
-CRITICAL REQUIREMENTS:
-- Minimum 5000 words of substantive scientific content
-- Publication-quality academic writing
-- Complete self-contained HTML document
-- Professional scientific formatting
-- Interactive data visualizations
-- Comprehensive statistical analysis
-- Focus EXCLUSIVELY on "${context.researchContext.topic}"
-- PhD-level analytical depth
-- Ready for academic journal submission
-
-Generate the complete HTML document with all sections, embedded styling, and interactive elements.`,
-    context.apiKeys.gemini,
-    'thinking-structured', // Generate comprehensive structured HTML
-    undefined,
-    { 
-      stageId: '9', 
-      graphHash: JSON.stringify(context.graphData).slice(0, 100),
-      researchTopic: context.researchContext.topic,
-      maxTokens: 65536 // Maximum tokens for comprehensive report
-    }
-  );
-
-  // Create final analysis node
-  const finalNode: GraphNode = {
-    id: '9.0',
-    label: 'Final Comprehensive Analysis',
-    type: 'synthesis',
-    confidence: [0.95, 0.95, 0.95, 0.95],
-    metadata: {
-      parameter_id: 'P1.0',
-      type: 'Final Analysis',
-      source_description: 'Comprehensive publication-ready scientific analysis',
-      value: finalComprehensiveReport,
-      timestamp: new Date().toISOString(),
-      notes: 'Complete synthesis of all research stages - publication ready',
-      statistical_power: 0.95,
-      evidence_quality: 'high',
-      peer_review_status: 'ready-for-submission'
-    },
-    position: { x: 400, y: 800 }
-  };
-
-  if (context.setGraphData) {
-    context.setGraphData(prev => ({
-    ...prev,
-    nodes: [...prev.nodes, finalNode],
-    edges: [...prev.edges],
-    metadata: {
-      ...prev.metadata,
-      last_updated: new Date().toISOString(),
-      total_nodes: prev.nodes.length + 1,
-      total_edges: prev.edges.length,
-      stage: 9
-    }
-    }));
+    componentAssessments.push({
+      componentName: component,
+      contentLength: componentContent.length,
+      hasActionableInsights: componentContent.toLowerCase().includes('recommend') || componentContent.toLowerCase().includes('suggest'),
+      hasEvidence: componentContent.toLowerCase().includes('evidence') || componentContent.toLowerCase().includes('data'),
+      content: componentContent
+    });
   }
 
-  // Return the complete HTML report directly for export functionality
-  return finalComprehensiveReport;
+  // Calculate final analysis metrics
+  const actionableCount = componentAssessments.filter(comp => comp.hasActionableInsights).length;
+  const evidenceBasedCount = componentAssessments.filter(comp => comp.hasEvidence).length;
+  const totalContentLength = allFinalResults.join('').length;
+
+  return `# **STAGE 9 COMPLETE: Comprehensive Final Analysis for "${context.researchContext.topic}"**
+
+## **ASR-GoT Framework Analysis Complete - 9/9 Stages Executed**
+
+**Final Analysis Overview:**
+- Components analyzed: ${analysisComponents.length}
+- Total content generated: ${totalContentLength} characters
+- Components with actionable insights: ${actionableCount}
+- Evidence-based components: ${evidenceBasedCount}
+- Research nodes processed: ${context.graphData.nodes.length}
+- Average confidence: ${averageConfidence.toFixed(3)}
+
+---
+
+## **COMPREHENSIVE FINAL ANALYSIS**
+
+${allFinalResults.join('\n')}
+
+---
+
+## **Component Quality Assessment:**
+${componentAssessments.map((assessment, index) => 
+  `**${index + 1}. ${assessment.componentName}:**
+- Content Length: ${assessment.contentLength} characters
+- Actionable Insights: ${assessment.hasActionableInsights ? '✓' : '✗'}
+- Evidence-Based: ${assessment.hasEvidence ? '✓' : '✗'}`
+).join('\n\n')}
+
+---
+
+## **ASR-GoT Framework Summary:**
+
+**Research Topic:** ${context.researchContext.topic}
+**Research Field:** ${context.researchContext.field}
+**Analysis Date:** ${new Date().toLocaleDateString()}
+**Framework Version:** ASR-GoT (Automatic Scientific Research - Graph of Thoughts)
+
+**Complete 9-Stage Pipeline Executed:**
+✓ Stage 1: Initialization & Root Node Creation
+✓ Stage 2: Multi-Dimensional Decomposition (Batch Processed)
+✓ Stage 3: Hypothesis Generation per Dimension (Batch Processed) 
+✓ Stage 4: Evidence Integration per Hypothesis (Batch Processed)
+✓ Stage 5: Pruning/Merging per Evidence Branch (Batch Processed)
+✓ Stage 6: Subgraph Extraction per Evidence Cluster (Batch Processed)
+✓ Stage 7: Composition per Report Section (Batch Processed)
+✓ Stage 8: Critical Reflection per Aspect (Batch Processed)
+✓ Stage 9: Final Analysis per Component (Batch Processed)
+
+**Graph Statistics:**
+- Knowledge Nodes: ${context.graphData.nodes.length}
+- Connections: ${context.graphData.edges.length}
+- Node Types: ${JSON.stringify(nodeTypes)}
+- Hypotheses Generated: ${context.researchContext.hypotheses.length}
+
+**🎉 RESEARCH ANALYSIS COMPLETE 🎉**
+
+This comprehensive analysis represents a complete PhD-level scientific investigation using the ASR-GoT framework with optimal batch API processing for maximum efficiency and branch coherency.`
+
 };
