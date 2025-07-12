@@ -116,33 +116,63 @@ export const decomposeTask = async (
   const defaultDimensions = ['Scope', 'Objectives', 'Constraints', 'Data Needs', 'Use Cases', 'Potential Biases', 'Knowledge Gaps'];
   const useDimensions = dimensions || defaultDimensions;
 
-  // Stage 2: Use structured outputs for decomposition analysis
-  const decompositionAnalysis = await callGeminiAPI(
-    `For the research topic "${context.researchContext.topic}", analyze each dimension and provide specific insights: ${useDimensions.join(', ')}`,
-    context.apiKeys.gemini,
-    'thinking-structured', // RULE 5: Stage 2 = THINKING + STRUCTURED_OUTPUTS
-    undefined,
-    { 
-      stageId: '2', 
-      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
-    }
+  // **BATCH API IMPLEMENTATION**: Process each dimension individually for proper branching
+  const dimensionBatchPrompts = useDimensions.map((dimension, i) => 
+    `You are a PhD-level researcher conducting Stage 2: Task Decomposition.
+
+RESEARCH TOPIC: "${context.researchContext.topic}"
+
+SPECIFIC DIMENSION TO ANALYZE: "${dimension}"
+
+Analyze this dimension in detail for the research topic:
+
+1. **Dimension-Specific Analysis**: Provide detailed insights specifically for "${dimension}" in the context of "${context.researchContext.topic}"
+2. **Research Implications**: How does this dimension impact the research approach?
+3. **Key Considerations**: What are the critical factors within this dimension?
+4. **Methodological Requirements**: What methods are needed to address this dimension?
+5. **Potential Challenges**: What difficulties might arise in this dimension?
+6. **Success Criteria**: How will success in this dimension be measured?
+
+Focus ONLY on the "${dimension}" dimension for the research topic: "${context.researchContext.topic}"
+
+BATCH_INDEX: ${i}
+DIMENSION_ID: 2.${i + 1}`
   );
 
-  const dimensionNodes: GraphNode[] = useDimensions.map((dim, index) => ({
-    id: `2.${index + 1}`,
-    label: dim,
-    type: 'dimension' as const,
-    confidence: [0.8, 0.8, 0.8, 0.8],
-    metadata: {
-      parameter_id: 'P1.2',
-      type: 'Dimension',
-      source_description: 'AI-analyzed task decomposition dimension',
-      value: dim,
-      timestamp: new Date().toISOString(),
-      notes: decompositionAnalysis
-    },
-    position: { x: 200 + index * 150, y: 350 }
-  }));
+  // Execute batch API call for all dimension analysis
+  const batchDimensionResults = context.routeApiCall 
+    ? await context.routeApiCall(dimensionBatchPrompts, { 
+        batch: true,
+        stageId: '2_decomposition_batch', 
+        graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+      })
+    : await Promise.all(dimensionBatchPrompts.map(prompt => 
+        callGeminiAPI(prompt, context.apiKeys.gemini, 'thinking-structured')
+      ));
+
+  // Process batch results and create dimension nodes
+  const dimensionNodes: GraphNode[] = useDimensions.map((dim, index) => {
+    const dimensionAnalysis = Array.isArray(batchDimensionResults) 
+      ? batchDimensionResults[index] 
+      : batchDimensionResults;
+
+    return {
+      id: `2.${index + 1}`,
+      label: dim,
+      type: 'dimension' as const,
+      confidence: [0.8, 0.8, 0.8, 0.8],
+      metadata: {
+        parameter_id: 'P1.2',
+        type: 'Dimension',
+        source_description: `AI-analyzed dimension: ${dim}`,
+        value: dimensionAnalysis,
+        timestamp: new Date().toISOString(),
+        notes: dimensionAnalysis,
+        dimension_focus: dim
+      },
+      position: { x: 200 + index * 150, y: 350 }
+    };
+  });
 
   const dimensionEdges: GraphEdge[] = dimensionNodes.map(node => ({
     id: `edge-1.0-${node.id}`,
@@ -170,7 +200,15 @@ export const decomposeTask = async (
     }));
   }
 
-  return `**Stage 2 Complete: Decomposition**\n\n**AI Analysis:**\n${decompositionAnalysis}`;
+  // Create comprehensive results from batch analysis
+  const dimensionResults = useDimensions.map((dim, index) => {
+    const analysis = Array.isArray(batchDimensionResults) 
+      ? batchDimensionResults[index] 
+      : batchDimensionResults;
+    return `**${dim} Analysis:**\n${analysis}\n`;
+  });
+
+  return `**Stage 2 Complete: Batch Decomposition Analysis**\n\n**Dimension-by-Dimension Analysis:**\n${dimensionResults.join('\n')}`;
 };
 
 export const generateHypotheses = async (
@@ -551,87 +589,124 @@ ${nodeQualityAssessments.map(assessment =>
 };
 
 export const extractSubgraphs = async (context: StageExecutorContext): Promise<string> => {
-  // Get stage 5 results for context
-  const stage5Results = context.stageResults.length >= 5 ? context.stageResults[4] : '';
-  
-  // Build research-focused analysis
-  const researchGraph = {
-    topic: context.researchContext.topic,
-    field: context.researchContext.field,
-    totalNodes: context.graphData.nodes.length,
-    totalEdges: context.graphData.edges.length,
-    evidenceNodes: context.graphData.nodes.filter(n => n.type === 'evidence'),
-    hypothesisNodes: context.graphData.nodes.filter(n => n.type === 'hypothesis'),
-    dimensionNodes: context.graphData.nodes.filter(n => n.type === 'dimension'),
-    highConfidenceNodes: context.graphData.nodes.filter(n => {
-      if (!n.confidence || !Array.isArray(n.confidence) || n.confidence.length === 0) return false;
-      const avgConf = n.confidence.reduce((a, b) => a + b, 0) / n.confidence.length;
-      return avgConf > 0.7;
-    })
-  };
-
-  const subgraphAnalysis = await callGeminiAPI(
-    `Stage 6: Subgraph Extraction for research topic: "${context.researchContext.topic}"
-
-RESEARCH CONTEXT - MAINTAIN FOCUS:
-Topic: ${context.researchContext.topic}
-Field: ${context.researchContext.field}
-
-BUILD UPON STAGE 5 PRUNING:
-${stage5Results}
-
-CURRENT RESEARCH GRAPH FOR "${context.researchContext.topic}":
-- Total Nodes: ${researchGraph.totalNodes}
-- Evidence Nodes: ${researchGraph.evidenceNodes.length}
-- Hypothesis Nodes: ${researchGraph.hypothesisNodes.length}
-- High-Confidence Nodes: ${researchGraph.highConfidenceNodes.length}
-
-EXTRACT KEY SUBGRAPHS FOR "${context.researchContext.topic}":
-
-Identify and rank the most important knowledge clusters specifically for understanding "${context.researchContext.topic}":
-
-1. **Evidence Clusters**: Group related evidence nodes that support key findings about ${context.researchContext.topic}
-2. **Hypothesis Networks**: Identify hypothesis chains that build understanding of ${context.researchContext.topic}
-3. **High-Impact Pathways**: Find critical reasoning paths that lead to insights about ${context.researchContext.topic}
-4. **Research Bottlenecks**: Identify key nodes that are central to understanding ${context.researchContext.topic}
-5. **Knowledge Gaps**: Areas where more evidence is needed for ${context.researchContext.topic}
-
-Provide specific rankings of:
-- Most important evidence clusters for this research topic
-- Critical hypothesis chains that explain the research question
-- Key insights that emerge from the graph structure
-- Recommendations for the next composition stage
-
-CRITICAL: Focus EXCLUSIVELY on "${context.researchContext.topic}" - all subgraph analysis must relate to this specific research question.`,
-    context.apiKeys.gemini,
-    'thinking-only', // Use thinking mode for research analysis
-    undefined,
-    { 
-      stageId: '6', 
-      graphHash: JSON.stringify(context.graphData).slice(0, 100),
-      researchTopic: context.researchContext.topic
-    }
+  // Get high-quality evidence nodes from Stage 5 to extract subgraphs from
+  const evidenceNodes = context.graphData.nodes.filter(node => 
+    node.type === 'evidence' && 
+    node.confidence && 
+    Array.isArray(node.confidence) && 
+    (node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length) >= 0.5
   );
+  
+  if (evidenceNodes.length === 0) {
+    throw new Error('No high-quality evidence nodes found from Stage 5. Cannot extract subgraphs.');
+  }
 
-  // Identify the most important subgraph for composition
-  const criticalSubgraph = {
-    evidenceClusters: researchGraph.evidenceNodes.length,
-    hypothesisClusters: researchGraph.hypothesisNodes.length,
-    highConfidenceConnections: researchGraph.highConfidenceNodes.length,
-    researchFocus: context.researchContext.topic
-  };
+  const allSubgraphResults: string[] = [];
+  const subgraphAssessments: any[] = [];
 
-  return `**Stage 6 Complete: Subgraph Extraction for "${context.researchContext.topic}"**
+  // **BATCH API IMPLEMENTATION**: Analyze subgraph potential for each evidence cluster
+  const subgraphBatchPrompts = evidenceNodes.map((evidence, i) => {
+    // Get connected nodes for this evidence (hypothesis parent, related evidence)
+    const parentHypothesisEdge = context.graphData.edges.find(edge => edge.target === evidence.id);
+    const parentHypothesis = parentHypothesisEdge 
+      ? context.graphData.nodes.find(node => node.id === parentHypothesisEdge.source)
+      : null;
+    
+    // Get dimension grandparent
+    const grandparentDimensionEdge = parentHypothesis 
+      ? context.graphData.edges.find(edge => edge.target === parentHypothesis.id)
+      : null;
+    const grandparentDimension = grandparentDimensionEdge 
+      ? context.graphData.nodes.find(node => node.id === grandparentDimensionEdge.source)
+      : null;
 
-**Critical Research Subgraphs Identified:**
-- Evidence clusters: ${criticalSubgraph.evidenceClusters}
-- Hypothesis networks: ${criticalSubgraph.hypothesisClusters}  
-- High-confidence pathways: ${criticalSubgraph.highConfidenceConnections}
+    return `You are a PhD-level researcher conducting Stage 6: Subgraph Extraction.
 
-**Research-Focused Analysis:**
-${subgraphAnalysis}
+RESEARCH TOPIC: "${context.researchContext.topic}"
 
-**Ready for Stage 7**: Composition will synthesize these key subgraphs into comprehensive analysis of "${context.researchContext.topic}"`;
+EVIDENCE CLUSTER TO ANALYZE: "${evidence.label}"
+EVIDENCE DETAILS: ${evidence.metadata?.value || evidence.label}
+PARENT HYPOTHESIS: ${parentHypothesis?.label || 'Unknown'}
+PARENT DIMENSION: ${grandparentDimension?.label || 'Unknown'}
+EVIDENCE CONFIDENCE: ${evidence.confidence ? (evidence.confidence.reduce((a, b) => a + b, 0) / evidence.confidence.length).toFixed(2) : 'Unknown'}
+
+Analyze this evidence cluster for subgraph extraction:
+
+1. **Cluster Importance**: Rate the importance of this evidence cluster for understanding the research topic (0.0-1.0)
+2. **Knowledge Pathway**: Identify the key reasoning pathway: Dimension → Hypothesis → Evidence
+3. **Research Impact**: How critical is this cluster for answering the research question?
+4. **Connection Strength**: Assess how well this evidence connects to other parts of the graph
+5. **Insight Potential**: What key insights does this cluster provide?
+6. **Composition Value**: How should this cluster be prioritized in the final composition?
+
+Focus ONLY on this specific evidence cluster: "${evidence.label}"
+Analyze its subgraph potential and research contribution.
+
+BATCH_INDEX: ${i}
+EVIDENCE_ID: ${evidence.id}`
+  });
+
+  // Execute batch API call for all subgraph analysis
+  const batchSubgraphResults = context.routeApiCall 
+    ? await context.routeApiCall(subgraphBatchPrompts, { 
+        batch: true,
+        stageId: '6_subgraph_batch', 
+        graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+      })
+    : await Promise.all(subgraphBatchPrompts.map(prompt => 
+        callGeminiAPI(prompt, context.apiKeys.gemini, 'thinking-only')
+      ));
+
+  // Process batch results and rank subgraphs
+  for (let i = 0; i < evidenceNodes.length; i++) {
+    const evidence = evidenceNodes[i];
+    const subgraphAnalysis = Array.isArray(batchSubgraphResults) 
+      ? batchSubgraphResults[i] 
+      : batchSubgraphResults;
+    
+    allSubgraphResults.push(`**${evidence.label} Subgraph Analysis:**\n${subgraphAnalysis}\n`);
+
+    // Extract importance score from analysis
+    const importanceMatch = subgraphAnalysis.match(/importance.*?(\d\.\d+)/i);
+    const importanceScore = importanceMatch ? parseFloat(importanceMatch[1]) : 0.5;
+    
+    // Extract impact assessment
+    const isHighImpact = subgraphAnalysis.toLowerCase().includes('critical') || 
+                        subgraphAnalysis.toLowerCase().includes('essential') ||
+                        importanceScore >= 0.7;
+
+    subgraphAssessments.push({
+      evidenceId: evidence.id,
+      label: evidence.label,
+      importanceScore,
+      isHighImpact,
+      analysis: subgraphAnalysis,
+      parentHypothesis: context.graphData.edges.find(edge => edge.target === evidence.id)?.source || 'none'
+    });
+  }
+
+  // Sort subgraphs by importance
+  subgraphAssessments.sort((a, b) => b.importanceScore - a.importanceScore);
+  
+  const highImpactClusters = subgraphAssessments.filter(s => s.isHighImpact);
+  const totalClusters = subgraphAssessments.length;
+
+  return `**Stage 6 Complete: Batch Subgraph Extraction for "${context.researchContext.topic}"**
+
+**Subgraph Analysis Results:**
+- Evidence clusters analyzed: ${totalClusters}
+- High-impact clusters identified: ${highImpactClusters.length}
+- Top-ranked cluster: ${subgraphAssessments[0]?.label || 'None'} (Score: ${subgraphAssessments[0]?.importanceScore.toFixed(2) || 'N/A'})
+
+**Cluster-by-Cluster Analysis:**
+${allSubgraphResults.join('\n')}
+
+**Importance Ranking:**
+${subgraphAssessments.map((assessment, index) => 
+  `${index + 1}. ${assessment.label}: Importance ${assessment.importanceScore.toFixed(2)} (${assessment.isHighImpact ? 'HIGH IMPACT' : 'Standard'})`
+).join('\n')}
+
+**Ready for Stage 7**: Composition will prioritize these ranked subgraphs for comprehensive analysis of "${context.researchContext.topic}"`;
 };
 
 export const composeResults = async (context: StageExecutorContext): Promise<string> => {
