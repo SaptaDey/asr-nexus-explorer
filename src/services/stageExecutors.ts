@@ -52,8 +52,9 @@ Research Question: "${taskDescription}"
 
 Provide detailed analysis for "${component}":
 - Be comprehensive but focused on this specific aspect
-- Limit response to 400 tokens to prevent truncation
+- Provide up to 800 tokens of analysis (we have increased token limit)
 - Include specific examples and recent developments where applicable
+- Structure your response clearly with key points
 
 Component Analysis Required: ${component}`;
 
@@ -67,16 +68,17 @@ Component Analysis Required: ${component}`;
         ? context.routeApiCall(componentPrompt, { 
             stageId: `1_component_${i}`, 
             component: component,
-            maxTokens: 500 // Smaller chunks to prevent truncation
+            maxTokens: 2000 // Increased from 500 to 2000 to avoid MAX_TOKENS truncation
           })
         : callGeminiAPI(
             componentPrompt,
             context.apiKeys.gemini,
-            'thinking-structured', // RULE 5: Stage 1 = THINKING + STRUCTURED_OUTPUTS
-            500, // Limit tokens per component
+            'thinking-only', // Use thinking-only to avoid schema issues
+            undefined, // No schema to avoid errors
             { 
               stageId: `1_component_${i}`,
-              component: component
+              component: component,
+              maxTokens: 2000 // Increased token limit
             }
           );
       

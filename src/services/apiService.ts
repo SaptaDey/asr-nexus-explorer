@@ -182,6 +182,12 @@ export const callGeminiAPI = async (
     }
     
     const candidate = data.candidates[0];
+    
+    // Handle MAX_TOKENS finish reason specifically
+    if (candidate.finishReason === 'MAX_TOKENS') {
+      throw new Error(`API response truncated due to MAX_TOKENS limit. Increase token limit. Candidate: ${JSON.stringify(candidate)}`);
+    }
+    
     if (!candidate.content || !candidate.content.parts || !Array.isArray(candidate.content.parts) || candidate.content.parts.length === 0) {
       throw new Error(`Invalid candidate structure: ${JSON.stringify(candidate)}`);
     }

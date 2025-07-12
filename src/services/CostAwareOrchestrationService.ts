@@ -663,6 +663,12 @@ export class CostAwareOrchestrationService {
     }
     
     const candidate = data.candidates[0];
+    
+    // Handle MAX_TOKENS finish reason specifically
+    if (candidate.finishReason === 'MAX_TOKENS') {
+      throw new Error(`Flash API response truncated due to MAX_TOKENS limit. Increase token limit. Candidate: ${JSON.stringify(candidate)}`);
+    }
+    
     if (!candidate.content || !candidate.content.parts || !Array.isArray(candidate.content.parts) || candidate.content.parts.length === 0) {
       throw new Error(`Invalid Flash candidate structure: ${JSON.stringify(candidate)}`);
     }
@@ -783,6 +789,12 @@ plt.savefig('figure_name.png', dpi=300, bbox_inches='tight')`;
     }
     
     const candidate = data.candidates[0];
+    
+    // Handle MAX_TOKENS finish reason specifically
+    if (candidate.finishReason === 'MAX_TOKENS') {
+      throw new Error(`Pro API response truncated due to MAX_TOKENS limit. Increase token limit. Candidate: ${JSON.stringify(candidate)}`);
+    }
+    
     if (!candidate.content || !candidate.content.parts || !Array.isArray(candidate.content.parts) || candidate.content.parts.length === 0) {
       throw new Error(`Invalid Pro candidate structure: ${JSON.stringify(candidate)}`);
     }
