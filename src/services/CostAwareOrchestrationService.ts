@@ -404,10 +404,11 @@ export class CostAwareOrchestrationService {
 
   /**
    * Route API call to appropriate model based on stage and capability
+   * Supports both single prompts and batch processing
    */
   async routeApiCall(
     stage: string,
-    prompt: string,
+    prompt: string | string[],
     apiKeys: APICredentials,
     additionalParams?: any
   ): Promise<any> {
@@ -432,24 +433,38 @@ export class CostAwareOrchestrationService {
       throw new Error('Gemini API key required for Gemini models');
     }
 
+    // Detect batch request
+    const isBatchRequest = Array.isArray(prompt) || additionalParams?.batch === true;
+    const prompts = Array.isArray(prompt) ? prompt : 
+                   additionalParams?.prompts ? additionalParams.prompts : [prompt];
+
     // Track cost before API call
     const startTime = Date.now();
 
     try {
       let result;
       
-      switch (model) {
-        case 'sonar-deep-research':
-          result = await this.callSonarDeepResearch(prompt, apiKeys.perplexity, capability, maxTokens, additionalParams);
-          break;
-        case 'gemini-2.5-flash':
-          result = await this.callGeminiFlash(prompt, apiKeys.gemini, capability, maxTokens, thinkingBudget, additionalParams);
-          break;
-        case 'gemini-2.5-pro':
-          result = await this.callGeminiPro(prompt, apiKeys.gemini, capability, maxTokens, thinkingBudget, additionalParams);
-          break;
-        default:
-          throw new Error(`Unsupported model: ${model}`);
+      if (isBatchRequest && prompts.length > 1) {
+        // Use batch processing
+        console.log(`Executing batch request for stage ${stage} with ${prompts.length} prompts`);
+        result = await this.executeBatch(stage, prompts, apiKeys, additionalParams);
+      } else {
+        // Single prompt processing
+        const singlePrompt = Array.isArray(prompt) ? prompt[0] : prompt;
+        
+        switch (model) {
+          case 'sonar-deep-research':
+            result = await this.callSonarDeepResearch(singlePrompt, apiKeys.perplexity, capability, maxTokens, additionalParams);
+            break;
+          case 'gemini-2.5-flash':
+            result = await this.callGeminiFlash(singlePrompt, apiKeys.gemini, capability, maxTokens, thinkingBudget, additionalParams);
+            break;
+          case 'gemini-2.5-pro':
+            result = await this.callGeminiPro(singlePrompt, apiKeys.gemini, capability, maxTokens, thinkingBudget, additionalParams);
+            break;
+          default:
+            throw new Error(`Unsupported model: ${model}`);
+        }
       }
 
       // Track cost after successful call

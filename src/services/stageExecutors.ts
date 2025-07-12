@@ -308,13 +308,9 @@ export const integrateEvidence = async (
   const allEvidenceEdges: GraphEdge[] = [];
   const hypothesisResults: string[] = [];
 
-  // Process each hypothesis branch individually (PROPER GRAPH OF THOUGHTS)
-  for (let i = 0; i < hypothesisNodes.length; i++) {
-    const hypothesis = hypothesisNodes[i];
-    
-    // Collect evidence specifically for this hypothesis
-    const hypothesisEvidenceAnalysis = await (context.routeApiCall || callGeminiAPI)(
-      `You are a PhD-level researcher conducting Stage 4: Evidence Integration.
+  // **BATCH API IMPLEMENTATION**: Process all hypotheses in optimized batches
+  const hypothesisBatchPrompts = hypothesisNodes.map((hypothesis, i) => 
+    `You are a PhD-level researcher conducting Stage 4: Evidence Integration.
 
 RESEARCH TOPIC: "${context.researchContext.topic}"
 
@@ -332,16 +328,29 @@ Collect and analyze evidence SPECIFICALLY for this individual hypothesis:
 6. **Research Gaps**: Identify missing evidence needed to properly test this hypothesis
 
 Focus ONLY on evidence for this specific hypothesis: "${hypothesis.label}"
-Do NOT analyze other hypotheses or general research topics.`,
-      context.apiKeys.gemini,
-      'thinking-only',
-      undefined,
-      { 
-        stageId: `4.${i + 1}`, 
-        hypothesis: hypothesis.label,
+Do NOT analyze other hypotheses or general research topics.
+
+BATCH_INDEX: ${i}
+HYPOTHESIS_ID: ${hypothesis.id}`
+  );
+
+  // Execute batch API call for all hypotheses evidence collection
+  const batchEvidenceResults = context.routeApiCall 
+    ? await context.routeApiCall(hypothesisBatchPrompts, { 
+        batch: true,
+        stageId: '4_evidence_batch', 
         graphHash: JSON.stringify(context.graphData).slice(0, 100) 
-      }
-    );
+      })
+    : await Promise.all(hypothesisBatchPrompts.map(prompt => 
+        callGeminiAPI(prompt, context.apiKeys.gemini, 'thinking-only')
+      ));
+
+  // Process batch results and create nodes/edges
+  for (let i = 0; i < hypothesisNodes.length; i++) {
+    const hypothesis = hypothesisNodes[i];
+    const hypothesisEvidenceAnalysis = Array.isArray(batchEvidenceResults) 
+      ? batchEvidenceResults[i] 
+      : batchEvidenceResults;
 
     // Create evidence node specifically for this hypothesis
     const hypothesisEvidenceNode: GraphNode = {
@@ -399,84 +408,108 @@ Do NOT analyze other hypotheses or general research topics.`,
 };
 
 export const pruneMergeNodes = async (context: StageExecutorContext): Promise<string> => {
-  // Get current graph state and previous results for context
+  // Get all evidence nodes from Stage 4 to process individually
+  const evidenceNodes = context.graphData.nodes.filter(node => node.type === 'evidence');
+  
+  if (evidenceNodes.length === 0) {
+    throw new Error('No evidence nodes found from Stage 4. Cannot perform pruning/merging.');
+  }
+
+  const allPruningResults: string[] = [];
+  const nodeQualityAssessments: any[] = [];
+
+  // **BATCH API IMPLEMENTATION**: Process all evidence branches for pruning/merging
+  const evidencePruningPrompts = evidenceNodes.map((evidence, i) => {
+    // Get the parent hypothesis for this evidence
+    const parentHypothesisEdge = context.graphData.edges.find(edge => edge.target === evidence.id);
+    const parentHypothesis = parentHypothesisEdge 
+      ? context.graphData.nodes.find(node => node.id === parentHypothesisEdge.source)
+      : null;
+
+    return `You are a PhD-level researcher conducting Stage 5: Pruning/Merging Analysis.
+
+RESEARCH TOPIC: "${context.researchContext.topic}"
+
+SPECIFIC EVIDENCE BRANCH TO ANALYZE: "${evidence.label}"
+EVIDENCE DETAILS: ${evidence.metadata?.value || evidence.label}
+PARENT HYPOTHESIS: ${parentHypothesis?.label || 'Unknown'}
+EVIDENCE QUALITY: ${evidence.metadata?.statistical_power || 'Not specified'}
+
+Analyze this specific evidence branch for pruning/merging decisions:
+
+1. **Evidence Quality Assessment**: Rate the methodological quality of this specific evidence (0.0-1.0)
+2. **Confidence Update**: Based on evidence strength, recommend updated confidence scores
+3. **Pruning Decision**: Should this evidence branch be kept, merged, or removed?
+4. **Merging Opportunities**: Identify other evidence that could be merged with this branch
+5. **Connection Strength**: Assess the strength of this evidence's connection to its hypothesis
+6. **Research Value**: How much does this evidence contribute to understanding the research topic?
+
+Focus ONLY on this specific evidence branch: "${evidence.label}"
+Provide specific recommendations for this evidence node and its connections.
+
+BATCH_INDEX: ${i}
+EVIDENCE_ID: ${evidence.id}`
+  });
+
+  // Execute batch API call for all evidence pruning analysis
+  const batchPruningResults = context.routeApiCall 
+    ? await context.routeApiCall(evidencePruningPrompts, { 
+        batch: true,
+        stageId: '5_pruning_batch', 
+        graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+      })
+    : await Promise.all(evidencePruningPrompts.map(prompt => 
+        callGeminiAPI(prompt, context.apiKeys.gemini, 'thinking-only')
+      ));
+
+  // Process batch results and make pruning decisions
   const currentNodes = context.graphData.nodes;
   const currentEdges = context.graphData.edges;
-  const stage4Results = context.stageResults.length >= 4 ? context.stageResults[3] : '';
-  
-  // Build focused context from previous stages about this specific research topic
-  const researchFocus = {
-    topic: context.researchContext.topic,
-    field: context.researchContext.field,
-    hypotheses: context.researchContext.hypotheses,
-    objectives: context.researchContext.objectives,
-    nodeCount: currentNodes.length,
-    evidenceNodes: currentNodes.filter(n => n.type === 'evidence').length,
-    hypothesisNodes: currentNodes.filter(n => n.type === 'hypothesis').length
-  };
+  let prunedNodes = [...currentNodes];
+  let prunedEdges = [...currentEdges];
 
-  // Stage 5: Prune and merge nodes while maintaining research focus
-  const pruningAnalysis = await callGeminiAPI(
-    `Stage 5: Pruning/Merging for research topic: "${context.researchContext.topic}"
+  for (let i = 0; i < evidenceNodes.length; i++) {
+    const evidence = evidenceNodes[i];
+    const pruningAnalysis = Array.isArray(batchPruningResults) 
+      ? batchPruningResults[i] 
+      : batchPruningResults;
+    
+    allPruningResults.push(`**${evidence.label} Pruning Analysis:**\n${pruningAnalysis}\n`);
 
-RESEARCH CONTEXT - STAY FOCUSED ON THIS TOPIC:
-Topic: ${context.researchContext.topic}
-Field: ${context.researchContext.field}
-Current Hypotheses: ${context.researchContext.hypotheses.join('; ')}
-Current Objectives: ${context.researchContext.objectives.join('; ')}
+    // Extract quality score from analysis (simple pattern matching)
+    const qualityMatch = pruningAnalysis.match(/quality.*?(\d\.\d+)/i);
+    const qualityScore = qualityMatch ? parseFloat(qualityMatch[1]) : 0.5;
+    
+    // Extract pruning decision
+    const shouldKeep = !pruningAnalysis.toLowerCase().includes('remove') && 
+                      !pruningAnalysis.toLowerCase().includes('delete') &&
+                      qualityScore >= 0.3;
 
-BUILD UPON STAGE 4 EVIDENCE INTEGRATION:
-${stage4Results}
-
-CURRENT RESEARCH GRAPH STATE:
-- Total Nodes: ${currentNodes.length}
-- Evidence Nodes: ${currentNodes.filter(n => n.type === 'evidence').length}
-- Hypothesis Nodes: ${currentNodes.filter(n => n.type === 'hypothesis').length}
-- Research Topic Focus: ${context.researchContext.topic}
-
-PERFORM STAGE 5 PRUNING/MERGING:
-
-Analyze the knowledge graph for "${context.researchContext.topic}" and:
-
-1. **Quality Assessment**: Evaluate evidence quality specifically for ${context.researchContext.topic}
-2. **Confidence Scoring**: Update confidence scores based on evidence strength related to this research topic
-3. **Node Pruning**: Identify low-confidence connections that don't contribute to understanding ${context.researchContext.topic}
-4. **Information Merging**: Combine similar evidence or hypotheses about ${context.researchContext.topic}
-5. **Research Coherence**: Ensure all remaining nodes directly relate to the research question
-
-Focus EXCLUSIVELY on: "${context.researchContext.topic}"
-
-Provide specific recommendations for:
-- Which nodes have strong evidence support for this research topic
-- Which connections should be strengthened or weakened
-- How to improve the graph's focus on the research question
-- Quality metrics specific to this research domain
-
-CRITICAL: All analysis must relate directly to "${context.researchContext.topic}" - do not discuss unrelated topics.`,
-    context.apiKeys.gemini,
-    'thinking-only',
-    undefined,
-    { 
-      stageId: '5', 
-      graphHash: JSON.stringify(context.graphData).slice(0, 100),
-      researchTopic: context.researchContext.topic
+    if (!shouldKeep) {
+      // Remove this evidence node and its edges
+      prunedNodes = prunedNodes.filter(node => node.id !== evidence.id);
+      prunedEdges = prunedEdges.filter(edge => edge.source !== evidence.id && edge.target !== evidence.id);
+    } else {
+      // Update confidence based on quality assessment
+      const nodeIndex = prunedNodes.findIndex(node => node.id === evidence.id);
+      if (nodeIndex >= 0) {
+        prunedNodes[nodeIndex] = {
+          ...prunedNodes[nodeIndex],
+          confidence: [qualityScore, qualityScore, qualityScore, qualityScore]
+        };
+      }
     }
-  );
 
-  // Apply pruning based on analysis - remove very low confidence nodes
-  const prunedNodes = currentNodes.filter(node => {
-    if (node.type === 'root' || node.type === 'knowledge') return true; // Keep essential nodes
-    if (!node.confidence || !Array.isArray(node.confidence) || node.confidence.length === 0) return false;
-    const avgConfidence = node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length;
-    return avgConfidence >= 0.3; // Remove nodes with very low confidence
-  });
+    nodeQualityAssessments.push({
+      nodeId: evidence.id,
+      label: evidence.label,
+      qualityScore,
+      kept: shouldKeep,
+      analysis: pruningAnalysis
+    });
+  }
 
-  const prunedEdges = currentEdges.filter(edge => {
-    // Keep edges where both source and target nodes exist
-    return prunedNodes.some(n => n.id === edge.source) && prunedNodes.some(n => n.id === edge.target);
-  });
-
-  // Update graph with pruned data
+  // Update graph with pruned data from batch analysis
   if (context.setGraphData) {
     context.setGraphData(prev => ({
     ...prev,
@@ -487,23 +520,32 @@ CRITICAL: All analysis must relate directly to "${context.researchContext.topic}
       stage: 5,
       last_updated: new Date().toISOString(),
       total_nodes: prunedNodes.length,
-      total_edges: prunedEdges.length
+      total_edges: prunedEdges.length,
+      pruning_summary: nodeQualityAssessments
     }
     }));
   }
 
   const nodesRemoved = currentNodes.length - prunedNodes.length;
   const edgesRemoved = currentEdges.length - prunedEdges.length;
+  const nodesKept = nodeQualityAssessments.filter(n => n.kept).length;
 
-  return `**Stage 5 Complete: Pruning/Merging for "${context.researchContext.topic}"**
+  return `**Stage 5 Complete: Branch-by-Branch Pruning/Merging for "${context.researchContext.topic}"**
 
 **Optimization Results:**
-- Nodes pruned: ${nodesRemoved} (${currentNodes.length} → ${prunedNodes.length})
-- Edges pruned: ${edgesRemoved} (${currentEdges.length} → ${prunedEdges.length})
-- Focus maintained on: ${context.researchContext.topic}
+- Evidence branches analyzed: ${evidenceNodes.length}
+- Evidence branches kept: ${nodesKept}
+- Evidence branches pruned: ${evidenceNodes.length - nodesKept}
+- Total nodes: ${currentNodes.length} → ${prunedNodes.length} (${nodesRemoved} removed)
+- Total edges: ${currentEdges.length} → ${prunedEdges.length} (${edgesRemoved} removed)
 
-**Quality Analysis:**
-${pruningAnalysis}
+**Branch-by-Branch Quality Analysis:**
+${allPruningResults.join('\n')}
+
+**Quality Summary:**
+${nodeQualityAssessments.map(assessment => 
+  `- ${assessment.label}: Quality ${assessment.qualityScore.toFixed(2)} (${assessment.kept ? 'KEPT' : 'PRUNED'})`
+).join('\n')}
 
 **Next**: Ready for Stage 6 - Subgraph Extraction focused on "${context.researchContext.topic}"`;
 };
