@@ -103,9 +103,12 @@ export const useCostAwareStageExecution = ({
           const result = await callGeminiAPI(
             prompt, 
             apiKeys.gemini, 
-            'thinking-structured',
-            additionalParams?.maxTokens || 500,
-            additionalParams
+            'thinking-only', // Use thinking-only instead of thinking-structured to avoid schema issues
+            undefined, // No schema to avoid the 400 error
+            { 
+              maxTokens: additionalParams?.maxTokens || 500,
+              stageId: additionalParams?.stageId || 'stage1_bypass'
+            }
           );
           
           console.log(`✅ Direct API call successful for Stage 1`, { 
@@ -143,9 +146,13 @@ export const useCostAwareStageExecution = ({
           return await callGeminiAPI(
             prompt, 
             apiKeys.gemini, 
-            'thinking-structured',
-            additionalParams?.maxTokens || 5000,
-            additionalParams
+            'thinking-only', // Use thinking-only to avoid schema issues
+            undefined, // No schema to avoid errors
+            { 
+              maxTokens: additionalParams?.maxTokens || 5000,
+              stageId: additionalParams?.stageId || 'fallback',
+              temperature: 0.1
+            }
           );
         }
       }

@@ -765,7 +765,8 @@ plt.savefig('figure_name.png', dpi=300, bbox_inches='tight')`;
           // THINKING is always included by default in Gemini calls
           break;
         case 'STRUCTURED_OUTPUTS':
-          tools.push({ 'function_declarations': [] });
+          // Skip adding tools for structured outputs to avoid schema validation errors
+          // The API will handle structured outputs based on the prompt instructions
           break;
         case 'SEARCH_GROUNDING':
           tools.push({ 'google_search_retrieval': {} });
