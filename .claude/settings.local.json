@@ -28,7 +28,8 @@
       "Bash(git pull:*)",
       "Bash(git stash:*)",
       "Bash(curl:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(npx update-browserslist-db:*)"
     ],
     "deny": []
   }

@@ -883,29 +883,6 @@ plt.savefig('figure_name.png', dpi=300, bbox_inches='tight')`;
     return results;
   }
 
-  /**
-   * Implement hallucination detection and Flash→Pro escalation (per document)
-   */
-  private async detectHallucination(response: string, originalPrompt: string): Promise<boolean> {
-    // Simple heuristic-based hallucination detection
-    const hallucinationIndicators = [
-      /I don't have access/i,
-      /I cannot access/i,
-      /I'm not able to browse/i,
-      /I don't have real-time/i,
-      /fictional/i,
-      /made up/i,
-      /hypothetical/i
-    ];
-    
-    const hallucinationCount = hallucinationIndicators.filter(indicator => 
-      indicator.test(response)
-    ).length;
-    
-    // If ≥10% hallucination indicators, escalate to Pro (per document)
-    const hallucinationRate = hallucinationCount / hallucinationIndicators.length;
-    return hallucinationRate >= 0.1;
-  }
 
   /**
    * Handle fallback scenarios with hallucination detection and escalation (per document)
