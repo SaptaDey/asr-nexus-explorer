@@ -168,10 +168,28 @@ export const callGeminiAPI = async (
     }
 
     const data = await response.json();
-    const content = data.candidates[0]?.content?.parts[0]?.text;
+    
+    // Enhanced error handling and logging for response structure
+    console.log('🔍 Gemini API response structure:', {
+      hasCandidates: !!data.candidates,
+      candidatesLength: data.candidates?.length,
+      firstCandidate: data.candidates?.[0],
+      dataKeys: Object.keys(data)
+    });
+    
+    if (!data.candidates || !Array.isArray(data.candidates) || data.candidates.length === 0) {
+      throw new Error(`No candidates in Gemini API response: ${JSON.stringify(data)}`);
+    }
+    
+    const candidate = data.candidates[0];
+    if (!candidate.content || !candidate.content.parts || !Array.isArray(candidate.content.parts) || candidate.content.parts.length === 0) {
+      throw new Error(`Invalid candidate structure: ${JSON.stringify(candidate)}`);
+    }
+    
+    const content = candidate.content.parts[0]?.text;
     
     if (!content || typeof content !== 'string') {
-      throw new Error('Invalid response from Gemini API');
+      throw new Error(`No text content in response: ${JSON.stringify(candidate.content.parts[0])}`);
     }
     
     // Record actual usage - estimate output tokens from response

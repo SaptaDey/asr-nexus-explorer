@@ -650,7 +650,28 @@ export class CostAwareOrchestrationService {
     }
 
     const data = await response.json();
-    const flashOutput = data.candidates[0].content.parts[0].text;
+    
+    // Enhanced error handling for Flash API response
+    console.log('🔍 Flash API response structure:', {
+      hasCandidates: !!data.candidates,
+      candidatesLength: data.candidates?.length,
+      dataKeys: Object.keys(data)
+    });
+    
+    if (!data.candidates || !Array.isArray(data.candidates) || data.candidates.length === 0) {
+      throw new Error(`No candidates in Flash API response: ${JSON.stringify(data)}`);
+    }
+    
+    const candidate = data.candidates[0];
+    if (!candidate.content || !candidate.content.parts || !Array.isArray(candidate.content.parts) || candidate.content.parts.length === 0) {
+      throw new Error(`Invalid Flash candidate structure: ${JSON.stringify(candidate)}`);
+    }
+    
+    const flashOutput = candidate.content.parts[0]?.text;
+    
+    if (!flashOutput || typeof flashOutput !== 'string') {
+      throw new Error(`No text content in Flash response: ${JSON.stringify(candidate.content.parts[0])}`);
+    }
 
     // **FALLBACK GUARDRAIL**: Automatic hallucination detection with ≥10% threshold escalation
     // Skip hallucination check for certain internal calls to avoid infinite recursion
@@ -749,7 +770,30 @@ plt.savefig('figure_name.png', dpi=300, bbox_inches='tight')`;
     }
 
     const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
+    
+    // Enhanced error handling for Pro API response
+    console.log('🔍 Pro API response structure:', {
+      hasCandidates: !!data.candidates,
+      candidatesLength: data.candidates?.length,
+      dataKeys: Object.keys(data)
+    });
+    
+    if (!data.candidates || !Array.isArray(data.candidates) || data.candidates.length === 0) {
+      throw new Error(`No candidates in Pro API response: ${JSON.stringify(data)}`);
+    }
+    
+    const candidate = data.candidates[0];
+    if (!candidate.content || !candidate.content.parts || !Array.isArray(candidate.content.parts) || candidate.content.parts.length === 0) {
+      throw new Error(`Invalid Pro candidate structure: ${JSON.stringify(candidate)}`);
+    }
+    
+    const content = candidate.content.parts[0]?.text;
+    
+    if (!content || typeof content !== 'string') {
+      throw new Error(`No text content in Pro response: ${JSON.stringify(candidate.content.parts[0])}`);
+    }
+    
+    return content;
   }
 
   /**
