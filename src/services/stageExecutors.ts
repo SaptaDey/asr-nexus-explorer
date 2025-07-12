@@ -57,24 +57,36 @@ Provide detailed analysis for "${component}":
 
 Component Analysis Required: ${component}`;
 
-    const componentResult = context.routeApiCall 
-      ? await context.routeApiCall(componentPrompt, { 
-          stageId: `1_component_${i}`, 
-          component: component,
-          maxTokens: 500 // Smaller chunks to prevent truncation
-        })
-      : await callGeminiAPI(
-          componentPrompt,
-          context.apiKeys.gemini,
-          'thinking-structured', // RULE 5: Stage 1 = THINKING + STRUCTURED_OUTPUTS
-          500, // Limit tokens per component
-          { 
-            stageId: `1_component_${i}`,
-            component: component
-          }
-        );
-    
-    componentAnalyses.push(`**${component}:**\n${componentResult}\n`);
+    try {
+      // **TIMEOUT PROTECTION**: Add timeout for Stage 1 components
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Component analysis timeout')), 30000) // 30 second timeout
+      );
+      
+      const analysisPromise = context.routeApiCall 
+        ? context.routeApiCall(componentPrompt, { 
+            stageId: `1_component_${i}`, 
+            component: component,
+            maxTokens: 500 // Smaller chunks to prevent truncation
+          })
+        : callGeminiAPI(
+            componentPrompt,
+            context.apiKeys.gemini,
+            'thinking-structured', // RULE 5: Stage 1 = THINKING + STRUCTURED_OUTPUTS
+            500, // Limit tokens per component
+            { 
+              stageId: `1_component_${i}`,
+              component: component
+            }
+          );
+      
+      const componentResult = await Promise.race([analysisPromise, timeoutPromise]);
+      componentAnalyses.push(`**${component}:**\n${componentResult}\n`);
+    } catch (error: any) {
+      console.error(`Component ${component} analysis failed:`, error);
+      // Fallback content if component fails
+      componentAnalyses.push(`**${component}:**\nAnalysis pending - ${error.message}\n`);
+    }
   }
 
   // Combine all component analyses

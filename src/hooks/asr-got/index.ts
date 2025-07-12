@@ -40,7 +40,7 @@ export const useASRGoT = () => {
   useEffect(() => {
     if (autoMode && 
         !stateHook.isProcessing && 
-        stateHook.currentStage > 0 && 
+        stateHook.currentStage >= 1 && // **FIX**: Include stage 1 (after initialization)
         stateHook.currentStage < 9 &&
         credentialsHook.apiKeys.gemini) {
       

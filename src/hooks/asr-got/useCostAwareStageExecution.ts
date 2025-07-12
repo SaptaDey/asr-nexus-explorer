@@ -91,12 +91,63 @@ export const useCostAwareStageExecution = ({
           throw new Error('PERPLEXITY_KEY_REQUIRED');
         }
         
-        return await costAwareOrchestration.routeApiCall(
-          stageName,
-          prompt,
-          apiKeys,
-          additionalParams
-        );
+        // **STAGE 1 BYPASS**: Use direct API for Stage 1 to avoid any Cost-Aware Orchestration issues
+        if (currentStage === 0) {
+          console.log(`🎯 Direct API call for Stage 1 (bypassing cost-aware orchestration)`, { 
+            promptLength: prompt.length, 
+            hasGeminiKey: !!apiKeys.gemini,
+            additionalParams 
+          });
+          
+          const { callGeminiAPI } = await import('@/services/apiService');
+          const result = await callGeminiAPI(
+            prompt, 
+            apiKeys.gemini, 
+            'thinking-structured',
+            additionalParams?.maxTokens || 500,
+            additionalParams
+          );
+          
+          console.log(`✅ Direct API call successful for Stage 1`, { 
+            resultLength: typeof result === 'string' ? result.length : 'non-string' 
+          });
+          
+          return result;
+        }
+        
+        try {
+          console.log(`🎯 Routing API call for stage: ${stageName}`, { 
+            promptLength: prompt.length, 
+            hasGeminiKey: !!apiKeys.gemini,
+            additionalParams 
+          });
+          
+          const result = await costAwareOrchestration.routeApiCall(
+            stageName,
+            prompt,
+            apiKeys,
+            additionalParams
+          );
+          
+          console.log(`✅ API call successful for stage: ${stageName}`, { 
+            resultLength: typeof result === 'string' ? result.length : 'non-string' 
+          });
+          
+          return result;
+        } catch (error: any) {
+          console.error(`❌ Cost-aware routing failed for stage ${stageName}:`, error);
+          console.log(`🔄 Falling back to direct Gemini API for stage: ${stageName}`);
+          
+          // Fallback to direct API call if routing fails
+          const { callGeminiAPI } = await import('@/services/apiService');
+          return await callGeminiAPI(
+            prompt, 
+            apiKeys.gemini, 
+            'thinking-structured',
+            additionalParams?.maxTokens || 5000,
+            additionalParams
+          );
+        }
       }
     };
   }, [apiKeys, graphData, researchContext, stageResults, currentStage, setGraphData, setResearchContext]);
@@ -116,8 +167,11 @@ export const useCostAwareStageExecution = ({
     setIsProcessing(true);
     
     try {
+      console.log(`🚀 Starting stage execution: ${stageIndex + 1}`, { stageIndex, input });
+      
       // For Stage 1 (Initialization), set the research topic from input
       if (stageIndex === 0 && input && typeof input === 'string') {
+        console.log(`📝 Setting research topic for Stage 1: ${input}`);
         setResearchContext(prev => ({
           ...prev,
           topic: input,
@@ -131,6 +185,7 @@ export const useCostAwareStageExecution = ({
         }));
       }
       
+      console.log(`🔧 Creating stage context for stage ${stageIndex + 1}`);
       const context = createStageContext();
       let result = '';
       
@@ -138,17 +193,22 @@ export const useCostAwareStageExecution = ({
       const stageName = stageMapping[stageIndex as keyof typeof stageMapping];
       const stageAssignment = costAwareOrchestration.getStageModelAssignment(stageName);
       
+      console.log(`💰 Stage assignment for ${stageName}:`, stageAssignment);
+      
       if (stageAssignment) {
         toast.info(`Executing ${stageName} with ${stageAssignment.modelCapability.model} (Est. $${stageAssignment.costEstimate.priceUSD.toFixed(4)})`);
       }
 
       switch (stageIndex) {
         case 0: // Initialization
+          console.log(`🔬 Starting Stage 1 Initialization`);
           // Use the input topic if provided, otherwise fall back to existing research context
           const topicToUse = (stageIndex === 0 && input && typeof input === 'string') 
             ? input 
             : researchContext.topic;
+          console.log(`📋 Research topic: ${topicToUse}`);
           result = await initializeGraph(topicToUse, context);
+          console.log(`📊 Initialization result length: ${result.length}`);
           setGraphData(prev => ({ ...prev, stage: 'initialization' }));
           break;
           
@@ -212,11 +272,28 @@ export const useCostAwareStageExecution = ({
           throw new Error(`Unknown stage: ${stageIndex}`);
       }
 
+      console.log(`✅ Stage ${stageIndex + 1} execution completed successfully`, { 
+        resultLength: result.length, 
+        stageIndex 
+      });
+      
       updateStageResults(stageIndex, result);
+      
+      // **CRITICAL FIX**: Auto-advance stage after successful completion
+      if (stageIndex < 8) { // Don't advance past stage 9 (index 8)
+        console.log(`⏭️ Auto-advancing from stage ${stageIndex + 1} to ${stageIndex + 2} in 1 second`);
+        setTimeout(() => {
+          console.log(`🔄 Advancing stage from ${stageIndex + 1} to ${stageIndex + 2}`);
+          advanceStage();
+        }, 1000); // 1 second delay to show completion message
+      } else {
+        console.log(`🏁 Final stage ${stageIndex + 1} completed - no auto-advance`);
+      }
       
       // Show cost information after successful execution
       const costDashboard = costAwareOrchestration.getCostDashboard();
       toast.success(`Stage ${stageIndex + 1} completed! Total session cost: $${costDashboard.totalCost.toFixed(4)}`);
+      console.log(`💰 Stage ${stageIndex + 1} cost dashboard:`, costDashboard);
       
     } catch (error: any) {
       console.error(`Stage ${stageIndex + 1} execution failed:`, error);
