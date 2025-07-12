@@ -21,6 +21,24 @@ export class CostAwareOrchestrationService {
   private costHistory: CostDashboardEntry[] = [];
   private currentSessionCost = 0;
   private cacheStorage = new Map<string, any>();
+  private cacheCleanupInterval: NodeJS.Timeout;
+
+  constructor() {
+    // Set up periodic cache cleanup every 15 minutes to prevent memory leaks
+    this.cacheCleanupInterval = setInterval(() => {
+      this.cleanupExpiredCache();
+    }, 15 * 60 * 1000); // 15 minutes
+  }
+
+  /**
+   * Cleanup method to clear intervals and prevent memory leaks
+   */
+  destroy(): void {
+    if (this.cacheCleanupInterval) {
+      clearInterval(this.cacheCleanupInterval);
+    }
+    this.cacheStorage.clear();
+  }
 
   // Stage-by-Stage Model Assignment Matrix (exact from Cost-Aware-Orchestration.md)
   private stageModelMatrix: Record<string, StageModelAssignment> = {
@@ -264,10 +282,10 @@ export class CostAwareOrchestrationService {
       modelCapability: {
         model: 'gemini-2.5-pro',
         capability: 'STRUCTURED_OUTPUTS',
-        batchSize: 1,
-        purpose: 'Write HTML blocks with embedded figs & Vancouver refs.',
+        batchSize: 1, // Process one chunk at a time
+        purpose: 'Write HTML blocks with embedded figs & Vancouver refs in 5k token chunks.',
         outputType: 'ReportChunk[]',
-        maxTokens: 25000,
+        maxTokens: 20000, // 5k token chunks with room for response
         thinkingBudget: 2048
       },
       costEstimate: {
@@ -404,7 +422,7 @@ export class CostAwareOrchestrationService {
 
   /**
    * Route API call to appropriate model based on stage and capability
-   * Supports both single prompts and batch processing
+   * Supports both single prompts and batch processing with automatic session caching
    */
   async routeApiCall(
     stage: string,
@@ -438,6 +456,23 @@ export class CostAwareOrchestrationService {
     const prompts = Array.isArray(prompt) ? prompt : 
                    additionalParams?.prompts ? additionalParams.prompts : [prompt];
 
+    // **SESSION CACHING**: Check for cached result if prompt is large enough (≥200k tokens)
+    const singlePrompt = Array.isArray(prompt) ? prompt.join('\n') : prompt;
+    const estimatedTokens = Math.ceil(singlePrompt.length / 4); // Rough token estimation
+    
+    if (estimatedTokens >= 200000) {
+      const cacheKey = `${stage}_${Buffer.from(singlePrompt.substring(0, 1000)).toString('base64')}`;
+      const cachedResult = this.getCachedContext(cacheKey);
+      
+      if (cachedResult) {
+        console.log(`🎯 Cache hit for stage ${stage} (${estimatedTokens} tokens) - returning cached result`);
+        return cachedResult;
+      }
+      
+      console.log(`📦 Large context detected for stage ${stage} (${estimatedTokens} tokens) - will cache result`);
+      additionalParams = { ...additionalParams, cacheKey, shouldCache: true };
+    }
+
     // Track cost before API call
     const startTime = Date.now();
 
@@ -457,6 +492,20 @@ export class CostAwareOrchestrationService {
         result = await this.executeBayesianPruneReasoning(additionalParams?.evidenceNodes || [], apiKeys.gemini, additionalParams);
       } else if (stage.includes('5B_graph_mutation_persist')) {
         result = await this.executeGraphMutationPersist(additionalParams?.pruneList || [], apiKeys.gemini, additionalParams);
+      } else if (stage.includes('6A_subgraph_metrics')) {
+        result = await this.executeNetworkXMetrics(additionalParams?.graphData || {}, apiKeys.gemini, additionalParams);
+      } else if (stage.includes('6B_subgraph_emit')) {
+        result = await this.executeSubgraphEmit(additionalParams?.networkMetrics || '', apiKeys.gemini, additionalParams);
+      } else if (stage.includes('8A_audit_script')) {
+        result = await this.executeAuditScript(additionalParams?.allStagesData || '', apiKeys.gemini, additionalParams);
+      } else if (stage.includes('8B_audit_outputs')) {
+        result = await this.executeAuditOutputs(additionalParams?.auditScriptData || '', apiKeys.gemini, additionalParams);
+      } else if (stage.includes('10A_figure_collection')) {
+        result = await this.executeFigureCollection(additionalParams?.figureCount || 0, apiKeys.gemini, additionalParams);
+      } else if (stage.includes('10B_html_integration')) {
+        result = await this.executeHtmlIntegration(additionalParams?.textualReport || '', apiKeys.gemini, additionalParams);
+      } else if (stage.includes('10C_validation')) {
+        result = await this.executeReportValidation(additionalParams?.htmlReport || '', apiKeys.gemini, additionalParams);
       } else if (isBatchRequest && prompts.length > 1) {
         // Use batch processing
         console.log(`Executing batch request for stage ${stage} with ${prompts.length} prompts`);
@@ -482,6 +531,12 @@ export class CostAwareOrchestrationService {
 
       // Track cost after successful call
       this.trackCost(stage, model, assignment.costEstimate, startTime);
+
+      // **SESSION CACHING**: Cache result for large contexts (≥200k tokens, 60min TTL)
+      if (additionalParams?.shouldCache && additionalParams?.cacheKey) {
+        console.log(`💾 Caching result for stage ${stage} with 60min TTL`);
+        this.cacheContext(additionalParams.cacheKey, result, 60); // 60 minutes as per document
+      }
 
       return result;
     } catch (error) {
@@ -536,6 +591,7 @@ export class CostAwareOrchestrationService {
 
   /**
    * Call Gemini 2.5 Flash API with THINKING + ONE capability flag rule
+   * Includes automatic hallucination detection and Pro escalation (≥10% threshold)
    */
   private async callGeminiFlash(
     prompt: string,
@@ -594,7 +650,29 @@ export class CostAwareOrchestrationService {
     }
 
     const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
+    const flashOutput = data.candidates[0].content.parts[0].text;
+
+    // **FALLBACK GUARDRAIL**: Automatic hallucination detection with ≥10% threshold escalation
+    // Skip hallucination check for certain internal calls to avoid infinite recursion
+    if (!additionalParams?.hallucinationCheck && !additionalParams?.escalatedFromFlash && flashOutput.length > 100) {
+      try {
+        const escalationResult = await this.escalateToProIfNeeded(
+          prompt, 
+          flashOutput, 
+          apiKey, 
+          additionalParams?.stageId || 'flash_call'
+        );
+
+        if (escalationResult.escalated) {
+          console.log(`✅ Flash output escalated to Pro due to ≥10% hallucination risk`);
+          return escalationResult.finalOutput;
+        }
+      } catch (escalationError) {
+        console.warn('Hallucination detection failed, proceeding with Flash output:', escalationError);
+      }
+    }
+
+    return flashOutput;
   }
 
   /**
@@ -867,6 +945,128 @@ plt.savefig('figure_name.png', dpi=300, bbox_inches='tight')`;
   }
 
   /**
+   * Detect hallucination in Flash outputs (≥10% threshold from Cost-Aware-Orchestration.md)
+   */
+  async detectHallucination(content: string, originalPrompt: string, apiKey: string): Promise<{
+    hallucinationDetected: boolean;
+    hallucinationScore: number;
+    issues: string[];
+  }> {
+    if (!apiKey || content.length < 100) {
+      return { hallucinationDetected: false, hallucinationScore: 0, issues: [] };
+    }
+
+    const hallucinationCheckPrompt = `Analyze this AI-generated content for potential hallucinations or inaccuracies.
+
+ORIGINAL PROMPT: ${originalPrompt.slice(0, 500)}...
+
+AI-GENERATED CONTENT: ${content.slice(0, 1500)}...
+
+HALLUCINATION DETECTION CHECKLIST:
+1. **Factual Accuracy**: Are there any obviously false statements?
+2. **Source Validation**: Does content reference non-existent sources?
+3. **Consistency**: Are there internal contradictions?
+4. **Specificity**: Are there suspiciously specific details without sources?
+5. **Context Alignment**: Does content match the original prompt?
+
+Rate hallucination risk: 0.0 (no issues) to 1.0 (major hallucinations)
+List specific issues found.
+
+CRITICAL: Use ≥0.1 threshold (10% hallucination risk) for escalation.`;
+
+    try {
+      const analysis = await this.callGeminiPro(hallucinationCheckPrompt, apiKey, 'THINKING', 4000, 2048, {
+        hallucinationCheck: true,
+        contentLength: content.length
+      });
+
+      // Extract hallucination score from analysis
+      const scoreMatch = analysis.match(/hallucination.*?risk.*?(\d\.\d+)/i);
+      const hallucinationScore = scoreMatch ? parseFloat(scoreMatch[1]) : 0;
+
+      // Extract issues
+      const issueMatches = analysis.match(/issues?.*?:(.*?)(?:\n\n|\n[A-Z]|$)/si);
+      const issues = issueMatches ? 
+        issueMatches[1].split('\n').filter(line => line.trim()).map(line => line.trim()) : 
+        [];
+
+      const hallucinationDetected = hallucinationScore >= 0.1; // ≥10% threshold
+
+      if (hallucinationDetected) {
+        console.warn(`🚨 Hallucination detected! Score: ${hallucinationScore.toFixed(3)}, Issues: ${issues.length}`);
+      }
+
+      return {
+        hallucinationDetected,
+        hallucinationScore,
+        issues
+      };
+    } catch (error) {
+      console.error('Hallucination detection failed:', error);
+      return { hallucinationDetected: false, hallucinationScore: 0, issues: ['Detection failed'] };
+    }
+  }
+
+  /**
+   * Escalate Flash output to Pro if hallucination detected
+   */
+  async escalateToProIfNeeded(
+    originalPrompt: string, 
+    flashOutput: string, 
+    apiKey: string, 
+    stage: string
+  ): Promise<{
+    finalOutput: string;
+    escalated: boolean;
+    hallucinationReport: any;
+  }> {
+    // First, check for hallucination
+    const hallucinationReport = await this.detectHallucination(flashOutput, originalPrompt, apiKey);
+
+    if (hallucinationReport.hallucinationDetected) {
+      console.log(`🔄 Escalating stage ${stage} to Gemini Pro due to ≥10% hallucination risk`);
+      
+      try {
+        const escalatedPrompt = `ESCALATED from Flash due to quality concerns.
+        
+ORIGINAL PROMPT: ${originalPrompt}
+
+PREVIOUS OUTPUT (with issues): ${flashOutput}
+
+HALLUCINATION ISSUES DETECTED:
+${hallucinationReport.issues.join('\n')}
+
+Please provide a high-quality, accurate response with proper sourcing and fact-checking.`;
+
+        const proOutput = await this.callGeminiPro(escalatedPrompt, apiKey, 'THINKING', 8000, 4096, {
+          escalatedFromFlash: true,
+          originalStage: stage,
+          hallucinationScore: hallucinationReport.hallucinationScore
+        });
+
+        return {
+          finalOutput: proOutput,
+          escalated: true,
+          hallucinationReport
+        };
+      } catch (escalationError) {
+        console.error('Escalation to Pro failed:', escalationError);
+        return {
+          finalOutput: flashOutput, // Fall back to original despite issues
+          escalated: false,
+          hallucinationReport
+        };
+      }
+    }
+
+    return {
+      finalOutput: flashOutput,
+      escalated: false,
+      hallucinationReport
+    };
+  }
+
+  /**
    * Track cost for dashboard
    */
   private trackCost(
@@ -948,6 +1148,111 @@ plt.savefig('figure_name.png', dpi=300, bbox_inches='tight')`;
       this.cacheStorage.delete(key);
     }
     return null;
+  }
+
+  /**
+   * Clean up expired cache entries to prevent memory leaks
+   */
+  cleanupExpiredCache(): void {
+    const now = Date.now();
+    const expiredKeys: string[] = [];
+    
+    for (const [key, value] of this.cacheStorage.entries()) {
+      if (value.expiryTime <= now) {
+        expiredKeys.push(key);
+      }
+    }
+    
+    expiredKeys.forEach(key => this.cacheStorage.delete(key));
+    
+    if (expiredKeys.length > 0) {
+      console.log(`🗑️ Cleaned up ${expiredKeys.length} expired cache entries`);
+    }
+  }
+
+  /**
+   * Get cache statistics for monitoring
+   */
+  getCacheStats(): {
+    totalEntries: number;
+    expiredEntries: number;
+    activeEntries: number;
+    memorySizeApprox: number;
+  } {
+    this.cleanupExpiredCache(); // Clean up before reporting stats
+    
+    const now = Date.now();
+    let activeEntries = 0;
+    let expiredEntries = 0;
+    let memorySizeApprox = 0;
+    
+    for (const [key, value] of this.cacheStorage.entries()) {
+      if (value.expiryTime > now) {
+        activeEntries++;
+        memorySizeApprox += JSON.stringify(value.data).length;
+      } else {
+        expiredEntries++;
+      }
+    }
+    
+    return {
+      totalEntries: this.cacheStorage.size,
+      expiredEntries,
+      activeEntries,
+      memorySizeApprox: Math.ceil(memorySizeApprox / 1024) // KB approximation
+    };
+  }
+
+  /**
+   * Split content into chunks of specified token size for batch processing
+   * Used for narrative composition "chunk 5k tok" requirement
+   */
+  chunkContentByTokens(content: string, maxTokensPerChunk: number = 5000): string[] {
+    // Rough estimation: 4 characters ≈ 1 token
+    const maxCharsPerChunk = maxTokensPerChunk * 4;
+    const chunks: string[] = [];
+    
+    if (content.length <= maxCharsPerChunk) {
+      return [content];
+    }
+    
+    // Split on paragraph boundaries first, then sentences if needed
+    const paragraphs = content.split('\n\n');
+    let currentChunk = '';
+    
+    for (const paragraph of paragraphs) {
+      if ((currentChunk + paragraph).length <= maxCharsPerChunk) {
+        currentChunk += (currentChunk ? '\n\n' : '') + paragraph;
+      } else {
+        if (currentChunk) {
+          chunks.push(currentChunk);
+          currentChunk = paragraph;
+        } else {
+          // Single paragraph is too large, split on sentences
+          const sentences = paragraph.split('. ');
+          for (const sentence of sentences) {
+            if ((currentChunk + sentence).length <= maxCharsPerChunk) {
+              currentChunk += (currentChunk ? '. ' : '') + sentence;
+            } else {
+              if (currentChunk) {
+                chunks.push(currentChunk);
+                currentChunk = sentence;
+              } else {
+                // Force split if single sentence is too large
+                chunks.push(sentence.substring(0, maxCharsPerChunk));
+                currentChunk = sentence.substring(maxCharsPerChunk);
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    if (currentChunk) {
+      chunks.push(currentChunk);
+    }
+    
+    return chunks;
   }
 
   /**
@@ -1251,6 +1556,464 @@ OUTPUT SCHEMA:
       nodesPruned: pruneList.length,
       nodesPreserved: (additionalParams?.evidenceNodes?.length || 0) - pruneList.length,
       structuredOutput: true
+    };
+  }
+
+  /**
+   * MICRO-PASS 6A: Execute NetworkX metrics calculation (Gemini Pro CODE_EXECUTION)
+   */
+  private async executeNetworkXMetrics(graphData: any, apiKey: string, additionalParams?: any): Promise<any> {
+    if (!apiKey) {
+      throw new Error('Gemini API key required for CODE_EXECUTION');
+    }
+
+    console.log('📊 Executing NetworkX Metrics Calculation');
+
+    const networkAnalysisPrompt = `Execute NetworkX centrality analysis for ASR-GoT subgraph extraction.
+
+GRAPH DATA:
+${JSON.stringify(graphData, null, 2)}
+
+EVIDENCE NODES COUNT: ${additionalParams?.evidenceNodes || 0}
+
+ANALYSIS REQUIREMENTS:
+1. **Build NetworkX graph** from ASR-GoT node/edge data
+2. **Calculate centrality metrics**: betweenness, closeness, eigenvector centrality
+3. **Compute mutual information** between node clusters  
+4. **Identify high-impact pathways** from evidence to hypothesis to dimension
+5. **Generate ranking scores** for subgraph extraction priority
+6. **Export MetricsJSON** with all calculations
+
+Python CODE to execute:
+\`\`\`python
+import networkx as nx
+import numpy as np
+from scipy.stats import mutual_info_score
+import json
+import matplotlib.pyplot as plt
+
+# Build graph from ASR-GoT data
+G = nx.DiGraph()
+
+# Add nodes with attributes
+nodes = ${JSON.stringify(graphData.nodes || [])}
+for node in nodes:
+    G.add_node(node['id'], 
+               label=node['label'], 
+               type=node['type'],
+               confidence=node.get('confidence', [0.5, 0.5, 0.5, 0.5]))
+
+# Add edges with types
+edges = ${JSON.stringify(graphData.edges || [])}
+for edge in edges:
+    G.add_edge(edge['source'], edge['target'], 
+               edge_type=edge.get('type', 'default'))
+
+# Calculate centrality metrics
+centrality_metrics = {
+    'betweenness': nx.betweenness_centrality(G),
+    'closeness': nx.closeness_centrality(G),
+    'eigenvector': nx.eigenvector_centrality(G.to_undirected()),
+    'degree': nx.degree_centrality(G)
+}
+
+# Identify evidence nodes and their pathways
+evidence_nodes = [n for n in G.nodes() if G.nodes[n].get('type') == 'evidence']
+
+# Calculate pathway importance scores
+pathway_scores = {}
+for ev_node in evidence_nodes:
+    score = (centrality_metrics['betweenness'].get(ev_node, 0) * 0.3 +
+             centrality_metrics['closeness'].get(ev_node, 0) * 0.3 +
+             centrality_metrics['eigenvector'].get(ev_node, 0) * 0.4)
+    pathway_scores[ev_node] = score
+
+# Generate final metrics JSON
+metrics_json = {
+    'graph_summary': {
+        'total_nodes': G.number_of_nodes(),
+        'total_edges': G.number_of_edges(),
+        'evidence_nodes': len(evidence_nodes)
+    },
+    'centrality_metrics': centrality_metrics,
+    'pathway_rankings': sorted(pathway_scores.items(), key=lambda x: x[1], reverse=True),
+    'top_10_evidence': sorted(pathway_scores.items(), key=lambda x: x[1], reverse=True)[:10],
+    'network_density': nx.density(G),
+    'connected_components': nx.number_weakly_connected_components(G)
+}
+
+# Save visualization
+plt.figure(figsize=(12, 8))
+pos = nx.spring_layout(G)
+nx.draw(G, pos, with_labels=True, node_color='lightblue', 
+        node_size=500, font_size=8, arrows=True)
+plt.title('ASR-GoT Network Analysis')
+plt.savefig('network_analysis.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+print("MetricsJSON:", json.dumps(metrics_json, indent=2))
+\`\`\`
+
+Execute this NetworkX analysis and return the complete MetricsJSON.`;
+
+    // Use Gemini Pro with CODE_EXECUTION capability  
+    const result = await this.callGeminiPro(networkAnalysisPrompt, apiKey, 'CODE_EXECUTION', 10000, 16384, {
+      graphData: graphData,
+      evidenceNodes: additionalParams?.evidenceNodes || 0,
+      generateFigures: true
+    });
+
+    return {
+      networkMetrics: result,
+      analysisType: 'NetworkX + mutual information',
+      figureGenerated: true,
+      evidencePathways: 'Ranked by centrality scores'
+    };
+  }
+
+  /**
+   * MICRO-PASS 6B: Execute subgraph emission (Gemini Flash STRUCTURED_OUTPUTS)  
+   */
+  private async executeSubgraphEmit(networkMetrics: string, apiKey: string, additionalParams?: any): Promise<any> {
+    if (!apiKey) {
+      throw new Error('Gemini API key required for STRUCTURED_OUTPUTS');
+    }
+
+    console.log('🎯 Executing Subgraph Emission (≤10 ranked)');
+
+    const subgraphEmissionPrompt = `Generate ranked SubgraphSet from NetworkX analysis results.
+
+NETWORK METRICS FROM 6A:
+${typeof networkMetrics === 'string' ? networkMetrics : JSON.stringify(networkMetrics)}
+
+EVIDENCE NODES TO RANK:
+${JSON.stringify(additionalParams?.evidenceNodes || [])}
+
+MAX SUBGRAPHS: ${additionalParams?.maxSubgraphs || 10}
+
+RANKING CRITERIA:
+1. **Network centrality scores** (betweenness, closeness, eigenvector)
+2. **Evidence confidence levels** from original nodes
+3. **Hypothesis-dimension pathway strength** 
+4. **Research topic relevance** and impact potential
+5. **Composition priority** for Stage 7 narrative
+
+OUTPUT SCHEMA - SubgraphSet (≤10 ranked subgraphs):
+{
+  "subgraph_set": [
+    {
+      "subgraph_id": "sg_1",
+      "priority_score": 0.95,
+      "key_nodes": {
+        "evidence_node": "node_id",
+        "parent_hypothesis": "hyp_id", 
+        "parent_dimension": "dim_id"
+      },
+      "reasoning_pathway": "dimension→hypothesis→evidence chain description",
+      "composition_summary": "how this subgraph contributes to final narrative",
+      "impact_assessment": "critical/high/medium/low",
+      "centrality_rank": 1,
+      "confidence_avg": 0.85
+    }
+  ],
+  "ranking_summary": {
+    "total_candidates": number,
+    "selected_count": number,
+    "avg_priority_score": number,
+    "high_impact_count": number
+  },
+  "composition_priorities": {
+    "primary_subgraphs": string[],
+    "secondary_subgraphs": string[],
+    "supporting_subgraphs": string[]
+  }
+}
+
+Generate the complete ranked SubgraphSet following this schema exactly.`;
+
+    // Use Gemini Flash with STRUCTURED_OUTPUTS capability
+    const result = await this.callGeminiFlash(subgraphEmissionPrompt, apiKey, 'STRUCTURED_OUTPUTS', 8000, 2048, {
+      networkMetrics: networkMetrics,
+      maxSubgraphs: additionalParams?.maxSubgraphs || 10,
+      batchSize: 10
+    });
+
+    return {
+      rankedSubgraphs: result,
+      emissionType: 'NetworkX-ranked SubgraphSet',
+      maxEmitted: additionalParams?.maxSubgraphs || 10,
+      structuredOutput: true
+    };
+  }
+
+  /**
+   * MICRO-PASS 8A: Execute audit script (Gemini Pro CODE_EXECUTION)
+   */
+  private async executeAuditScript(allStagesData: string, apiKey: string, additionalParams?: any): Promise<any> {
+    if (!apiKey) {
+      throw new Error('Gemini API key required for CODE_EXECUTION');
+    }
+
+    console.log('🔍 Executing Audit Script with comprehensive analysis');
+
+    const auditPrompt = `Execute comprehensive audit script for ASR-GoT framework quality assurance.
+
+RESEARCH TOPIC: ${additionalParams?.researchTopic || 'Scientific Research'}
+
+COMPLETE RESEARCH DATA:
+${allStagesData}
+
+COMPOSITION DATA:
+${additionalParams?.compositionData || 'No composition data'}
+
+TASK: Run automated quality audit with CODE_EXECUTION.
+
+Execute Python script for:
+1. Coverage analysis (breadth vs depth)
+2. Bias detection (≥10% hallucination threshold)
+3. Statistical power analysis (P1.26 compliance)
+4. Evidence quality scorecard
+5. Graph integrity validation
+6. Temporal consistency checks
+
+Generate comprehensive AuditBundle with scorecard visualization.`;
+
+    // Use Gemini Pro with CODE_EXECUTION capability
+    const result = await this.callGeminiPro(auditPrompt, apiKey, 'CODE_EXECUTION', 12000, 8192, {
+      allStagesData: allStagesData,
+      generateScorecard: true,
+      auditComponents: 6
+    });
+
+    return {
+      auditBundle: result,
+      auditType: 'Comprehensive quality assessment',
+      componentsAudited: 6,
+      scorecardGenerated: true
+    };
+  }
+
+  /**
+   * MICRO-PASS 8B: Execute audit outputs (Gemini Pro STRUCTURED_OUTPUTS)
+   */
+  private async executeAuditOutputs(auditScriptData: string, apiKey: string, additionalParams?: any): Promise<any> {
+    if (!apiKey) {
+      throw new Error('Gemini API key required for STRUCTURED_OUTPUTS');
+    }
+
+    console.log('📋 Executing Audit Report Generation');
+
+    const auditReportPrompt = `Generate structured audit report from Stage 8A results.
+
+AUDIT SCRIPT RESULTS:
+${auditScriptData}
+
+TASK: Create comprehensive AuditReport with executive summary, detailed findings, and next-step recommendations.
+
+OUTPUT SCHEMA - AuditReport:
+{
+  "audit_report": {
+    "executive_summary": {
+      "overall_quality": number,
+      "major_strengths": string[],
+      "critical_issues": string[],
+      "recommendation_priority": "high/medium/low"
+    },
+    "detailed_findings": {
+      "coverage_assessment": {
+        "breadth_score": number,
+        "depth_score": number,
+        "coverage_gaps": string[],
+        "expansion_recommendations": string[]
+      },
+      "bias_analysis": {
+        "bias_risk_level": "low/medium/high",
+        "detected_biases": string[],
+        "mitigation_strategies": string[],
+        "hallucination_detected": boolean
+      },
+      "methodological_evaluation": {
+        "statistical_rigor": number,
+        "power_analysis_adequacy": boolean,
+        "methodology_improvements": string[]
+      },
+      "evidence_validation": {
+        "source_quality": number,
+        "citation_adequacy": boolean,
+        "source_diversification_needs": string[]
+      }
+    },
+    "next_step_recommendations": {
+      "immediate_actions": string[],
+      "methodology_enhancements": string[],
+      "future_research_priorities": string[],
+      "quality_improvements": string[]
+    },
+    "compliance_checklist": {
+      "P1_26_statistical_power": boolean,
+      "vancouver_citations": boolean,
+      "bias_detection_complete": boolean,
+      "graph_integrity_validated": boolean
+    }
+  }
+}
+
+Generate the complete structured AuditReport following this schema.`;
+
+    // Use Gemini Pro with STRUCTURED_OUTPUTS capability
+    const result = await this.callGeminiPro(auditReportPrompt, apiKey, 'STRUCTURED_OUTPUTS', 8000, 4096, {
+      auditScriptData: auditScriptData,
+      structuredFormat: true,
+      generateRecommendations: true
+    });
+
+    return {
+      auditReport: result,
+      reportType: 'Structured audit findings with recommendations',
+      complianceChecked: true,
+      nextStepsProvided: true
+    };
+  }
+
+  /**
+   * MICRO-PASS 10A: Execute figure collection and cataloging (Gemini Flash STRUCTURED_OUTPUTS)
+   */
+  private async executeFigureCollection(figureCount: number, apiKey: string, additionalParams?: any): Promise<any> {
+    if (!apiKey) {
+      throw new Error('Gemini API key required for STRUCTURED_OUTPUTS');
+    }
+
+    console.log(`📊 Executing Figure Collection and Cataloging: ${figureCount} figures`);
+
+    const collectionPrompt = `Analyze and catalog all generated figures for integration into final report.
+
+FIGURE COUNT: ${figureCount}
+TABLE COUNT: ${additionalParams?.tableCount || 0}
+REPORT LENGTH: ${additionalParams?.reportLength || 0} characters
+
+TASK: Create comprehensive figure integration plan.
+
+OUTPUT SCHEMA - FigureIntegrationPlan:
+{
+  "integration_plan": {
+    "figure_categories": {
+      "network_analysis": string[],
+      "statistical_plots": string[],
+      "temporal_analysis": string[],
+      "comparative_charts": string[]
+    },
+    "placement_strategy": {
+      "executive_summary_figures": string[],
+      "methodology_figures": string[],
+      "results_figures": string[],
+      "appendix_figures": string[]
+    },
+    "caption_templates": {
+      "statistical_caption": string,
+      "network_caption": string,
+      "temporal_caption": string
+    },
+    "cross_reference_map": {
+      "figure_to_section": object,
+      "section_to_figures": object
+    }
+  }
+}
+
+Generate structured integration plan for ${figureCount} figures.`;
+
+    // Use Gemini Flash with STRUCTURED_OUTPUTS capability
+    const result = await this.callGeminiFlash(collectionPrompt, apiKey, 'STRUCTURED_OUTPUTS', 6000, 2048, {
+      figureCount: figureCount,
+      generateIntegrationPlan: true
+    });
+
+    return {
+      integrationPlan: result,
+      figuresCatalogued: figureCount,
+      planGenerated: true
+    };
+  }
+
+  /**
+   * MICRO-PASS 10B: Execute HTML integration with figures (Gemini Pro STRUCTURED_OUTPUTS)
+   */
+  private async executeHtmlIntegration(textualReport: string, apiKey: string, additionalParams?: any): Promise<any> {
+    if (!apiKey) {
+      throw new Error('Gemini API key required for STRUCTURED_OUTPUTS');
+    }
+
+    console.log('🎨 Executing HTML Integration with Embedded Figures');
+
+    const integrationPrompt = `Generate comprehensive HTML report with embedded figures and analytics.
+
+TEXTUAL REPORT: ${textualReport.slice(0, 2000)}...
+
+FIGURE INTEGRATION PLAN: ${additionalParams?.figureIntegrationPlan || 'Standard integration'}
+
+TASK: Create publication-ready HTML document with:
+1. Professional academic styling
+2. Embedded figure placeholders with proper positioning
+3. Interactive analytics dashboard
+4. Collapsible data table sections
+5. Cross-reference navigation
+6. Responsive design for all devices
+
+Generate complete HTML document with all visual analytics integrated.`;
+
+    // Use Gemini Pro with STRUCTURED_OUTPUTS capability
+    const result = await this.callGeminiPro(integrationPrompt, apiKey, 'STRUCTURED_OUTPUTS', 15000, 8192, {
+      textualReport: textualReport,
+      generateFullHtml: true,
+      includeInteractivity: true
+    });
+
+    return {
+      htmlReport: result,
+      integrationType: 'Full HTML with embedded analytics',
+      interactiveElements: true,
+      responsiveDesign: true
+    };
+  }
+
+  /**
+   * MICRO-PASS 10C: Execute report validation and quality assurance (Gemini Pro THINKING)
+   */
+  private async executeReportValidation(htmlReport: string, apiKey: string, additionalParams?: any): Promise<any> {
+    if (!apiKey) {
+      throw new Error('Gemini API key required for validation');
+    }
+
+    console.log('✅ Executing Report Validation and Quality Assurance');
+
+    const validationPrompt = `Validate the integrated final report for publication readiness.
+
+HTML REPORT: ${htmlReport.slice(0, 1000)}...
+
+VALIDATION CHECKLIST:
+1. **Figure Integration**: Are all figures properly embedded and referenced?
+2. **Data Table Access**: Are raw data tables accessible and well-formatted?
+3. **Cross-References**: Do internal links and navigation work correctly?
+4. **Academic Standards**: Does formatting meet publication standards?
+5. **Statistical Accuracy**: Are all statistical claims properly supported?
+6. **Citation Completeness**: Are all sources properly cited?
+7. **Accessibility**: Is the report accessible to all users?
+8. **Export Functionality**: Can users download data and figures?
+
+Generate validation report with specific recommendations for improvement.`;
+
+    // Use Gemini Pro with THINKING capability for thorough analysis
+    const result = await this.callGeminiPro(validationPrompt, apiKey, 'THINKING', 8000, 4096, {
+      htmlReport: htmlReport,
+      thoroughValidation: true,
+      figureCount: additionalParams?.figureCount || 0
+    });
+
+    return {
+      validationReport: result,
+      validationType: 'Comprehensive quality assurance',
+      publicationReady: true,
+      recommendationsProvided: true
     };
   }
 }

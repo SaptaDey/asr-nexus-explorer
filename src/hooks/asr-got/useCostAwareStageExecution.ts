@@ -17,6 +17,7 @@ import {
   composeResults,
   performReflection,
   generateFinalAnalysis,
+  generateIntegratedFinalReport,
   StageExecutorContext
 } from '@/services/stageExecutors';
 
@@ -60,7 +61,8 @@ export const useCostAwareStageExecution = ({
     5: '6A_subgraph_metrics', // Will also trigger 6B
     6: '7_narrative_composition',
     7: '8A_audit_script', // Will also trigger 8B
-    8: 'final_analysis_complete'
+    8: '9_final_analysis',
+    9: '10A_figure_collection' // Will also trigger 10B and 10C - Final Report Integration
   };
 
   // Create enhanced context with cost-aware orchestration
@@ -197,6 +199,13 @@ export const useCostAwareStageExecution = ({
           result = await generateFinalAnalysis(context);
           setGraphData(prev => ({ ...prev, stage: 'final_analysis' }));
           setFinalReport(result);
+          break;
+
+        case 9: // Stage 10: Final Report Integration with Figures
+          // This will be called externally with figure data
+          result = `Stage 10 ready for final report integration with figures and analytics.
+                   Call generateIntegratedFinalReport() with figure data to complete.`;
+          setGraphData(prev => ({ ...prev, stage: 'report_integration_ready' }));
           break;
           
         default:
