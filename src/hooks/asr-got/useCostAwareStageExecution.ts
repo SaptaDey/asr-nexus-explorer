@@ -100,7 +100,7 @@ export const useCostAwareStageExecution = ({
   }, [apiKeys, graphData, researchContext, stageResults, currentStage, setGraphData, setResearchContext]);
 
   // Enhanced stage execution with cost-aware routing
-  const executeStage = useCallback(async (stageIndex: number) => {
+  const executeStage = useCallback(async (stageIndex: number, input?: any) => {
     if (isProcessing) {
       toast.warning('Processing in progress, please wait...');
       return;
@@ -114,6 +114,21 @@ export const useCostAwareStageExecution = ({
     setIsProcessing(true);
     
     try {
+      // For Stage 1 (Initialization), set the research topic from input
+      if (stageIndex === 0 && input && typeof input === 'string') {
+        setResearchContext(prev => ({
+          ...prev,
+          topic: input,
+          field: '',
+          objectives: [],
+          hypotheses: [],
+          constraints: [],
+          biases_detected: [],
+          knowledge_gaps: [],
+          auto_generated: false
+        }));
+      }
+      
       const context = createStageContext();
       let result = '';
       
@@ -127,7 +142,11 @@ export const useCostAwareStageExecution = ({
 
       switch (stageIndex) {
         case 0: // Initialization
-          result = await initializeGraph(researchContext.topic, context);
+          // Use the input topic if provided, otherwise fall back to existing research context
+          const topicToUse = (stageIndex === 0 && input && typeof input === 'string') 
+            ? input 
+            : researchContext.topic;
+          result = await initializeGraph(topicToUse, context);
           setGraphData(prev => ({ ...prev, stage: 'initialization' }));
           break;
           
