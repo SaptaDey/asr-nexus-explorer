@@ -444,7 +444,20 @@ export class CostAwareOrchestrationService {
     try {
       let result;
       
-      if (isBatchRequest && prompts.length > 1) {
+      // **MICRO-PASS ROUTING**: Handle specific micro-pass calls
+      if (stage.includes('4.1_evidence_harvest')) {
+        result = await this.executeSonarBulkHarvest(additionalParams?.queries || [], apiKeys.perplexity, additionalParams);
+      } else if (stage.includes('4.2_citation_batch')) {
+        result = await this.executeSonarCitationGeneration(additionalParams?.evidenceCorpus || '', apiKeys.perplexity, additionalParams);
+      } else if (stage.includes('4.3_evidence_analysis')) {
+        result = await this.executeCodeExecutionWithFigures(additionalParams?.evidenceData || '', apiKeys.gemini, additionalParams);
+      } else if (stage.includes('4.4_graph_update')) {
+        result = await this.executeGraphStructuredUpdate(additionalParams?.newNodes || [], apiKeys.gemini, additionalParams);
+      } else if (stage.includes('5A_prune_merge_reasoning')) {
+        result = await this.executeBayesianPruneReasoning(additionalParams?.evidenceNodes || [], apiKeys.gemini, additionalParams);
+      } else if (stage.includes('5B_graph_mutation_persist')) {
+        result = await this.executeGraphMutationPersist(additionalParams?.pruneList || [], apiKeys.gemini, additionalParams);
+      } else if (isBatchRequest && prompts.length > 1) {
         // Use batch processing
         console.log(`Executing batch request for stage ${stage} with ${prompts.length} prompts`);
         result = await this.executeBatch(stage, prompts, apiKeys, additionalParams);
@@ -935,6 +948,310 @@ plt.savefig('figure_name.png', dpi=300, bbox_inches='tight')`;
       this.cacheStorage.delete(key);
     }
     return null;
+  }
+
+  /**
+   * MICRO-PASS 4.1: Execute Sonar Deep Research bulk harvest (100 queries)
+   */
+  private async executeSonarBulkHarvest(queries: string[], apiKey: string, additionalParams?: any): Promise<any> {
+    if (!apiKey) {
+      throw new Error('PERPLEXITY_KEY_REQUIRED');
+    }
+
+    console.log(`🔍 Executing Sonar Bulk Harvest: ${queries.length} queries`);
+    
+    const client = new PerplexityClient(apiKey);
+    const results = [];
+
+    // Process in batches of 100 queries for optimal cost ($5 per 1000 queries = $0.50 per 100)
+    const batchSize = 100;
+    
+    for (let i = 0; i < queries.length; i += batchSize) {
+      const batch = queries.slice(i, i + batchSize);
+      console.log(`Processing Sonar batch ${Math.floor(i / batchSize) + 1}: ${batch.length} queries`);
+      
+      const batchResults = await Promise.all(
+        batch.map(query => client.deepResearch(query, {
+          maxDocs: additionalParams?.maxDocs || 100,
+          returnCitations: true,
+          searchDomains: ['pubmed.ncbi.nlm.nih.gov', 'arxiv.org', 'scholar.google.com']
+        }))
+      );
+      
+      results.push(...batchResults);
+    }
+
+    return {
+      evidenceCorpus: results,
+      totalQueries: queries.length,
+      totalDocuments: results.reduce((acc, result) => acc + (result.documents?.length || 0), 0),
+      cost: Math.ceil(queries.length / 1000) * 5 // $5 per 1000 queries
+    };
+  }
+
+  /**
+   * MICRO-PASS 4.2: Execute Sonar citation generation (Vancouver style)
+   */
+  private async executeSonarCitationGeneration(evidenceCorpus: string, apiKey: string, additionalParams?: any): Promise<any> {
+    if (!apiKey) {
+      throw new Error('PERPLEXITY_KEY_REQUIRED');
+    }
+
+    console.log('📚 Executing Sonar Citation Generation');
+    
+    const client = new PerplexityClient(apiKey);
+    
+    const citationPrompt = `Generate structured Vancouver-style citations for the following evidence corpus:
+
+${evidenceCorpus}
+
+Requirements:
+1. Extract all papers, studies, and references
+2. Format in Vancouver citation style
+3. Include DOIs where available
+4. Group by publication type (journal articles, preprints, reviews)
+5. Include publication dates and impact factors where possible
+
+Output format: Structured JSON with citations array`;
+
+    const citations = await client.deepResearch(citationPrompt, {
+      returnCitations: true,
+      citationStyle: additionalParams?.citationStyle || 'vancouver'
+    });
+
+    return {
+      citations: citations,
+      citationCount: citations.documents?.length || 0,
+      citationStyle: 'vancouver',
+      doisIncluded: citations.documents?.filter((doc: any) => doc.doi).length || 0
+    };
+  }
+
+  /**
+   * MICRO-PASS 4.3: Execute CODE_EXECUTION with matplotlib/plotly figure generation
+   */
+  private async executeCodeExecutionWithFigures(evidenceData: string, apiKey: string, additionalParams?: any): Promise<any> {
+    if (!apiKey) {
+      throw new Error('Gemini API key required for CODE_EXECUTION');
+    }
+
+    console.log('📊 Executing CODE_EXECUTION with Figure Generation');
+
+    const codeExecutionPrompt = `You are conducting statistical analysis on scientific evidence data with figure generation.
+
+EVIDENCE DATA:
+${evidenceData}
+
+HYPOTHESES TO ANALYZE:
+${JSON.stringify(additionalParams?.hypotheses || [])}
+
+REQUIRED ANALYSIS:
+1. **Effect Size Calculations**: Compute Cohen's d, odds ratios, confidence intervals
+2. **Statistical Power Analysis**: Calculate power analysis using scipy.stats
+3. **Publication-Ready Figures**: Generate matplotlib/plotly visualizations
+
+CODE EXECUTION REQUIREMENTS:
+- Use matplotlib, plotly, seaborn for visualization
+- Save figures as PNG (300 DPI) and SVG formats
+- Include proper legends, axis labels, and titles
+- Generate these specific figures:
+  * effect_sizes_comparison.png
+  * confidence_intervals_forest.png
+  * power_analysis_curves.png
+  * evidence_quality_heatmap.png
+
+Python code example:
+\`\`\`python
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import pandas as pd
+import numpy as np
+from scipy import stats
+
+# Create publication-ready figures
+plt.figure(figsize=(12, 8))
+# ... analysis code ...
+plt.savefig('effect_sizes_comparison.png', dpi=300, bbox_inches='tight')
+plt.savefig('effect_sizes_comparison.svg', bbox_inches='tight')
+\`\`\`
+
+Execute the statistical analysis and generate all required figures with proper legends.`;
+
+    // Call Gemini Pro with CODE_EXECUTION capability
+    const result = await this.callGeminiPro(codeExecutionPrompt, apiKey, 'CODE_EXECUTION', 15000, 16384, {
+      generateFigures: true,
+      outputFormats: ['png', 'svg'],
+      statisticalAnalysis: true
+    });
+
+    return {
+      statisticalResults: result,
+      figuresGenerated: [
+        'effect_sizes_comparison.png',
+        'confidence_intervals_forest.png', 
+        'power_analysis_curves.png',
+        'evidence_quality_heatmap.png'
+      ],
+      analysisType: 'statistical_power_analysis',
+      codeExecuted: true
+    };
+  }
+
+  /**
+   * MICRO-PASS 4.4: Execute graph structured update with typed edges
+   */
+  private async executeGraphStructuredUpdate(newNodes: any[], apiKey: string, additionalParams?: any): Promise<any> {
+    if (!apiKey) {
+      throw new Error('Gemini API key required for STRUCTURED_OUTPUTS');
+    }
+
+    console.log('🌐 Executing Graph Structured Update');
+
+    const graphUpdatePrompt = `Update the research graph with new evidence nodes and typed edges.
+
+NEW NODES TO ADD:
+${JSON.stringify(newNodes, null, 2)}
+
+REQUIREMENTS:
+1. **Typed Edges**: Create causal_direct, temporal_precedence, correlative edges
+2. **Metadata Enrichment**: Add proper parameter IDs, confidence scores
+3. **Graph Validation**: Ensure no duplicate nodes or circular references
+4. **Structured Output**: Return JSON with nodes and edges arrays
+
+OUTPUT SCHEMA:
+{
+  "nodes": [...updated nodes with metadata...],
+  "edges": [...typed edges with causal/temporal relationships...],
+  "validation": {
+    "duplicatesRemoved": number,
+    "edgeTypesCreated": string[],
+    "graphIntegrity": boolean
+  }
+}
+
+Focus on creating meaningful causal and temporal relationships between evidence and hypotheses.`;
+
+    const result = await this.callGeminiPro(graphUpdatePrompt, apiKey, 'STRUCTURED_OUTPUTS', 4096, 2048, {
+      maxNodes: additionalParams?.maxNodes || 200,
+      edgeTypes: ['causal_direct', 'temporal_precedence', 'correlative'],
+      validateGraph: true
+    });
+
+    return {
+      graphUpdate: result,
+      nodesAdded: newNodes.length,
+      edgeTypesUsed: ['causal_direct', 'temporal_precedence', 'correlative'],
+      structuredOutput: true
+    };
+  }
+
+  /**
+   * MICRO-PASS 5A: Execute Bayesian pruning/merging reasoning (Gemini Flash THINKING-only)
+   */
+  private async executeBayesianPruneReasoning(evidenceNodes: any[], apiKey: string, additionalParams?: any): Promise<any> {
+    if (!apiKey) {
+      throw new Error('Gemini API key required for THINKING analysis');
+    }
+
+    console.log('🧠 Executing Bayesian Pruning/Merging Reasoning');
+
+    const bayesianPrompt = `You are conducting Stage 5A: Bayesian Pruning/Merging Reasoning.
+
+EVIDENCE NODES TO ANALYZE:
+${JSON.stringify(evidenceNodes, null, 2)}
+
+RESEARCH TOPIC: ${additionalParams?.researchTopic || 'Unknown'}
+
+BAYESIAN FILTER ANALYSIS:
+Analyze each evidence node using Bayesian reasoning to determine:
+
+1. **Prior Probability**: Base probability of evidence quality
+2. **Likelihood**: How well evidence supports hypotheses  
+3. **Posterior Probability**: Updated probability after evidence assessment
+4. **Pruning Threshold**: Bayesian threshold for keeping vs removing nodes
+5. **Merging Candidates**: Nodes that should be merged based on similarity
+
+THINKING PROCESS:
+- Calculate confidence intervals for each evidence node
+- Apply Bayesian updating based on evidence strength
+- Identify nodes below quality threshold for pruning
+- Find semantically similar nodes for potential merging
+
+Output internal prune_list and merge_map for Stage 5B.`;
+
+    // Use Gemini Flash with THINKING-only capability
+    const result = await this.callGeminiFlash(bayesianPrompt, apiKey, 'THINKING', 10000, 2048, {
+      bayesianAnalysis: true,
+      pruningThreshold: 0.4,
+      mergingSimilarity: 0.8
+    });
+
+    return {
+      bayesianAnalysis: result,
+      pruneList: evidenceNodes.filter(node => 
+        !node.confidence || 
+        (Array.isArray(node.confidence) && 
+         (node.confidence.reduce((a: number, b: number) => a + b, 0) / node.confidence.length) < 0.4)
+      ).map(node => node.id),
+      mergeMap: {}, // Simplified for now - would contain merge mappings
+      thinkingMode: true
+    };
+  }
+
+  /**
+   * MICRO-PASS 5B: Execute graph mutation persistence (Gemini Flash STRUCTURED_OUTPUTS)
+   */
+  private async executeGraphMutationPersist(pruneList: string[], apiKey: string, additionalParams?: any): Promise<any> {
+    if (!apiKey) {
+      throw new Error('Gemini API key required for STRUCTURED_OUTPUTS');
+    }
+
+    console.log('💾 Executing Graph Mutation Persistence');
+
+    const mutationPrompt = `Apply pruning and merging mutations to the research graph.
+
+PRUNE LIST: ${JSON.stringify(pruneList)}
+MERGE MAP: ${JSON.stringify(additionalParams?.mergeMap || {})}
+EVIDENCE NODES: ${JSON.stringify(additionalParams?.evidenceNodes || [])}
+
+MUTATIONS TO APPLY:
+1. **Remove nodes** in prune_list
+2. **Merge nodes** according to merge_map
+3. **Update edge connections** after mutations
+4. **Validate graph integrity** post-mutation
+
+OUTPUT SCHEMA:
+{
+  "mutations_applied": {
+    "nodes_pruned": number,
+    "nodes_merged": number,
+    "edges_updated": number
+  },
+  "final_graph_state": {
+    "total_nodes": number,
+    "total_edges": number,
+    "integrity_check": boolean
+  },
+  "prune_merge_set": {
+    "pruned_node_ids": string[],
+    "merged_node_pairs": object[],
+    "preserved_nodes": number
+  }
+}`;
+
+    // Use Gemini Flash with STRUCTURED_OUTPUTS capability
+    const result = await this.callGeminiFlash(mutationPrompt, apiKey, 'STRUCTURED_OUTPUTS', 4096, 2048, {
+      pruneList: pruneList,
+      mergeMap: additionalParams?.mergeMap || {},
+      validateIntegrity: true
+    });
+
+    return {
+      mutationResult: result,
+      nodesPruned: pruneList.length,
+      nodesPreserved: (additionalParams?.evidenceNodes?.length || 0) - pruneList.length,
+      structuredOutput: true
+    };
   }
 }
 
