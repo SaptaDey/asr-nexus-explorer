@@ -108,11 +108,7 @@ export const useStageExecution = ({
       
       toast.success(`Stage ${stageIndex + 1} completed successfully`);
       
-      // Update stage progress after successful execution
-      if (stageIndex === currentStage) {
-        // Advance stage immediately after completion
-        advanceStage();
-      }
+      // Stage completed successfully - advancement is now manual via UI
     } catch (error) {
       toast.error(`Error in stage ${stageIndex + 1}: ${error}`);
     } finally {

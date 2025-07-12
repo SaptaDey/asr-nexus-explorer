@@ -204,7 +204,6 @@ export const useCostAwareStageExecution = ({
       }
 
       updateStageResults(stageIndex, result);
-      advanceStage();
       
       // Show cost information after successful execution
       const costDashboard = costAwareOrchestration.getCostDashboard();

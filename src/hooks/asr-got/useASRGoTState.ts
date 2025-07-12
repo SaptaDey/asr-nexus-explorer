@@ -176,7 +176,9 @@ export const useASRGoTState = () => {
     });
   }, []);
 
-  const stageProgress = (currentStage / 9) * 100;
+  // Calculate progress based on completed stages (stages with results)
+  const completedStages = stageResults.filter(result => result && result.trim().length > 0).length;
+  const stageProgress = (completedStages / 9) * 100;
 
   return {
     // State
