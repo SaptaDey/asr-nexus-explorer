@@ -177,189 +177,225 @@ export const generateHypotheses = async (
   customHypotheses: string[] | undefined,
   context: StageExecutorContext
 ): Promise<string> => {
-  // Stage 3: Use structured outputs for hypothesis generation
-  const comprehensiveHypothesisAnalysis = await callGeminiAPI(
-    `You are a PhD-level researcher. Generate and analyze testable scientific hypotheses for: "${context.researchContext.topic}"
+  // Get all dimension nodes from Stage 2 to process individually
+  const dimensionNodes = context.graphData.nodes.filter(node => node.type === 'dimension');
+  
+  if (dimensionNodes.length === 0) {
+    throw new Error('No dimension nodes found from Stage 2. Cannot generate hypotheses.');
+  }
 
-Please provide:
-1. **Hypothesis Generation**: Create 3-5 specific, testable scientific hypotheses based on established scientific principles
-2. **Falsification Criteria**: Define clear criteria for how each hypothesis could be falsified
-3. **Methodological Approaches**: Suggest research methods to test each hypothesis
-4. **Statistical Considerations**: Identify appropriate statistical tests and sample size considerations
-5. **Literature Support**: Reference established scientific principles and theoretical frameworks that support each hypothesis
-6. **Impact Assessment**: Evaluate the potential scientific impact of each hypothesis
+  const allHypothesisNodes: GraphNode[] = [];
+  const allHypothesisEdges: GraphEdge[] = [];
+  const dimensionResults: string[] = [];
 
-Generate hypotheses grounded in current scientific understanding and established research methodologies.`,
-    context.apiKeys.gemini,
-    'thinking-structured', // RULE 5: Stage 3 uses STRUCTURED_OUTPUTS when search not available
-    undefined,
-    { 
-      stageId: '3B', 
-      graphHash: JSON.stringify(context.graphData).slice(0, 100) 
-    }
-  );
+  // Process each dimension branch individually (PROPER GRAPH OF THOUGHTS)
+  for (let i = 0; i < dimensionNodes.length; i++) {
+    const dimension = dimensionNodes[i];
+    
+    // Generate hypotheses specifically for this dimension
+    const dimensionHypothesisAnalysis = await (context.routeApiCall || callGeminiAPI)(
+      `You are a PhD-level researcher conducting Stage 3: Hypothesis Generation.
 
-  // Extract hypotheses from AI response
-  const generatedHypotheses = comprehensiveHypothesisAnalysis.split('\n').filter(line => 
-    line.includes('Hypothesis') || line.includes('H1:') || line.includes('H2:') || line.includes('H3:') || line.includes('**H')
-  ).slice(0, 5);
+RESEARCH TOPIC: "${context.researchContext.topic}"
 
-  const hypothesisNodes: GraphNode[] = generatedHypotheses.map((hyp, index) => ({
-    id: `3.${index + 1}`,
-    label: `Hypothesis ${index + 1}`,
-    type: 'hypothesis' as const,
-    confidence: [0.6, 0.6, 0.6, 0.6],
-    metadata: {
-      parameter_id: 'P1.3',
-      type: 'Hypothesis',
-      source_description: 'AI-generated hypothesis with analysis',
-      value: hyp,
-      timestamp: new Date().toISOString(),
-      notes: comprehensiveHypothesisAnalysis,
-      falsification_criteria: `Testable via experimental validation - ${hyp}`,
-      impact_score: 0.7 + (index * 0.05)
-    },
-    position: { x: 100 + index * 200, y: 500 }
-  }));
+SPECIFIC DIMENSION TO ANALYZE: "${dimension.label}"
+DIMENSION DETAILS: ${dimension.metadata?.value || dimension.label}
 
-  // Connect hypotheses to relevant dimension nodes
-  const hypothesisEdges: GraphEdge[] = [];
-  hypothesisNodes.forEach(hypNode => {
-    // Connect to first few dimension nodes
-    context.graphData.nodes.filter(node => node.type === 'dimension').slice(0, 3).forEach(dimNode => {
-      hypothesisEdges.push({
-        id: `edge-${dimNode.id}-${hypNode.id}`,
-        source: dimNode.id,
-        target: hypNode.id,
-        type: 'supportive',
-        confidence: 0.7,
-        metadata: {
-          type: 'hypothesis_derivation'
-        }
-      });
-    });
-  });
+Generate 2-3 SPECIFIC, TESTABLE hypotheses that directly address this dimension:
+
+1. **Dimension-Specific Hypotheses**: Create hypotheses that specifically test aspects related to "${dimension.label}"
+2. **Falsification Criteria**: Define clear, measurable criteria for each hypothesis
+3. **Research Methods**: Suggest specific methods to test each hypothesis
+4. **Expected Outcomes**: Predict measurable outcomes that would support/refute each hypothesis
+
+Focus ONLY on hypotheses relevant to the "${dimension.label}" dimension. Each hypothesis must be:
+- Testable with specific methodologies
+- Directly related to the dimension being analyzed
+- Measurable with clear success/failure criteria`,
+      context.apiKeys.gemini,
+      'thinking-structured',
+      undefined,
+      { 
+        stageId: `3.${i + 1}`, 
+        dimension: dimension.label,
+        graphHash: JSON.stringify(context.graphData).slice(0, 100) 
+      }
+    );
+
+    // Extract hypotheses specific to this dimension
+    const dimensionHypotheses = dimensionHypothesisAnalysis.split('\n').filter(line => 
+      line.includes('Hypothesis') || line.includes('H1:') || line.includes('H2:') || line.includes('H3:') || line.includes('**H')
+    ).slice(0, 3); // 2-3 hypotheses per dimension
+
+    // Create hypothesis nodes for this dimension
+    const dimensionHypothesisNodes: GraphNode[] = dimensionHypotheses.map((hyp, hypIndex) => ({
+      id: `3.${i + 1}.${hypIndex + 1}`,
+      label: `${dimension.label} Hypothesis ${hypIndex + 1}`,
+      type: 'hypothesis' as const,
+      confidence: [0.7, 0.7, 0.7, 0.7],
+      metadata: {
+        parameter_id: 'P1.3',
+        type: 'Hypothesis',
+        source_description: `Hypothesis specific to ${dimension.label} dimension`,
+        value: hyp,
+        parent_dimension: dimension.id,
+        timestamp: new Date().toISOString(),
+        notes: dimensionHypothesisAnalysis,
+        falsification_criteria: `Testable via experimental validation - ${hyp}`,
+        impact_score: 0.7 + (hypIndex * 0.05)
+      },
+      position: { x: dimension.position.x + (hypIndex * 120), y: dimension.position.y + 200 }
+    }));
+
+    // Create edges from this dimension to its specific hypotheses
+    const dimensionHypothesisEdges: GraphEdge[] = dimensionHypothesisNodes.map(hypNode => ({
+      id: `edge-${dimension.id}-${hypNode.id}`,
+      source: dimension.id,
+      target: hypNode.id,
+      type: 'supportive',
+      confidence: 0.8,
+      metadata: {
+        type: 'dimension_hypothesis_derivation',
+        parent_dimension: dimension.label
+      }
+    }));
+
+    allHypothesisNodes.push(...dimensionHypothesisNodes);
+    allHypothesisEdges.push(...dimensionHypothesisEdges);
+    dimensionResults.push(`**${dimension.label} Analysis:**\n${dimensionHypothesisAnalysis}\n`);
+  }
 
   if (context.setGraphData) {
     context.setGraphData(prev => ({
     ...prev,
-    nodes: [...prev.nodes, ...hypothesisNodes],
-    edges: [...prev.edges, ...hypothesisEdges],
+    nodes: [...prev.nodes, ...allHypothesisNodes],
+    edges: [...prev.edges, ...allHypothesisEdges],
     metadata: {
       ...prev.metadata,
       last_updated: new Date().toISOString(),
-      total_nodes: prev.nodes.length + hypothesisNodes.length,
-      total_edges: prev.edges.length + hypothesisEdges.length,
+      total_nodes: prev.nodes.length + allHypothesisNodes.length,
+      total_edges: prev.edges.length + allHypothesisEdges.length,
       stage: 3
     }
     }));
   }
 
+  // Extract all hypotheses for research context
+  const allHypothesesText = allHypothesisNodes.map(node => node.metadata?.value || node.label);
+
   if (context.setResearchContext) {
     context.setResearchContext(prev => ({
     ...prev,
-    hypotheses: generatedHypotheses
+    hypotheses: allHypothesesText
   }));
   }
 
-  return `**Stage 3 Complete: Hypothesis Generation**\n\n${comprehensiveHypothesisAnalysis}`;
+  return `**Stage 3 Complete: Hypothesis Generation**\n\n**Branch-by-Branch Analysis:**\n${dimensionResults.join('\n')}`;
 };
 
 export const integrateEvidence = async (
   query: string | undefined,
   context: StageExecutorContext
 ): Promise<string> => {
-  // Extract hypotheses from previous stage results
-  const previousHypotheses = context.researchContext.hypotheses || [];
-  const hypothesesText = previousHypotheses.length > 0 
-    ? previousHypotheses.join('\n') 
-    : 'No specific hypotheses generated in previous stage';
-  
-  // Get stage 3 results for context
-  const stage3Results = context.stageResults.length >= 3 ? context.stageResults[2] : '';
-  
-  // Stage 4: Use thinking mode for evidence integration BASED ON STAGE 3 HYPOTHESES
-  const comprehensiveEvidenceAnalysis = await callGeminiAPI(
-    `You are a PhD-level researcher conducting Stage 4: Evidence Integration for the research topic: "${context.researchContext.topic}"
-
-BUILD UPON STAGE 3 RESULTS:
-=== GENERATED HYPOTHESES FROM STAGE 3 ===
-${hypothesesText}
-
-=== STAGE 3 ANALYSIS ===
-${stage3Results}
-
-Now conduct comprehensive evidence integration SPECIFICALLY FOR THESE HYPOTHESES:
-
-1. **Evidence Collection**: For EACH hypothesis listed above, find and analyze relevant evidence
-2. **Hypothesis-Evidence Mapping**: Map specific evidence to each hypothesis generated in Stage 3
-3. **Quality Assessment**: Evaluate the strength of evidence for each specific hypothesis
-4. **Statistical Support**: Assess statistical evidence supporting/refuting each hypothesis
-5. **Methodological Evaluation**: Analyze research methods relevant to testing these specific hypotheses
-6. **Evidence Synthesis**: Synthesize evidence quality for each hypothesis individually
-7. **Gaps Identification**: Identify missing evidence for each specific hypothesis
-
-Focus ONLY on evidence relevant to the hypotheses generated in Stage 3. Do NOT create new hypotheses or analyze unrelated topics.`,
-    context.apiKeys.gemini,
-    'thinking-only', // RULE 5: Stage 4 uses THINKING only when search not available
-    undefined,
-    { 
-      stageId: '4.1', 
-      graphHash: JSON.stringify(context.graphData).slice(0, 100),
-      previousStageResults: stage3Results.substring(0, 500)
-    }
-  );
-
-  // Create evidence nodes
-  const evidenceNodes: GraphNode[] = [{
-    id: `4.1`,
-    label: 'Evidence Collection',
-    type: 'evidence' as const,
-    confidence: [0.8, 0.7, 0.8, 0.7],
-    metadata: {
-      parameter_id: 'P1.4',
-      type: 'Evidence',
-      source_description: 'AI-collected and analyzed evidence with web search',
-      value: comprehensiveEvidenceAnalysis,
-      timestamp: new Date().toISOString(),
-      notes: comprehensiveEvidenceAnalysis,
-      statistical_power: 0.85
-    },
-    position: { x: 600, y: 400 }
-  }];
-
-  // Connect evidence to hypotheses
-  const evidenceEdges: GraphEdge[] = [];
+  // Get all hypothesis nodes from Stage 3 to process individually
   const hypothesisNodes = context.graphData.nodes.filter(node => node.type === 'hypothesis');
-  hypothesisNodes.forEach(hypNode => {
-    evidenceEdges.push({
-      id: `edge-4.1-${hypNode.id}`,
-      source: '4.1',
-      target: hypNode.id,
-      type: 'supportive',
-      confidence: 0.7,
-      metadata: {
-        type: 'evidence_support'
+  
+  if (hypothesisNodes.length === 0) {
+    throw new Error('No hypothesis nodes found from Stage 3. Cannot integrate evidence.');
+  }
+
+  const allEvidenceNodes: GraphNode[] = [];
+  const allEvidenceEdges: GraphEdge[] = [];
+  const hypothesisResults: string[] = [];
+
+  // Process each hypothesis branch individually (PROPER GRAPH OF THOUGHTS)
+  for (let i = 0; i < hypothesisNodes.length; i++) {
+    const hypothesis = hypothesisNodes[i];
+    
+    // Collect evidence specifically for this hypothesis
+    const hypothesisEvidenceAnalysis = await (context.routeApiCall || callGeminiAPI)(
+      `You are a PhD-level researcher conducting Stage 4: Evidence Integration.
+
+RESEARCH TOPIC: "${context.researchContext.topic}"
+
+SPECIFIC HYPOTHESIS TO ANALYZE: "${hypothesis.label}"
+HYPOTHESIS DETAILS: ${hypothesis.metadata?.value || hypothesis.label}
+PARENT DIMENSION: ${hypothesis.metadata?.parent_dimension || 'Unknown'}
+
+Collect and analyze evidence SPECIFICALLY for this individual hypothesis:
+
+1. **Targeted Evidence Search**: Find scientific evidence directly relevant to testing this specific hypothesis
+2. **Study Identification**: Identify specific studies, papers, or data that could support/refute this hypothesis
+3. **Quality Assessment**: Evaluate the methodological quality of evidence for this hypothesis
+4. **Statistical Analysis**: Assess statistical power and significance of evidence related to this hypothesis
+5. **Confidence Scoring**: Rate evidence strength from 0.0-1.0 for this specific hypothesis
+6. **Research Gaps**: Identify missing evidence needed to properly test this hypothesis
+
+Focus ONLY on evidence for this specific hypothesis: "${hypothesis.label}"
+Do NOT analyze other hypotheses or general research topics.`,
+      context.apiKeys.gemini,
+      'thinking-only',
+      undefined,
+      { 
+        stageId: `4.${i + 1}`, 
+        hypothesis: hypothesis.label,
+        graphHash: JSON.stringify(context.graphData).slice(0, 100) 
       }
-    });
-  });
+    );
+
+    // Create evidence node specifically for this hypothesis
+    const hypothesisEvidenceNode: GraphNode = {
+      id: `4.${i + 1}`,
+      label: `Evidence: ${hypothesis.label}`,
+      type: 'evidence' as const,
+      confidence: [0.8, 0.7, 0.8, 0.7],
+      metadata: {
+        parameter_id: 'P1.4',
+        type: 'Evidence',
+        source_description: `Evidence specific to hypothesis: ${hypothesis.label}`,
+        value: hypothesisEvidenceAnalysis,
+        parent_hypothesis: hypothesis.id,
+        timestamp: new Date().toISOString(),
+        notes: hypothesisEvidenceAnalysis,
+        statistical_power: 0.75 + (i * 0.05)
+      },
+      position: { x: hypothesis.position.x, y: hypothesis.position.y + 200 }
+    };
+
+    // Create edge from hypothesis to its specific evidence
+    const hypothesisEvidenceEdge: GraphEdge = {
+      id: `edge-${hypothesis.id}-${hypothesisEvidenceNode.id}`,
+      source: hypothesis.id,
+      target: hypothesisEvidenceNode.id,
+      type: 'supportive',
+      confidence: 0.8,
+      metadata: {
+        type: 'hypothesis_evidence_link',
+        parent_hypothesis: hypothesis.label
+      }
+    };
+
+    allEvidenceNodes.push(hypothesisEvidenceNode);
+    allEvidenceEdges.push(hypothesisEvidenceEdge);
+    hypothesisResults.push(`**${hypothesis.label} Evidence:**\n${hypothesisEvidenceAnalysis}\n`);
+  }
 
   if (context.setGraphData) {
     context.setGraphData(prev => ({
     ...prev,
-    nodes: [...prev.nodes, ...evidenceNodes],
-    edges: [...prev.edges, ...evidenceEdges],
+    nodes: [...prev.nodes, ...allEvidenceNodes],
+    edges: [...prev.edges, ...allEvidenceEdges],
     metadata: {
       ...prev.metadata,
       last_updated: new Date().toISOString(),
-      total_nodes: prev.nodes.length + evidenceNodes.length,
-      total_edges: prev.edges.length + evidenceEdges.length,
+      total_nodes: prev.nodes.length + allEvidenceNodes.length,
+      total_edges: prev.edges.length + allEvidenceEdges.length,
       stage: 4
     }
     }));
   }
 
-  return `**Stage 4 Complete: Evidence Integration**\n\n${comprehensiveEvidenceAnalysis}`;
+  return `**Stage 4 Complete: Evidence Integration**\n\n**Branch-by-Branch Evidence Analysis:**\n${hypothesisResults.join('\n')}`;
 };
 
 export const pruneMergeNodes = async (context: StageExecutorContext): Promise<string> => {
