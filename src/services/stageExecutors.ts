@@ -51,10 +51,10 @@ export const initializeGraph = async (
 Research Question: "${taskDescription}"
 
 Provide detailed analysis for "${component}":
-- Be comprehensive but focused on this specific aspect
-- Provide up to 800 tokens of analysis (we have increased token limit)
-- Include specific examples and recent developments where applicable
-- Structure your response clearly with key points
+- Be comprehensive and thorough - we have massive token capacity (32k tokens available)
+- Include extensive examples, recent developments, and detailed insights
+- Structure your response with clear sections and comprehensive coverage
+- Provide deep analysis with citations, methodologies, and expert perspectives
 
 Component Analysis Required: ${component}`;
 
@@ -68,7 +68,7 @@ Component Analysis Required: ${component}`;
         ? context.routeApiCall(componentPrompt, { 
             stageId: `1_component_${i}`, 
             component: component,
-            maxTokens: 2000 // Increased from 500 to 2000 to avoid MAX_TOKENS truncation
+            maxTokens: 32000 // Massive token increase - use full capacity for comprehensive analysis
           })
         : callGeminiAPI(
             componentPrompt,
@@ -78,7 +78,7 @@ Component Analysis Required: ${component}`;
             { 
               stageId: `1_component_${i}`,
               component: component,
-              maxTokens: 2000 // Increased token limit
+              maxTokens: 32000 // Massive token limit for comprehensive analysis
             }
           );
       
@@ -161,6 +161,14 @@ export const decomposeTask = async (
   dimensions: string[] | undefined,
   context: StageExecutorContext
 ): Promise<string> => {
+  // **INPUT VALIDATION**: Ensure we have a valid research topic
+  const researchTopic = context.researchContext?.topic || 'Unknown Research Topic';
+  if (!researchTopic || researchTopic.trim() === '' || researchTopic === 'Unknown Research Topic') {
+    console.warn('⚠️ Stage 2: No valid research topic found, using fallback');
+  }
+  
+  console.log(`🔬 Stage 2 starting with topic: "${researchTopic}"`);
+  
   const defaultDimensions = ['Scope', 'Objectives', 'Constraints', 'Data Needs', 'Use Cases', 'Potential Biases', 'Knowledge Gaps'];
   const useDimensions = dimensions || defaultDimensions;
 
@@ -168,15 +176,17 @@ export const decomposeTask = async (
   const dimensionBatchPrompts = useDimensions.map((dimension, i) => 
     `You are a PhD-level researcher conducting Stage 2: Task Decomposition.
 
-RESEARCH TOPIC: "${context.researchContext.topic}"
+RESEARCH TOPIC: "${researchTopic}"
 
 SPECIFIC DIMENSION TO ANALYZE: "${dimension}"
 
-Analyze this dimension in detail for the research topic:
+Analyze this dimension in detail for the research topic (32k tokens available for comprehensive analysis):
 
-1. **Dimension-Specific Analysis**: Provide detailed insights specifically for "${dimension}" in the context of "${context.researchContext.topic}"
+1. **Dimension-Specific Analysis**: Provide detailed insights specifically for "${dimension}" in the context of "${researchTopic}"
 2. **Research Implications**: How does this dimension impact the research approach?
 3. **Key Considerations**: What are the critical factors within this dimension?
+4. **Detailed Breakdown**: Provide extensive analysis with examples, methodologies, and expert perspectives
+5. **Research Framework**: How should this dimension be integrated into the overall research framework?
 4. **Methodological Requirements**: What methods are needed to address this dimension?
 5. **Potential Challenges**: What difficulties might arise in this dimension?
 6. **Success Criteria**: How will success in this dimension be measured?

@@ -95,7 +95,7 @@ export const callGeminiAPI = async (
       ],
       generationConfig: {
         temperature: options.temperature || 0.4,
-        maxOutputTokens: options.maxTokens || 65536
+        maxOutputTokens: options.maxTokens || 65536 // Keep this at 65536 as it's the actual API limit
       },
       systemInstruction: {
         parts: [

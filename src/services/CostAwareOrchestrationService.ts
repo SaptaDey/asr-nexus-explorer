@@ -51,7 +51,7 @@ export class CostAwareOrchestrationService {
         batchSize: 50,
         purpose: 'Emit root n₀ and parameter inventory.',
         outputType: 'RootNode JSON',
-        maxTokens: 5000,
+        maxTokens: 32000,
         thinkingBudget: 2048
       },
       costEstimate: {
@@ -69,7 +69,7 @@ export class CostAwareOrchestrationService {
         batchSize: 50,
         purpose: 'Create dimension nodes + bias flags.',
         outputType: 'DimensionArray',
-        maxTokens: 10000,
+        maxTokens: 48000,
         thinkingBudget: 2048
       },
       costEstimate: {
@@ -87,7 +87,7 @@ export class CostAwareOrchestrationService {
         batchSize: 25,
         purpose: 'Draft 3-5 hypotheses per dimension w/ metadata.',
         outputType: 'HypothesisBatch',
-        maxTokens: 10000,
+        maxTokens: 48000,
         thinkingBudget: 2048
       },
       costEstimate: {
@@ -105,7 +105,7 @@ export class CostAwareOrchestrationService {
         batchSize: 10,
         purpose: 'Rapid facts & review snippets.',
         outputType: 'SearchResultSet',
-        maxTokens: 8000,
+        maxTokens: 40000,
         thinkingBudget: 4096
       },
       costEstimate: {
@@ -123,7 +123,7 @@ export class CostAwareOrchestrationService {
         batchSize: 1,
         purpose: 'Select next back-end fn (run_lit_review, queue_lab_protocol).',
         outputType: 'CallSpec',
-        maxTokens: 4000,
+        maxTokens: 32000,
         thinkingBudget: 4096
       },
       costEstimate: {
@@ -177,7 +177,7 @@ export class CostAwareOrchestrationService {
         batchSize: 10,
         purpose: 'Compute effect sizes, CI, power (P1.26), produce figs.',
         outputType: 'StatsBundle + PNGs',
-        maxTokens: 15000,
+        maxTokens: 50000,
         thinkingBudget: 16384
       },
       costEstimate: {
@@ -195,7 +195,7 @@ export class CostAwareOrchestrationService {
         batchSize: 200,
         purpose: 'Attach Evidence nodes & typed edges (causal, temporal).',
         outputType: 'EvidenceBatch',
-        maxTokens: 20000,
+        maxTokens: 55000,
         thinkingBudget: 8192
       },
       costEstimate: {
@@ -213,7 +213,7 @@ export class CostAwareOrchestrationService {
         batchSize: 1,
         purpose: 'Bayesian filter: mark prune_list & merge_map.',
         outputType: 'internal list',
-        maxTokens: 5000,
+        maxTokens: 32000,
         thinkingBudget: 2048
       },
       costEstimate: {
@@ -231,7 +231,7 @@ export class CostAwareOrchestrationService {
         batchSize: 1,
         purpose: 'Apply prune_list / merge_map.',
         outputType: 'PruneMergeSet',
-        maxTokens: 8000,
+        maxTokens: 40000,
         thinkingBudget: 2048
       },
       costEstimate: {
@@ -249,7 +249,7 @@ export class CostAwareOrchestrationService {
         batchSize: 1,
         purpose: 'Run NetworkX / GraphML centrality + MI scores.',
         outputType: 'MetricsJSON',
-        maxTokens: 10000,
+        maxTokens: 48000,
         thinkingBudget: 16384
       },
       costEstimate: {
@@ -267,7 +267,7 @@ export class CostAwareOrchestrationService {
         batchSize: 10,
         purpose: 'Send ranked SubgraphSet.',
         outputType: 'SubgraphSet',
-        maxTokens: 8000,
+        maxTokens: 40000,
         thinkingBudget: 2048
       },
       costEstimate: {
@@ -285,7 +285,7 @@ export class CostAwareOrchestrationService {
         batchSize: 1, // Process one chunk at a time
         purpose: 'Write HTML blocks with embedded figs & Vancouver refs in 5k token chunks.',
         outputType: 'ReportChunk[]',
-        maxTokens: 20000, // 5k token chunks with room for response
+        maxTokens: 55000, // 5k token chunks with room for response
         thinkingBudget: 2048
       },
       costEstimate: {
@@ -303,7 +303,7 @@ export class CostAwareOrchestrationService {
         batchSize: 1,
         purpose: 'Auto-check coverage, bias, power; produce scorecard.',
         outputType: 'AuditBundle',
-        maxTokens: 10000,
+        maxTokens: 48000,
         thinkingBudget: 8192
       },
       costEstimate: {
@@ -321,7 +321,7 @@ export class CostAwareOrchestrationService {
         batchSize: 1,
         purpose: 'Persist AuditReport + next-step recs.',
         outputType: 'AuditReport',
-        maxTokens: 8000,
+        maxTokens: 40000,
         thinkingBudget: 4096
       },
       costEstimate: {
@@ -603,8 +603,8 @@ export class CostAwareOrchestrationService {
   ): Promise<any> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
-    // Enforce 65536 token limit as per document
-    const enforcedMaxTokens = Math.min(maxTokens, 65536);
+    // Use full token capacity - remove 65536 limit restriction
+    const enforcedMaxTokens = maxTokens;
     
     // THINKING + exactly ONE capability flag per request (as per document rule)
     const tools = ['THINKING'];
@@ -715,8 +715,8 @@ export class CostAwareOrchestrationService {
   ): Promise<any> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`;
     
-    // Enforce 65536 token limit as per document
-    const enforcedMaxTokens = Math.min(maxTokens, 65536);
+    // Use full token capacity - remove 65536 limit restriction
+    const enforcedMaxTokens = maxTokens;
     
     // THINKING + exactly ONE capability flag per request (as per document rule)
     const tools = ['THINKING'];
@@ -857,8 +857,8 @@ plt.savefig('figure_name.png', dpi=300, bbox_inches='tight')`;
     const modelName = model === 'gemini-2.5-flash' ? 'gemini-2.5-flash' : 'gemini-2.5-pro';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
     
-    // Enforce 65536 token limit as per document
-    const enforcedMaxTokens = Math.min(maxTokens, 65536);
+    // Use full token capacity - remove 65536 limit restriction
+    const enforcedMaxTokens = maxTokens;
     
     // THINKING + exactly ONE capability flag per request (as per document rule)
     const tools = ['THINKING'];

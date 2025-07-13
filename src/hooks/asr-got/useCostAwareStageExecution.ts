@@ -106,7 +106,7 @@ export const useCostAwareStageExecution = ({
             'thinking-only', // Use thinking-only instead of thinking-structured to avoid schema issues
             undefined, // No schema to avoid the 400 error
             { 
-              maxTokens: additionalParams?.maxTokens || 2000, // Increased from 500 to 2000 to avoid MAX_TOKENS truncation
+              maxTokens: additionalParams?.maxTokens || 32000, // Massive increase - use 32k tokens for Stage 1 components
               stageId: additionalParams?.stageId || 'stage1_bypass',
               temperature: 0.1
             }
@@ -150,7 +150,7 @@ export const useCostAwareStageExecution = ({
             'thinking-only', // Use thinking-only to avoid schema issues
             undefined, // No schema to avoid errors
             { 
-              maxTokens: additionalParams?.maxTokens || 8000, // Increased token limit for fallback
+              maxTokens: additionalParams?.maxTokens || 32000, // Massive token limit for fallback - use full capacity
               stageId: additionalParams?.stageId || 'fallback',
               temperature: 0.1
             }
