@@ -177,11 +177,13 @@ export const useCostAwareStageExecution = ({
     try {
       console.log(`🚀 Starting stage execution: ${stageIndex + 1}`, { stageIndex, input });
       
-      // For Stage 1 (Initialization), set the research topic from input
+      // For Stage 1 (Initialization), ensure we have the input topic
+      let contextForStage = researchContext;
       if (stageIndex === 0 && input && typeof input === 'string') {
-        console.log(`📝 Setting research topic for Stage 1: ${input}`);
-        setResearchContext(prev => ({
-          ...prev,
+        console.log(`📝 Using research topic for Stage 1: ${input}`);
+        // Create temporary context with the topic for Stage 1
+        contextForStage = {
+          ...researchContext,
           topic: input,
           field: '',
           objectives: [],
@@ -190,11 +192,100 @@ export const useCostAwareStageExecution = ({
           biases_detected: [],
           knowledge_gaps: [],
           auto_generated: false
-        }));
+        };
       }
       
-      console.log(`🔧 Creating stage context for stage ${stageIndex + 1}`);
-      const context = createStageContext();
+      console.log(`🔧 Creating stage context for stage ${stageIndex + 1}`, { 
+        topic: contextForStage.topic,
+        hasValidTopic: !!contextForStage.topic && contextForStage.topic.trim() !== '' 
+      });
+      
+      // Create context with the appropriate research context
+      const context: StageExecutorContext = {
+        apiKeys,
+        graphData,
+        researchContext: contextForStage, // Use the appropriate context
+        stageResults,
+        setGraphData,
+        setResearchContext,
+        routeApiCall: async (prompt: string, additionalParams?: any) => {
+          const stageName = stageMapping[currentStage as keyof typeof stageMapping];
+          if (!stageName) {
+            throw new Error(`Unknown stage: ${currentStage}`);
+          }
+          
+          // Check if Perplexity key is needed for evidence harvest stages
+          if (stageName.includes('evidence_harvest') && !apiKeys.perplexity) {
+            throw new Error('PERPLEXITY_KEY_REQUIRED');
+          }
+          
+          // **STAGE 1 BYPASS**: Use direct API for Stage 1 to avoid any Cost-Aware Orchestration issues
+          if (currentStage === 0) {
+            console.log(`🎯 Direct API call for Stage 1 (bypassing cost-aware orchestration)`, { 
+              promptLength: prompt.length, 
+              hasGeminiKey: !!apiKeys.gemini,
+              additionalParams 
+            });
+            
+            const { callGeminiAPI } = await import('@/services/apiService');
+            const result = await callGeminiAPI(
+              prompt, 
+              apiKeys.gemini, 
+              'thinking-only', // Use thinking-only instead of thinking-structured to avoid schema issues
+              undefined, // No schema to avoid the 400 error
+              { 
+                maxTokens: additionalParams?.maxTokens || 32000, // Massive increase - use 32k tokens for Stage 1 components
+                stageId: additionalParams?.stageId || 'stage1_bypass',
+                temperature: 0.1
+              }
+            );
+            
+            console.log(`✅ Direct API call successful for Stage 1`, { 
+              resultLength: typeof result === 'string' ? result.length : 'non-string' 
+            });
+            
+            return result;
+          }
+          
+          try {
+            console.log(`🎯 Routing API call for stage: ${stageName}`, { 
+              promptLength: prompt.length, 
+              hasGeminiKey: !!apiKeys.gemini,
+              additionalParams 
+            });
+            
+            const result = await costAwareOrchestration.routeApiCall(
+              stageName,
+              prompt,
+              apiKeys,
+              additionalParams
+            );
+            
+            console.log(`✅ API call successful for stage: ${stageName}`, { 
+              resultLength: typeof result === 'string' ? result.length : 'non-string' 
+            });
+            
+            return result;
+          } catch (error: any) {
+            console.error(`❌ Cost-aware routing failed for stage ${stageName}:`, error);
+            console.log(`🔄 Falling back to direct Gemini API for stage: ${stageName}`);
+            
+            // Fallback to direct API call if routing fails
+            const { callGeminiAPI } = await import('@/services/apiService');
+            return await callGeminiAPI(
+              prompt, 
+              apiKeys.gemini, 
+              'thinking-only', // Use thinking-only to avoid schema issues
+              undefined, // No schema to avoid errors
+              { 
+                maxTokens: additionalParams?.maxTokens || 32000, // Massive token limit for fallback - use full capacity
+                stageId: additionalParams?.stageId || 'fallback',
+                temperature: 0.1
+              }
+            );
+          }
+        }
+      };
       let result = '';
       
       // Get estimated cost for this stage
@@ -210,17 +301,31 @@ export const useCostAwareStageExecution = ({
       switch (stageIndex) {
         case 0: // Initialization
           console.log(`🔬 Starting Stage 1 Initialization`);
-          // Use the input topic if provided, otherwise fall back to existing research context
-          const topicToUse = (stageIndex === 0 && input && typeof input === 'string') 
-            ? input 
-            : researchContext.topic;
+          // Use the topic from the context (which already has the right value)
+          const topicToUse = contextForStage.topic;
           console.log(`📋 Research topic: ${topicToUse}`);
+          if (!topicToUse || topicToUse.trim() === '') {
+            throw new Error('Stage 1 requires a valid research topic');
+          }
           result = await initializeGraph(topicToUse, context);
           console.log(`📊 Initialization result length: ${result.length}`);
           setGraphData(prev => ({ ...prev, stage: 'initialization' }));
           break;
           
         case 1: // Decomposition
+          // **CRITICAL DEBUG**: Log the context state for Stage 2
+          console.log(`🔍 Stage 2 Debug - Research Context:`, {
+            topic: context.researchContext.topic,
+            hasValidTopic: !!context.researchContext.topic && context.researchContext.topic.trim() !== '',
+            field: context.researchContext.field,
+            objectives: context.researchContext.objectives?.length || 0
+          });
+          
+          // Additional validation before calling Stage 2
+          if (!context.researchContext.topic || context.researchContext.topic.trim() === '') {
+            throw new Error(`Stage 2 failed: Invalid research topic. Current topic: "${context.researchContext.topic}". Please ensure Stage 1 completed successfully and set a valid research topic.`);
+          }
+          
           result = await decomposeTask(undefined, context);
           setGraphData(prev => ({ ...prev, stage: 'decomposition' }));
           break;
