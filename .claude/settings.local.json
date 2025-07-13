@@ -29,7 +29,9 @@
       "Bash(git stash:*)",
       "Bash(curl:*)",
       "Bash(mv:*)",
-      "Bash(npx update-browserslist-db:*)"
+      "Bash(npx update-browserslist-db:*)",
+      "Bash(true)",
+      "Bash(timeout:*)"
     ],
     "deny": []
   }
