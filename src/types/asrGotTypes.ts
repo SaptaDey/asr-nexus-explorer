@@ -234,4 +234,12 @@ export interface SonarSearchRequest {
   maxDocs: number;
   batch: boolean;
   costPerQuery: number;
+  query?: string;
+  maxTokens?: number;
+  searchMode?: 'academic' | 'general' | 'news';
+  dateFilter?: string;
+  domainFilter?: string[];
+  stageId?: string;
+  researchDomain?: string;
+  customSystemPrompt?: string;
 }

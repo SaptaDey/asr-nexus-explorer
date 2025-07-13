@@ -16,18 +16,35 @@ import {
   APICredentials 
 } from '@/types/asrGotTypes';
 import { PerplexityClient } from './PerplexityClient';
+import { ScientificResearchAPI } from './ScientificResearchAPI';
+import { SupabaseResearchStorage } from './SupabaseResearchStorage';
 
 export class CostAwareOrchestrationService {
   private costHistory: CostDashboardEntry[] = [];
   private currentSessionCost = 0;
   private cacheStorage = new Map<string, any>();
   private cacheCleanupInterval: NodeJS.Timeout;
+  private scientificAPI: ScientificResearchAPI | null = null;
+  private researchStorage: SupabaseResearchStorage | null = null;
 
   constructor() {
     // Set up periodic cache cleanup every 15 minutes to prevent memory leaks
     this.cacheCleanupInterval = setInterval(() => {
       this.cleanupExpiredCache();
     }, 15 * 60 * 1000); // 15 minutes
+  }
+
+  /**
+   * Initialize enhanced scientific research capabilities
+   */
+  initializeScientificResearch(apiKeys: APICredentials, supabaseUrl?: string, supabaseKey?: string): void {
+    if (apiKeys.perplexity) {
+      this.scientificAPI = new ScientificResearchAPI(apiKeys.perplexity);
+    }
+
+    if (supabaseUrl && supabaseKey) {
+      this.researchStorage = new SupabaseResearchStorage(supabaseUrl, supabaseKey);
+    }
   }
 
   /**
@@ -2049,6 +2066,133 @@ Generate validation report with specific recommendations for improvement.`;
       publicationReady: true,
       recommendationsProvided: true
     };
+  }
+
+  /**
+   * Execute enhanced Sonar Deep Research with comprehensive evidence collection
+   */
+  async executeEnhancedSonarResearch(
+    query: string,
+    researchDomain: string,
+    stageId: string,
+    options: {
+      maxTokens?: number;
+      dateFilter?: string;
+      customDomains?: string[];
+    } = {}
+  ): Promise<any> {
+    if (!this.scientificAPI) {
+      throw new Error('Scientific Research API not initialized. Call initializeScientificResearch() first.');
+    }
+
+    const cacheKey = `enhanced_sonar_${query}_${researchDomain}_${JSON.stringify(options)}`;
+    
+    // Check cache first
+    const cachedResult = this.getCachedResult(cacheKey);
+    if (cachedResult) {
+      console.log('🎯 Cache hit for enhanced Sonar research');
+      return cachedResult;
+    }
+
+    try {
+      console.log(`🔬 Conducting enhanced Sonar Deep Research for domain: ${researchDomain}`);
+      
+      const result = await this.scientificAPI.conductCustomResearch(query, {
+        maxTokens: options.maxTokens || 128000,
+        dateFilter: options.dateFilter,
+        customDomains: options.customDomains || [
+          'pubmed.ncbi.nlm.nih.gov',
+          'scholar.google.com',
+          'arxiv.org',
+          'nature.com',
+          'science.org',
+          'cell.com',
+          'nejm.org',
+          'bmj.com',
+          'plos.org',
+          'springer.com'
+        ],
+        customSystemPrompt: `You are conducting Stage 4.1 Sonar Deep Research for the ASR-GoT framework with focus on: ${researchDomain}
+
+Your task is to conduct EXHAUSTIVE evidence collection with maximum analytical depth:
+
+1. Search through all available peer-reviewed scientific literature
+2. Identify and extract relevant datasets, tables, charts, and supplementary materials  
+3. Focus on finding downloadable raw datasets and supplementary files
+4. Organize findings systematically for data visualization and analysis
+5. Provide detailed citations and source information
+6. Highlight any statistical data, correlation analyses, and quantitative findings
+7. Note any available supplementary data files, raw datasets, or downloadable materials
+
+When analyzing scientific papers, pay special attention to:
+- Methods sections for dataset descriptions
+- Results sections for statistical analyses and charts
+- Supplementary materials and data availability statements
+- Tables with raw data or statistical summaries
+- Figure legends that might reference underlying datasets
+- Data repository links (e.g., GEO, ArrayExpress, Zenodo, Figshare)
+
+For ASR-GoT framework, provide comprehensive analysis with:
+- Evidence quality assessment using GRADE methodology
+- Statistical analysis and effect sizes
+- Clinical translation potential
+- Innovation assessment and competitive landscape
+- Research gap identification and priority recommendations
+
+Format your response to clearly separate:
+- Main findings and datasets
+- Supplementary materials and raw data sources
+- Statistical analyses and correlations found
+- Recommendations for data visualization approaches
+- Evidence synthesis for ASR-GoT Stage 4.2 Gemini analysis
+
+Generate MAXIMUM comprehensive content with exhaustive evidence collection and analysis.`
+      });
+
+      // Store in Supabase
+      if (this.researchStorage) {
+        try {
+          await this.researchStorage.storeASRGoTStageResult(
+            stageId,
+            query,
+            result,
+            {
+              stageNumber: 4,
+              stageName: 'Evidence Integration',
+              microPass: '4.1',
+              researchDomain: researchDomain
+            }
+          );
+          console.log('✅ Research result stored in Supabase');
+        } catch (storageError) {
+          console.warn('⚠️ Failed to store research result in Supabase:', storageError);
+        }
+      }
+
+      // Cache the result for 2 hours (longer for enhanced research)
+      this.setCachedResult(cacheKey, result, 120);
+
+      console.log(`✅ Enhanced Sonar research completed: ${result.choices[0].message.content.length} characters generated`);
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Enhanced Sonar research failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get research storage instance for direct access
+   */
+  getResearchStorage(): SupabaseResearchStorage | null {
+    return this.researchStorage;
+  }
+
+  /**
+   * Get scientific API instance for direct access
+   */
+  getScientificAPI(): ScientificResearchAPI | null {
+    return this.scientificAPI;
   }
 }
 
