@@ -44,8 +44,12 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
     memoryUsage: 0
   });
 
-  // Transform graph data to tree hierarchy
+  // Transform graph data to tree hierarchy with safe defaults
   const { treeData, botanicalElements, animations } = useGraphToTree(graphData, currentStage);
+  
+  // Ensure we have valid data structures
+  const safeBotanicalElements = botanicalElements || [];
+  const safeAnimations = animations || {};
 
   // Handle performance monitoring
   const handlePerformanceChange = (api: any) => {
@@ -124,8 +128,8 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
         <Suspense fallback={<TreeLoadingFallback />}>
           <BotanicalTreeGroup
             treeData={treeData}
-            botanicalElements={botanicalElements}
-            animations={animations}
+            botanicalElements={safeBotanicalElements}
+            animations={safeAnimations}
             currentStage={currentStage}
             performanceLevel={sceneState.performanceLevel}
             reducedMotion={reducedMotion}
@@ -137,7 +141,7 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
         {currentStage >= 8 && (
           <Suspense fallback={null}>
             <PollenSystem
-              checklistResults={botanicalElements.auditResults}
+              checklistResults={safeBotanicalElements.auditResults || []}
               performanceLevel={sceneState.performanceLevel}
               reducedMotion={reducedMotion}
             />

@@ -43,11 +43,20 @@ export const useGraphToTree = (graphData: GraphData | null | undefined, currentS
   const hierarchyData = useMemo(() => {
     if (!graphData?.nodes?.length) return null;
 
+    // Ensure nodes have proper structure
+    const validNodes = graphData.nodes.filter(node => 
+      node && node.id && typeof node.id === 'string'
+    );
+
     try {
-      // Prepare nodes for stratify
-      const stratifyNodes = graphData.nodes.map(node => ({
+      // Prepare nodes for stratify with validation
+      const stratifyNodes = validNodes.map(node => ({
         id: node.id,
         parentId: findParentId(node.id, graphData.edges || []),
+        type: node.type || 'unknown',
+        label: node.label || node.id,
+        confidence: Array.isArray(node.confidence) ? node.confidence : [0.5, 0.5, 0.5, 0.5],
+        metadata: node.metadata || {},
         ...node
       }));
 
@@ -282,8 +291,8 @@ export const useGraphToTree = (graphData: GraphData | null | undefined, currentS
 
   return {
     treeData: hierarchyData,
-    botanicalElements,
-    animations: stageAnimations,
+    botanicalElements: botanicalElements || [],
+    animations: stageAnimations || {},
     treeVersion
   };
 };

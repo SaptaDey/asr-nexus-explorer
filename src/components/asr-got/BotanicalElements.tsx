@@ -33,15 +33,17 @@ export const BotanicalElements: React.FC<BotanicalElementsProps> = ({
   const groupRef = useRef<THREE.Group>(null);
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
 
-  // Filter elements by type for organized rendering
+  // Filter elements by type for organized rendering with comprehensive safety
   const elementsByType = useMemo(() => {
-    const safeElements = elements || [];
+    const safeElements = Array.isArray(elements) ? elements : [];
+    const safeAnimations = animations || {};
+    
     return {
-      buds: safeElements.filter(e => e?.type === 'bud'),
-      leaves: safeElements.filter(e => e?.type === 'leaf'),
-      blossoms: safeElements.filter(e => e?.type === 'blossom'),
-      rootlets: safeElements.filter(e => e?.type === 'rootlet'),
-      branches: safeElements.filter(e => e?.type === 'branch')
+      buds: safeElements.filter(e => e && e.type === 'bud'),
+      leaves: safeElements.filter(e => e && e.type === 'leaf'),
+      blossoms: safeElements.filter(e => e && e.type === 'blossom'),
+      rootlets: safeElements.filter(e => e && e.type === 'rootlet'),
+      branches: safeElements.filter(e => e && e.type === 'branch')
     };
   }, [elements]);
 
@@ -84,20 +86,20 @@ export const BotanicalElements: React.FC<BotanicalElementsProps> = ({
         <group name="evidence-buds">
           {lodSettings.instancedBuds ? (
             <InstancedBuds
-              elements={elementsByType.buds}
-              animations={animations?.buds}
+              elements={elementsByType.buds || []}
+              animations={Array.isArray(animations?.buds) ? animations.buds : []}
               performanceLevel={performanceLevel}
               reducedMotion={reducedMotion}
               maxInstances={lodSettings.maxElements}
               onElementClick={onElementClick}
             />
           ) : (
-            elementsByType.buds.slice(0, lodSettings.maxElements).map((element, index) => (
+            (elementsByType.buds || []).slice(0, lodSettings.maxElements).map((element, index) => (
               <EvidenceBud
                 key={element.id}
                 element={element}
                 index={index}
-                animation={animations?.buds?.[index]}
+                animation={Array.isArray(animations?.buds) ? animations.buds[index] : undefined}
                 performanceLevel={performanceLevel}
                 reducedMotion={reducedMotion}
                 isHovered={hoveredElement === element.id}
@@ -113,8 +115,8 @@ export const BotanicalElements: React.FC<BotanicalElementsProps> = ({
       {currentStage >= 6 && (
         <group name="knowledge-leaves">
           <InstancedLeaves
-            elements={elementsByType.leaves}
-            animations={animations?.leaves}
+            elements={elementsByType.leaves || []}
+            animations={Array.isArray(animations?.leaves) ? animations.leaves : []}
             performanceLevel={performanceLevel}
             reducedMotion={reducedMotion}
             maxInstances={lodSettings.maxElements}
@@ -126,12 +128,12 @@ export const BotanicalElements: React.FC<BotanicalElementsProps> = ({
       {/* Synthesis Blossoms - Stage 7+ */}
       {currentStage >= 7 && (
         <group name="synthesis-blossoms">
-          {elementsByType.blossoms.slice(0, lodSettings.maxElements).map((element, index) => (
+          {(elementsByType.blossoms || []).slice(0, lodSettings.maxElements).map((element, index) => (
             <SynthesisBlossom
               key={element.id}
               element={element}
               index={index}
-              animation={animations?.blossoms?.[index]}
+              animation={Array.isArray(animations?.blossoms) ? animations.blossoms[index] : undefined}
               performanceLevel={performanceLevel}
               reducedMotion={reducedMotion}
               isHovered={hoveredElement === element.id}
@@ -168,11 +170,8 @@ const EvidenceBud: React.FC<{
   const [pulsePhase, setPulsePhase] = useState(Math.random() * Math.PI * 2);
 
   // Base bud animation with safe defaults
-  const { scale, emissiveIntensity } = useSpring({
-    scale: animation?.scale || [0.8, 0.8, 0.8],
-    emissiveIntensity: isHovered ? 0.4 : 0.2,
-    config: config.wobbly
-  });
+  const scaleValue = animation?.scale || [0.8, 0.8, 0.8];
+  const emissiveIntensityValue = isHovered ? 0.4 : 0.2;
 
   // Pulse animation for evidence arrival
   useFrame(({ clock }) => {
@@ -195,10 +194,10 @@ const EvidenceBud: React.FC<{
   }, [performanceLevel]);
 
   return (
-    <animated.mesh
+    <mesh
       ref={meshRef}
       position={element.position}
-      scale={scale}
+      scale={scaleValue}
       geometry={geometry}
       onPointerOver={() => onHover(element.id)}
       onPointerOut={() => onHover(null)}
@@ -207,11 +206,11 @@ const EvidenceBud: React.FC<{
       <meshStandardMaterial
         color={element.color}
         emissive={element.color}
-        emissiveIntensity={emissiveIntensity}
+        emissiveIntensity={emissiveIntensityValue}
         roughness={0.6}
         metalness={0.1}
       />
-    </animated.mesh>
+    </mesh>
   );
 };
 
@@ -485,13 +484,10 @@ const SynthesisBlossom: React.FC<{
   const groupRef = useRef<THREE.Group>(null);
   const [bloomPhase, setBloomPhase] = useState(0);
 
-  // Blossom opening animation
-  const { scale, petalSpread, centerGlow } = useSpring({
-    scale: animation?.scale || [1, 1, 1],
-    petalSpread: animation?.petalSpread || 1,
-    centerGlow: isHovered ? 0.6 : 0.3,
-    config: { duration: 800 }
-  });
+  // Blossom opening animation with safe defaults
+  const scaleValue = animation?.scale || [1, 1, 1];
+  const petalSpreadValue = animation?.petalSpread || 1;
+  const centerGlowValue = isHovered ? 0.6 : 0.3;
 
   // Bloom progression
   useFrame(({ clock }) => {
@@ -516,10 +512,10 @@ const SynthesisBlossom: React.FC<{
   }, []);
 
   return (
-    <animated.group
+    <group
       ref={groupRef}
       position={element.position}
-      scale={scale}
+      scale={scaleValue}
       onPointerOver={() => onHover(element.id)}
       onPointerOut={() => onHover(null)}
       onClick={() => onClick?.(7)}
@@ -530,27 +526,27 @@ const SynthesisBlossom: React.FC<{
         <meshStandardMaterial
           color="#FFD700"
           emissive="#FFA500"
-          emissiveIntensity={centerGlow}
+          emissiveIntensity={centerGlowValue}
           roughness={0.4}
         />
       </mesh>
 
       {/* Petals */}
       {petals.map((petal, i) => (
-        <animated.mesh
+        <mesh
           key={i}
           geometry={petalGeometry}
           position={[
-            Math.cos(petal.angle) * 0.3 * petalSpread,
+            Math.cos(petal.angle) * 0.3 * petalSpreadValue,
             0.1,
-            Math.sin(petal.angle) * 0.3 * petalSpread
+            Math.sin(petal.angle) * 0.3 * petalSpreadValue
           ]}
           rotation={[
             -Math.PI / 6,
             petal.angle,
             Math.sin(bloomPhase * Math.PI + petal.offset) * 0.1
           ]}
-          scale={petalSpread.to(s => [s * petal.scale, s * petal.scale, s])}
+          scale={[petalSpreadValue * petal.scale, petalSpreadValue * petal.scale, petalSpreadValue]}
         >
           <meshStandardMaterial
             color={element.color}
@@ -559,7 +555,7 @@ const SynthesisBlossom: React.FC<{
             opacity={0.8}
             roughness={0.6}
           />
-        </animated.mesh>
+        </mesh>
       ))}
 
       {/* Synthesis insight particles */}
@@ -573,19 +569,20 @@ const SynthesisBlossom: React.FC<{
           />
         </mesh>
       )}
-    </animated.group>
+    </group>
   );
 };
 
 // Interactive Hotspots for Accessibility
 const InteractiveHotspots: React.FC<{
-  elements: BotanicalElement[];
+  elements?: BotanicalElement[];
   currentStage: number;
   hoveredElement: string | null;
   onElementClick?: (stage: number) => void;
 }> = ({ elements, currentStage, hoveredElement, onElementClick }) => {
   const hotspotElements = useMemo(() => {
-    return elements.filter(e => e.evidenceCount > 0 || e.impactScore > 0.7);
+    const safeElements = Array.isArray(elements) ? elements : [];
+    return safeElements.filter(e => e.evidenceCount > 0 || e.impactScore > 0.7);
   }, [elements]);
 
   return (
