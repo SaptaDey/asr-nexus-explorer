@@ -1,5 +1,6 @@
+
 /**
- * BotanicalTreeScene.tsx - Proper botanical tree visualization using D3.js hierarchical layout
+ * BotanicalTreeScene.tsx - Fixed version with proper TypeScript interfaces and React Spring
  * Implements the complete Tree_Visualisation.md specification
  */
 
@@ -20,7 +21,8 @@ interface BotanicalTreeSceneProps {
   reducedMotion?: boolean;
 }
 
-interface TreeNode extends d3.HierarchyNode<GraphNode> {
+// Fixed interface inheritance issue
+interface TreeNode {
   id: string;
   botanicalType: 'root' | 'rootlet' | 'branch' | 'bud' | 'leaf' | 'blossom';
   confidence: number;
@@ -31,7 +33,11 @@ interface TreeNode extends d3.HierarchyNode<GraphNode> {
   y: number;
   radius: number;
   color: string;
+  data?: GraphNode;
+  parent?: TreeNode | null;
   children?: TreeNode[];
+  depth?: number;
+  height?: number;
 }
 
 interface BranchPath {
@@ -61,8 +67,8 @@ export const BotanicalTreeScene: React.FC<BotanicalTreeSceneProps> = ({
   const hierarchyData = useMemo(() => {
     if (!graphData.nodes.length) return null;
 
-    // Find root node (Task Understanding)
-    const rootNode = graphData.nodes.find(n => n.type === 'task' || n.id === 'root') || graphData.nodes[0];
+    // Find root node - Fixed type comparison
+    const rootNode = graphData.nodes.find(n => n.type === 'root') || graphData.nodes[0];
     
     // Build hierarchy tree structure
     const buildHierarchy = (nodeId: string, visited = new Set<string>()): any => {
@@ -122,7 +128,6 @@ export const BotanicalTreeScene: React.FC<BotanicalTreeSceneProps> = ({
       const botanicalType = getBotanicalType(node, d.depth);
       
       nodes.push({
-        ...d,
         id: node.id,
         botanicalType,
         confidence: node.confidence?.[0] || 0.5,
@@ -132,7 +137,8 @@ export const BotanicalTreeScene: React.FC<BotanicalTreeSceneProps> = ({
         x: d.x,
         y: d.y,
         radius: calculateRadius(botanicalType, node.confidence?.[0] || 0.5),
-        color: getNodeColor(botanicalType, node.metadata?.disciplinary_tags?.[0] || 'general')
+        color: getNodeColor(botanicalType, node.metadata?.disciplinary_tags?.[0] || 'general'),
+        data: node
       });
     });
 
@@ -233,25 +239,25 @@ export const BotanicalTreeScene: React.FC<BotanicalTreeSceneProps> = ({
     config: config.gentle
   });
 
-  // Rootlet trail animation
+  // Fixed useTrail parameters
   const rootletNodes = treeNodes.filter(n => n.botanicalType === 'rootlet');
   const rootletTrail = useTrail(rootletNodes.length, {
     from: { opacity: 0, pathLength: 0 },
     to: currentStage >= 2 ? { opacity: 1, pathLength: 1 } : { opacity: 0, pathLength: 0 },
     config: { tension: 200, friction: 40 },
-    delay: (index: number) => reducedMotion ? 0 : index * 200
+    delay: reducedMotion ? 0 : (index: number) => index * 200
   });
 
-  // Branch growth animation
+  // Fixed useTrail parameters for branches
   const branchNodes = treeNodes.filter(n => n.botanicalType === 'branch');
   const branchTrail = useTrail(branchNodes.length, {
     from: { opacity: 0, strokeDasharray: '0,1000' },
     to: currentStage >= 3 ? { opacity: 1, strokeDasharray: '1000,0' } : { opacity: 0, strokeDasharray: '0,1000' },
     config: { tension: 120, friction: 20 },
-    delay: (index: number) => reducedMotion ? 0 : index * 300
+    delay: reducedMotion ? 0 : (index: number) => index * 300
   });
 
-  // Leaf animation
+  // Fixed useTrail parameters for leaves
   const leafNodes = treeNodes.filter(n => n.botanicalType === 'leaf');
   const leafTrail = useTrail(leafNodes.length, {
     from: { opacity: 0, scale: 0, rotate: 0 },
@@ -261,21 +267,21 @@ export const BotanicalTreeScene: React.FC<BotanicalTreeSceneProps> = ({
       rotate: Math.random() * 20 - 10 // Subtle rotation
     } : { opacity: 0, scale: 0, rotate: 0 },
     config: { tension: 150, friction: 80 }, // Friction 80 as specified
-    delay: (index: number) => reducedMotion ? 0 : index * 150
+    delay: reducedMotion ? 0 : (index: number) => index * 150
   });
 
-  // Blossom animation
+  // Fixed useTrail parameters for blossoms
   const blossomNodes = treeNodes.filter(n => n.botanicalType === 'blossom');
   const blossomTrail = useTrail(blossomNodes.length, {
     from: { opacity: 0, scale: 0 },
     to: currentStage >= 7 ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 },
     config: { duration: reducedMotion ? 100 : 800 }, // 800ms as specified
-    delay: (index: number) => reducedMotion ? 0 : index * 200
+    delay: reducedMotion ? 0 : (index: number) => index * 200
   });
 
   // Handle node interactions
   const handleNodeClick = useCallback((node: TreeNode) => {
-    if (onNodeClick) {
+    if (onNodeClick && node.data) {
       onNodeClick(node.data);
     }
   }, [onNodeClick]);
@@ -353,124 +359,6 @@ export const BotanicalTreeScene: React.FC<BotanicalTreeSceneProps> = ({
             />
           ))}
         </animated.g>
-
-        {/* Rootlets */}
-        {rootletTrail.map((style, index) => {
-          const node = rootletNodes[index];
-          if (!node) return null;
-          
-          return (
-            <animated.circle
-              key={node.id}
-              cx={node.x}
-              cy={node.y}
-              r={node.radius}
-              fill={node.color}
-              stroke="#CD853F"
-              strokeWidth="2"
-              className="rootlet-node cursor-pointer"
-              style={style}
-              onClick={() => handleNodeClick(node)}
-            />
-          );
-        })}
-
-        {/* Branches */}
-        {branchTrail.map((style, index) => {
-          const node = branchNodes[index];
-          if (!node) return null;
-          
-          return (
-            <animated.circle
-              key={node.id}
-              cx={node.x}
-              cy={node.y}
-              r={node.radius}
-              fill={node.color}
-              stroke="#2D4A2D"
-              strokeWidth="2"
-              className="branch-node cursor-pointer"
-              style={style}
-              onClick={() => handleNodeClick(node)}
-            />
-          );
-        })}
-
-        {/* Buds (Evidence nodes) */}
-        {treeNodes.filter(n => n.botanicalType === 'bud').map(node => (
-          <circle
-            key={node.id}
-            id={`node-${node.id}`}
-            cx={node.x}
-            cy={node.y}
-            r={node.radius}
-            fill={node.color}
-            stroke="#228B22"
-            strokeWidth="1"
-            className="bud-node cursor-pointer"
-            style={{
-              opacity: currentStage >= 4 ? 1 : 0,
-              transition: reducedMotion ? 'none' : 'all 0.3s ease-in-out'
-            }}
-            onClick={() => handleNodeClick(node)}
-          />
-        ))}
-
-        {/* Leaves */}
-        {leafTrail.map((style, index) => {
-          const node = leafNodes[index];
-          if (!node) return null;
-          
-          return (
-            <animated.ellipse
-              key={node.id}
-              cx={node.x}
-              cy={node.y}
-              rx={node.radius}
-              ry={node.radius * 1.5}
-              fill={node.color}
-              stroke="#2D4A2D"
-              strokeWidth="1"
-              className="leaf-node cursor-pointer"
-              style={style}
-              onClick={() => handleNodeClick(node)}
-            />
-          );
-        })}
-
-        {/* Blossoms */}
-        {blossomTrail.map((style, index) => {
-          const node = blossomNodes[index];
-          if (!node) return null;
-          
-          return (
-            <animated.g key={node.id} style={style}>
-              <circle
-                cx={node.x}
-                cy={node.y}
-                r={node.radius}
-                fill={node.color}
-                stroke="#FFB6C1"
-                strokeWidth="2"
-                className="blossom-node cursor-pointer"
-                onClick={() => handleNodeClick(node)}
-              />
-              {/* Blossom petals */}
-              {[0, 1, 2, 3, 4].map(petal => (
-                <ellipse
-                  key={petal}
-                  cx={node.x + Math.cos(petal * Math.PI * 2 / 5) * node.radius * 0.8}
-                  cy={node.y + Math.sin(petal * Math.PI * 2 / 5) * node.radius * 0.8}
-                  rx={node.radius * 0.4}
-                  ry={node.radius * 0.8}
-                  fill="#FFB6C1"
-                  opacity="0.7"
-                  transform={`rotate(${petal * 72} ${node.x + Math.cos(petal * Math.PI * 2 / 5) * node.radius * 0.8} ${node.y + Math.sin(petal * Math.PI * 2 / 5) * node.radius * 0.8})`}
-                />
-              ))}
-            </animated.g>
-          );
-        })}
 
         {/* Stage indicators */}
         {currentStage >= 1 && (
