@@ -97,7 +97,7 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
       tension: 170,
       friction: 26,
     },
-    delay: reducedMotion ? 0 : (key: string) => parseInt(key) * 150
+    delay: reducedMotion ? 0 : (index: number) => index * 150
   });
 
   // Stage 3: Anime.js stroke-dashoffset → react-spring thickness sequence
@@ -118,10 +118,10 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
         element.style.strokeDasharray = `${pathLength}`;
         element.style.strokeDashoffset = `${pathLength}`;
         
-        // Anime.js stroke-dashoffset animation - Fixed with proper parameters
+        // Anime.js stroke-dashoffset animation - Fixed parameters
         anime({
           targets: element,
-          strokeDashoffset: [pathLength, 0],
+          strokeDashoffset: 0,
           duration: 1200,
           delay: index * 200,
           easing: 'easeInOutCubic',
@@ -143,19 +143,17 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
       const targetBranch = svgRef.current.querySelector(`#branch-${event.targetBranchId}`);
       if (!targetBranch) return;
 
-      // Branch pulse (rgba flash) - Fixed with proper parameters
+      // Branch pulse (rgba flash) - Fixed parameters
       anime({
         targets: targetBranch,
-        stroke: [
-          { value: 'rgba(255, 215, 0, 0.9)', duration: 200 },
-          { value: 'rgba(255, 215, 0, 0.3)', duration: 200 },
-          { value: 'rgba(255, 215, 0, 0.9)', duration: 200 }
-        ],
-        duration: 600,
+        stroke: 'rgba(255, 215, 0, 0.9)',
+        duration: 200,
+        direction: 'alternate',
+        loop: 3,
         easing: 'easeInOutQuad'
       });
 
-      // Radius spring increases by Δr (Bayesian ΔC) - Fixed with proper parameters
+      // Radius spring increases by Δr (Bayesian ΔC) - Fixed parameters
       const currentWidth = parseFloat(targetBranch.getAttribute('stroke-width') || '2');
       const deltaR = event.deltaC * 10; // Scale factor for visual impact
       const newWidth = currentWidth + deltaR;
@@ -178,7 +176,7 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
       const prunedNodes = svgRef.current.querySelectorAll('.pruned-node');
       const mergedPaths = svgRef.current.querySelectorAll('.merged-path');
 
-      // Withered branch fades to 20% opacity - Fixed with proper parameters
+      // Withered branch fades to 20% opacity - Fixed parameters
       anime({
         targets: Array.from(prunedNodes),
         opacity: 0.2,
@@ -186,7 +184,7 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
         easing: 'easeOutQuad'
       });
 
-      // Merged paths morph smoothly - Fixed with proper parameters
+      // Merged paths morph smoothly - Fixed parameters
       mergedPaths.forEach((path, index) => {
         const element = path as SVGPathElement;
         const originalPath = element.getAttribute('d');
@@ -195,7 +193,7 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
         if (originalPath && targetPath) {
           anime({
             targets: element,
-            d: [originalPath, targetPath],
+            d: targetPath,
             duration: 1000,
             delay: index * 100,
             easing: 'easeInOutCubic'
@@ -228,7 +226,7 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
       tension: 120,
       friction: 80 // Exact friction 80 as specified
     },
-    delay: reducedMotion ? 0 : (key: string) => parseInt(key) * 100
+    delay: reducedMotion ? 0 : (index: number) => index * 100
   });
 
   // Stage 7: SVG path morph over 800ms with right-slide labels
@@ -248,23 +246,23 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
         const openPath = element.getAttribute('data-open-path');
         
         if (closedPath && openPath) {
-          // SVG path morph over 800ms - Fixed with proper parameters
+          // SVG path morph over 800ms - Fixed parameters
           anime({
             targets: element,
-            d: [closedPath, openPath],
+            d: openPath,
             duration: 800,
             delay: index * 200,
             easing: 'easeOutCubic'
           });
         }
 
-        // Label slides in from right - Fixed with proper parameters
+        // Label slides in from right - Fixed parameters
         const label = svgRef.current?.querySelector(`#blossom-label-${index}`);
         if (label) {
           anime({
             targets: label,
-            translateX: [100, 0],
-            opacity: [0, 1],
+            translateX: 0,
+            opacity: 1,
             duration: 600,
             delay: index * 200 + 400,
             easing: 'easeOutQuart'
@@ -280,7 +278,7 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
 
     checklist.forEach((item, index) => {
       if (item.passed) {
-        // Golden particles for success - Fixed with proper parameters
+        // Golden particles for success - Fixed parameters
         const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         particle.setAttribute('r', '3');
         particle.setAttribute('fill', '#fbbf24');
@@ -293,8 +291,8 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
         anime({
           targets: particle,
           translateY: -50,
-          opacity: [0.8, 0],
-          scale: [1, 0.3],
+          opacity: 0,
+          scale: 0.3,
           duration: 2000,
           delay: index * 100,
           easing: 'easeOutQuad',
@@ -306,16 +304,10 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
         // Crimson particles and branch shaking for failures
         const failedBranch = svgRef.current.querySelector(`#branch-${item.id}`);
         if (failedBranch) {
-          // Branch shaking - Fixed with proper parameters
+          // Branch shaking - Fixed parameters
           anime({
             targets: failedBranch,
-            translateX: [
-              { value: -5, duration: 100 },
-              { value: 5, duration: 100 },
-              { value: -3, duration: 100 },
-              { value: 3, duration: 100 },
-              { value: 0, duration: 100 }
-            ],
+            translateX: [-5, 5, -3, 3, 0],
             duration: 500,
             delay: index * 150,
             easing: 'easeInOutQuad'

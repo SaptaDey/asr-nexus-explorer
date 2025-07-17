@@ -245,7 +245,7 @@ export const BotanicalTreeScene: React.FC<BotanicalTreeSceneProps> = ({
     from: { opacity: 0, pathLength: 0 },
     to: currentStage >= 2 ? { opacity: 1, pathLength: 1 } : { opacity: 0, pathLength: 0 },
     config: { tension: 200, friction: 40 },
-    delay: reducedMotion ? 0 : (key: string) => parseInt(key) * 200
+    delay: reducedMotion ? 0 : (index: number) => index * 200
   });
 
   // Fixed useTrail parameters for branches
@@ -254,7 +254,7 @@ export const BotanicalTreeScene: React.FC<BotanicalTreeSceneProps> = ({
     from: { opacity: 0, strokeDasharray: '0,1000' },
     to: currentStage >= 3 ? { opacity: 1, strokeDasharray: '1000,0' } : { opacity: 0, strokeDasharray: '0,1000' },
     config: { tension: 120, friction: 20 },
-    delay: reducedMotion ? 0 : (key: string) => parseInt(key) * 300
+    delay: reducedMotion ? 0 : (index: number) => index * 300
   });
 
   // Fixed useTrail parameters for leaves
@@ -267,7 +267,7 @@ export const BotanicalTreeScene: React.FC<BotanicalTreeSceneProps> = ({
       rotate: Math.random() * 20 - 10 // Subtle rotation
     } : { opacity: 0, scale: 0, rotate: 0 },
     config: { tension: 150, friction: 80 }, // Friction 80 as specified
-    delay: reducedMotion ? 0 : (key: string) => parseInt(key) * 150
+    delay: reducedMotion ? 0 : (index: number) => index * 150
   });
 
   // Fixed useTrail parameters for blossoms
@@ -276,7 +276,7 @@ export const BotanicalTreeScene: React.FC<BotanicalTreeSceneProps> = ({
     from: { opacity: 0, scale: 0 },
     to: currentStage >= 7 ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 },
     config: { duration: reducedMotion ? 100 : 800 }, // 800ms as specified
-    delay: reducedMotion ? 0 : (key: string) => parseInt(key) * 200
+    delay: reducedMotion ? 0 : (index: number) => index * 200
   });
 
   // Handle node interactions

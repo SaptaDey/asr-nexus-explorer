@@ -1,3 +1,4 @@
+
 /**
  * TreeScene.tsx - React Three Fiber WebGL botanical tree visualization
  * Implements the complete tree_view_implementation.md specification
@@ -141,25 +142,18 @@ export const TreeScene: React.FC<TreeSceneProps> = ({
         {currentStage >= 8 && (
           <Suspense fallback={null}>
             <PollenSystem
-              checklistResults={safeBotanicalElements.auditResults || []}
+              checklistResults={[]}
               performanceLevel={sceneState.performanceLevel}
               reducedMotion={reducedMotion}
             />
           </Suspense>
         )}
 
-        {/* Camera Controls with Keyboard Support */}
+        {/* Camera Controls - Fixed props */}
         <OrbitControls
           enablePan={true}
           enableZoom={true}
           enableRotate={true}
-          enableKeys={true}
-          keys={{
-            LEFT: 'ArrowLeft',
-            UP: 'ArrowUp', 
-            RIGHT: 'ArrowRight',
-            BOTTOM: 'ArrowDown'
-          }}
           keyPanSpeed={7.0}
           minDistance={5}
           maxDistance={50}
@@ -262,9 +256,9 @@ const BotanicalTreeGroup: React.FC<{
     }
   });
 
-  // Tree sway animation
+  // Tree sway animation - Fixed rotation type
   const { rotation } = useSpring({
-    rotation: [0, 0, reducedMotion ? 0 : Math.sin(Date.now() * 0.001) * 0.02],
+    rotation: [0, 0, reducedMotion ? 0 : Math.sin(Date.now() * 0.001) * 0.02] as [number, number, number],
     config: config.gentle,
     loop: !reducedMotion
   });
@@ -290,7 +284,6 @@ const BotanicalTreeGroup: React.FC<{
           <meshStandardMaterial 
             color="#8B4513" 
             roughness={0.8}
-            normalScale={[0.5, 0.5]}
           />
         </mesh>
       </animated.group>

@@ -1,3 +1,4 @@
+
 /**
  * EvidenceEventSystem.tsx - Stage 4 evidence event loop implementation
  * Handles real-time evidence processing with branch pulsing and Bayesian ΔC
@@ -106,7 +107,7 @@ export const EvidenceEventSystem: React.FC<EvidenceEventSystemProps> = ({
         if (!reducedMotion) {
           anime({
             targets: targetBranch,
-            strokeWidth: [currentWidth, newWidth],
+            strokeWidth: newWidth,
             duration: 800,
             easing: 'easeOutElastic(1, .8)',
             delay: 300
@@ -292,10 +293,15 @@ export const EvidenceEventSystem: React.FC<EvidenceEventSystemProps> = ({
     }
   }, [currentStage, simulateEvidenceEvents]);
 
-  return {
-    addEvidenceEvent,
-    simulateEvidenceEvents,
-    branchSpring,
-    eventQueue: eventQueueRef.current
-  };
+  // Return JSX component instead of object
+  return (
+    <div className="evidence-event-system">
+      <div className="sr-only">
+        Evidence Event System - Stage {currentStage}
+        {eventQueueRef.current.length > 0 && (
+          <span>Processing {eventQueueRef.current.length} evidence events</span>
+        )}
+      </div>
+    </div>
+  );
 };

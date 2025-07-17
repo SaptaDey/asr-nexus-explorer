@@ -1,3 +1,4 @@
+
 /**
  * Comprehensive Parameters Pane for ASR-GoT Framework
  * Displays all P1.0-P1.29 parameters with inline documentation tooltips
@@ -100,7 +101,7 @@ export const ParametersPane: React.FC<ParametersPaneProps> = ({
       filtered = filtered.filter(([id, param]) =>
         id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         param.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        param.value.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        String(param.value).toLowerCase().includes(searchTerm.toLowerCase()) ||
         param.notes.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -161,7 +162,7 @@ export const ParametersPane: React.FC<ParametersPaneProps> = ({
   // Parameter status indicator
   const getParameterStatus = (param: ASRGoTParameter) => {
     if (!param.enabled) return 'disabled';
-    if (param.value.length < 10) return 'incomplete';
+    if (String(param.value).length < 10) return 'incomplete';
     return 'active';
   };
 
@@ -250,14 +251,14 @@ export const ParametersPane: React.FC<ParametersPaneProps> = ({
                   
                   {isEditing ? (
                     <Textarea
-                      value={param.value}
+                      value={String(param.value)}
                       onChange={(e) => handleParameterEdit(parameterId, 'value', e.target.value)}
                       className="min-h-20"
                       placeholder="Enter parameter value..."
                     />
                   ) : (
                     <div className="bg-muted/50 p-3 rounded-md">
-                      <code className="text-sm">{param.value}</code>
+                      <code className="text-sm">{String(param.value)}</code>
                     </div>
                   )}
                 </div>
@@ -321,7 +322,7 @@ export const ParametersPane: React.FC<ParametersPaneProps> = ({
   // Calculate statistics
   const totalParameters = Object.keys(parameters).length;
   const enabledParameters = Object.values(parameters).filter(p => p.enabled).length;
-  const completeParameters = Object.values(parameters).filter(p => p.enabled && p.value.length >= 10).length;
+  const completeParameters = Object.values(parameters).filter(p => p.enabled && String(p.value).length >= 10).length;
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
