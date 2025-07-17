@@ -1,3 +1,4 @@
+
 /**
  * Cost-Aware Stage Execution Hook
  * Integrates the tri-model orchestration system with ASR-GoT stage execution
@@ -193,6 +194,9 @@ export const useCostAwareStageExecution = ({
           knowledge_gaps: [],
           auto_generated: false
         };
+        
+        // **CRITICAL FIX**: Update the research context immediately after Stage 1 input
+        setResearchContext(contextForStage);
       }
       
       console.log(`🔧 Creating stage context for stage ${stageIndex + 1}`, { 
@@ -321,9 +325,23 @@ export const useCostAwareStageExecution = ({
             objectives: context.researchContext.objectives?.length || 0
           });
           
-          // Additional validation before calling Stage 2
+          // **CRITICAL FIX**: Additional validation with better error message
           if (!context.researchContext.topic || context.researchContext.topic.trim() === '') {
-            throw new Error(`Stage 2 failed: Invalid research topic. Current topic: "${context.researchContext.topic}". Please ensure Stage 1 completed successfully and set a valid research topic.`);
+            // Try to get topic from stage results or input
+            let fallbackTopic = '';
+            if (stageResults[0] && stageResults[0].includes('Research Topic:')) {
+              const match = stageResults[0].match(/Research Topic:\s*([^\n]+)/);
+              if (match) {
+                fallbackTopic = match[1].trim();
+                console.log(`🔧 Found fallback topic from Stage 1 results: ${fallbackTopic}`);
+                // Update context with fallback topic
+                context.researchContext.topic = fallbackTopic;
+              }
+            }
+            
+            if (!fallbackTopic) {
+              throw new Error(`Stage 2 failed: Invalid input: must be a non-empty string. Current research topic is empty or undefined. Please ensure Stage 1 completed successfully and set a valid research topic.`);
+            }
           }
           
           result = await decomposeTask(undefined, context);
@@ -429,7 +447,10 @@ export const useCostAwareStageExecution = ({
     setGraphData,
     updateStageResults,
     advanceStage,
-    setFinalReport
+    setFinalReport,
+    researchContext,
+    stageResults,
+    setResearchContext
   ]);
 
   return {

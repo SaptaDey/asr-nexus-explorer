@@ -97,7 +97,7 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
       tension: 170,
       friction: 26,
     },
-    delay: reducedMotion ? 0 : (index: number) => index * 150
+    delay: reducedMotion ? 0 : (key: string) => parseInt(key) * 150
   });
 
   // Stage 3: Anime.js stroke-dashoffset → react-spring thickness sequence
@@ -180,7 +180,7 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
 
       // Withered branch fades to 20% opacity - Fixed with proper parameters
       anime({
-        targets: prunedNodes,
+        targets: Array.from(prunedNodes),
         opacity: 0.2,
         duration: 700,
         easing: 'easeOutQuad'
@@ -228,7 +228,7 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
       tension: 120,
       friction: 80 // Exact friction 80 as specified
     },
-    delay: reducedMotion ? 0 : (index: number) => index * 100
+    delay: reducedMotion ? 0 : (key: string) => parseInt(key) * 100
   });
 
   // Stage 7: SVG path morph over 800ms with right-slide labels
