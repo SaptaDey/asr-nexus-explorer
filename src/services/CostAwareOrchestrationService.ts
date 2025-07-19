@@ -526,7 +526,7 @@ export class CostAwareOrchestrationService {
       } else if (isBatchRequest && prompts.length > 1) {
         // Use batch processing
         console.log(`Executing batch request for stage ${stage} with ${prompts.length} prompts`);
-        result = await this.executeBatch(stage, prompts, apiKeys, additionalParams);
+        result = await this.routeBatchApiCall(stage, prompts, apiKeys, additionalParams);
       } else {
         // Single prompt processing
         const singlePrompt = Array.isArray(prompt) ? prompt[0] : prompt;

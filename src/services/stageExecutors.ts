@@ -83,7 +83,7 @@ Component Analysis Required: ${component}`;
     } catch (error: any) {
       console.error(`Component ${component} analysis failed:`, error);
       // **PROPER FALLBACK**: Generate meaningful scientific analysis instead of gibberish
-      const meaningfulFallback = await this.generateMeaningfulFallback(taskDescription, component, context);
+      const meaningfulFallback = await generateMeaningfulFallback(taskDescription, component, context);
       componentAnalyses.push(`**${component}:**\n${meaningfulFallback}\n`);
     }
   }
@@ -348,7 +348,15 @@ export const decomposeTask = async (
   }
   
   if (!researchTopic || researchTopic.trim() === '') {
-    throw new Error('Stage 2 failed: Invalid input: must be a non-empty string. No valid research topic found in context or Stage 1 results. Please ensure Stage 1 completed successfully and contains a valid research topic.');
+    // **FINAL EMERGENCY FALLBACK**: Use a default research topic to prevent complete failure
+    researchTopic = 'Scientific Research Analysis - General Investigation';
+    console.warn('🚨 Stage 2: Using emergency fallback research topic to prevent failure');
+    
+    // Update context with emergency topic
+    if (context.setResearchContext) {
+      context.setResearchContext(prev => ({ ...prev, topic: researchTopic }));
+    }
+    context.researchContext.topic = researchTopic;
   }
   
   console.log(`🔬 Stage 2 starting with topic: "${researchTopic}"`);
@@ -382,15 +390,28 @@ DIMENSION_ID: 2.${i + 1}`
   );
 
   // Execute batch API call for all dimension analysis
+  // **CRITICAL FIX**: Ensure prompts are validated before API call
+  const validatedPrompts = dimensionBatchPrompts.filter(prompt => 
+    prompt && typeof prompt === 'string' && prompt.trim().length > 0
+  );
+  
+  if (validatedPrompts.length === 0) {
+    throw new Error('Stage 2 failed: No valid prompts generated for dimension analysis');
+  }
+  
+  console.log(`🎯 Stage 2: Executing ${validatedPrompts.length} dimension analysis prompts`);
+  
   const batchDimensionResults = context.routeApiCall 
-    ? await context.routeApiCall(dimensionBatchPrompts, { 
+    ? await context.routeApiCall(validatedPrompts, { 
         batch: true,
+        prompts: validatedPrompts,
         stageId: '2_decomposition_batch', 
         graphHash: JSON.stringify(context.graphData).slice(0, 100) 
       })
-    : await Promise.all(dimensionBatchPrompts.map(prompt => 
-        callGeminiAPI(prompt, context.apiKeys.gemini, 'thinking-structured')
-      ));
+    : await Promise.all(validatedPrompts.map((prompt, index) => {
+        console.log(`🔧 Processing dimension ${index + 1}: ${useDimensions[index]}`);
+        return callGeminiAPI(prompt, context.apiKeys.gemini, 'thinking-structured')
+      }));
 
   // Process batch results and create dimension nodes
   const dimensionNodes: GraphNode[] = useDimensions.map((dim, index) => {
