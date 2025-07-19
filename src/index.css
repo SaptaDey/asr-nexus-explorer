@@ -99,62 +99,62 @@
 
 @layer base {
   :root {
-    /* 🌸 PASCAL/EASTER COLOR SCHEME 🌸 */
-    --background: 120 100% 97%; /* Soft mint green background */
-    --foreground: 340 30% 25%; /* Deep plum text */
-    --card: 60 100% 95%; /* Pale yellow cards */
-    --card-foreground: 340 30% 25%; /* Deep plum text on cards */
-    --popover: 300 100% 95%; /* Soft lavender popovers */
-    --popover-foreground: 340 30% 25%; /* Deep plum text */
-    --primary: 280 60% 70%; /* Beautiful lilac purple */
+    /* 💙 PASTEL BLUE GRADIENT COLOR SCHEME 💙 */
+    --background: 210 100% 98%; /* Soft blue-white background */
+    --foreground: 220 50% 25%; /* Deep blue text */
+    --card: 200 100% 96%; /* Pale blue cards */
+    --card-foreground: 220 50% 25%; /* Deep blue text on cards */
+    --popover: 210 80% 95%; /* Soft blue popovers */
+    --popover-foreground: 220 50% 25%; /* Deep blue text */
+    --primary: 220 70% 75%; /* Pastel blue primary (688FE5) */
     --primary-foreground: 0 0% 100%; /* White text on primary */
-    --secondary: 120 40% 85%; /* Sage green */
-    --secondary-foreground: 340 30% 25%; /* Deep plum text */
-    --muted: 180 30% 92%; /* Soft aqua */
-    --muted-foreground: 340 20% 40%; /* Muted plum */
-    --accent: 40 90% 80%; /* Soft peach accent */
-    --accent-foreground: 340 30% 25%; /* Deep plum text */
+    --secondary: 200 60% 85%; /* Light blue secondary */
+    --secondary-foreground: 220 50% 25%; /* Deep blue text */
+    --muted: 190 50% 90%; /* Soft aqua muted */
+    --muted-foreground: 220 30% 45%; /* Muted blue */
+    --accent: 185 65% 80%; /* Soft cyan accent */
+    --accent-foreground: 220 50% 25%; /* Deep blue text */
     --destructive: 350 70% 65%; /* Soft coral red */
     --destructive-foreground: 0 0% 100%; /* White text */
-    --border: 160 40% 85%; /* Soft mint borders */
-    --input: 160 40% 90%; /* Light mint inputs */
-    --ring: 280 60% 70%; /* Lilac ring color */
+    --border: 200 40% 88%; /* Soft blue borders */
+    --input: 200 40% 92%; /* Light blue inputs */
+    --ring: 220 70% 75%; /* Blue ring color */
     --radius: 0.5rem;
     
-    /* 🌸 PASCAL BRAND COLORS 🌸 */
-    --brand-start: 280 60% 70%; /* Lilac purple */
-    --brand-end: 40 90% 80%; /* Soft peach */
-    --branch-fill: 120 40% 70%; /* Sage green for branches */
+    /* 💙 PASTEL BLUE BRAND COLORS 💙 */
+    --brand-start: 220 70% 75%; /* #688FE5 */
+    --brand-end: 180 70% 85%; /* #95E4E5 */
+    --branch-fill: 195 65% 70%; /* #7ABDE5 for branches */
     --brand-gradient: linear-gradient(135deg, hsl(var(--brand-start)) 0%, hsl(var(--brand-end)) 100%);
     --brand-glow: 0 0 20px hsl(var(--brand-start) / 0.3);
   }
 
   .dark {
-    /* 🌸 PASCAL DARK MODE 🌸 */
-    --background: 340 20% 15%; /* Dark plum background */
-    --foreground: 60 30% 85%; /* Pale yellow text */
-    --card: 340 15% 20%; /* Dark plum cards */
-    --card-foreground: 60 30% 85%; /* Pale yellow text */
-    --popover: 300 20% 18%; /* Dark lavender popovers */
-    --popover-foreground: 60 30% 85%; /* Pale yellow text */
-    --primary: 280 60% 70%; /* Lilac purple primary */
+    /* 💙 PASTEL BLUE DARK MODE 💙 */
+    --background: 220 30% 12%; /* Dark blue background */
+    --foreground: 200 60% 85%; /* Light blue text */
+    --card: 220 25% 18%; /* Dark blue cards */
+    --card-foreground: 200 60% 85%; /* Light blue text */
+    --popover: 210 30% 15%; /* Dark blue popovers */
+    --popover-foreground: 200 60% 85%; /* Light blue text */
+    --primary: 220 70% 65%; /* Darker pastel blue primary */
     --primary-foreground: 0 0% 100%; /* White text on primary */
-    --secondary: 120 20% 25%; /* Dark sage green */
-    --secondary-foreground: 60 30% 85%; /* Pale yellow text */
-    --muted: 180 15% 25%; /* Dark aqua */
-    --muted-foreground: 60 20% 65%; /* Muted yellow */
-    --accent: 40 60% 40%; /* Darker peach accent */
-    --accent-foreground: 60 30% 85%; /* Pale yellow text */
+    --secondary: 200 40% 25%; /* Dark blue secondary */
+    --secondary-foreground: 200 60% 85%; /* Light blue text */
+    --muted: 190 30% 25%; /* Dark aqua */
+    --muted-foreground: 200 40% 65%; /* Muted blue */
+    --accent: 185 50% 40%; /* Darker cyan accent */
+    --accent-foreground: 200 60% 85%; /* Light blue text */
     --destructive: 350 70% 50%; /* Darker coral red */
     --destructive-foreground: 0 0% 100%; /* White text */
-    --border: 160 15% 30%; /* Dark mint borders */
-    --input: 160 15% 25%; /* Dark mint inputs */
-    --ring: 261 83% 58%;
+    --border: 200 30% 30%; /* Dark blue borders */
+    --input: 200 30% 25%; /* Dark blue inputs */
+    --ring: 220 70% 65%;
     
-    /* ASR-GoT Brand Colors - Dark Mode */
-    --brand-start: 261 83% 58%;
-    --brand-end: 191 100% 50%;
-    --branch-fill: 172 79% 41%;
+    /* Pastel Blue Brand Colors - Dark Mode */
+    --brand-start: 220 70% 65%;
+    --brand-end: 180 60% 75%;
+    --branch-fill: 195 55% 60%;
     --brand-gradient: linear-gradient(135deg, hsl(var(--brand-start)) 0%, hsl(var(--brand-end)) 100%);
     --brand-glow: 0 0 20px hsl(var(--brand-start) / 0.4);
   }
@@ -165,19 +165,22 @@
     @apply border-border;
   }
   
-  /* 🌸 PASCAL THEME - VERY OBVIOUS CHANGES 🌸 */
+  /* 💙 PASTEL BLUE THEME - VERY OBVIOUS CHANGES 💙 */
   body {
     background: linear-gradient(135deg, 
-      #f0fff0 0%,   /* Light mint green */
-      #f8f8ff 50%,  /* Ghost white */ 
-      #fff8dc 100%  /* Cornsilk yellow */
+      #688FE5 0%,   /* Pastel Blue 1 */
+      #73A9E5 25%,  /* Pastel Blue 2 */ 
+      #7ABDE5 50%,  /* Pastel Blue 3 */
+      #88D0E5 75%,  /* Pastel Blue 4 */
+      #95E4E5 100%  /* Pastel Blue 5 */
     ) !important;
+    background-attachment: fixed;
     min-height: 100vh;
   }
   
   h1, h2, h3 {
-    color: #8B4B8C !important; /* Deep plum for headers */
-    text-shadow: 0 1px 3px rgba(139, 75, 140, 0.2);
+    color: #2C5AA0 !important; /* Deep blue for headers */
+    text-shadow: 0 1px 3px rgba(44, 90, 160, 0.3);
   }
 
   /* REMOVED - Using pascal theme body style above */
