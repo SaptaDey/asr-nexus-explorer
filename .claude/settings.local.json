@@ -33,7 +33,8 @@
       "Bash(true)",
       "Bash(timeout:*)",
       "Bash(pkill:*)",
-      "WebFetch(domain:scientific-research.online)"
+      "WebFetch(domain:scientific-research.online)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }
