@@ -95,7 +95,7 @@ export const useCostAwareStageExecution = ({
         // **STAGE 1 BYPASS**: Use direct API for Stage 1 to avoid any Cost-Aware Orchestration issues
         if (currentStage === 0) {
           console.log(`🎯 Direct API call for Stage 1 (bypassing cost-aware orchestration)`, { 
-            promptLength: prompt.length, 
+            promptLength: (prompt && typeof prompt === 'string') ? prompt.length : 0, 
             hasGeminiKey: !!apiKeys.gemini,
             additionalParams 
           });
@@ -114,7 +114,7 @@ export const useCostAwareStageExecution = ({
           );
           
           console.log(`✅ Direct API call successful for Stage 1`, { 
-            resultLength: typeof result === 'string' ? result.length : 'non-string' 
+            resultLength: (result && typeof result === 'string') ? result.length : 'non-string' 
           });
           
           return result;
@@ -122,7 +122,7 @@ export const useCostAwareStageExecution = ({
         
         try {
           console.log(`🎯 Routing API call for stage: ${stageName}`, { 
-            promptLength: prompt.length, 
+            promptLength: (prompt && typeof prompt === 'string') ? prompt.length : 0, 
             hasGeminiKey: !!apiKeys.gemini,
             additionalParams 
           });
@@ -135,7 +135,7 @@ export const useCostAwareStageExecution = ({
           );
           
           console.log(`✅ API call successful for stage: ${stageName}`, { 
-            resultLength: typeof result === 'string' ? result.length : 'non-string' 
+            resultLength: (result && typeof result === 'string') ? result.length : 'non-string' 
           });
           
           return result;
@@ -226,7 +226,7 @@ export const useCostAwareStageExecution = ({
           // **STAGE 1 BYPASS**: Use direct API for Stage 1 to avoid any Cost-Aware Orchestration issues
           if (currentStage === 0) {
             console.log(`🎯 Direct API call for Stage 1 (bypassing cost-aware orchestration)`, { 
-              promptLength: prompt.length, 
+              promptLength: (prompt && typeof prompt === 'string') ? prompt.length : 0, 
               hasGeminiKey: !!apiKeys.gemini,
               additionalParams 
             });
@@ -245,7 +245,7 @@ export const useCostAwareStageExecution = ({
             );
             
             console.log(`✅ Direct API call successful for Stage 1`, { 
-              resultLength: typeof result === 'string' ? result.length : 'non-string' 
+              resultLength: (result && typeof result === 'string') ? result.length : 'non-string' 
             });
             
             return result;
@@ -253,7 +253,7 @@ export const useCostAwareStageExecution = ({
           
           try {
             console.log(`🎯 Routing API call for stage: ${stageName}`, { 
-              promptLength: prompt.length, 
+              promptLength: (prompt && typeof prompt === 'string') ? prompt.length : 0, 
               hasGeminiKey: !!apiKeys.gemini,
               additionalParams 
             });
@@ -266,7 +266,7 @@ export const useCostAwareStageExecution = ({
             );
             
             console.log(`✅ API call successful for stage: ${stageName}`, { 
-              resultLength: typeof result === 'string' ? result.length : 'non-string' 
+              resultLength: (result && typeof result === 'string') ? result.length : 'non-string' 
             });
             
             return result;
@@ -312,7 +312,7 @@ export const useCostAwareStageExecution = ({
             throw new Error('Stage 1 requires a valid research topic');
           }
           result = await initializeGraph(topicToUse, context);
-          console.log(`📊 Initialization result length: ${result.length}`);
+          console.log(`📊 Initialization result length: ${(result && typeof result === 'string') ? result.length : 'non-string'}`);
           setGraphData(prev => ({ ...prev, stage: 'initialization' }));
           break;
           
@@ -322,7 +322,7 @@ export const useCostAwareStageExecution = ({
             topic: context.researchContext.topic,
             hasValidTopic: !!context.researchContext.topic && context.researchContext.topic.trim() !== '',
             field: context.researchContext.field,
-            objectives: context.researchContext.objectives?.length || 0
+            objectives: (context.researchContext.objectives && Array.isArray(context.researchContext.objectives)) ? context.researchContext.objectives.length : 0
           });
           
           // **CRITICAL FIX**: Additional validation with better error message
@@ -404,7 +404,7 @@ export const useCostAwareStageExecution = ({
       }
 
       console.log(`✅ Stage ${stageIndex + 1} execution completed successfully`, { 
-        resultLength: result.length, 
+        resultLength: (result && typeof result === 'string') ? result.length : 'non-string', 
         stageIndex 
       });
       

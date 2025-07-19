@@ -323,7 +323,7 @@ export const decomposeTask = async (
     console.log('🚨 Stage 2: No topic in context, trying fallback methods...');
     
     // Try to extract from stage 1 results
-    if (context.stageResults && context.stageResults[0]) {
+    if (context.stageResults && Array.isArray(context.stageResults) && context.stageResults.length > 0 && context.stageResults[0]) {
       const stage1Result = context.stageResults[0];
       const topicMatches = [
         stage1Result.match(/Research Topic:\s*"([^"]+)"/),
@@ -856,11 +856,16 @@ export const extractSubgraphs = async (context: StageExecutorContext): Promise<s
   // 6A: Sub-graph Metrics Calc (Gemini Pro + CODE_EXECUTION)
   // 6B: Sub-graph Emit (Gemini Flash + STRUCTURED_OUTPUTS)
 
+  // **DEFENSIVE CHECK**: Ensure graph data exists before processing
+  const safeNodes = (context.graphData && Array.isArray(context.graphData.nodes)) ? context.graphData.nodes : [];
+  const safeEdges = (context.graphData && Array.isArray(context.graphData.edges)) ? context.graphData.edges : [];
+
   // Get high-quality evidence nodes from Stage 5 to extract subgraphs from
-  const evidenceNodes = context.graphData.nodes.filter(node => 
-    node.type === 'evidence' && 
+  const evidenceNodes = safeNodes.filter(node => 
+    node && node.type === 'evidence' && 
     node.confidence && 
     Array.isArray(node.confidence) && 
+    node.confidence.length > 0 &&
     (node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length) >= 0.5
   );
   
@@ -874,19 +879,19 @@ export const extractSubgraphs = async (context: StageExecutorContext): Promise<s
 RESEARCH TOPIC: "${context.researchContext.topic}"
 
 GRAPH STRUCTURE TO ANALYZE:
-Nodes: ${context.graphData.nodes.length}
-Edges: ${context.graphData.edges.length}
+Nodes: ${safeNodes.length}
+Edges: ${safeEdges.length}
 Evidence Nodes: ${evidenceNodes.length}
 
 COMPLETE GRAPH DATA:
 ${JSON.stringify({
-  nodes: context.graphData.nodes.map(n => ({
+  nodes: safeNodes.map(n => ({
     id: n.id,
     label: n.label,
     type: n.type,
     confidence: n.confidence
   })),
-  edges: context.graphData.edges.map(e => ({
+  edges: safeEdges.map(e => ({
     source: e.source,
     target: e.target,
     type: e.type || 'default'
@@ -1057,7 +1062,7 @@ export const composeResults = async (context: StageExecutorContext): Promise<str
   console.log(`🔬 Stage 7 starting with topic: "${researchTopic}"`);
   
   // Get high-priority subgraphs from Stage 6 to compose sections for
-  const stage6Results = context.stageResults.length >= 6 ? context.stageResults[5] : '';
+  const stage6Results = (context.stageResults && Array.isArray(context.stageResults) && context.stageResults.length >= 6) ? context.stageResults[5] : '';
   
   // Define composition sections for batch processing
   const compositionSections = [
@@ -1276,9 +1281,13 @@ export const performReflection = async (context: StageExecutorContext): Promise<
   // 8A: Audit Script (Gemini Pro + CODE_EXECUTION)
   // 8B: Audit Outputs (Gemini Pro + STRUCTURED_OUTPUTS)
 
+  // **DEFENSIVE CHECK**: Ensure graph data exists before processing
+  const safeNodes = (context.graphData && Array.isArray(context.graphData.nodes)) ? context.graphData.nodes : [];
+  const safeEdges = (context.graphData && Array.isArray(context.graphData.edges)) ? context.graphData.edges : [];
+
   // Get all previous stage results for comprehensive audit
-  const stage7Results = context.stageResults.length >= 7 ? context.stageResults[6] : '';
-  const allPreviousStages = context.stageResults.slice(0, 7).join('\n--- STAGE BREAK ---\n');
+  const stage7Results = (context.stageResults && Array.isArray(context.stageResults) && context.stageResults.length >= 7) ? context.stageResults[6] : '';
+  const allPreviousStages = (context.stageResults && Array.isArray(context.stageResults)) ? context.stageResults.slice(0, 7).join('\n--- STAGE BREAK ---\n') : '';
 
   // **MICRO-PASS 8A: Audit Script (CODE_EXECUTION with coverage, bias, power analysis)**
   const auditScriptPrompt = `Execute comprehensive audit script for ASR-GoT framework Stage 8A.
@@ -1292,9 +1301,9 @@ STAGE 7 COMPOSITION:
 ${stage7Results}
 
 GRAPH STRUCTURE:
-Nodes: ${context.graphData.nodes.length}
-Edges: ${context.graphData.edges.length}
-Types: ${[...new Set(context.graphData.nodes.map(n => n.type))].join(', ')}
+Nodes: ${safeNodes.length}
+Edges: ${safeEdges.length}
+Types: ${[...new Set(safeNodes.map(n => n.type))].join(', ')}
 
 TASK: Run automated audit script with CODE_EXECUTION to check:
 1. **Coverage analysis** - research breadth vs depth assessment
@@ -1670,20 +1679,28 @@ export const generateFinalAnalysis = async (context: StageExecutorContext): Prom
   const componentAssessments: any[] = [];
 
   // Get previous stage results for context
-  const stage8Results = context.stageResults.length >= 8 ? context.stageResults[7] : '';
-  const stage7Results = context.stageResults.length >= 7 ? context.stageResults[6] : '';
-  const allPreviousStages = context.stageResults.slice(0, 8).join('\n--- STAGE BREAK ---\n');
+  const stage8Results = (context.stageResults && Array.isArray(context.stageResults) && context.stageResults.length >= 8) ? context.stageResults[7] : '';
+  const stage7Results = (context.stageResults && Array.isArray(context.stageResults) && context.stageResults.length >= 7) ? context.stageResults[6] : '';
+  const allPreviousStages = (context.stageResults && Array.isArray(context.stageResults)) ? context.stageResults.slice(0, 8).join('\n--- STAGE BREAK ---\n') : '';
+
+  // **DEFENSIVE CHECK**: Ensure graph data exists before processing
+  const safeNodes = (context.graphData && Array.isArray(context.graphData.nodes)) ? context.graphData.nodes : [];
+  const safeEdges = (context.graphData && Array.isArray(context.graphData.edges)) ? context.graphData.edges : [];
 
   // Generate comprehensive statistics
-  const nodeTypes = context.graphData.nodes.reduce((acc, node) => {
-    acc[node.type] = (acc[node.type] || 0) + 1;
+  const nodeTypes = safeNodes.reduce((acc, node) => {
+    if (node && node.type) {
+      acc[node.type] = (acc[node.type] || 0) + 1;
+    }
     return acc;
   }, {} as Record<string, number>);
 
-  const averageConfidence = context.graphData.nodes
-    .filter(n => n.confidence && n.confidence.length > 0)
-    .map(n => n.confidence.reduce((a, b) => a + b, 0) / n.confidence.length)
-    .reduce((sum, conf) => sum + conf, 0) / Math.max(1, context.graphData.nodes.length);
+  const averageConfidence = safeNodes.length > 0 
+    ? safeNodes
+        .filter(n => n && n.confidence && Array.isArray(n.confidence) && n.confidence.length > 0)
+        .map(n => n.confidence.reduce((a, b) => a + b, 0) / n.confidence.length)
+        .reduce((sum, conf) => sum + conf, 0) / Math.max(1, safeNodes.length)
+    : 0;
 
   // **BATCH API IMPLEMENTATION**: Process each final analysis component individually
   const finalAnalysisBatchPrompts = analysisComponents.map((component, i) => {
@@ -1703,10 +1720,10 @@ COMPLETE RESEARCH PROGRESSION:
 ${allPreviousStages}
 
 RESEARCH STATISTICS:
-- Total Knowledge Nodes: ${context.graphData.nodes.length}
+- Total Knowledge Nodes: ${safeNodes.length}
 - Average Confidence: ${averageConfidence.toFixed(3)}
 - Node Types: ${JSON.stringify(nodeTypes)}
-- Hypotheses Generated: ${context.researchContext.hypotheses.length}
+- Hypotheses Generated: ${(context.researchContext.hypotheses && Array.isArray(context.researchContext.hypotheses)) ? context.researchContext.hypotheses.length : 0}
 
 Create comprehensive "${component}" for the final analysis:
 
@@ -1767,7 +1784,7 @@ COMPONENT_ID: ${component.toLowerCase().replace(/ /g, '_')}`
 - Total content generated: ${totalContentLength} characters
 - Components with actionable insights: ${actionableCount}
 - Evidence-based components: ${evidenceBasedCount}
-- Research nodes processed: ${context.graphData.nodes.length}
+- Research nodes processed: ${safeNodes.length}
 - Average confidence: ${averageConfidence.toFixed(3)}
 
 ---
@@ -1807,10 +1824,10 @@ ${componentAssessments.map((assessment, index) =>
 ✓ Stage 9: Final Analysis per Component (Batch Processed)
 
 **Graph Statistics:**
-- Knowledge Nodes: ${context.graphData.nodes.length}
-- Connections: ${context.graphData.edges.length}
+- Knowledge Nodes: ${safeNodes.length}
+- Connections: ${safeEdges.length}
 - Node Types: ${JSON.stringify(nodeTypes)}
-- Hypotheses Generated: ${context.researchContext.hypotheses.length}
+- Hypotheses Generated: ${(context.researchContext.hypotheses && Array.isArray(context.researchContext.hypotheses)) ? context.researchContext.hypotheses.length : 0}
 
 **🎉 RESEARCH ANALYSIS COMPLETE 🎉**
 
