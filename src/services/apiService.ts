@@ -60,6 +60,11 @@ export const callGeminiAPI = async (
     throw new Error('Invalid Gemini API key');
   }
 
+  // **CRITICAL FIX**: Defensive validation before validateInput
+  if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
+    throw new Error('API call failed: Invalid prompt - must be a non-empty string');
+  }
+  
   // Validate and sanitize input
   const sanitizedPrompt = validateInput(prompt, 'prompt');
 

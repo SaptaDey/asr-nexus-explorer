@@ -524,12 +524,23 @@ export class CostAwareOrchestrationService {
       } else if (stage.includes('10C_validation')) {
         result = await this.executeReportValidation(additionalParams?.htmlReport || '', apiKeys.gemini, additionalParams);
       } else if (isBatchRequest && prompts.length > 1) {
+        // **CRITICAL FIX**: Validate all prompts in batch before API call
+        const invalidPrompts = prompts.filter(p => !p || typeof p !== 'string' || p.trim() === '');
+        if (invalidPrompts.length > 0) {
+          throw new Error(`Invalid prompts in batch for stage ${stage}: ${invalidPrompts.length} empty/invalid prompts found`);
+        }
+        
         // Use batch processing
         console.log(`Executing batch request for stage ${stage} with ${prompts.length} prompts`);
         result = await this.routeBatchApiCall(stage, prompts, apiKeys, additionalParams);
       } else {
         // Single prompt processing
         const singlePrompt = Array.isArray(prompt) ? prompt[0] : prompt;
+        
+        // **CRITICAL FIX**: Validate single prompt before API call
+        if (!singlePrompt || typeof singlePrompt !== 'string' || singlePrompt.trim() === '') {
+          throw new Error(`Invalid prompt for stage ${stage}: must be a non-empty string`);
+        }
         
         switch (model) {
           case 'sonar-deep-research':

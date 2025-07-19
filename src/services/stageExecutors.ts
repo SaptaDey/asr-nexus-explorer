@@ -1132,6 +1132,11 @@ SECTION_ID: ${section.toLowerCase().replace(/ /g, '_')}`
   
   console.log(`🎯 Stage 7: Executing ${validatedPrompts.length} composition prompts`);
   
+  // **DEBUG**: Log first few characters of each prompt for debugging
+  validatedPrompts.forEach((prompt, index) => {
+    console.log(`📝 Stage 7 Prompt ${index + 1}: "${prompt.substring(0, 100)}..." (${prompt.length} chars)`);
+  });
+  
   // Execute batch API call for all composition sections
   const batchCompositionResults = context.routeApiCall 
     ? await context.routeApiCall(validatedPrompts, { 
