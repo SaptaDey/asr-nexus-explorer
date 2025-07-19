@@ -827,10 +827,21 @@ plt.savefig('figure_name.png', dpi=300, bbox_inches='tight')`;
       throw new Error(`Invalid Pro candidate structure: ${JSON.stringify(candidate)}`);
     }
     
-    const content = candidate.content.parts[0]?.text;
+    const part = candidate.content.parts[0];
+    let content = part?.text;
+    
+    // **CRITICAL FIX**: Handle CODE_EXECUTION responses with executableCode
+    if (!content && part?.executableCode) {
+      console.log('🔧 Pro API: Processing executableCode response');
+      // For CODE_EXECUTION responses, combine the code and any output
+      content = `Code executed:\n\`\`\`python\n${part.executableCode.code}\n\`\`\`\n\nLanguage: ${part.executableCode.language}`;
+      if (part.executionResult) {
+        content += `\n\nExecution Result:\n${JSON.stringify(part.executionResult, null, 2)}`;
+      }
+    }
     
     if (!content || typeof content !== 'string') {
-      throw new Error(`No text content in Pro response: ${JSON.stringify(candidate.content.parts[0])}`);
+      throw new Error(`No text content in Pro response: ${JSON.stringify(part)}`);
     }
     
     return content;

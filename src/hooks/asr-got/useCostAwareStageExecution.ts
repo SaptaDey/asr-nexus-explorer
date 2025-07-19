@@ -429,13 +429,28 @@ export const useCostAwareStageExecution = ({
     } catch (error: any) {
       console.error(`Stage ${stageIndex + 1} execution failed:`, error);
       
+      // **CRITICAL FIX**: Enhanced error handling to prevent unhandled promise rejections
+      let errorMessage = error.message || 'Unknown error occurred';
+      
       if (error.message === 'PERPLEXITY_KEY_REQUIRED') {
         toast.error('Please configure Perplexity API key for Sonar Deep Research to continue');
+      } else if (errorMessage.includes('Cannot read properties of undefined')) {
+        errorMessage = `Stage ${stageIndex + 1} encountered a data structure error. This may be due to incomplete previous stage results.`;
+        toast.error(errorMessage);
+      } else if (errorMessage.includes('Invalid input: must be a non-empty string')) {
+        errorMessage = `Stage ${stageIndex + 1} received invalid input. Please ensure all previous stages completed successfully.`;
+        toast.error(errorMessage);
       } else {
-        toast.error(`Stage ${stageIndex + 1} failed: ${error.message}`);
+        toast.error(`Stage ${stageIndex + 1} failed: ${errorMessage}`);
       }
       
-      throw error;
+      // Log error for debugging but don't rethrow to prevent unhandled promise rejection
+      console.warn(`🚨 Stage ${stageIndex + 1} error handled gracefully:`, errorMessage);
+      
+      // Update stage results with error message instead of throwing
+      updateStageResults(stageIndex, `**Stage ${stageIndex + 1} Error**: ${errorMessage}`);
+      
+      return; // Exit gracefully without throwing
     } finally {
       setIsProcessing(false);
     }

@@ -1153,9 +1153,15 @@ SECTION_ID: ${section.toLowerCase().replace(/ /g, '_')}`
   // Process batch results and compile sections
   for (let i = 0; i < compositionSections.length; i++) {
     const section = compositionSections[i];
-    const sectionContent = Array.isArray(batchCompositionResults) 
+    let sectionContent = Array.isArray(batchCompositionResults) 
       ? batchCompositionResults[i] 
       : batchCompositionResults;
+    
+    // **CRITICAL FIX**: Defensive check for undefined sectionContent
+    if (!sectionContent || typeof sectionContent !== 'string') {
+      sectionContent = `Section ${section} could not be generated due to API response issues.`;
+      console.warn(`🚨 Stage 7: Section ${section} content is undefined, using fallback`);
+    }
     
     allCompositionResults.push(`## ${section}\n\n${sectionContent}\n`);
 
