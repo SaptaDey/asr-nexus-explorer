@@ -710,8 +710,8 @@ Make the data realistic and scientifically meaningful for the research domain.
       {/* Main Interface */}
       <div className={`container mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 transition-all duration-300 ${showBiasAudit ? 'sm:mr-96' : ''}`}>
         
-        {/* 🐛 Debug Button - Always Visible at Top */}
-        <div className="fixed top-4 right-4 z-50">
+        {/* 🐛 Debug Button - Always Visible at Bottom */}
+        <div className="fixed bottom-4 right-4 z-50">
           <DebugButton />
         </div>
         
@@ -1151,7 +1151,6 @@ Make the data realistic and scientifically meaningful for the research domain.
                     <RotateCcw className="h-4 w-4 mr-2" />
                     Reset Framework
                   </Button>
-              <DebugButton />
               <RealTimeErrorLogger 
                 maxErrors={100}
                 showInline={false}
