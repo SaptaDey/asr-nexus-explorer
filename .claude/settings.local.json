@@ -32,7 +32,8 @@
       "Bash(npx update-browserslist-db:*)",
       "Bash(true)",
       "Bash(timeout:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "WebFetch(domain:scientific-research.online)"
     ],
     "deny": []
   }

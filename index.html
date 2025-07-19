@@ -5,6 +5,52 @@
     <link rel="icon" type="image/png" href="/img/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ASR-GoT Research Framework</title>
+    
+    <!-- Emergency Error Logging -->
+    <script>
+      window.onerror = function(msg, url, line, col, error) {
+        const errorDiv = document.getElementById('emergency-errors') || createErrorDiv();
+        errorDiv.innerHTML += `<div style="color: red; border: 1px solid red; padding: 10px; margin: 5px; background: #ffe6e6;">
+          <strong>JavaScript Error:</strong><br/>
+          Message: ${msg}<br/>
+          File: ${url}<br/>
+          Line: ${line}:${col}<br/>
+          Error: ${error?.stack || error}<br/>
+          Time: ${new Date().toISOString()}
+        </div>`;
+        return false;
+      };
+      
+      window.addEventListener('unhandledrejection', function(event) {
+        const errorDiv = document.getElementById('emergency-errors') || createErrorDiv();
+        errorDiv.innerHTML += `<div style="color: red; border: 1px solid red; padding: 10px; margin: 5px; background: #ffe6e6;">
+          <strong>Unhandled Promise Rejection:</strong><br/>
+          Reason: ${event.reason}<br/>
+          Time: ${new Date().toISOString()}
+        </div>`;
+      });
+      
+      function createErrorDiv() {
+        const div = document.createElement('div');
+        div.id = 'emergency-errors';
+        div.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; z-index: 99999; background: white; max-height: 300px; overflow-y: auto; border-bottom: 3px solid red;';
+        document.body.prepend(div);
+        return div;
+      }
+      
+      // Log app loading status
+      console.log('%c🚀 ASR-GoT App Starting...', 'color: blue; font-size: 16px; font-weight: bold;');
+      setTimeout(() => {
+        if (!document.querySelector('[data-app-loaded]')) {
+          const errorDiv = document.getElementById('emergency-errors') || createErrorDiv();
+          errorDiv.innerHTML += `<div style="color: orange; border: 1px solid orange; padding: 10px; margin: 5px; background: #fff3cd;">
+            <strong>App Loading Issue:</strong><br/>
+            React app did not load within 5 seconds. Check console for errors.<br/>
+            Time: ${new Date().toISOString()}
+          </div>`;
+        }
+      }, 5000);
+    </script>
     <meta name="description" content="Advanced Scientific Reasoning Graph of Thoughts - AI-powered research analysis framework" />
     <meta name="author" content="ASR-GoT Team" />
 
