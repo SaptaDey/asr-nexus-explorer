@@ -478,7 +478,7 @@ export class CostAwareOrchestrationService {
     const estimatedTokens = Math.ceil(singlePrompt.length / 4); // Rough token estimation
     
     if (estimatedTokens >= 200000) {
-      const cacheKey = `${stage}_${Buffer.from(singlePrompt.substring(0, 1000)).toString('base64')}`;
+      const cacheKey = `${stage}_${btoa(singlePrompt.substring(0, 1000)).replace(/[^a-zA-Z0-9]/g, '_')}`;
       const cachedResult = this.getCachedContext(cacheKey);
       
       if (cachedResult) {

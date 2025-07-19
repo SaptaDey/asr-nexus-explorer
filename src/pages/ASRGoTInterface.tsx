@@ -360,7 +360,7 @@ Make the data realistic and scientifically meaningful for the research domain.
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <meta name="description" content="Comprehensive scientific analysis report generated using advanced reasoning framework">
-          <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+          <script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
           <style>
             * { box-sizing: border-box; }
             body { 

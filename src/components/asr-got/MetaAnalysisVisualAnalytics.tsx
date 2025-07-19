@@ -51,7 +51,7 @@ export const MetaAnalysisVisualAnalytics: React.FC<MetaAnalysisVisualAnalyticsPr
     }
 
     const script = document.createElement('script');
-    script.src = 'https://cdn.plot.ly/plotly-latest.min.js';
+    script.src = 'https://cdn.plot.ly/plotly-3.0.1.min.js';
     script.onload = () => setPlotlyLoaded(true);
     script.onerror = () => toast.error('Failed to load Plotly.js');
     document.head.appendChild(script);

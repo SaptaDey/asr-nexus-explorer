@@ -62,7 +62,7 @@ export const VisualAnalytics: React.FC<VisualAnalyticsProps> = ({
     }
 
     const script = document.createElement('script');
-    script.src = 'https://cdn.plot.ly/plotly-latest.min.js';
+    script.src = 'https://cdn.plot.ly/plotly-3.0.1.min.js';
     script.onload = () => {
       setPlotlyLoaded(true);
       toast.success('Plotly.js loaded for visual analytics');

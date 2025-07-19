@@ -1039,6 +1039,23 @@ ${subgraphNodes.slice(0, 5).map((sg, i) =>
 };
 
 export const composeResults = async (context: StageExecutorContext): Promise<string> => {
+  // **CRITICAL INPUT VALIDATION**: Ensure we have a valid research topic
+  let researchTopic = context.researchContext?.topic || '';
+  
+  if (!researchTopic || researchTopic.trim() === '') {
+    // **EMERGENCY FALLBACK**: Use a default research topic to prevent complete failure
+    researchTopic = 'Scientific Research Analysis - General Investigation';
+    console.warn('🚨 Stage 7: Using emergency fallback research topic to prevent failure');
+    
+    // Update context with emergency topic
+    if (context.setResearchContext) {
+      context.setResearchContext(prev => ({ ...prev, topic: researchTopic }));
+    }
+    context.researchContext.topic = researchTopic;
+  }
+  
+  console.log(`🔬 Stage 7 starting with topic: "${researchTopic}"`);
+  
   // Get high-priority subgraphs from Stage 6 to compose sections for
   const stage6Results = context.stageResults.length >= 6 ? context.stageResults[5] : '';
   
@@ -1072,7 +1089,7 @@ export const composeResults = async (context: StageExecutorContext): Promise<str
     
     return `You are a PhD-level researcher conducting Stage 7: Composition.
 
-RESEARCH TOPIC: "${context.researchContext.topic}"
+RESEARCH TOPIC: "${researchTopic}"
 
 SPECIFIC SECTION TO COMPOSE: "${section}"
 
@@ -1104,16 +1121,29 @@ BATCH_INDEX: ${i}
 SECTION_ID: ${section.toLowerCase().replace(/ /g, '_')}`
   });
 
+  // **CRITICAL FIX**: Ensure prompts are validated before API call
+  const validatedPrompts = compositionBatchPrompts.filter(prompt => 
+    prompt && typeof prompt === 'string' && prompt.trim().length > 0
+  );
+  
+  if (validatedPrompts.length === 0) {
+    throw new Error('Stage 7 failed: No valid prompts generated for composition');
+  }
+  
+  console.log(`🎯 Stage 7: Executing ${validatedPrompts.length} composition prompts`);
+  
   // Execute batch API call for all composition sections
   const batchCompositionResults = context.routeApiCall 
-    ? await context.routeApiCall(compositionBatchPrompts, { 
+    ? await context.routeApiCall(validatedPrompts, { 
         batch: true,
+        prompts: validatedPrompts,
         stageId: '7_composition_batch', 
         graphHash: JSON.stringify(context.graphData).slice(0, 100) 
       })
-    : await Promise.all(compositionBatchPrompts.map(prompt => 
-        callGeminiAPI(prompt, context.apiKeys.gemini, 'thinking-structured')
-      ));
+    : await Promise.all(validatedPrompts.map((prompt, index) => {
+        console.log(`🔧 Processing section ${index + 1}: ${compositionSections[index]}`);
+        return callGeminiAPI(prompt, context.apiKeys.gemini, 'thinking-structured')
+      }));
 
   // Process batch results and compile sections
   for (let i = 0; i < compositionSections.length; i++) {
