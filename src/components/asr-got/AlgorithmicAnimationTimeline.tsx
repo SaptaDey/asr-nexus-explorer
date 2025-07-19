@@ -1,4 +1,3 @@
-
 /**
  * AlgorithmicAnimationTimeline.tsx - Fixed version that returns proper JSX
  * Implements the precise 8-stage animation sequence with specific timing and easing
@@ -6,7 +5,6 @@
 
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSpring, useTrail, config } from '@react-spring/web';
-import { animate as anime } from 'animejs';
 
 interface AlgorithmicAnimationTimelineProps {
   currentStage: number;
@@ -97,10 +95,10 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
       tension: 170,
       friction: 26,
     },
-    delay: reducedMotion ? 0 : (index: number) => index * 150
+    delay: reducedMotion ? 0 : 150
   });
 
-  // Stage 3: Anime.js stroke-dashoffset → react-spring thickness sequence
+  // Stage 3: CSS-based stroke-dashoffset animation
   const branchSpring = useSpring({
     thickness: currentStage >= 3 ? 1 : 0,
     config: { tension: 200, friction: 25 }
@@ -117,18 +115,15 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
         // Set initial stroke-dasharray and dashoffset
         element.style.strokeDasharray = `${pathLength}`;
         element.style.strokeDashoffset = `${pathLength}`;
+        element.style.transition = `stroke-dashoffset ${1200 + index * 200}ms cubic-bezier(0.4, 0, 0.2, 1)`;
         
-        // Anime.js stroke-dashoffset animation - Fixed parameters
-        anime({
-          targets: element,
-          strokeDashoffset: 0,
-          duration: 1200,
-          delay: index * 200,
-          easing: 'easeInOutCubic',
-          complete: () => {
-            onAnimationComplete?.(3);
+        // Trigger animation
+        setTimeout(() => {
+          element.style.strokeDashoffset = '0';
+          if (index === branches.length - 1) {
+            setTimeout(() => onAnimationComplete?.(3), 1200);
           }
-        });
+        }, index * 200);
       });
     }
   }, [currentStage, reducedMotion, svgRef, onAnimationComplete]);
@@ -143,67 +138,55 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
       const targetBranch = svgRef.current.querySelector(`#branch-${event.targetBranchId}`);
       if (!targetBranch) return;
 
-      // Branch pulse (rgba flash) - Fixed parameters
-      anime({
-        targets: targetBranch,
-        stroke: 'rgba(255, 215, 0, 0.9)',
-        duration: 200,
-        direction: 'alternate',
-        loop: 3,
-        easing: 'easeInOutQuad'
-      });
+      // Branch pulse (CSS-based flash)
+      (targetBranch as SVGElement).style.stroke = 'rgba(255, 215, 0, 0.9)';
+      (targetBranch as SVGElement).style.transition = 'stroke 200ms ease-in-out';
+      
+      setTimeout(() => {
+        (targetBranch as SVGElement).style.stroke = '';
+      }, 600);
 
-      // Radius spring increases by Δr (Bayesian ΔC) - Fixed parameters
+      // Radius spring increases by Δr (Bayesian ΔC)
       const currentWidth = parseFloat(targetBranch.getAttribute('stroke-width') || '2');
       const deltaR = event.deltaC * 10; // Scale factor for visual impact
       const newWidth = currentWidth + deltaR;
 
-      anime({
-        targets: targetBranch,
-        strokeWidth: newWidth,
-        duration: 800,
-        easing: 'easeOutElastic(1, .6)'
-      });
+      (targetBranch as SVGElement).style.transition = 'stroke-width 800ms cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+      (targetBranch as SVGElement).style.strokeWidth = `${newWidth}`;
     };
 
     // Process evidence events
     animationStateRef.current.evidenceEvents.forEach(processEvidenceEvent);
   }, [currentStage, svgRef]);
 
-  // Stage 5: Prune/merge with Anime.js morphTo
+  // Stage 5: Prune/merge with CSS transitions
   useEffect(() => {
     if (currentStage >= 5 && !reducedMotion && svgRef.current) {
       const prunedNodes = svgRef.current.querySelectorAll('.pruned-node');
       const mergedPaths = svgRef.current.querySelectorAll('.merged-path');
 
-      // Withered branch fades to 20% opacity - Fixed parameters
-      anime({
-        targets: Array.from(prunedNodes),
-        opacity: 0.2,
-        duration: 700,
-        easing: 'easeOutQuad'
+      // Withered branch fades to 20% opacity
+      prunedNodes.forEach((node) => {
+        (node as SVGElement).style.transition = 'opacity 700ms ease-out';
+        (node as SVGElement).style.opacity = '0.2';
       });
 
-      // Merged paths morph smoothly - Fixed parameters
+      // Merged paths morph smoothly (simplified approach)
       mergedPaths.forEach((path, index) => {
         const element = path as SVGPathElement;
-        const originalPath = element.getAttribute('d');
         const targetPath = element.getAttribute('data-merged-path');
         
-        if (originalPath && targetPath) {
-          anime({
-            targets: element,
-            d: targetPath,
-            duration: 1000,
-            delay: index * 100,
-            easing: 'easeInOutCubic'
-          });
+        if (targetPath) {
+          setTimeout(() => {
+            element.style.transition = 'd 1000ms cubic-bezier(0.4, 0, 0.2, 1)';
+            element.setAttribute('d', targetPath);
+          }, index * 100);
         }
       });
     }
   }, [currentStage, reducedMotion, svgRef]);
 
-  // Stage 6: Staggered leaf fade-in with friction 80 jitter - Fixed useTrail parameters
+  // Stage 6: Staggered leaf fade-in with friction 80 jitter
   const leafTrail = useTrail(leafNodes.length, {
     from: { 
       opacity: 0, 
@@ -226,7 +209,7 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
       tension: 120,
       friction: 80 // Exact friction 80 as specified
     },
-    delay: reducedMotion ? 0 : (index: number) => index * 100
+    delay: reducedMotion ? 0 : 100
   });
 
   // Stage 7: SVG path morph over 800ms with right-slide labels
@@ -242,43 +225,38 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
       
       blossoms.forEach((blossom, index) => {
         const element = blossom as SVGPathElement;
-        const closedPath = element.getAttribute('data-closed-path');
         const openPath = element.getAttribute('data-open-path');
         
-        if (closedPath && openPath) {
-          // SVG path morph over 800ms - Fixed parameters
-          anime({
-            targets: element,
-            d: openPath,
-            duration: 800,
-            delay: index * 200,
-            easing: 'easeOutCubic'
-          });
+        if (openPath) {
+          setTimeout(() => {
+            element.style.transition = 'd 800ms cubic-bezier(0.4, 0, 0.2, 1)';
+            element.setAttribute('d', openPath);
+          }, index * 200);
         }
 
-        // Label slides in from right - Fixed parameters
+        // Label slides in from right
         const label = svgRef.current?.querySelector(`#blossom-label-${index}`);
         if (label) {
-          anime({
-            targets: label,
-            translateX: 0,
-            opacity: 1,
-            duration: 600,
-            delay: index * 200 + 400,
-            easing: 'easeOutQuart'
-          });
+          (label as SVGElement).style.transform = 'translateX(100px)';
+          (label as SVGElement).style.opacity = '0';
+          
+          setTimeout(() => {
+            (label as SVGElement).style.transition = 'transform 600ms ease-out, opacity 600ms ease-out';
+            (label as SVGElement).style.transform = 'translateX(0)';
+            (label as SVGElement).style.opacity = '1';
+          }, index * 200 + 400);
         }
       });
     }
   }, [currentStage, reducedMotion, svgRef]);
 
-  // Stage 8: Pollen particle system with branch shaking
+  // Stage 8: Particle system with branch shaking
   const processChecklistItems = useCallback((checklist: ChecklistItem[]) => {
     if (!svgRef.current) return;
 
     checklist.forEach((item, index) => {
       if (item.passed) {
-        // Golden particles for success - Fixed parameters
+        // Golden particles for success
         const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         particle.setAttribute('r', '3');
         particle.setAttribute('fill', '#fbbf24');
@@ -288,29 +266,30 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
         
         svgRef.current.appendChild(particle);
         
-        anime({
-          targets: particle,
-          translateY: -50,
-          opacity: 0,
-          scale: 0.3,
-          duration: 2000,
-          delay: index * 100,
-          easing: 'easeOutQuad',
-          complete: () => {
+        // CSS-based particle animation
+        particle.style.transition = 'transform 2000ms ease-out, opacity 2000ms ease-out, scale 2000ms ease-out';
+        
+        setTimeout(() => {
+          particle.style.transform = 'translateY(-50px)';
+          particle.style.opacity = '0';
+          particle.style.transform += ' scale(0.3)';
+          
+          setTimeout(() => {
             particle.remove();
-          }
-        });
+          }, 2000);
+        }, index * 100);
       } else {
-        // Crimson particles and branch shaking for failures
+        // Branch shaking for failures
         const failedBranch = svgRef.current.querySelector(`#branch-${item.id}`);
         if (failedBranch) {
-          // Branch shaking - Fixed parameters
-          anime({
-            targets: failedBranch,
-            translateX: [-5, 5, -3, 3, 0],
-            duration: 500,
-            delay: index * 150,
-            easing: 'easeInOutQuad'
+          const element = failedBranch as SVGElement;
+          element.style.transition = 'transform 500ms ease-in-out';
+          
+          const keyframes = [-5, 5, -3, 3, 0];
+          keyframes.forEach((offset, i) => {
+            setTimeout(() => {
+              element.style.transform = `translateX(${offset}px)`;
+            }, (i * 100) + (index * 150));
           });
         }
       }
