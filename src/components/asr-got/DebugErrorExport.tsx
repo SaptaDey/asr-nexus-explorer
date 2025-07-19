@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Bug, Download, Copy, FileText, AlertTriangle } from 'lucide-react';
-import { GraphData, ResearchContext } from '@/types/asrGotTypes';
+import type { GraphData, ResearchContext } from '@/types/asrGotTypes';
 
 interface DebugErrorExportProps {
   graphData: GraphData;
