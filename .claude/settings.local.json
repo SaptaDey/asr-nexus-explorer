@@ -31,7 +31,8 @@
       "Bash(mv:*)",
       "Bash(npx update-browserslist-db:*)",
       "Bash(true)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(pkill:*)"
     ],
     "deny": []
   }

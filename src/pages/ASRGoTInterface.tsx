@@ -24,6 +24,7 @@ import { MetaAnalysisVisualAnalytics } from '@/components/asr-got/MetaAnalysisVi
 import { CostAwareDashboard } from '@/components/asr-got/CostAwareDashboard';
 import { DeveloperMode } from '@/components/asr-got/DeveloperMode';
 import { UnifiedAPICredentialsModal } from '@/components/asr-got/UnifiedAPICredentialsModal';
+import { DebugErrorExport } from '@/components/asr-got/DebugErrorExport';
 import { useASRGoT } from '@/hooks/useASRGoT';
 import { useProcessingMode } from '@/hooks/asr-got/useProcessingMode';
 import { costAwareOrchestration } from '@/services/CostAwareOrchestrationService';
@@ -1141,6 +1142,14 @@ Make the data realistic and scientifically meaningful for the research domain.
                     <RotateCcw className="h-4 w-4 mr-2" />
                     Reset Framework
                   </Button>
+                  <DebugErrorExport
+                    graphData={graphData}
+                    researchContext={researchContext}
+                    stageResults={stageResults}
+                    errorLogs={[]}
+                    currentStage={currentStage}
+                    isProcessing={isProcessing}
+                  />
                 </div>
                 
                 {/* In-App Preview */}
