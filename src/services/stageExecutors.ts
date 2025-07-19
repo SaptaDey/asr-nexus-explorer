@@ -1072,16 +1072,24 @@ export const composeResults = async (context: StageExecutorContext): Promise<str
   const allCompositionResults: string[] = [];
   const sectionAssessments: any[] = [];
 
-  // Generate comprehensive statistics for context
-  const nodeTypes = context.graphData.nodes.reduce((acc, node) => {
-    acc[node.type] = (acc[node.type] || 0) + 1;
+  // **DEFENSIVE CHECK**: Ensure graph data exists before processing
+  const safeNodes = context.graphData?.nodes || [];
+  const safeEdges = context.graphData?.edges || [];
+  
+  // Generate comprehensive statistics for context with defensive programming
+  const nodeTypes = safeNodes.reduce((acc, node) => {
+    if (node && node.type) {
+      acc[node.type] = (acc[node.type] || 0) + 1;
+    }
     return acc;
   }, {} as Record<string, number>);
 
-  const averageConfidence = context.graphData.nodes
-    .filter(n => n.confidence && n.confidence.length > 0)
-    .map(n => n.confidence.reduce((a, b) => a + b, 0) / n.confidence.length)
-    .reduce((sum, conf) => sum + conf, 0) / Math.max(1, context.graphData.nodes.length);
+  const averageConfidence = safeNodes.length > 0 
+    ? safeNodes
+        .filter(n => n && n.confidence && Array.isArray(n.confidence) && n.confidence.length > 0)
+        .map(n => n.confidence.reduce((a, b) => a + b, 0) / n.confidence.length)
+        .reduce((sum, conf) => sum + conf, 0) / Math.max(1, safeNodes.length)
+    : 0;
 
   // **BATCH API IMPLEMENTATION**: Process each composition section individually
   const compositionBatchPrompts = compositionSections.map((section, i) => {
@@ -1095,9 +1103,9 @@ SPECIFIC SECTION TO COMPOSE: "${section}"
 
 RESEARCH CONTEXT:
 - Field: ${context.researchContext.field}
-- Total Knowledge Nodes: ${context.graphData.nodes.length}
+- Total Knowledge Nodes: ${safeNodes.length}
 - Average Confidence: ${averageConfidence.toFixed(3)}
-- Hypotheses Generated: ${context.researchContext.hypotheses.length}
+- Hypotheses Generated: ${(context.researchContext.hypotheses || []).length}
 
 STAGE 6 SUBGRAPH ANALYSIS:
 ${stage6Results}
@@ -1157,21 +1165,47 @@ SECTION_ID: ${section.toLowerCase().replace(/ /g, '_')}`
       ? batchCompositionResults[i] 
       : batchCompositionResults;
     
-    // **CRITICAL FIX**: Defensive check for undefined sectionContent
-    if (!sectionContent || typeof sectionContent !== 'string') {
-      sectionContent = `Section ${section} could not be generated due to API response issues.`;
-      console.warn(`🚨 Stage 7: Section ${section} content is undefined, using fallback`);
-    }
-    
-    allCompositionResults.push(`## ${section}\n\n${sectionContent}\n`);
+    // **ULTRA-DEFENSIVE CHECK**: Multiple layers of validation to prevent any undefined access
+    try {
+      // First layer: basic undefined/null check
+      if (!sectionContent || typeof sectionContent !== 'string') {
+        sectionContent = `Section ${section} could not be generated due to API response issues.`;
+        console.warn(`🚨 Stage 7: Section ${section} content is undefined, using fallback`);
+      }
+      
+      // Second layer: ensure it's actually a valid string with content
+      if (typeof sectionContent !== 'string' || sectionContent.trim() === '') {
+        sectionContent = `Section ${section}: Content generation failed - using emergency fallback.`;
+        console.warn(`🚨 Stage 7: Section ${section} content is empty string, using emergency fallback`);
+      }
+      
+      // Third layer: final validation before any string operations
+      const safeContent = String(sectionContent || '').trim() || `Section ${section}: Emergency content replacement`;
+      
+      allCompositionResults.push(`## ${section}\n\n${safeContent}\n`);
 
-    sectionAssessments.push({
-      sectionName: section,
-      contentLength: sectionContent.length,
-      hasEvidence: sectionContent.toLowerCase().includes('evidence'),
-      hasHypotheses: sectionContent.toLowerCase().includes('hypothesis'),
-      content: sectionContent
-    });
+      sectionAssessments.push({
+        sectionName: section,
+        contentLength: safeContent.length, // Now guaranteed to be a valid string
+        hasEvidence: safeContent.toLowerCase().includes('evidence'),
+        hasHypotheses: safeContent.toLowerCase().includes('hypothesis'),
+        content: safeContent
+      });
+      
+    } catch (error) {
+      // Emergency fallback if any of the above operations fail
+      console.error(`🚨 Stage 7: Critical error processing section ${section}:`, error);
+      const emergencyContent = `Section ${section}: Critical processing error occurred.`;
+      
+      allCompositionResults.push(`## ${section}\n\n${emergencyContent}\n`);
+      sectionAssessments.push({
+        sectionName: section,
+        contentLength: emergencyContent.length,
+        hasEvidence: false,
+        hasHypotheses: false,
+        content: emergencyContent
+      });
+    }
   }
 
   // Compile final HTML document
@@ -1191,19 +1225,19 @@ SECTION_ID: ${section.toLowerCase().replace(/ /g, '_')}`
     </style>
 </head>
 <body>
-    <h1>Scientific Research Analysis: ${context.researchContext.topic}</h1>
+    <h1>Scientific Research Analysis: ${context.researchContext?.topic || 'Research Topic'}</h1>
     
     <div class="metadata">
-        <strong>Research Field:</strong> ${context.researchContext.field}<br>
+        <strong>Research Field:</strong> ${context.researchContext?.field || 'General Research'}<br>
         <strong>Analysis Date:</strong> ${new Date().toLocaleDateString()}<br>
         <strong>Framework:</strong> ASR-GoT (Automatic Scientific Research - Graph of Thoughts)
     </div>
 
     <div class="stats">
-        <div class="stat-box"><h3>${context.graphData.nodes.length}</h3>Knowledge Nodes</div>
-        <div class="stat-box"><h3>${context.graphData.edges.length}</h3>Connections</div>
+        <div class="stat-box"><h3>${safeNodes.length}</h3>Knowledge Nodes</div>
+        <div class="stat-box"><h3>${safeEdges.length}</h3>Connections</div>
         <div class="stat-box"><h3>${averageConfidence.toFixed(2)}</h3>Avg Confidence</div>
-        <div class="stat-box"><h3>${context.researchContext.hypotheses.length}</h3>Hypotheses</div>
+        <div class="stat-box"><h3>${(context.researchContext.hypotheses || []).length}</h3>Hypotheses</div>
     </div>
 
     ${allCompositionResults.join('\n')}
@@ -1213,17 +1247,23 @@ SECTION_ID: ${section.toLowerCase().replace(/ /g, '_')}`
 </body>
 </html>`;
 
-  return `**Stage 7 Complete: Batch Composition for "${context.researchContext.topic}"**
+  // **FINAL DEFENSIVE CHECK**: Ensure all arrays are valid before final output
+  const safeCompositionResults = Array.isArray(allCompositionResults) ? allCompositionResults : [];
+  const safeSectionAssessments = Array.isArray(sectionAssessments) ? sectionAssessments : [];
+  const safeCompositionSections = Array.isArray(compositionSections) ? compositionSections : [];
+
+  return `**Stage 7 Complete: Batch Composition for "${context.researchContext.topic || 'Research Topic'}"**
 
 **Composition Results:**
-- Sections composed: ${compositionSections.length}
-- Total content length: ${allCompositionResults.join('').length} characters
+- Sections composed: ${safeCompositionSections.length}
+- Total content length: ${safeCompositionResults.join('').length} characters
 - HTML report generated with embedded styling and statistics
 
 **Section Analysis:**
-${sectionAssessments.map((assessment, index) => 
-  `${index + 1}. ${assessment.sectionName}: ${assessment.contentLength} chars (Evidence: ${assessment.hasEvidence ? 'YES' : 'NO'}, Hypotheses: ${assessment.hasHypotheses ? 'YES' : 'NO'})`
-).join('\n')}
+${safeSectionAssessments.map((assessment, index) => {
+  const safeAssessment = assessment || {};
+  return `${index + 1}. ${safeAssessment.sectionName || 'Unknown'}: ${safeAssessment.contentLength || 0} chars (Evidence: ${safeAssessment.hasEvidence ? 'YES' : 'NO'}, Hypotheses: ${safeAssessment.hasHypotheses ? 'YES' : 'NO'})`;
+}).join('\n')}
 
 **Final HTML Report:**
 ${finalHtmlReport}
