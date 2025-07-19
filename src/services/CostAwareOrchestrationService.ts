@@ -828,20 +828,98 @@ plt.savefig('figure_name.png', dpi=300, bbox_inches='tight')`;
     }
     
     const part = candidate.content.parts[0];
-    let content = part?.text;
+    let content = part?.text || null; // Explicitly set to null if falsy
     
-    // **CRITICAL FIX**: Handle CODE_EXECUTION responses with executableCode
-    if (!content && part?.executableCode) {
+    // **ENHANCED DEBUG**: Log the part structure for executableCode responses
+    console.log('🔍 Pro API part structure:', {
+      hasText: !!part?.text,
+      hasExecutableCode: !!part?.executableCode,
+      partKeys: part ? Object.keys(part) : [],
+      textLength: part?.text?.length || 0,
+      executableCodeStructure: part?.executableCode ? {
+        hasCode: !!part.executableCode.code,
+        hasLanguage: !!part.executableCode.language,
+        codeLength: part.executableCode.code?.length || 0
+      } : null
+    });
+    
+    // **ENHANCED FIX**: Handle CODE_EXECUTION responses with executableCode
+    if ((!content || content.trim() === '') && part?.executableCode) {
       console.log('🔧 Pro API: Processing executableCode response');
-      // For CODE_EXECUTION responses, combine the code and any output
-      content = `Code executed:\n\`\`\`python\n${part.executableCode.code}\n\`\`\`\n\nLanguage: ${part.executableCode.language}`;
-      if (part.executionResult) {
+      
+      // Validate executableCode structure
+      if (!part.executableCode.code || typeof part.executableCode.code !== 'string') {
+        console.error('❌ Invalid executableCode structure:', part.executableCode);
+        throw new Error(`Invalid executableCode in Pro response: missing or invalid code field`);
+      }
+      
+      // **SPECIAL HANDLING FOR STAGE 6A**: NetworkX metrics often returns large code
+      // Prioritize execution result over code display for data analysis stages
+      if (part.executionResult && (part.executionResult.output || part.executionResult.result)) {
+        content = `NetworkX Analysis Results:\n${part.executionResult.output || part.executionResult.result || JSON.stringify(part.executionResult, null, 2)}`;
+        console.log('✅ Pro API: Prioritized execution result for data analysis stage');
+      } else {
+        // For CODE_EXECUTION responses, combine the code and any output
+        const codeLength = part.executableCode.code?.length || 0;
+        console.log(`📝 Pro API: Processing executableCode with ${codeLength} characters`);
+        
+        const codePreview = codeLength > 1000 
+          ? part.executableCode.code.substring(0, 1000) + '...\n[Code truncated for readability]'
+          : part.executableCode.code;
+          
+        content = `Code executed:\n\`\`\`${part.executableCode.language || 'python'}\n${codePreview}\n\`\`\`\n\nLanguage: ${part.executableCode.language || 'PYTHON'}`;
+        console.log(`📋 Pro API: Generated content length: ${content.length}`);
+      }
+      
+      if (part.executionResult && !content.includes('NetworkX Analysis Results:')) {
         content += `\n\nExecution Result:\n${JSON.stringify(part.executionResult, null, 2)}`;
+      }
+      
+      console.log('✅ Pro API: Successfully processed executableCode response', {
+        contentLength: content.length,
+        hasExecutionResult: !!part.executionResult,
+        codeLength: part.executableCode.code.length
+      });
+    }
+    
+    // **ADDITIONAL CHECK**: Try to extract content from other possible response formats
+    if (!content && part) {
+      // Check if there are multiple parts or other formats
+      if (candidate.content.parts.length > 1) {
+        console.log('🔍 Pro API: Checking multiple parts for content');
+        for (let i = 0; i < candidate.content.parts.length; i++) {
+          const altPart = candidate.content.parts[i];
+          if (altPart?.text) {
+            content = altPart.text;
+            console.log(`✅ Found text content in part ${i}`);
+            break;
+          }
+          if (altPart?.executableCode?.code) {
+            content = `Code: ${altPart.executableCode.code}`;
+            console.log(`✅ Found executableCode in part ${i}`);
+            break;
+          }
+        }
       }
     }
     
+    // **FINAL FALLBACK**: If we still don't have content, create a meaningful response from available data
     if (!content || typeof content !== 'string') {
-      throw new Error(`No text content in Pro response: ${JSON.stringify(part)}`);
+      if (part?.executableCode) {
+        // If we have executableCode but couldn't process it properly, create a basic response
+        content = `Code execution attempted with ${part.executableCode.language || 'PYTHON'}. Code length: ${part.executableCode.code?.length || 0} characters.`;
+        console.warn('⚠️ Pro API: Using fallback content for executableCode response');
+      } else {
+        console.error('❌ Pro API: No valid content found', {
+          partStructure: part,
+          allParts: candidate.content.parts.map(p => ({ 
+            hasText: !!p?.text, 
+            hasExecutableCode: !!p?.executableCode,
+            keys: p ? Object.keys(p) : []
+          }))
+        });
+        throw new Error(`No text content in Pro response: ${JSON.stringify(part)}`);
+      }
     }
     
     return content;
