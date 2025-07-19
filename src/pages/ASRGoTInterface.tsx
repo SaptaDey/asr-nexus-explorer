@@ -27,6 +27,7 @@ import { CostAwareDashboard } from '@/components/asr-got/CostAwareDashboard';
 import { DeveloperMode } from '@/components/asr-got/DeveloperMode';
 import { UnifiedAPICredentialsModal } from '@/components/asr-got/UnifiedAPICredentialsModal';
 import { DebugButton } from '@/components/asr-got/DebugButton';
+import { RealTimeErrorLogger } from '@/components/asr-got/RealTimeErrorLogger';
 import { useASRGoT } from '@/hooks/useASRGoT';
 import { useProcessingMode } from '@/hooks/asr-got/useProcessingMode';
 import { costAwareOrchestration } from '@/services/CostAwareOrchestrationService';
@@ -1150,7 +1151,17 @@ Make the data realistic and scientifically meaningful for the research domain.
                     <RotateCcw className="h-4 w-4 mr-2" />
                     Reset Framework
                   </Button>
-                  <DebugButton />
+              <DebugButton />
+              <RealTimeErrorLogger 
+                maxErrors={100}
+                showInline={false}
+                onErrorCapture={(error) => {
+                  // Log critical errors for additional tracking
+                  if (error.severity === 'critical') {
+                    console.log('🚨 Critical error captured:', error);
+                  }
+                }}
+              />
                 </div>
                 
                 {/* In-App Preview */}

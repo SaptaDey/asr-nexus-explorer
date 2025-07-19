@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Bug, Download, Copy, Trash2, RefreshCw, AlertTriangle, Info, XCircle, CheckCircle } from 'lucide-react';
+import { Bug, Download, Copy, Trash2, RefreshCw, AlertTriangle, Info, XCircle, CheckCircle, Activity, Monitor } from 'lucide-react';
 
 interface ErrorLog {
   id: string;
@@ -32,6 +32,12 @@ interface DebugState {
   errors: ErrorLog[];
   isRecording: boolean;
   lastUpdate: string;
+  realTimeMode: boolean;
+  systemHealth: {
+    memoryUsage?: number;
+    performanceScore?: number;
+    errorRate?: number;
+  };
 }
 
 export const DebugButton: React.FC = () => {
@@ -39,16 +45,41 @@ export const DebugButton: React.FC = () => {
   const [debugState, setDebugState] = useState<DebugState>({
     errors: [],
     isRecording: true,
-    lastUpdate: new Date().toISOString()
+    lastUpdate: new Date().toISOString(),
+    realTimeMode: true,
+    systemHealth: {}
   });
   const [activeTab, setActiveTab] = useState('errors');
   const errorIdCounter = useRef(0);
 
-  // Initialize error logging on component mount
+  // Initialize comprehensive error monitoring system
   useEffect(() => {
     const errorLoggers: (() => void)[] = [];
 
-    // 1. JavaScript Error Handler
+    // System Health Monitoring
+    const updateSystemHealth = () => {
+      if ('memory' in performance) {
+        const memInfo = (performance as any).memory;
+        const memoryUsage = memInfo ? (memInfo.usedJSHeapSize / memInfo.totalJSHeapSize) * 100 : 0;
+        
+        setDebugState(prev => ({
+          ...prev,
+          systemHealth: {
+            ...prev.systemHealth,
+            memoryUsage,
+            errorRate: prev.errors.filter(e => 
+              new Date(e.timestamp).getTime() > Date.now() - 60000
+            ).length,
+            performanceScore: Math.max(0, 100 - memoryUsage)
+          }
+        }));
+      }
+    };
+
+    const healthInterval = setInterval(updateSystemHealth, 10000); // Update every 10s
+    errorLoggers.push(() => clearInterval(healthInterval));
+
+    // Enhanced JavaScript Error Handler
     const originalErrorHandler = window.onerror;
     window.onerror = function(message, source, lineno, colno, error) {
       if (debugState.isRecording) {
@@ -63,7 +94,6 @@ export const DebugButton: React.FC = () => {
         });
       }
       
-      // Call original handler if it exists
       if (originalErrorHandler) {
         return originalErrorHandler(message, source, lineno, colno, error);
       }
@@ -83,14 +113,18 @@ export const DebugButton: React.FC = () => {
     };
     window.addEventListener('unhandledrejection', promiseRejectionHandler);
 
-    // 3. Console Error Interceptor
+    // Enhanced Console Error Interceptor with better categorization
     const originalConsoleError = console.error;
     console.error = function(...args) {
       if (debugState.isRecording && args.length > 0) {
+        const errorMessage = args.join(' ');
+        const isStageError = errorMessage.toLowerCase().includes('stage') && 
+                            errorMessage.toLowerCase().includes('failed');
+        
         addError({
-          type: 'custom',
-          severity: 'medium',
-          message: args.join(' '),
+          type: isStageError ? 'custom' : 'custom',
+          severity: isStageError ? 'critical' : 'medium',
+          message: errorMessage,
           context: args.length > 1 ? args.slice(1) : undefined
         });
       }
@@ -366,12 +400,16 @@ export const DebugButton: React.FC = () => {
 
           {/* Main Content */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="errors">
-                Error Log ({debugState.errors.length})
+                Errors ({debugState.errors.length})
               </TabsTrigger>
-              <TabsTrigger value="system">System Info</TabsTrigger>
-              <TabsTrigger value="export">Export & Share</TabsTrigger>
+              <TabsTrigger value="realtime">
+                <Activity className="h-4 w-4 mr-1" />
+                Live
+              </TabsTrigger>
+              <TabsTrigger value="system">System</TabsTrigger>
+              <TabsTrigger value="export">Export</TabsTrigger>
             </TabsList>
             
             <TabsContent value="errors" className="space-y-4">
@@ -441,6 +479,86 @@ export const DebugButton: React.FC = () => {
                   </div>
                 </ScrollArea>
               )}
+            </TabsContent>
+
+            <TabsContent value="realtime" className="space-y-4">
+              {/* Real-Time Health Monitoring */}
+              <div className="grid grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {debugState.systemHealth.memoryUsage?.toFixed(1) || 0}%
+                    </div>
+                    <p className="text-xs text-muted-foreground">Memory Usage</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold text-green-600">
+                      {debugState.systemHealth.performanceScore?.toFixed(0) || 100}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Performance Score</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {debugState.systemHealth.errorRate || 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Errors/Min</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Live Error Stream */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Monitor className="h-4 w-4" />
+                    Live Error Stream
+                    {debugState.isRecording && (
+                      <div className="animate-pulse w-2 h-2 bg-red-500 rounded-full"></div>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-64 w-full">
+                    {debugState.errors.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                        <p>No errors detected</p>
+                        <p className="text-xs">System running smoothly</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {debugState.errors.slice(0, 20).map((error) => (
+                          <div
+                            key={error.id}
+                            className="flex items-start gap-2 p-2 rounded border text-sm"
+                          >
+                            {getSeverityIcon(error.severity)}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge variant={getSeverityColor(error.severity) as any} className="text-xs">
+                                  {error.severity}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(error.timestamp).toLocaleTimeString()}
+                                </span>
+                              </div>
+                              <p className="text-xs break-words">
+                                {error.message.length > 80 
+                                  ? `${error.message.substring(0, 80)}...` 
+                                  : error.message}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
             </TabsContent>
             
             <TabsContent value="system" className="space-y-4">
