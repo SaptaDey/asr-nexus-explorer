@@ -150,6 +150,8 @@ Component Analysis Required: ${component}`;
   
   if (context.setResearchContext) {
     context.setResearchContext(() => newContext);
+    // **CRITICAL FIX**: Ensure context is immediately available for next stage
+    context.researchContext = newContext;
   }
 
   return `**Stage 1 Complete: Initialization**\n\n${comprehensiveAnalysis}`;
@@ -314,10 +316,39 @@ export const decomposeTask = async (
   context: StageExecutorContext
 ): Promise<string> => {
   // **CRITICAL INPUT VALIDATION**: Ensure we have a valid research topic
-  const researchTopic = context.researchContext?.topic || '';
+  let researchTopic = context.researchContext?.topic || '';
   
+  // **EMERGENCY FALLBACK**: Try multiple sources for the research topic
   if (!researchTopic || researchTopic.trim() === '' || researchTopic === 'Unknown Research Topic') {
-    throw new Error('Stage 2 failed: Invalid input: must be a non-empty string. No valid research topic available from Stage 1. Please ensure Stage 1 completed successfully.');
+    console.log('🚨 Stage 2: No topic in context, trying fallback methods...');
+    
+    // Try to extract from stage 1 results
+    if (context.stageResults && context.stageResults[0]) {
+      const stage1Result = context.stageResults[0];
+      const topicMatches = [
+        stage1Result.match(/Research Topic:\s*"([^"]+)"/),
+        stage1Result.match(/Topic:\s*"([^"]+)"/),
+        stage1Result.match(/RESEARCH TOPIC:\s*"([^"]+)"/),
+        stage1Result.match(/Field Analysis.*?Research Question:\s*"([^"]+)"/s)
+      ];
+      
+      for (const match of topicMatches) {
+        if (match && match[1]) {
+          researchTopic = match[1].trim();
+          console.log(`🔧 Stage 2: Found topic from Stage 1 results: "${researchTopic}"`);
+          // Update context immediately
+          if (context.setResearchContext) {
+            context.setResearchContext(prev => ({ ...prev, topic: researchTopic }));
+          }
+          context.researchContext.topic = researchTopic;
+          break;
+        }
+      }
+    }
+  }
+  
+  if (!researchTopic || researchTopic.trim() === '') {
+    throw new Error('Stage 2 failed: Invalid input: must be a non-empty string. No valid research topic found in context or Stage 1 results. Please ensure Stage 1 completed successfully and contains a valid research topic.');
   }
   
   console.log(`🔬 Stage 2 starting with topic: "${researchTopic}"`);
