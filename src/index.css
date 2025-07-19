@@ -99,54 +99,56 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 261 83% 58%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 261 83% 58%;
+    /* 🌸 PASCAL/EASTER COLOR SCHEME 🌸 */
+    --background: 120 100% 97%; /* Soft mint green background */
+    --foreground: 340 30% 25%; /* Deep plum text */
+    --card: 60 100% 95%; /* Pale yellow cards */
+    --card-foreground: 340 30% 25%; /* Deep plum text on cards */
+    --popover: 300 100% 95%; /* Soft lavender popovers */
+    --popover-foreground: 340 30% 25%; /* Deep plum text */
+    --primary: 280 60% 70%; /* Beautiful lilac purple */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
+    --secondary: 120 40% 85%; /* Sage green */
+    --secondary-foreground: 340 30% 25%; /* Deep plum text */
+    --muted: 180 30% 92%; /* Soft aqua */
+    --muted-foreground: 340 20% 40%; /* Muted plum */
+    --accent: 40 90% 80%; /* Soft peach accent */
+    --accent-foreground: 340 30% 25%; /* Deep plum text */
+    --destructive: 350 70% 65%; /* Soft coral red */
+    --destructive-foreground: 0 0% 100%; /* White text */
+    --border: 160 40% 85%; /* Soft mint borders */
+    --input: 160 40% 90%; /* Light mint inputs */
+    --ring: 280 60% 70%; /* Lilac ring color */
     --radius: 0.5rem;
     
-    /* ASR-GoT Brand Colors */
-    --brand-start: 261 83% 58%;
-    --brand-end: 191 100% 50%;
-    --branch-fill: 172 79% 41%;
+    /* 🌸 PASCAL BRAND COLORS 🌸 */
+    --brand-start: 280 60% 70%; /* Lilac purple */
+    --brand-end: 40 90% 80%; /* Soft peach */
+    --branch-fill: 120 40% 70%; /* Sage green for branches */
     --brand-gradient: linear-gradient(135deg, hsl(var(--brand-start)) 0%, hsl(var(--brand-end)) 100%);
     --brand-glow: 0 0 20px hsl(var(--brand-start) / 0.3);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 261 83% 58%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    /* 🌸 PASCAL DARK MODE 🌸 */
+    --background: 340 20% 15%; /* Dark plum background */
+    --foreground: 60 30% 85%; /* Pale yellow text */
+    --card: 340 15% 20%; /* Dark plum cards */
+    --card-foreground: 60 30% 85%; /* Pale yellow text */
+    --popover: 300 20% 18%; /* Dark lavender popovers */
+    --popover-foreground: 60 30% 85%; /* Pale yellow text */
+    --primary: 280 60% 70%; /* Lilac purple primary */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
+    --secondary: 120 20% 25%; /* Dark sage green */
+    --secondary-foreground: 60 30% 85%; /* Pale yellow text */
+    --muted: 180 15% 25%; /* Dark aqua */
+    --muted-foreground: 60 20% 65%; /* Muted yellow */
+    --accent: 40 60% 40%; /* Darker peach accent */
+    --accent-foreground: 60 30% 85%; /* Pale yellow text */
+    --destructive: 350 70% 50%; /* Darker coral red */
+    --destructive-foreground: 0 0% 100%; /* White text */
+    --border: 160 15% 30%; /* Dark mint borders */
+    --input: 160 15% 25%; /* Dark mint inputs */
     --ring: 261 83% 58%;
     
     /* ASR-GoT Brand Colors - Dark Mode */
@@ -162,17 +164,23 @@
   * {
     @apply border-border;
   }
-
+  
+  /* 🌸 PASCAL THEME - VERY OBVIOUS CHANGES 🌸 */
   body {
     background: linear-gradient(135deg, 
-      hsl(var(--brand-start) / 0.05) 0%, 
-      hsl(var(--brand-end) / 0.03) 35%, 
-      hsl(var(--branch-fill) / 0.02) 70%, 
-      hsl(var(--background)) 100%);
-    @apply text-foreground;
-    background-attachment: fixed;
+      #f0fff0 0%,   /* Light mint green */
+      #f8f8ff 50%,  /* Ghost white */ 
+      #fff8dc 100%  /* Cornsilk yellow */
+    ) !important;
     min-height: 100vh;
   }
+  
+  h1, h2, h3 {
+    color: #8B4B8C !important; /* Deep plum for headers */
+    text-shadow: 0 1px 3px rgba(139, 75, 140, 0.2);
+  }
+
+  /* REMOVED - Using pascal theme body style above */
 }
 
 /* Enhanced animations and gradients */
