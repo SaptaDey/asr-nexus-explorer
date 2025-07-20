@@ -454,6 +454,78 @@ export class CostAwareOrchestrationService {
         outputTokens: 60000,
         priceUSD: 0.96
       }
+    },
+    '9A_document_structure': {
+      stage: 'HTML Document Structure',
+      microPass: undefined,
+      modelCapability: {
+        model: 'gemini-2.5-pro',
+        capability: 'STRUCTURED_OUTPUTS',
+        batchSize: 1,
+        purpose: 'Generate HTML document structure and metadata framework.',
+        outputType: 'HTMLStructure',
+        maxTokens: 3000,
+        thinkingBudget: 2048
+      },
+      costEstimate: {
+        inputTokens: 4000,
+        outputTokens: 2000,
+        priceUSD: 0.02
+      }
+    },
+    '9B_content_integration': {
+      stage: 'Content Integration',
+      microPass: undefined,
+      modelCapability: {
+        model: 'gemini-2.5-pro',
+        capability: 'STRUCTURED_OUTPUTS',
+        batchSize: 1,
+        purpose: 'Integrate complete 8-stage research content into HTML format.',
+        outputType: 'HTMLContent',
+        maxTokens: 4000,
+        thinkingBudget: 2048
+      },
+      costEstimate: {
+        inputTokens: 15000,
+        outputTokens: 3000,
+        priceUSD: 0.045
+      }
+    },
+    '9C_visualization_embedding': {
+      stage: 'Visualization Embedding',
+      microPass: undefined,
+      modelCapability: {
+        model: 'gemini-2.5-pro',
+        capability: 'STRUCTURED_OUTPUTS',
+        batchSize: 1,
+        purpose: 'Embed visualizations with figure legends and references.',
+        outputType: 'HTMLVisualization',
+        maxTokens: 3000,
+        thinkingBudget: 2048
+      },
+      costEstimate: {
+        inputTokens: 5000,
+        outputTokens: 2000,
+        priceUSD: 0.025
+      }
+    },
+    '9D_final_assembly': {
+      stage: 'Final HTML Assembly',
+      microPass: undefined,
+      modelCapability: {
+        model: 'gemini-2.5-pro',
+        capability: 'STRUCTURED_OUTPUTS',
+        batchSize: 1,
+        purpose: 'Assemble complete HTML report with Vancouver references.',
+        outputType: 'CompleteHTML',
+        maxTokens: 5000,
+        thinkingBudget: 4096
+      },
+      costEstimate: {
+        inputTokens: 10000,
+        outputTokens: 4000,
+        priceUSD: 0.04
+      }
     }
   };
 
