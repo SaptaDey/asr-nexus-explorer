@@ -2184,8 +2184,9 @@ async function convertFiguresToFiles(figures: any[]): Promise<File[]> {
 }
 
 /**
- * Generate Comprehensive HTML Report with Full Analytics Integration
+ * Generate Comprehensive HTML Report with Full Analytics Integration  
  * This function creates a publication-ready scientific report with embedded Plotly figures
+ * Updated: Fixed duplicate declaration issue for deployment
  */
 const generateComprehensiveHtmlReport = async (
   context: StageExecutorContext,
