@@ -96,6 +96,10 @@ export const useASRGoT = () => {
     finalReport: stateHook.finalReport,
     autoMode,
     
+    // Session management
+    currentSessionId: stateHook.currentSessionId,
+    queryHistorySessionId: stateHook.queryHistorySessionId,
+    
     // Actions
     executeStage: executeStageWithAutoMode,
     resetFramework: resetFrameworkWithAutoMode,
@@ -105,9 +109,24 @@ export const useASRGoT = () => {
     advanceStage: stateHook.advanceStage,
     setAutoMode,
     
+    // Session actions
+    createSession: stateHook.createSession,
+    loadSession: stateHook.loadSession,
+    pauseSession: stateHook.pauseSession,
+    resumeFromHistory: stateHook.resumeFromHistory,
+    completeSession: stateHook.completeSession,
+    
+    // Auto-storage methods
+    forceSave: stateHook.forceSave,
+    queueFigureForSaving: stateHook.queueFigureForSaving,
+    queueTableForSaving: stateHook.queueTableForSaving,
+    
     // Computed
     isComplete: stateHook.isComplete,
     hasResults: stateHook.hasResults,
-    canExportHtml: stateHook.canExportHtml
+    canExportHtml: stateHook.canExportHtml,
+    isAutoSaveEnabled: stateHook.isAutoSaveEnabled,
+    lastSaveTime: stateHook.lastSaveTime,
+    isConnected: stateHook.isConnected
   };
 };
