@@ -29,6 +29,7 @@ import { UnifiedAPICredentialsModal } from '@/components/asr-got/UnifiedAPICrede
 import { DebugButton } from '@/components/asr-got/DebugButton';
 import { RealTimeErrorLogger } from '@/components/asr-got/RealTimeErrorLogger';
 import { StoredAnalysesManager } from '@/components/asr-got/StoredAnalysesManager';
+import { Stage9ProgressIndicator } from '@/components/asr-got/Stage9ProgressIndicator';
 import { useASRGoT } from '@/hooks/useASRGoT';
 import { useProcessingMode } from '@/hooks/asr-got/useProcessingMode';
 import { costAwareOrchestration } from '@/services/CostAwareOrchestrationService';
@@ -59,6 +60,7 @@ const ASRGoTInterface: React.FC = () => {
 
   const [showAPICredentialsModal, setShowAPICredentialsModal] = useState(false);
   const [activeTab, setActiveTab] = useState('research');
+  const [showStage9Progress, setShowStage9Progress] = useState(false);
   const [showBiasAudit, setShowBiasAudit] = useState(false);
   const [exportContent, setExportContent] = useState<string>('');
   
@@ -88,6 +90,12 @@ const ASRGoTInterface: React.FC = () => {
       toast.error('No results to export yet - run some analysis stages first');
       return;
     }
+    
+    // Show Stage 9 multi-substage progress indicator
+    setShowStage9Progress(true);
+    toast.info('Starting comprehensive multi-substage thesis generation (9A-9G)...', {
+      duration: 3000
+    });
     
     // Check if we have a comprehensive HTML report from stage 7 or 9
     const htmlReportStages = [6, 8]; // Stage 7 (index 6) and Stage 9 (index 8)
@@ -1138,14 +1146,31 @@ Make the data realistic and scientifically meaningful for the research domain.
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Stage 9 Multi-Substage Progress Indicator */}
+                <Stage9ProgressIndicator 
+                  isVisible={showStage9Progress}
+                  onComplete={(report) => {
+                    setShowStage9Progress(false);
+                    toast.success(`🎉 Comprehensive thesis generated successfully! ${report.totalWordCount.toLocaleString()} words, ${report.figureMetadata.length} figures with legends.`, {
+                      duration: 5000
+                    });
+                  }}
+                  onError={(error) => {
+                    setShowStage9Progress(false);
+                    toast.error(`❌ Thesis generation failed: ${error}`, {
+                      duration: 10000
+                    });
+                  }}
+                />
+
                 <div className="grid grid-cols-2 gap-4">
                   <Button 
                     onClick={handleExportHTML} 
-                    disabled={!hasResults} 
+                    disabled={!hasResults || showStage9Progress} 
                     className="gradient-bg disabled:opacity-50"
                   >
                     <FileText className="h-4 w-4 mr-2" />
-                    Export HTML Report
+                    {showStage9Progress ? 'Generating Thesis...' : 'Export 150+ Page Thesis (9A-9G)'}
                   </Button>
                   <Button 
                     onClick={() => exportResults('json')} 

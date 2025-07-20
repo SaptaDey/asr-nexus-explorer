@@ -52,40 +52,121 @@ export const exportAsHTML = async (
   finalReport: string,
   parameters: ASRGoTParameters
 ): Promise<void> => {
-  // Import the new comprehensive Stage 9 generator
-  const { Stage9Generator } = await import('@/services/Stage9Generator');
+  // Import the new multi-substage Stage 9 generator
+  const { Stage9MultiSubstageGenerator } = await import('@/services/Stage9MultiSubstageGenerator');
   
   try {
-    console.log('🚀 Starting comprehensive HTML generation with Stage 9 generator...');
+    console.log('🚀 Starting comprehensive multi-substage thesis generation...');
     
-    // **CREATE STAGE 9 GENERATOR INSTANCE**
-    const stage9Generator = new Stage9Generator(
+    // **PROGRESS TRACKING**: Set up progress callback for UI feedback
+    const progressCallback = (substage: string, progress: number) => {
+      console.log(`📊 Progress: ${substage} - ${progress}%`);
+      // Emit progress event for UI components to listen to
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('stage9-progress', { 
+          detail: { substage, progress } 
+        }));
+      }
+    };
+    
+    // **CREATE MULTI-SUBSTAGE GENERATOR INSTANCE**
+    const multiSubstageGenerator = new Stage9MultiSubstageGenerator(
       parameters,
       researchContext,
       graphData,
-      stageResults
+      stageResults,
+      progressCallback
     );
     
-    // **GENERATE COMPREHENSIVE FINAL REPORT using full token budget**
-    console.log('🧠 Generating deep scientific content using Gemini 2.5 Pro with full token budget...');
-    const htmlContent = await stage9Generator.generateComprehensiveFinalReport({
+    // **GENERATE COMPREHENSIVE 150+ PAGE THESIS using progressive substages**
+    console.log('🧠 Generating 150+ page thesis with progressive substages (9A-9G)...');
+    const comprehensiveReport = await multiSubstageGenerator.generateComprehensiveThesisReport({
       storeInSupabase: true, // Enable automatic storage in Supabase
-      sessionTitle: `${researchContext.topic} - ${new Date().toLocaleDateString()}`
+      sessionTitle: `${researchContext.topic} - Multi-Substage Thesis`,
+      enableProgressiveRefinement: true // Enable context chaining between substages
     });
     
+    // **QUALITY VALIDATION**: Check thesis quality metrics
+    console.log(`📈 Thesis Quality Metrics:
+      - Academic Rigor: ${comprehensiveReport.qualityMetrics.academicRigor.toFixed(1)}%
+      - Content Depth: ${comprehensiveReport.qualityMetrics.contentDepth.toFixed(1)}%
+      - Figure Integration: ${comprehensiveReport.qualityMetrics.figureIntegration.toFixed(1)}%
+      - Reference Quality: ${comprehensiveReport.qualityMetrics.referenceQuality.toFixed(1)}%
+      - Total Word Count: ${comprehensiveReport.totalWordCount.toLocaleString()}
+      - Total Figures: ${comprehensiveReport.figureMetadata.length}
+      - Total Tokens Used: ${comprehensiveReport.totalTokensUsed.toLocaleString()}`);
+    
     // **SANITIZE AND EXPORT**: Clean the HTML and download
-    const sanitizedHTML = sanitizeHTML(htmlContent);
+    const sanitizedHTML = sanitizeHTML(comprehensiveReport.finalHTML);
     
-    downloadFile(sanitizedHTML, `asr-got-comprehensive-report-${Date.now()}.html`, 'text/html');
+    // Generate filename with comprehensive metadata
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const filename = `asr-got-thesis-${comprehensiveReport.totalWordCount}words-${comprehensiveReport.figureMetadata.length}figs-${timestamp}.html`;
     
-    console.log(`✅ Comprehensive HTML Export Complete: ${sanitizedHTML.length} characters`);
+    downloadFile(sanitizedHTML, filename, 'text/html');
+    
+    console.log(`✅ Comprehensive Multi-Substage Thesis Export Complete: 
+      - ${sanitizedHTML.length.toLocaleString()} characters
+      - ${comprehensiveReport.totalWordCount.toLocaleString()} words
+      - ${comprehensiveReport.figureMetadata.length} figures with legends
+      - ${comprehensiveReport.substageResults.length} substages (9A-9G)
+      - Generated in ${comprehensiveReport.totalGenerationTime} seconds`);
+    
+    // **SUCCESS NOTIFICATION**: Dispatch completion event
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('stage9-complete', { 
+        detail: { 
+          report: comprehensiveReport,
+          filename,
+          success: true 
+        } 
+      }));
+    }
     
   } catch (error) {
-    console.error('❌ Stage 9 HTML export failed, falling back to simple export:', error);
+    console.error('❌ Multi-substage thesis generation failed:', error);
     
-    // **FALLBACK**: If comprehensive generation fails, use simple export
-    const fallbackHTML = generateFallbackHTML(stageResults, graphData, researchContext, finalReport);
-    downloadFile(fallbackHTML, `asr-got-fallback-${Date.now()}.html`, 'text/html');
+    // **ENHANCED FALLBACK**: Try single-stage generation first
+    try {
+      console.log('🔄 Attempting fallback to single-stage generation...');
+      const { Stage9Generator } = await import('@/services/Stage9Generator');
+      
+      const stage9Generator = new Stage9Generator(
+        parameters,
+        researchContext,
+        graphData,
+        stageResults
+      );
+      
+      const fallbackContent = await stage9Generator.generateComprehensiveFinalReport({
+        storeInSupabase: false, // Don't store fallback version
+        sessionTitle: `${researchContext.topic} - Fallback Generation`
+      });
+      
+      const sanitizedHTML = sanitizeHTML(fallbackContent);
+      downloadFile(sanitizedHTML, `asr-got-fallback-comprehensive-${Date.now()}.html`, 'text/html');
+      
+      console.log('⚠️ Fallback generation succeeded - single-stage comprehensive report exported');
+      
+    } catch (fallbackError) {
+      console.error('❌ Both multi-substage and single-stage generation failed:', fallbackError);
+      
+      // **FINAL FALLBACK**: Use simple static export
+      const fallbackHTML = generateFallbackHTML(stageResults, graphData, researchContext, finalReport);
+      downloadFile(fallbackHTML, `asr-got-basic-fallback-${Date.now()}.html`, 'text/html');
+      
+      console.log('⚠️ Using basic fallback HTML export');
+    }
+    
+    // **ERROR NOTIFICATION**: Dispatch error event
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('stage9-error', { 
+        detail: { 
+          error: error instanceof Error ? error.message : 'Unknown error',
+          fallbackUsed: true 
+        } 
+      }));
+    }
   }
 };
 
