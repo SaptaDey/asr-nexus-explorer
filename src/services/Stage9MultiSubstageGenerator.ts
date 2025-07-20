@@ -1087,7 +1087,10 @@ Generate academically rigorous references and appendices suitable for peer revie
               found = true;
               break;
             }
-          } catch {}
+          } catch (error) {
+            // Silently continue if conversion fails
+            console.warn('Failed to convert figure to blob:', error);
+          }
         }
         
         if (!found) {

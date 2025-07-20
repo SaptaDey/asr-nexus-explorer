@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Brain, Database, FileText, Download, Zap, Settings, Network, Play, RotateCcw, Mail, ToggleLeft, BookOpen, Bug, Clock } from 'lucide-react';
+import { Brain, Database, FileText, Download, Zap, Settings, Network, Play, RotateCcw, Mail, ToggleLeft, BookOpen, Bug, Clock, Pause, PlayCircle } from 'lucide-react';
 import { TreeOfReasoningVisualization } from '@/components/asr-got/TreeOfReasoningVisualization';
 import { ResearchInterface } from '@/components/asr-got/ResearchInterface';
 import { EnhancedGraphVisualization } from '@/components/asr-got/EnhancedGraphVisualization';
@@ -56,7 +56,13 @@ const ASRGoTInterface: React.FC = () => {
     exportResults,
     isComplete,
     hasResults,
-    canExportHtml
+    canExportHtml,
+    queryHistorySessionId,
+    pauseSession,
+    resumeFromHistory,
+    completeSession,
+    isAutoSaveEnabled,
+    lastSaveTime
   } = useASRGoT();
 
   const [showAPICredentialsModal, setShowAPICredentialsModal] = useState(false);
@@ -75,6 +81,9 @@ const ASRGoTInterface: React.FC = () => {
       if (completedStages >= 9) {
         setActiveTab('export');
         toast.success('🎉 All 9 stages completed! Switched to Export tab to view your HTML report.');
+        
+        // Automatically complete the query history session
+        handleCompleteSession();
       }
     }
   }, [currentStage, stageResults]);
@@ -114,6 +123,26 @@ const ASRGoTInterface: React.FC = () => {
   const handleAPICredentialsSave = (credentials: APICredentials) => {
     updateApiKeys(credentials);
     toast.success('✅ API credentials saved successfully.');
+  };
+
+  const handleResumeSession = async (sessionId: string) => {
+    try {
+      const success = await resumeFromHistory(sessionId);
+      if (success) {
+        setActiveTab('research'); // Switch to research tab to continue
+        toast.success('✅ Session resumed! Continue from where you left off.');
+      }
+    } catch (error) {
+      toast.error('Failed to resume session');
+      console.error('Resume error:', error);
+    }
+  };
+
+  const handleCompleteSession = async () => {
+    if (isComplete && queryHistorySessionId) {
+      await completeSession();
+      toast.success('🎉 Research session completed and saved to History!');
+    }
   };
 
 
@@ -964,6 +993,32 @@ Make the data realistic and scientifically meaningful for the research domain.
                 </span>
               </Button>
               
+              {/* Pause/Resume Controls */}
+              {queryHistorySessionId && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={pauseSession}
+                  disabled={!isProcessing}
+                  className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto border-orange-300 text-orange-600 hover:bg-orange-50 disabled:opacity-50"
+                >
+                  <Pause className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Pause Session</span>
+                  <span className="sm:hidden">Pause</span>
+                </Button>
+              )}
+              
+              {/* Auto-save Status Indicator */}
+              {isAutoSaveEnabled && (
+                <div className="flex items-center px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                  <span className="text-xs text-green-700 font-medium">
+                    <span className="hidden sm:inline">Auto-saving</span>
+                    <span className="sm:hidden">Auto</span>
+                  </span>
+                </div>
+              )}
+              
               {currentStage >= 8 && (
                 <Button
                   size="sm"
@@ -1317,17 +1372,14 @@ Make the data realistic and scientifically meaningful for the research domain.
 
           <TabsContent value="history">
             <QueryHistoryManager
-              onResumeSession={(sessionId) => {
-                // Handle session resume
-                toast.info(`Resuming session: ${sessionId}`);
-                // TODO: Integrate with enhanced ASR-GoT hook
-              }}
+              onResumeSession={handleResumeSession}
               onLoadForReanalysis={(sessionId) => {
                 // Handle loading session for reanalysis
                 toast.info(`Loading session for reanalysis: ${sessionId}`);
-                // TODO: Integrate with enhanced ASR-GoT hook
+                setActiveTab('research');
+                // TODO: Integrate RAG capabilities for reanalysis
               }}
-              currentSessionId={undefined} // TODO: Track current session
+              currentSessionId={queryHistorySessionId}
             />
           </TabsContent>
         </Tabs>
