@@ -103,6 +103,13 @@ export const Stage9ProgressIndicator: React.FC<Stage9ProgressProps> = ({
   useEffect(() => {
     if (!isVisible) return;
 
+    // Reset state when becoming visible
+    setCurrentProgress(0);
+    setCurrentSubstage('');
+    setCompletedSubstages(new Set());
+    setIsGenerating(true);
+    setError(null);
+
     const handleProgress = (event: CustomEvent) => {
       const { substage, progress } = event.detail;
       setCurrentProgress(progress);
@@ -111,12 +118,12 @@ export const Stage9ProgressIndicator: React.FC<Stage9ProgressProps> = ({
       
       // Mark substages as completed based on progress milestones
       const progressToSubstage = {
-        20: '9A',
-        35: '9B', 
-        50: '9C',
-        65: '9D',
-        80: '9E',
-        90: '9F',
+        15: '9A',
+        30: '9B', 
+        45: '9C',
+        60: '9D',
+        75: '9E',
+        85: '9F',
         95: '9G'
       };
       
@@ -134,10 +141,10 @@ export const Stage9ProgressIndicator: React.FC<Stage9ProgressProps> = ({
       setCompletedSubstages(new Set(substages.map(s => s.id)));
       
       setGenerationStats({
-        totalTokens: report.totalTokensUsed,
-        totalWords: report.totalWordCount,
-        totalTime: report.totalGenerationTime,
-        figuresProcessed: report.figureMetadata.length
+        totalTokens: report.totalTokensUsed || 0,
+        totalWords: report.totalWordCount || 0,
+        totalTime: report.totalGenerationTime || 0,
+        figuresProcessed: report.figureMetadata?.length || 0
       });
       
       if (onComplete) {
@@ -149,6 +156,7 @@ export const Stage9ProgressIndicator: React.FC<Stage9ProgressProps> = ({
       const { error: errorMessage } = event.detail;
       setError(errorMessage);
       setIsGenerating(false);
+      setCurrentProgress(0);
       
       if (onError) {
         onError(errorMessage);

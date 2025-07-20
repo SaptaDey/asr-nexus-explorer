@@ -78,6 +78,37 @@ const ASRGoTInterface: React.FC = () => {
     }
   }, [currentStage, stageResults]);
 
+  // Handle automatic Supabase storage events
+  useEffect(() => {
+    const handleAnalysisStored = (event: CustomEvent) => {
+      const { analysisId, sessionId } = event.detail;
+      toast.success(`✅ Analysis automatically saved to Supabase! ID: ${analysisId.substring(0, 8)}...`, {
+        duration: 5000,
+        action: {
+          label: 'View Storage',
+          onClick: () => setActiveTab('storage')
+        }
+      });
+    };
+
+    const handleStorageFailed = (event: CustomEvent) => {
+      const { error } = event.detail;
+      toast.error(`❌ Automatic storage failed: ${error}`, {
+        duration: 8000,
+        description: 'Your analysis is still available for manual export.'
+      });
+    };
+
+    // Listen for storage events
+    window.addEventListener('analysis-stored', handleAnalysisStored as EventListener);
+    window.addEventListener('analysis-storage-failed', handleStorageFailed as EventListener);
+
+    return () => {
+      window.removeEventListener('analysis-stored', handleAnalysisStored as EventListener);
+      window.removeEventListener('analysis-storage-failed', handleStorageFailed as EventListener);
+    };
+  }, []);
+
 
   const handleAPICredentialsSave = (credentials: APICredentials) => {
     updateApiKeys(credentials);
@@ -97,20 +128,28 @@ const ASRGoTInterface: React.FC = () => {
       duration: 3000
     });
     
-    // Check if we have a comprehensive HTML report from stage 7 or 9
-    const htmlReportStages = [6, 8]; // Stage 7 (index 6) and Stage 9 (index 8)
+    // Check if we have a comprehensive HTML report from stage 9 (index 8)
     let htmlReport = null;
     
-    for (const stageIndex of htmlReportStages.reverse()) {
-      if (stageResults[stageIndex] && 
-          (stageResults[stageIndex].includes('<!DOCTYPE html') || 
-           stageResults[stageIndex].includes('<html'))) {
-        htmlReport = stageResults[stageIndex];
-        break;
-      }
+    // First check Stage 9 results for complete HTML
+    if (stageResults[8] && 
+        (stageResults[8].includes('<!DOCTYPE html') || 
+         stageResults[8].includes('<html'))) {
+      htmlReport = stageResults[8];
+      console.log('✅ Found complete HTML report from Stage 9');
+    }
+    // Fallback to Stage 7 if Stage 9 doesn't have HTML
+    else if (stageResults[6] && 
+             (stageResults[6].includes('<!DOCTYPE html') || 
+              stageResults[6].includes('<html'))) {
+      htmlReport = stageResults[6];
+      console.log('✅ Found HTML report from Stage 7 (fallback)');
     }
     
     if (htmlReport) {
+      // Hide progress indicator since we have the report
+      setShowStage9Progress(false);
+      
       // Export the comprehensive HTML report directly
       const blob = new Blob([htmlReport], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
@@ -122,7 +161,9 @@ const ASRGoTInterface: React.FC = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      toast.success('✅ Comprehensive HTML report exported successfully');
+      toast.success('✅ Comprehensive HTML report exported successfully', {
+        description: `Report contains ${Math.round(htmlReport.length / 1000)}K characters with full 9A-9G content`
+      });
       
       // Also offer PDF conversion using browser print
       setTimeout(() => {
@@ -145,6 +186,28 @@ const ASRGoTInterface: React.FC = () => {
       }, 1000);
       
       return;
+    }
+    
+    // If no HTML report exists, trigger Stage 9 execution
+    if (currentStage < 8) {
+      setShowStage9Progress(false);
+      toast.error('Please complete all 9 stages first before exporting the comprehensive report');
+      return;
+    }
+    
+    // Execute Stage 9 if not already done
+    try {
+      console.log('🚀 Triggering Stage 9 execution for comprehensive report generation');
+      await executeStage(8); // Execute Stage 9 (index 8)
+      
+      // Wait for Stage 9 completion and then retry export
+      setTimeout(() => {
+        handleExportHTML();
+      }, 2000);
+      
+    } catch (error) {
+      setShowStage9Progress(false);
+      toast.error('Failed to generate comprehensive report: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
     
     // Fallback to basic report generation if no HTML report available

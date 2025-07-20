@@ -62,8 +62,19 @@ export const useCostAwareStageExecution = ({
     5: '6A_subgraph_metrics', // Will also trigger 6B
     6: '7_narrative_composition',
     7: '8A_audit_script', // Will also trigger 8B
-    8: '9_final_analysis',
+    8: '9_final_analysis', // Will trigger 9A-9G substages
     9: '10A_figure_collection' // Will also trigger 10B and 10C - Final Report Integration
+  };
+
+  // Map substage IDs to cost orchestration stages
+  const substageMapping = {
+    '9A_abstract_executive': '9_final_analysis',
+    '9B_introduction_literature': '9_final_analysis',
+    '9C_methodology_framework': '9_final_analysis',
+    '9D_results_statistical': '9_final_analysis',
+    '9E_discussion_clinical': '9_final_analysis',
+    '9F_conclusions_future': '9_final_analysis',
+    '9G_references_appendices': '9_final_analysis'
   };
 
   // Create enhanced context with cost-aware orchestration
@@ -213,9 +224,18 @@ export const useCostAwareStageExecution = ({
         setGraphData,
         setResearchContext,
         routeApiCall: async (prompt: string, additionalParams?: any) => {
-          const stageName = stageMapping[currentStage as keyof typeof stageMapping];
+          // Check if this is a substage call (9A-9G)
+          const substageId = additionalParams?.stageId;
+          let stageName = stageMapping[currentStage as keyof typeof stageMapping];
+          
+          // Handle substage routing
+          if (substageId && substageMapping[substageId as keyof typeof substageMapping]) {
+            stageName = substageMapping[substageId as keyof typeof substageMapping];
+            console.log(`🎯 Routing substage ${substageId} to ${stageName}`);
+          }
+          
           if (!stageName) {
-            throw new Error(`Unknown stage: ${currentStage}`);
+            throw new Error(`Unknown stage: ${currentStage} (substage: ${substageId})`);
           }
           
           // Check if Perplexity key is needed for evidence harvest stages
@@ -240,11 +260,39 @@ export const useCostAwareStageExecution = ({
               { 
                 maxTokens: additionalParams?.maxTokens || 32000, // Massive increase - use 32k tokens for Stage 1 components
                 stageId: additionalParams?.stageId || 'stage1_bypass',
-                temperature: 0.1
+                temperature: additionalParams?.temperature || 0.1
               }
             );
             
             console.log(`✅ Direct API call successful for Stage 1`, { 
+              resultLength: (result && typeof result === 'string') ? result.length : 'non-string' 
+            });
+            
+            return result;
+          }
+          
+          // **STAGE 9 SUBSTAGES**: Use direct API for 9A-9G substages for optimal quality
+          if (currentStage === 8 && substageId && substageId.startsWith('9')) {
+            console.log(`🎯 Direct API call for Stage 9 substage ${substageId}`, { 
+              promptLength: (prompt && typeof prompt === 'string') ? prompt.length : 0, 
+              hasGeminiKey: !!apiKeys.gemini,
+              additionalParams 
+            });
+            
+            const { callGeminiAPI } = await import('@/services/apiService');
+            const result = await callGeminiAPI(
+              prompt, 
+              apiKeys.gemini, 
+              'thinking-structured', // Use structured output for substages
+              undefined, // No schema constraints
+              { 
+                maxTokens: additionalParams?.maxTokens || 4000,
+                stageId: substageId,
+                temperature: additionalParams?.temperature || 0.3
+              }
+            );
+            
+            console.log(`✅ Direct API call successful for substage ${substageId}`, { 
               resultLength: (result && typeof result === 'string') ? result.length : 'non-string' 
             });
             
@@ -284,7 +332,7 @@ export const useCostAwareStageExecution = ({
               { 
                 maxTokens: additionalParams?.maxTokens || 32000, // Massive token limit for fallback - use full capacity
                 stageId: additionalParams?.stageId || 'fallback',
-                temperature: 0.1
+                temperature: additionalParams?.temperature || 0.1
               }
             );
           }

@@ -74,30 +74,63 @@ export class SupabaseStorageService {
    */
   async initializeStorage(): Promise<void> {
     try {
+      console.log('🔧 Initializing Supabase storage buckets...');
+      
       // Check if main bucket exists, create if not
-      const { data: buckets } = await supabase.storage.listBuckets();
+      const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+      
+      if (listError) {
+        console.warn('⚠️ Could not list buckets, proceeding with bucket creation attempts:', listError);
+      }
+      
       const mainBucketExists = buckets?.some(bucket => bucket.name === this.bucketName);
       const vizBucketExists = buckets?.some(bucket => bucket.name === this.visualizationBucket);
 
       if (!mainBucketExists) {
-        await supabase.storage.createBucket(this.bucketName, {
-          public: false,
-          allowedMimeTypes: ['application/json', 'text/html', 'text/plain'],
-          fileSizeLimit: 50 * 1024 * 1024 // 50MB limit
-        });
-        console.log('✅ Created main storage bucket');
+        try {
+          const { error: createError } = await supabase.storage.createBucket(this.bucketName, {
+            public: false,
+            allowedMimeTypes: ['application/json', 'text/html', 'text/plain'],
+            fileSizeLimit: 50 * 1024 * 1024 // 50MB limit
+          });
+          
+          if (createError && !createError.message.includes('already exists')) {
+            throw createError;
+          }
+          
+          console.log('✅ Main storage bucket ready');
+        } catch (bucketError) {
+          console.warn('⚠️ Main bucket creation issue (may already exist):', bucketError);
+        }
+      } else {
+        console.log('✅ Main storage bucket already exists');
       }
 
       if (!vizBucketExists) {
-        await supabase.storage.createBucket(this.visualizationBucket, {
-          public: true, // Visualizations can be public for display
-          allowedMimeTypes: ['image/png', 'image/svg+xml', 'application/pdf'],
-          fileSizeLimit: 10 * 1024 * 1024 // 10MB per file
-        });
-        console.log('✅ Created visualization storage bucket');
+        try {
+          const { error: createError } = await supabase.storage.createBucket(this.visualizationBucket, {
+            public: true, // Visualizations can be public for display
+            allowedMimeTypes: ['image/png', 'image/svg+xml', 'application/pdf', 'application/json'],
+            fileSizeLimit: 10 * 1024 * 1024 // 10MB per file
+          });
+          
+          if (createError && !createError.message.includes('already exists')) {
+            throw createError;
+          }
+          
+          console.log('✅ Visualization storage bucket ready');
+        } catch (bucketError) {
+          console.warn('⚠️ Visualization bucket creation issue (may already exist):', bucketError);
+        }
+      } else {
+        console.log('✅ Visualization storage bucket already exists');
       }
+      
+      console.log('🎉 Supabase storage initialization completed');
+      
     } catch (error) {
       console.error('❌ Storage initialization failed:', error);
+      // Don't throw error to prevent app from breaking
     }
   }
 
