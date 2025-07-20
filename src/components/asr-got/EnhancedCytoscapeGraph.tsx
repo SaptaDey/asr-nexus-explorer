@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
-import cytoscape, { Core, EdgeSingular, NodeSingular } from 'cytoscape';
+import cytoscape, { Core, EdgeSingular, NodeSingular } from '../../utils/cytoscapeSetup';
 import { GraphData, GraphNode, GraphEdge } from '@/types/asrGotTypes';
 import { Settings, ZoomIn, ZoomOut, RotateCcw, Download } from 'lucide-react';
 import { toast } from 'sonner';

@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => ({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           ui: ['@radix-ui/react-accordion', '@radix-ui/react-dialog', '@radix-ui/react-tabs'],
-          visualization: ['cytoscape', 'react-cytoscapejs', '@xyflow/react', 'plotly.js-dist-min'],
+          visualization: ['cytoscape', 'cytoscape-dagre', 'react-cytoscapejs', '@xyflow/react', 'plotly.js-dist-min'],
           utils: ['framer-motion', 'date-fns', 'clsx']
         }
       }

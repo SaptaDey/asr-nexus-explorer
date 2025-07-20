@@ -35,7 +35,8 @@
       "Bash(pkill:*)",
       "WebFetch(domain:scientific-research.online)",
       "Bash(mkdir:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }
