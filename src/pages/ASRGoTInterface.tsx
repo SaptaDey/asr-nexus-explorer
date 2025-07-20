@@ -28,6 +28,7 @@ import { DeveloperMode } from '@/components/asr-got/DeveloperMode';
 import { UnifiedAPICredentialsModal } from '@/components/asr-got/UnifiedAPICredentialsModal';
 import { DebugButton } from '@/components/asr-got/DebugButton';
 import { RealTimeErrorLogger } from '@/components/asr-got/RealTimeErrorLogger';
+import { StoredAnalysesManager } from '@/components/asr-got/StoredAnalysesManager';
 import { useASRGoT } from '@/hooks/useASRGoT';
 import { useProcessingMode } from '@/hooks/asr-got/useProcessingMode';
 import { costAwareOrchestration } from '@/services/CostAwareOrchestrationService';
@@ -909,7 +910,7 @@ Make the data realistic and scientifically meaningful for the research domain.
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* Clean Tabs Navigation */}
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-1 gap-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-1 gap-1">
             <TabsTrigger 
               value="research" 
               className="data-[state=active]:bg-blue-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-blue-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
@@ -958,6 +959,13 @@ Make the data realistic and scientifically meaningful for the research domain.
             >
               <span className="hidden sm:inline">📤 Export</span>
               <span className="sm:hidden">📤</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="storage" 
+              className="data-[state=active]:bg-purple-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-purple-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
+            >
+              <span className="hidden sm:inline">💾 Storage</span>
+              <span className="sm:hidden">💾</span>
             </TabsTrigger>
           </TabsList>
 
@@ -1193,6 +1201,20 @@ Make the data realistic and scientifically meaningful for the research domain.
                     </p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="storage">
+            <Card className="card-gradient">
+              <CardHeader>
+                <CardTitle className="gradient-text flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  Stored Analyses Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <StoredAnalysesManager />
               </CardContent>
             </Card>
           </TabsContent>

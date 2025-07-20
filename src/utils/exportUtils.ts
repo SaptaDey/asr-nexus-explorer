@@ -68,7 +68,10 @@ export const exportAsHTML = async (
     
     // **GENERATE COMPREHENSIVE FINAL REPORT using full token budget**
     console.log('🧠 Generating deep scientific content using Gemini 2.5 Pro with full token budget...');
-    const htmlContent = await stage9Generator.generateComprehensiveFinalReport();
+    const htmlContent = await stage9Generator.generateComprehensiveFinalReport({
+      storeInSupabase: true, // Enable automatic storage in Supabase
+      sessionTitle: `${researchContext.topic} - ${new Date().toLocaleDateString()}`
+    });
     
     // **SANITIZE AND EXPORT**: Clean the HTML and download
     const sanitizedHTML = sanitizeHTML(htmlContent);

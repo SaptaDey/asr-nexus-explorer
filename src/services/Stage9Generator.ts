@@ -6,6 +6,7 @@
 
 import { GraphData, ResearchContext, ASRGoTParameters } from '@/types/asrGotTypes';
 import { callGeminiAPI } from './apiService';
+import { supabaseStorage } from './SupabaseStorageService';
 
 export interface Stage9GenerationOptions {
   useExistingData: boolean;
@@ -36,18 +37,29 @@ export class Stage9Generator {
   /**
    * Main entry point for Stage 9 comprehensive report generation
    */
-  async generateComprehensiveFinalReport(): Promise<string> {
+  async generateComprehensiveFinalReport(options: { storeInSupabase?: boolean; sessionTitle?: string } = {}): Promise<string> {
     console.log('🚀 Stage 9: Starting comprehensive final report generation...');
+    const startTime = Date.now();
     
     try {
-      // **STEP 1: Collect all existing research data**
+      // **STEP 1: Initialize Supabase storage**
+      if (options.storeInSupabase) {
+        await supabaseStorage.initializeStorage();
+      }
+      
+      // **STEP 2: Collect all existing research data**
       const researchData = await this.collectExistingResearchData();
       
-      // **STEP 2: Generate deep scientific content using Gemini 2.5 Pro**
+      // **STEP 3: Generate deep scientific content using Gemini 2.5 Pro**
       const comprehensiveContent = await this.generateDeepScientificContent(researchData);
       
-      // **STEP 3: Structure the final HTML report**
+      // **STEP 4: Structure the final HTML report**
       const finalReport = await this.structureFinalReport(comprehensiveContent, researchData);
+      
+      // **STEP 5: Store complete analysis in Supabase if requested**
+      if (options.storeInSupabase) {
+        await this.storeCompleteAnalysis(finalReport, comprehensiveContent, researchData, startTime, options.sessionTitle);
+      }
       
       console.log(`✅ Stage 9 Complete: Generated ${finalReport.length} character comprehensive report`);
       return finalReport;
@@ -527,6 +539,146 @@ Focus on actionable research directions with clear impact potential, feasibility
           </ol>
       </section>
     `;
+  }
+
+  /**
+   * Store complete analysis in Supabase for future retrieval
+   */
+  private async storeCompleteAnalysis(
+    finalReport: string,
+    comprehensiveContent: any,
+    researchData: any,
+    startTime: number,
+    sessionTitle?: string
+  ): Promise<void> {
+    try {
+      console.log('💾 Storing complete analysis in Supabase...');
+      
+      // Convert PNG files from .png directory to File objects for upload
+      const visualizationFiles = await this.collectVisualizationFiles(researchData.figures);
+      
+      // Prepare storage data
+      const analysisData = {
+        researchContext: this.researchContext,
+        parameters: this.parameters,
+        stageResults: this.stageResults,
+        graphData: this.graphData,
+        finalReportHtml: finalReport,
+        textualContent: comprehensiveContent,
+        jsonAnalysisData: researchData.jsonData,
+        tableData: this.extractTableData(this.stageResults),
+        chartData: this.extractChartData(this.stageResults),
+        visualizationFiles,
+        metadata: {
+          totalTokensUsed: this.estimateTokenUsage(comprehensiveContent),
+          generationTimeSeconds: Math.round((Date.now() - startTime) / 1000),
+          modelVersions: {
+            gemini: 'gemini-2.0-flash-exp',
+            perplexity: 'sonar-pro'
+          }
+        }
+      };
+      
+      // Generate session ID and title
+      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const title = sessionTitle || `CTCL Chromosomal Analysis - ${new Date().toLocaleDateString()}`;
+      
+      // Store in Supabase
+      const analysisId = await supabaseStorage.storeCompleteAnalysis(
+        sessionId,
+        title,
+        analysisData
+      );
+      
+      console.log(`✅ Analysis stored successfully with ID: ${analysisId}`);
+      
+      // Store analysis ID globally for future reference
+      if (typeof window !== 'undefined') {
+        (window as any).lastStoredAnalysisId = analysisId;
+      }
+      
+    } catch (error) {
+      console.error('❌ Failed to store analysis in Supabase:', error);
+      // Don't throw error to prevent breaking the main generation flow
+    }
+  }
+
+  /**
+   * Convert PNG file paths to File objects for upload
+   */
+  private async collectVisualizationFiles(figureNames: string[]): Promise<File[]> {
+    const files: File[] = [];
+    
+    for (const figureName of figureNames) {
+      try {
+        // Try to fetch the PNG file from the .png directory
+        const response = await fetch(`.png/${figureName}`);
+        if (response.ok) {
+          const blob = await response.blob();
+          const file = new File([blob], figureName, { type: 'image/png' });
+          files.push(file);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Could not load figure: ${figureName}`);
+      }
+    }
+    
+    console.log(`📊 Collected ${files.length}/${figureNames.length} visualization files`);
+    return files;
+  }
+
+  /**
+   * Extract table data from stage results
+   */
+  private extractTableData(stageResults: string[]): any[] {
+    const tables: any[] = [];
+    
+    stageResults.forEach((result, stageIndex) => {
+      // Look for table-like structures in the results
+      const tableMatches = result.match(/\|.*\|/g);
+      if (tableMatches && tableMatches.length > 2) {
+        tables.push({
+          stage: stageIndex + 1,
+          rows: tableMatches,
+          description: `Table data from Stage ${stageIndex + 1}`,
+          created_at: new Date().toISOString()
+        });
+      }
+    });
+    
+    return tables;
+  }
+
+  /**
+   * Extract chart data from stage results
+   */
+  private extractChartData(stageResults: string[]): any[] {
+    const charts: any[] = [];
+    
+    stageResults.forEach((result, stageIndex) => {
+      // Look for statistical data that could be charts
+      const statisticalMatches = result.match(/(\d+\.?\d*)[%\s]*\([^)]*\)/g);
+      if (statisticalMatches && statisticalMatches.length > 0) {
+        charts.push({
+          stage: stageIndex + 1,
+          data_points: statisticalMatches,
+          type: 'statistical_summary',
+          description: `Chart data from Stage ${stageIndex + 1}`,
+          created_at: new Date().toISOString()
+        });
+      }
+    });
+    
+    return charts;
+  }
+
+  /**
+   * Estimate token usage for the generated content
+   */
+  private estimateTokenUsage(comprehensiveContent: any): number {
+    const totalText = Object.values(comprehensiveContent).join(' ');
+    // Rough estimation: 1 token ≈ 4 characters
+    return Math.round(totalText.length / 4);
   }
 
   /**
