@@ -187,10 +187,16 @@ export class SupabaseStorageService {
   }
 
   /**
-   * Upload visualization files (PNG, SVG, PDF)
+   * Upload visualization files (PNG, SVG, PDF) or generate URLs for existing files
    */
   private async uploadVisualizationFiles(analysisId: string, files: File[]): Promise<string[]> {
     const uploadedUrls: string[] = [];
+
+    // If no files provided, try to collect existing visualization files from the page
+    if (!files || files.length === 0) {
+      const existingFiles = await this.collectVisualizationFiles();
+      files = existingFiles;
+    }
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -223,6 +229,44 @@ export class SupabaseStorageService {
   }
 
   /**
+   * Collect visualization files from current page (figures, charts, etc.)
+   */
+  private async collectVisualizationFiles(): Promise<File[]> {
+    const files: File[] = [];
+    
+    try {
+      // Find all images and canvas elements that could be visualizations
+      const images = document.querySelectorAll('img[src*="data:"], canvas');
+      
+      for (let i = 0; i < images.length; i++) {
+        const element = images[i];
+        
+        if (element instanceof HTMLCanvasElement) {
+          // Convert canvas to blob
+          element.toBlob((blob) => {
+            if (blob) {
+              const file = new File([blob], `visualization_${i + 1}.png`, { type: 'image/png' });
+              files.push(file);
+            }
+          }, 'image/png');
+        } else if (element instanceof HTMLImageElement && element.src.startsWith('data:')) {
+          // Convert data URL to blob
+          const response = await fetch(element.src);
+          const blob = await response.blob();
+          const file = new File([blob], `figure_${i + 1}.png`, { type: blob.type || 'image/png' });
+          files.push(file);
+        }
+      }
+      
+      console.log(`📊 Collected ${files.length} visualization files from page`);
+    } catch (error) {
+      console.error('❌ Failed to collect visualization files:', error);
+    }
+    
+    return files;
+  }
+
+  /**
    * Store analysis record in database
    */
   private async storeAnalysisRecord(analysis: Partial<StoredAnalysis>): Promise<void> {
@@ -233,7 +277,7 @@ export class SupabaseStorageService {
         title: analysis.title || 'ASR-GoT Analysis',
         description: analysis.description,
         status: 'completed',
-        user_id: 'default_user', // In production, use actual user ID
+        user_id: '00000000-0000-0000-0000-000000000000', // Default user for anonymous storage
         config: {
           analysis_id: analysis.id,
           research_context: analysis.research_context,

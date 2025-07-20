@@ -1065,16 +1065,47 @@ Generate academically rigorous references and appendices suitable for peer revie
     }
   }
 
+  /**
+   * Collect all visualization files from the current analysis
+   */
   private async collectVisualizationFiles(): Promise<File[]> {
     const files: File[] = [];
     
     for (const figure of this.figureMetadata) {
       try {
-        const response = await fetch(`.png/${figure.filename}`);
-        if (response.ok) {
-          const blob = await response.blob();
-          const file = new File([blob], figure.filename, { type: 'image/png' });
-          files.push(file);
+        // Try to find the figure in the public directory or as data URLs
+        const possiblePaths = [
+          `/public/img/${figure.filename}`,
+          `./img/${figure.filename}`,
+          `/img/${figure.filename}`
+        ];
+        
+        let found = false;
+        for (const path of possiblePaths) {
+          try {
+            const response = await fetch(path);
+            if (response.ok) {
+              const blob = await response.blob();
+              const file = new File([blob], figure.filename, { type: 'image/png' });
+              files.push(file);
+              found = true;
+              break;
+            }
+          } catch {}
+        }
+        
+        if (!found) {
+          // Try to find image elements with data URLs or similar
+          const imageElements = document.querySelectorAll(`img[alt*="${figure.title}"], img[src*="${figure.filename}"]`);
+          if (imageElements.length > 0) {
+            const img = imageElements[0] as HTMLImageElement;
+            if (img.src.startsWith('data:')) {
+              const response = await fetch(img.src);
+              const blob = await response.blob();
+              const file = new File([blob], figure.filename, { type: blob.type || 'image/png' });
+              files.push(file);
+            }
+          }
         }
       } catch (error) {
         console.warn(`⚠️ Could not load figure: ${figure.filename}`);
