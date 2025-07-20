@@ -31,6 +31,8 @@ import { RealTimeErrorLogger } from '@/components/asr-got/RealTimeErrorLogger';
 import { StoredAnalysesManager } from '@/components/asr-got/StoredAnalysesManager';
 import { Stage9ProgressIndicator } from '@/components/asr-got/Stage9ProgressIndicator';
 import { QueryHistoryManager } from '@/components/asr-got/QueryHistoryManager';
+import { ResponsiveLayout } from '@/components/asr-got/ResponsiveLayout';
+import { defaultNavigationItems } from '@/components/asr-got/ResponsiveNavigation';
 import { useASRGoT } from '@/hooks/useASRGoT';
 import { useProcessingMode } from '@/hooks/asr-got/useProcessingMode';
 import { costAwareOrchestration } from '@/services/CostAwareOrchestrationService';
@@ -142,6 +144,182 @@ const ASRGoTInterface: React.FC = () => {
     if (isComplete && queryHistorySessionId) {
       await completeSession();
       toast.success('🎉 Research session completed and saved to History!');
+    }
+  };
+
+  // Content mapping for responsive layout
+  const renderTabContent = (tabId: string) => {
+    switch (tabId) {
+      case 'research':
+        return (
+          <ResearchInterface
+            currentStage={currentStage}
+            graphData={graphData}
+            onExecuteStage={executeStage}
+            isProcessing={isProcessing}
+            stageResults={stageResults}
+            researchContext={researchContext}
+            apiKeys={apiKeys}
+            processingMode={mode}
+            onShowApiModal={() => setShowAPICredentialsModal(true)}
+            onSwitchToExport={() => setActiveTab('export')}
+          />
+        );
+      
+      case 'tree':
+        return (
+          <div className="tree-scene" data-testid="tree-scene">
+            <TreeOfReasoningVisualization 
+              graphData={graphData}
+              currentStage={currentStage}
+              isProcessing={isProcessing}
+              stageResults={stageResults}
+              researchContext={researchContext}
+              parameters={parameters}
+            />
+          </div>
+        );
+      
+      case 'advanced':
+      case 'advanced-multi':
+        return (
+          <div className="h-full" style={{ height: '600px' }}>
+            <AdvancedGraphVisualization 
+              graphData={graphData}
+              showParameters={true}
+              currentStage={currentStage}
+              isProcessing={isProcessing}
+              stageResults={stageResults}
+              researchContext={researchContext}
+              parameters={parameters}
+            />
+          </div>
+        );
+      
+      case 'advanced-enhanced':
+        return (
+          <EnhancedGraphVisualization 
+            graphData={graphData}
+            currentStage={currentStage}
+            isProcessing={isProcessing}
+          />
+        );
+      
+      case 'analytics':
+      case 'analytics-standard':
+        return (
+          <VisualAnalytics
+            graphData={graphData}
+            currentStage={currentStage}
+            geminiApiKey={apiKeys.gemini}
+            stageResults={stageResults}
+            researchContext={researchContext}
+          />
+        );
+      
+      case 'analytics-meta':
+        return (
+          <MetaAnalysisVisualAnalytics
+            graphData={graphData}
+            stageResults={stageResults}
+            researchContext={researchContext}
+            geminiApiKey={apiKeys.gemini}
+            perplexityApiKey={apiKeys.perplexity}
+          />
+        );
+      
+      case 'parameters':
+        return (
+          <ParametersPane
+            parameters={parameters}
+            onParametersChange={setParameters}
+            currentStage={currentStage}
+            isProcessing={isProcessing}
+          />
+        );
+      
+      case 'developer':
+        return (
+          <DeveloperMode
+            graphData={graphData}
+            parameters={parameters}
+            currentStage={currentStage}
+            stageResults={stageResults}
+            researchContext={researchContext}
+            onParametersChange={setParameters}
+          />
+        );
+      
+      case 'export':
+        return (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button
+                onClick={handleExportHTML}
+                disabled={!hasResults}
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+              >
+                <Download className="h-5 w-5 mr-2" />
+                Generate & Export HTML Report
+              </Button>
+              
+              <Button
+                onClick={() => exportResults('json')}
+                disabled={!hasResults}
+                variant="outline"
+                size="lg"
+              >
+                <FileText className="h-5 w-5 mr-2" />
+                Export JSON Data
+              </Button>
+            </div>
+            
+            {exportContent && (
+              <div className="mt-4">
+                <InAppPreview
+                  content={exportContent}
+                  title={`ASR-GoT Report - ${researchContext.topic || 'Analysis'}`}
+                  type="html"
+                  onDownload={handleExportHTML}
+                  className="w-full"
+                />
+              </div>
+            )}
+            
+            {isComplete && (
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+                <h3 className="font-semibold text-green-800 mb-2">Analysis Complete!</h3>
+                <p className="text-green-700">Your comprehensive report is ready for export and sharing.</p>
+              </div>
+            )}
+          </div>
+        );
+      
+      case 'storage':
+        return (
+          <StoredAnalysesManager
+            currentSessionId={currentSessionId}
+            onLoadAnalysis={(analysisId) => {
+              toast.info(`Loading stored analysis: ${analysisId}`);
+            }}
+          />
+        );
+      
+      case 'history':
+        return (
+          <QueryHistoryManager
+            onResumeSession={handleResumeSession}
+            onLoadForReanalysis={(sessionId) => {
+              toast.info(`Loading session for reanalysis: ${sessionId}`);
+              setActiveTab('research');
+            }}
+            currentSessionId={queryHistorySessionId}
+          />
+        );
+      
+      default:
+        return <div>Select a tab to view content</div>;
     }
   };
 
@@ -1035,356 +1213,68 @@ Make the data realistic and scientifically meaningful for the research domain.
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          {/* Clean Tabs Navigation */}
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-10 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-1 gap-1">
-            <TabsTrigger 
-              value="research" 
-              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-blue-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
-            >
-              <span className="hidden sm:inline">🔬 Research</span>
-              <span className="sm:hidden">🔬</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="tree" 
-              className="data-[state=active]:bg-green-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-green-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
-            >
-              <span className="hidden sm:inline">🌳 Tree View</span>
-              <span className="sm:hidden">🌳</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="advanced" 
-              className="data-[state=active]:bg-cyan-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-cyan-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
-            >
-              <span className="hidden sm:inline">🔗 Advanced</span>
-              <span className="sm:hidden">🔗</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="analytics" 
-              className="data-[state=active]:bg-pink-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-pink-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
-            >
-              <span className="hidden sm:inline">📈 Analytics</span>
-              <span className="sm:hidden">📈</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="parameters" 
-              className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-teal-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
-            >
-              <span className="hidden sm:inline">⚙️ Parameters</span>
-              <span className="sm:hidden">⚙️</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="developer" 
-              className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-orange-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
-            >
-              <span className="hidden sm:inline">🔧 Developer</span>
-              <span className="sm:hidden">🔧</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="export" 
-              className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-indigo-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
-            >
-              <span className="hidden sm:inline">📤 Export</span>
-              <span className="sm:hidden">📤</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="storage" 
-              className="data-[state=active]:bg-purple-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-purple-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
-            >
-              <span className="hidden sm:inline">💾 Storage</span>
-              <span className="sm:hidden">💾</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="history" 
-              className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-indigo-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
-            >
-              <span className="hidden sm:inline">🕐 History</span>
-              <span className="sm:hidden">🕐</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="research" id="research-section">
-            <ResearchInterface
-              currentStage={currentStage}
-              graphData={graphData}
-              onExecuteStage={executeStage}
-              isProcessing={isProcessing}
-              stageResults={stageResults}
-              researchContext={researchContext}
-              apiKeys={apiKeys}
-              processingMode={mode}
-              onShowApiModal={() => setShowAPICredentialsModal(true)}
-              onSwitchToExport={() => setActiveTab('export')}
-            />
-          </TabsContent>
-
-          <TabsContent value="tree">
-            <Card className="card-gradient">
-              <CardHeader>
-                <CardTitle className="gradient-text flex items-center gap-2">
-                  <Brain className="h-5 w-5" />
-                  Tree of Reasoning Visualization
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="tree-scene" data-testid="tree-scene">
-                  <TreeOfReasoningVisualization 
-                    graphData={graphData}
-                    currentStage={currentStage}
-                    isProcessing={isProcessing}
-                    onStageSelect={(stage) => executeStage(stage)}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-
-          <TabsContent value="advanced" className="h-full">
-            <div className="space-y-6">
-              <Card className="card-gradient">
-                <CardHeader>
-                  <CardTitle className="gradient-text flex items-center gap-2">
-                    <Network className="h-5 w-5" />
-                    Advanced Graph Visualization & Analysis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <Tabs defaultValue="multi-layer" className="w-full">
-                    <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 mb-6 gap-1">
-                      <TabsTrigger value="multi-layer" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
-                        🔗 <span className="hidden sm:inline">Multi-Layer Network</span>
-                        <span className="sm:hidden">Multi-Layer</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="enhanced" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
-                        🌐 <span className="hidden sm:inline">Enhanced Graph View</span>
-                        <span className="sm:hidden">Enhanced</span>
-                      </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="multi-layer">
-                      <div className="h-full" style={{ height: '600px' }}>
-                        <AdvancedGraphVisualization 
-                          graphData={graphData}
-                          showParameters={true}
-                          onNodeSelect={(node) => {
-                            console.log('Selected node:', node);
-                          }}
-                          onEdgeSelect={(edge) => {
-                            console.log('Selected edge:', edge);
-                          }}
-                        />
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="enhanced">
-                      <div className="h-full" style={{ height: '600px' }}>
-                        <EnhancedGraphVisualization graphData={graphData} />
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <Tabs defaultValue="standard" className="w-full">
-              <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 mb-6 gap-1">
-                <TabsTrigger value="standard" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
-                  📊 <span className="hidden sm:inline">Standard Analytics</span>
-                  <span className="sm:hidden">Standard</span>
-                </TabsTrigger>
-                <TabsTrigger value="meta" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm p-2 sm:p-3">
-                  🧬 <span className="hidden sm:inline">Meta-Analysis & Advanced Visualizations</span>
-                  <span className="sm:hidden">Meta-Analysis</span>
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="standard">
-                <VisualAnalytics
-                  graphData={graphData}
-                  currentStage={currentStage}
-                  geminiApiKey={apiKeys.gemini}
-                  researchContext={researchContext}
-                />
-              </TabsContent>
-
-              <TabsContent value="meta">
-                <MetaAnalysisVisualAnalytics
-                  researchContext={researchContext}
-                  geminiApiKey={apiKeys.gemini}
-                  perplexityApiKey={apiKeys.perplexity}
-                  currentStage={currentStage}
-                />
-              </TabsContent>
-            </Tabs>
-          </TabsContent>
-
-          <TabsContent value="parameters">
-            <Card className="card-gradient">
-              <CardHeader>
-                <CardTitle className="gradient-text flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  ASR-GoT Parameters (P1.0-P1.29)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <ParametersPane 
-                  parameters={parameters}
-                  onParameterChange={(parameterId, updates) => {
-                    setParameters(prev => ({
-                      ...prev,
-                      [parameterId]: {
-                        ...prev[parameterId],
-                        ...updates
-                      }
-                    }));
-                  }}
-                  onParametersReset={() => {
-                    // Reset to default parameters
-                    resetFramework();
-                  }}
-                  onParametersSave={() => {
-                    toast.success('Parameters saved successfully');
-                  }}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="developer">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <CostAwareDashboard />
-              <DeveloperMode 
-                parameters={parameters}
-                onParametersChange={setParameters}
-              />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="export">
-            <Card className="card-gradient">
-              <CardHeader>
-                <CardTitle className="gradient-text flex items-center gap-2">
-                  <Download className="h-5 w-5" />
-                  Export Results
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Stage 9 Multi-Substage Progress Indicator */}
-                <Stage9ProgressIndicator 
-                  isVisible={showStage9Progress}
-                  onComplete={(report) => {
-                    setShowStage9Progress(false);
-                    toast.success(`🎉 Comprehensive thesis generated successfully! ${report.totalWordCount.toLocaleString()} words, ${report.figureMetadata.length} figures with legends.`, {
-                      duration: 5000
-                    });
-                  }}
-                  onError={(error) => {
-                    setShowStage9Progress(false);
-                    toast.error(`❌ Thesis generation failed: ${error}`, {
-                      duration: 10000
-                    });
-                  }}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <Button 
-                    onClick={handleExportHTML} 
-                    disabled={!hasResults || showStage9Progress} 
-                    className="gradient-bg disabled:opacity-50"
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    {showStage9Progress ? 'Generating Thesis...' : 'Export 150+ Page Thesis (9A-9G)'}
-                  </Button>
-                  <Button 
-                    onClick={() => exportResults('json')} 
-                    disabled={!hasResults} 
-                    className="gradient-bg disabled:opacity-50"
-                  >
-                    <Database className="h-4 w-4 mr-2" />
-                    Export JSON Data
-                  </Button>
-                  <Button onClick={resetFramework} variant="outline">
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset Framework
-                  </Button>
-              <RealTimeErrorLogger 
-                maxErrors={100}
-                showInline={false}
-                onErrorCapture={(error) => {
-                  // Log critical errors for additional tracking
-                  if (error.severity === 'critical') {
-                    console.log('🚨 Critical error captured:', error);
+        {/* New Responsive Layout */}
+        <ResponsiveLayout
+          navigationItems={defaultNavigationItems}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          headerContent={
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">ASR-GoT Research Framework</h1>
+                <p className="text-gray-600">Advanced Scientific Reasoning with Graph of Thoughts</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant={(apiKeys.gemini && apiKeys.perplexity) ? "default" : "outline"}
+                  onClick={() => setShowAPICredentialsModal(true)}
+                  className={
+                    (apiKeys.gemini && apiKeys.perplexity)
+                      ? 'bg-green-600 hover:bg-green-700 text-white' 
+                      : 'border-blue-300 text-blue-600 hover:bg-blue-50'
                   }
-                }}
-              />
-                </div>
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  {(apiKeys.gemini && apiKeys.perplexity) ? 'API Setup ✓' : 'Configure APIs'}
+                </Button>
                 
-                {/* In-App Preview */}
-                {exportContent && (
-                  <div className="mt-4">
-                    <InAppPreview
-                      content={exportContent}
-                      title={`ASR-GoT Report - ${researchContext.topic || 'Analysis'}`}
-                      type="html"
-                      onDownload={handleExportHTML}
-                      className="w-full"
-                    />
-                  </div>
+                {queryHistorySessionId && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={pauseSession}
+                    disabled={!isProcessing}
+                    className="border-orange-300 text-orange-600 hover:bg-orange-50 disabled:opacity-50"
+                  >
+                    <Pause className="h-4 w-4 mr-2" />
+                    Pause Session
+                  </Button>
                 )}
                 
-                {isComplete && (
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
-                    <h3 className="font-semibold text-green-800 mb-2">Analysis Complete!</h3>
-                    <p className="text-sm text-green-700">
-                      Your comprehensive ASR-GoT analysis is ready for export.
-                    </p>
+                {isAutoSaveEnabled && (
+                  <div className="flex items-center px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                    <span className="text-xs text-green-700 font-medium">Auto-saving</span>
                   </div>
                 )}
-                
-                {!hasResults && (
-                  <div className="text-center py-8">
-                    <Play className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-                    <p className="text-muted-foreground">
-                      Start your research analysis to generate exportable results.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="storage">
-            <Card className="card-gradient">
-              <CardHeader>
-                <CardTitle className="gradient-text flex items-center gap-2">
-                  <Database className="h-5 w-5" />
-                  Stored Analyses Management
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <StoredAnalysesManager />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="history">
-            <QueryHistoryManager
-              onResumeSession={handleResumeSession}
-              onLoadForReanalysis={(sessionId) => {
-                // Handle loading session for reanalysis
-                toast.info(`Loading session for reanalysis: ${sessionId}`);
-                setActiveTab('research');
-                // TODO: Integrate RAG capabilities for reanalysis
-              }}
-              currentSessionId={queryHistorySessionId}
-            />
-          </TabsContent>
-        </Tabs>
+              </div>
+            </div>
+          }
+        >
+          {renderTabContent(activeTab)}
+        </ResponsiveLayout>
       </div>
       </div>
+
+      {/* Stage 9 Progress Indicator */}
+      {showStage9Progress && (
+        <Stage9ProgressIndicator 
+          currentStage={currentStage}
+          isProcessing={isProcessing}
+          onComplete={() => setShowStage9Progress(false)}
+        />
+      )}
     </div>
   );
 };
