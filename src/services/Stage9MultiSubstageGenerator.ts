@@ -228,8 +228,7 @@ export class Stage9MultiSubstageGenerator {
 **Research Topic:** ${this.researchContext.topic}
 **Research Field:** ${this.researchContext.field}
 
-**Research Context:** ${JSON.stringify(this.researchContext)}
-**Key Findings from 8 Stages:** ${this.stageResults.slice(0, 3).join('\n').substring(0, 4000)}
+**Key Findings Summary:** ${this.stageResults.slice(0, 2).join('\n').substring(0, 2000)}
 
 **Requirements for Abstract:**
 1. **Background (100-150 words):** Clinical significance of CTCL and current staging limitations
@@ -279,9 +278,8 @@ Generate content that would be suitable for a high-impact medical journal abstra
     
     const prompt = `Generate a comprehensive introduction and literature review section (2000-2500 words) building upon the abstract:
 
-**Previous Context:** ${previousResults[0]?.content.substring(0, 1000)}
-**Research Analysis:** ${this.stageResults[0]?.substring(0, 3000)}
-**Research Context:** ${JSON.stringify(this.researchContext)}
+**Previous Context:** ${previousResults[0]?.content.substring(0, 500)}
+**Research Analysis:** ${this.stageResults[0]?.substring(0, 1500)}
 
 **Figures Available for Introduction:**
 ${introFigures.map(fig => `Figure ${fig.figureNumber}: ${fig.title} - ${fig.description}`).join('\n')}
@@ -354,9 +352,8 @@ Generate publication-quality introduction suitable for a leading medical journal
     
     const prompt = `Generate a comprehensive methodology section (1800-2200 words) detailing the ASR-GoT framework implementation:
 
-**Previous Context:** ${previousResults.slice(0, 2).map(r => r.content.substring(0, 500)).join('\n')}
-**Methodology Data:** ${this.stageResults[1]?.substring(0, 3000)}
-**Framework Parameters:** ${JSON.stringify(this.parameters)}
+**Previous Context:** ${previousResults.slice(0, 2).map(r => r.content.substring(0, 300)).join('\n')}
+**Methodology Data:** ${this.stageResults[1]?.substring(0, 1500)}
 
 **Figures Available for Methodology:**
 ${methodologyFigures.map(fig => `Figure ${fig.figureNumber}: ${fig.title} - ${fig.description}`).join('\n')}
@@ -436,9 +433,8 @@ Generate methodology section suitable for peer review in a top-tier journal.`;
     
     const prompt = `Generate a comprehensive results section (2500-3000 words) with detailed statistical analysis and figure integration:
 
-**Previous Context:** ${previousResults.slice(0, 3).map(r => r.content.substring(0, 400)).join('\n')}
-**Results Data:** ${this.stageResults.slice(2, 6).join('\n').substring(0, 6000)}
-**Graph Analysis:** ${JSON.stringify(this.graphData.metadata)}
+**Previous Context:** ${previousResults.slice(0, 3).map(r => r.content.substring(0, 200)).join('\n')}
+**Results Data:** ${this.stageResults.slice(2, 5).join('\n').substring(0, 2000)}
 
 **Available Result Figures (${resultsFigures.length} total):**
 ${resultsFigures.map(fig => `Figure ${fig.figureNumber}: ${fig.title} - ${fig.description}`).join('\n')}

@@ -5,9 +5,8 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import Cytoscape from 'cytoscape';
+import Cytoscape from '../../../utils/cytoscapeSetup';
 import CytoscapeComponent from 'react-cytoscapejs';
-import dagre from 'cytoscape-dagre';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -17,8 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { GraphData, GraphNode, GraphEdge, HyperEdge } from '@/types/asrGotTypes';
 import { Layers, Target, Zap, TrendingUp, Network, Eye, EyeOff } from 'lucide-react';
 
-// Register Cytoscape extensions
-Cytoscape.use(dagre);
+// Cytoscape extensions are initialized in cytoscapeSetup.ts
 
 interface AdvancedGraphVisualizationProps {
   graphData: GraphData;
