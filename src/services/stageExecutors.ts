@@ -2513,9 +2513,8 @@ FULL RESEARCH PROGRESSION DATA:
 TASK: Generate complete, publication-ready scientific HTML report with:
 
 1. **COMPREHENSIVE ACADEMIC STRUCTURE**:
-   ```html
    - Title Page with research metadata
-   - Abstract (250-300 words)
+   - Abstract with executive summary
    - Table of Contents with figure/table lists  
    - Introduction with background and objectives
    - Methods: ASR-GoT framework methodology
@@ -2524,7 +2523,6 @@ TASK: Generate complete, publication-ready scientific HTML report with:
    - Conclusions: Summary and future directions
    - References: Academic citations
    - Appendices: Data tables and supplementary material
-   ```
 
 2. **ADVANCED FIGURE INTEGRATION**:
    - Embed ALL ${totalFigures.length} figures with Plotly.js CDN
