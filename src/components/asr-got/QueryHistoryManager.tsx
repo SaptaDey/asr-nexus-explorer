@@ -29,9 +29,13 @@ import {
   BarChart3,
   Eye,
   RefreshCw,
-  Settings
+  Settings,
+  Brain,
+  Sparkles
 } from 'lucide-react';
 import { QuerySession, queryHistoryService, QueryFigure, QueryTable } from '@/services/QueryHistoryService';
+import { RAGReanalysisPanel } from './RAGReanalysisPanel';
+import { RAGInsight } from '@/services/RAGReanalysisService';
 import { toast } from 'sonner';
 import { formatDistanceToNow, format } from 'date-fns';
 
@@ -60,6 +64,8 @@ export const QueryHistoryManager: React.FC<QueryHistoryManagerProps> = ({
   const [totalSessions, setTotalSessions] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize] = useState(20);
+  const [showRAGReanalysis, setShowRAGReanalysis] = useState(false);
+  const [ragSessionId, setRAGSessionId] = useState<string | null>(null);
 
   /**
    * Load query history with filters
@@ -391,6 +397,44 @@ export const QueryHistoryManager: React.FC<QueryHistoryManagerProps> = ({
                             <RotateCcw className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
+                        <TooltipContent>Reanalyze session</TooltipContent>
+                      </Tooltip>
+
+                      {/* RAG Reanalysis */}
+                      {session.status === 'completed' && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                setRAGSessionId(session.id);
+                                setShowRAGReanalysis(true);
+                              }}
+                              className="border-purple-300 text-purple-600 hover:bg-purple-50"
+                            >
+                              <Brain className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>RAG Reanalysis with AI insights</TooltipContent>
+                        </Tooltip>
+                      )}
+
+                      {/* Smart Insights */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              setRAGSessionId(session.id);
+                              setShowRAGReanalysis(true);
+                            }}
+                            className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                          >
+                            <Sparkles className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
                         <TooltipContent>Load for reanalysis</TooltipContent>
                       </Tooltip>
 
@@ -453,6 +497,35 @@ export const QueryHistoryManager: React.FC<QueryHistoryManagerProps> = ({
           </Button>
         </div>
       )}
+
+      {/* RAG Reanalysis Dialog */}
+      <Dialog open={showRAGReanalysis} onOpenChange={setShowRAGReanalysis}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-purple-600" />
+              RAG-Enhanced Reanalysis
+            </DialogTitle>
+          </DialogHeader>
+          {ragSessionId && (
+            <RAGReanalysisPanel
+              sessionId={ragSessionId}
+              sessionQuery={sessions.find(s => s.id === ragSessionId)?.query || ''}
+              sessionField={sessions.find(s => s.id === ragSessionId)?.research_context?.field || 'General'}
+              onClose={() => {
+                setShowRAGReanalysis(false);
+                setRAGSessionId(null);
+              }}
+              onApplyInsights={(insights: RAGInsight[]) => {
+                toast.success(`Applied ${insights.length} RAG insights! Enhanced research capabilities activated.`, {
+                  description: 'Insights have been integrated for improved analysis.'
+                });
+                // Future: Apply insights to enhance current research
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
