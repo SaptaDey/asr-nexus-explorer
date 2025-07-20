@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import Cytoscape from '../../../utils/cytoscapeSetup';
+import Cytoscape from '@/utils/cytoscapeSetup';
 import CytoscapeComponent from 'react-cytoscapejs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { GraphData, GraphNode, GraphEdge, HyperEdge } from '@/types/asrGotTypes';
+import { GraphData, GraphNode, GraphEdge, HyperEdge, ASRGoTParameters, ResearchContext } from '@/types/asrGotTypes';
 import { Layers, Target, Zap, TrendingUp, Network, Eye, EyeOff } from 'lucide-react';
 
 // Cytoscape extensions are initialized in cytoscapeSetup.ts
@@ -22,6 +22,11 @@ interface AdvancedGraphVisualizationProps {
   graphData: GraphData;
   className?: string;
   showParameters?: boolean;
+  currentStage?: number;
+  isProcessing?: boolean;
+  stageResults?: string[];
+  researchContext?: ResearchContext;
+  parameters?: ASRGoTParameters;
   onNodeSelect?: (node: GraphNode) => void;
   onEdgeSelect?: (edge: GraphEdge) => void;
 }
@@ -65,6 +70,11 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
   graphData,
   className = '',
   showParameters = true,
+  currentStage = 0,
+  isProcessing = false,
+  stageResults = [],
+  researchContext,
+  parameters,
   onNodeSelect,
   onEdgeSelect
 }) => {

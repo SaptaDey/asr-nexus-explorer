@@ -27,6 +27,8 @@ import { Progress } from '@/components/ui/progress';
 interface EnhancedGraphVisualizationProps {
   graphData: GraphData;
   className?: string;
+  currentStage?: number;
+  isProcessing?: boolean;
 }
 
 // Custom Node Components
@@ -128,7 +130,9 @@ const edgeTypes = {
 
 export const EnhancedGraphVisualization: React.FC<EnhancedGraphVisualizationProps> = ({
   graphData,
-  className = ""
+  className = "",
+  currentStage = 0,
+  isProcessing = false
 }) => {
   // Convert ASR-GoT graph data to ReactFlow format
   const initialNodes: Node[] = useMemo(() => 
