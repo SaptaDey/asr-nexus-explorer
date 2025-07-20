@@ -1564,10 +1564,10 @@ export const generateFinalAnalysis = async (context: StageExecutorContext): Prom
 
     const finalHTML = await generateComprehensiveHtmlReport(
       context,
-      substageResults,
+      substageResults.join('\n\n'),
       allFigures,
-      safeNodes,
-      safeEdges
+      [],
+      'Integrated visual analytics with comprehensive figure placement and detailed legends'
     );
 
     const endTime = Date.now();
