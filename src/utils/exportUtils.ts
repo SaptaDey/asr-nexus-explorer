@@ -52,48 +52,33 @@ export const exportAsHTML = async (
   finalReport: string,
   parameters: ASRGoTParameters
 ): Promise<void> => {
-  // **CRITICAL FIX**: Use the new Stage 9 comprehensive HTML generation instead of old simple export
-  
-  // Import the comprehensive HTML generation function
-  const { generateComprehensiveHtmlReport } = await import('@/services/stageExecutors');
-  
-  // **VISUALIZATION DATA COLLECTION**: Gather all figures from VisualAnalytics
-  const visualAnalyticsData = typeof window !== 'undefined' && (window as any).visualAnalytics ? (window as any).visualAnalytics : null;
-  const allFigures = visualAnalyticsData?.figures || [];
-  
-  console.log(`🎨 HTML Export: Collected ${allFigures.length} visualizations for integration`);
-  
-  // **COMPLETE RESEARCH CONTENT**: Full content for 154-page equivalent
-  const completeResearchContent = stageResults.join('\n\n═══ STAGE SEPARATOR ═══\n\n');
-  
-  // Create context for comprehensive HTML generation
-  const htmlContext = {
-    stageResults: stageResults,
-    graphData: graphData,
-    researchContext: researchContext,
-    apiKeys: { gemini: '', perplexity: '' }, // Not needed for HTML generation
-    routeApiCall: null // Use fallback functions for HTML generation
-  };
+  // Import the new comprehensive Stage 9 generator
+  const { Stage9Generator } = await import('@/services/Stage9Generator');
   
   try {
-    // **GENERATE COMPREHENSIVE HTML**: Using the new Stage 9 architecture
-    const comprehensiveHTML = await generateComprehensiveHtmlReport(
-      htmlContext,
-      completeResearchContent, // Complete 8-stage research content
-      allFigures, // All 20+ visualizations
-      [], // Raw data tables (empty for now)
-      `Complete 9-stage integration: ${stageResults.length} stages, ${allFigures.length} figures`
+    console.log('🚀 Starting comprehensive HTML generation with Stage 9 generator...');
+    
+    // **CREATE STAGE 9 GENERATOR INSTANCE**
+    const stage9Generator = new Stage9Generator(
+      parameters,
+      researchContext,
+      graphData,
+      stageResults
     );
     
+    // **GENERATE COMPREHENSIVE FINAL REPORT using full token budget**
+    console.log('🧠 Generating deep scientific content using Gemini 2.5 Pro with full token budget...');
+    const htmlContent = await stage9Generator.generateComprehensiveFinalReport();
+    
     // **SANITIZE AND EXPORT**: Clean the HTML and download
-    const sanitizedHTML = sanitizeHTML(comprehensiveHTML);
+    const sanitizedHTML = sanitizeHTML(htmlContent);
     
     downloadFile(sanitizedHTML, `asr-got-comprehensive-report-${Date.now()}.html`, 'text/html');
     
     console.log(`✅ Comprehensive HTML Export Complete: ${sanitizedHTML.length} characters`);
     
   } catch (error) {
-    console.error('Failed to generate comprehensive HTML, falling back to simple export:', error);
+    console.error('❌ Stage 9 HTML export failed, falling back to simple export:', error);
     
     // **FALLBACK**: If comprehensive generation fails, use simple export
     const fallbackHTML = generateFallbackHTML(stageResults, graphData, researchContext, finalReport);
