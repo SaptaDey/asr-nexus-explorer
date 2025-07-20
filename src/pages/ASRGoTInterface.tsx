@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Brain, Database, FileText, Download, Zap, Settings, Network, Play, RotateCcw, Mail, ToggleLeft, BookOpen, Bug } from 'lucide-react';
+import { Brain, Database, FileText, Download, Zap, Settings, Network, Play, RotateCcw, Mail, ToggleLeft, BookOpen, Bug, Clock } from 'lucide-react';
 import { TreeOfReasoningVisualization } from '@/components/asr-got/TreeOfReasoningVisualization';
 import { ResearchInterface } from '@/components/asr-got/ResearchInterface';
 import { EnhancedGraphVisualization } from '@/components/asr-got/EnhancedGraphVisualization';
@@ -30,6 +30,7 @@ import { DebugButton } from '@/components/asr-got/DebugButton';
 import { RealTimeErrorLogger } from '@/components/asr-got/RealTimeErrorLogger';
 import { StoredAnalysesManager } from '@/components/asr-got/StoredAnalysesManager';
 import { Stage9ProgressIndicator } from '@/components/asr-got/Stage9ProgressIndicator';
+import { QueryHistoryManager } from '@/components/asr-got/QueryHistoryManager';
 import { useASRGoT } from '@/hooks/useASRGoT';
 import { useProcessingMode } from '@/hooks/asr-got/useProcessingMode';
 import { costAwareOrchestration } from '@/services/CostAwareOrchestrationService';
@@ -981,7 +982,7 @@ Make the data realistic and scientifically meaningful for the research domain.
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* Clean Tabs Navigation */}
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-1 gap-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-10 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-1 gap-1">
             <TabsTrigger 
               value="research" 
               className="data-[state=active]:bg-blue-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-blue-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
@@ -1037,6 +1038,13 @@ Make the data realistic and scientifically meaningful for the research domain.
             >
               <span className="hidden sm:inline">💾 Storage</span>
               <span className="sm:hidden">💾</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="history" 
+              className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-slate-700 font-medium rounded-md transition-all duration-200 hover:bg-indigo-50 data-[state=active]:shadow-md text-xs sm:text-sm p-2 sm:p-3"
+            >
+              <span className="hidden sm:inline">🕐 History</span>
+              <span className="sm:hidden">🕐</span>
             </TabsTrigger>
           </TabsList>
 
@@ -1305,6 +1313,22 @@ Make the data realistic and scientifically meaningful for the research domain.
                 <StoredAnalysesManager />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="history">
+            <QueryHistoryManager
+              onResumeSession={(sessionId) => {
+                // Handle session resume
+                toast.info(`Resuming session: ${sessionId}`);
+                // TODO: Integrate with enhanced ASR-GoT hook
+              }}
+              onLoadForReanalysis={(sessionId) => {
+                // Handle loading session for reanalysis
+                toast.info(`Loading session for reanalysis: ${sessionId}`);
+                // TODO: Integrate with enhanced ASR-GoT hook
+              }}
+              currentSessionId={undefined} // TODO: Track current session
+            />
           </TabsContent>
         </Tabs>
       </div>
