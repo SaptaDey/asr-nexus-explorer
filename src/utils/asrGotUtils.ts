@@ -69,14 +69,14 @@ Generated on: ${new Date().toLocaleString()}
   URL.revokeObjectURL(url);
 };
 
-export const exportResultsAsHTML = (
+export const exportResultsAsHTML = async (
   stageResults: string[],
   graphData: GraphData,
   researchContext: ResearchContext,
   finalReport: string,
   parameters: ASRGoTParameters
 ) => {
-  exportAsHTML(stageResults, graphData, researchContext, finalReport, parameters);
+  await exportAsHTML(stageResults, graphData, researchContext, finalReport, parameters);
 };
 
 export const exportResultsAsJSON = (

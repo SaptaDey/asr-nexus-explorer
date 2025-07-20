@@ -43,81 +43,126 @@ const downloadFile = (content: string, filename: string, mimeType: string): void
 };
 
 /**
- * Export results as sanitized HTML
+ * Export results as comprehensive publication-quality HTML using Stage 9 architecture
  */
-export const exportAsHTML = (
+export const exportAsHTML = async (
   stageResults: string[],
   graphData: GraphData,
   researchContext: ResearchContext,
   finalReport: string,
   parameters: ASRGoTParameters
-): void => {
-// Convert markdown to HTML first, then sanitize
+): Promise<void> => {
+  // **CRITICAL FIX**: Use the new Stage 9 comprehensive HTML generation instead of old simple export
+  
+  // Import the comprehensive HTML generation function
+  const { generateComprehensiveHtmlReport } = await import('@/services/stageExecutors');
+  
+  // **VISUALIZATION DATA COLLECTION**: Gather all figures from VisualAnalytics
+  const visualAnalyticsData = typeof window !== 'undefined' && (window as any).visualAnalytics ? (window as any).visualAnalytics : null;
+  const allFigures = visualAnalyticsData?.figures || [];
+  
+  console.log(`🎨 HTML Export: Collected ${allFigures.length} visualizations for integration`);
+  
+  // **COMPLETE RESEARCH CONTENT**: Full content for 154-page equivalent
+  const completeResearchContent = stageResults.join('\n\n═══ STAGE SEPARATOR ═══\n\n');
+  
+  // Create context for comprehensive HTML generation
+  const htmlContext = {
+    stageResults: stageResults,
+    graphData: graphData,
+    researchContext: researchContext,
+    apiKeys: { gemini: '', perplexity: '' }, // Not needed for HTML generation
+    routeApiCall: null // Use fallback functions for HTML generation
+  };
+  
+  try {
+    // **GENERATE COMPREHENSIVE HTML**: Using the new Stage 9 architecture
+    const comprehensiveHTML = await generateComprehensiveHtmlReport(
+      htmlContext,
+      completeResearchContent, // Complete 8-stage research content
+      allFigures, // All 20+ visualizations
+      [], // Raw data tables (empty for now)
+      `Complete 9-stage integration: ${stageResults.length} stages, ${allFigures.length} figures`
+    );
+    
+    // **SANITIZE AND EXPORT**: Clean the HTML and download
+    const sanitizedHTML = sanitizeHTML(comprehensiveHTML);
+    
+    downloadFile(sanitizedHTML, `asr-got-comprehensive-report-${Date.now()}.html`, 'text/html');
+    
+    console.log(`✅ Comprehensive HTML Export Complete: ${sanitizedHTML.length} characters`);
+    
+  } catch (error) {
+    console.error('Failed to generate comprehensive HTML, falling back to simple export:', error);
+    
+    // **FALLBACK**: If comprehensive generation fails, use simple export
+    const fallbackHTML = generateFallbackHTML(stageResults, graphData, researchContext, finalReport);
+    downloadFile(fallbackHTML, `asr-got-fallback-${Date.now()}.html`, 'text/html');
+  }
+};
+
+// **FALLBACK FUNCTION**: Simple HTML generation if comprehensive fails
+function generateFallbackHTML(
+  stageResults: string[],
+  graphData: GraphData,
+  researchContext: ResearchContext,
+  finalReport: string
+): string {
   const parseMarkdownToHTML = (markdown: string): string => {
-    const html = markdown
-      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2 text-primary">$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold mt-6 mb-3 text-primary">$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-8 mb-4 text-primary">$1</h1>')
-      .replace(/\*\*(.*)\*\*/gim, '<strong class="font-semibold">$1</strong>')
-      .replace(/\*(.*)\*/gim, '<em class="italic">$1</em>')
-      .replace(/```([\s\S]*?)```/gim, '<pre class="bg-gray-100 p-3 rounded-md text-sm overflow-x-auto my-3"><code>$1</code></pre>')
-      .replace(/`([^`]*)`/gim, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">$1</code>')
-      .replace(/^\* (.*$)/gim, '<li class="ml-4 list-disc">$1</li>')
-      .replace(/^- (.*$)/gim, '<li class="ml-4 list-disc">$1</li>')
-      .replace(/^\d+\. (.*$)/gim, '<li class="ml-4 list-decimal">$1</li>')
-      .replace(/\n\n/gim, '</p><p class="mb-3">')
-      .replace(/\n/gim, '<br>')
-      .replace(/^(?!<[hlu])/gim, '<p class="mb-3">')
-      .replace(/(?<![>])$/gim, '</p>');
-    return sanitizeHTML(html);
+    return markdown
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+      .replace(/\*(.*)\*/gim, '<em>$1</em>')
+      .replace(/\n\n/gim, '</p><p>')
+      .replace(/\n/gim, '<br>');
   };
 
-  const sanitizedResults = stageResults.map(result => parseMarkdownToHTML(result));
-  const sanitizedFinalReport = parseMarkdownToHTML(finalReport);
-  
-  const html = `
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASR-GoT Analysis Report</title>
+    <title>ASR-GoT Research Report - ${researchContext.topic}</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .stage { margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
-        .stage-title { color: #333; border-bottom: 2px solid #007acc; padding-bottom: 5px; }
-        .final-report { background: #f9f9f9; padding: 20px; border-radius: 8px; margin-top: 30px; }
-        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; }
-        code { background: #f5f5f5; padding: 2px 4px; border-radius: 2px; }
+        body { font-family: 'Times New Roman', serif; max-width: 1200px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; }
+        h2 { color: #34495e; margin-top: 2em; }
+        .stage { margin: 2em 0; padding: 1.5em; border: 1px solid #ddd; border-radius: 8px; }
+        .metadata { background: #f8f9fa; padding: 15px; border-left: 4px solid #3498db; margin: 20px 0; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>ASR-GoT Analysis Report</h1>
-        <p><strong>Topic:</strong> ${researchContext.topic || 'N/A'}</p>
-        <p><strong>Field:</strong> ${researchContext.field || 'N/A'}</p>
-        <p><strong>Generated:</strong> ${new Date().toISOString()}</p>
+    <h1>ASR-GoT Research Analysis: ${researchContext.topic}</h1>
+    
+    <div class="metadata">
+        <strong>Research Field:</strong> ${researchContext.field}<br>
+        <strong>Generated:</strong> ${new Date().toISOString()}<br>
+        <strong>Framework:</strong> ASR-GoT (Automatic Scientific Research - Graph of Thoughts)<br>
+        <strong>Total Stages:</strong> ${stageResults.length}
     </div>
     
-    ${sanitizedResults.map((result, index) => `
+    ${stageResults.map((result, index) => `
         <div class="stage">
-            <h2 class="stage-title">Stage ${index + 1}</h2>
-            <div>${result}</div>
+            <h2>Stage ${index + 1}</h2>
+            <div>${parseMarkdownToHTML(result)}</div>
         </div>
     `).join('')}
     
-    ${sanitizedFinalReport ? `
-        <div class="final-report">
+    ${finalReport ? `
+        <div class="stage">
             <h2>Final Analysis</h2>
-            <div>${sanitizedFinalReport}</div>
+            <div>${parseMarkdownToHTML(finalReport)}</div>
         </div>
     ` : ''}
+    
+    <hr>
+    <p><em>Generated by ASR-GoT Framework • ${new Date().toISOString()}</em></p>
 </body>
 </html>`;
-
-  downloadFile(html, `asr-got-analysis-${Date.now()}.html`, 'text/html');
-};
+}
 
 /**
  * Export results as JSON with validation

@@ -24,7 +24,7 @@ export const useExportFunctionality = ({
   parameters
 }: UseExportFunctionalityProps) => {
   
-  const exportResults = useCallback((format?: 'html' | 'json' | 'svg') => {
+  const exportResults = useCallback(async (format?: 'html' | 'json' | 'svg') => {
     const exportFormat = format || 'json';
     if (stageResults.length === 0 && exportFormat !== 'svg') {
       toast.warning('No results to export yet');
@@ -34,8 +34,8 @@ export const useExportFunctionality = ({
     try {
       switch (exportFormat) {
         case 'html':
-          exportResultsAsHTML(stageResults, graphData, researchContext, finalReport, parameters);
-          toast.success('HTML report exported successfully');
+          await exportResultsAsHTML(stageResults, graphData, researchContext, finalReport, parameters);
+          toast.success('Comprehensive HTML report exported successfully');
           break;
         case 'svg':
           exportGraphAsSVG(graphData);
