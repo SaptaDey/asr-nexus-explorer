@@ -347,6 +347,60 @@ export class CostAwareOrchestrationService {
         priceUSD: 0.13
       }
     },
+    '8A_coverage_bias': {
+      stage: 'Coverage & Bias Analysis',
+      microPass: undefined,
+      modelCapability: {
+        model: 'gemini-2.5-flash',
+        capability: 'STRUCTURED_OUTPUTS',
+        batchSize: 1,
+        purpose: 'Analyze research coverage and detect biases.',
+        outputType: 'CoverageAnalysis',
+        maxTokens: 2000,
+        thinkingBudget: 1024
+      },
+      costEstimate: {
+        inputTokens: 3000,
+        outputTokens: 1000,
+        priceUSD: 0.015
+      }
+    },
+    '8B_power_integrity': {
+      stage: 'Statistical Power & Integrity',
+      microPass: undefined,
+      modelCapability: {
+        model: 'gemini-2.5-flash',
+        capability: 'STRUCTURED_OUTPUTS',
+        batchSize: 1,
+        purpose: 'Analyze statistical power and graph integrity.',
+        outputType: 'IntegrityAnalysis',
+        maxTokens: 1500,
+        thinkingBudget: 1024
+      },
+      costEstimate: {
+        inputTokens: 2500,
+        outputTokens: 800,
+        priceUSD: 0.012
+      }
+    },
+    '8C_audit_synthesis': {
+      stage: 'Audit Synthesis',
+      microPass: undefined,
+      modelCapability: {
+        model: 'gemini-2.5-flash',
+        capability: 'STRUCTURED_OUTPUTS',
+        batchSize: 1,
+        purpose: 'Synthesize audit findings and recommendations.',
+        outputType: 'AuditSynthesis',
+        maxTokens: 1000,
+        thinkingBudget: 512
+      },
+      costEstimate: {
+        inputTokens: 1500,
+        outputTokens: 500,
+        priceUSD: 0.008
+      }
+    },
     'S_session_cache': {
       stage: 'Session-wide Cache',
       microPass: undefined,

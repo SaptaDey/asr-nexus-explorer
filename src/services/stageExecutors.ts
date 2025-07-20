@@ -1292,31 +1292,26 @@ export const performReflection = async (context: StageExecutorContext): Promise<
   const safeStage7Results = String(stage7Results || '');
   
   // **SUB-PROCESS 8A: Coverage and Bias Analysis**
-  const coverageBiasPrompt = `Execute Stage 8A audit: Coverage and Bias Analysis for ASR-GoT framework.
+  const coverageBiasPrompt = `Stage 8A Audit: Coverage & Bias Analysis
 
-RESEARCH TOPIC: "${context.researchContext?.topic || 'Research Analysis'}"
+TOPIC: "${context.researchContext?.topic || 'Research Analysis'}"
 
-STAGE 7 COMPOSITION SAMPLE:
-${safeStage7Results.length > 2000 ? safeStage7Results.substring(0, 2000) + '...[truncated for analysis]' : safeStage7Results}
-
-GRAPH STRUCTURE:
+ANALYSIS SCOPE:
 - Knowledge Nodes: ${safeNodes.length}
-- Graph Connections: ${safeEdges.length}
-- Node Types: ${[...new Set(safeNodes.map(n => n.type))].join(', ')}
+- Connections: ${safeEdges.length}
 
-TASK: Analyze research coverage and detect potential biases:
-1. **Coverage Analysis**: Assess research breadth vs depth
-2. **Bias Detection**: Identify statistical and methodological biases
-3. **Quality Assessment**: Evaluate evidence quality and reliability
+TASK: Generate concise audit (max 500 words):
+1. Coverage assessment (breadth vs depth)
+2. Bias detection (methodological issues)
+3. Quality evaluation (evidence reliability)
 
-Generate concise audit findings with specific recommendations.`;
+Provide brief findings and 3 specific recommendations.`;
 
   const coverageBiasAnalysis = context.routeApiCall 
     ? await context.routeApiCall('8A_coverage_bias', { 
         stageId: '8A_coverage_bias',
-        stage7Sample: safeStage7Results.substring(0, 2000),
         nodeCount: safeNodes.length,
-        maxTokens: 4000 // Limit tokens for this sub-process
+        maxTokens: 2000 // Reduced token limit
       })
     : `Coverage and Bias Analysis:
 - Research coverage: Balanced approach across ${safeNodes.length} knowledge nodes
@@ -1327,33 +1322,28 @@ Generate concise audit findings with specific recommendations.`;
   const safeCoverageBiasAnalysis = String(coverageBiasAnalysis || '');
 
   // **SUB-PROCESS 8B: Statistical Power and Integrity Analysis**
-  const powerIntegrityPrompt = `Execute Stage 8B audit: Statistical Power and Graph Integrity Analysis.
+  const powerIntegrityPrompt = `Stage 8B Audit: Statistical Power & Integrity
 
-RESEARCH TOPIC: "${context.researchContext?.topic || 'Research Analysis'}"
+TOPIC: "${context.researchContext?.topic || 'Research Analysis'}"
 
-RESEARCH CONTEXT:
-- Total Knowledge Nodes: ${safeNodes.length}
-- Graph Connections: ${safeEdges.length}
-- Hypotheses Generated: ${(context.researchContext?.hypotheses || []).length}
+DATA SUMMARY:
+- Nodes: ${safeNodes.length} | Connections: ${safeEdges.length}
 - Evidence Nodes: ${safeNodes.filter(n => n.type === 'evidence').length}
 
-PREVIOUS COVERAGE ANALYSIS:
-${safeCoverageBiasAnalysis.substring(0, 1000)}...
+PREVIOUS FINDINGS: ${safeCoverageBiasAnalysis.substring(0, 200)}
 
-TASK: Analyze statistical power and graph integrity:
-1. **Statistical Power Analysis**: P1.26 compliance assessment
-2. **Graph Integrity Check**: Node consistency and edge validation  
-3. **Temporal Consistency**: Timeline coherence verification
-4. **Evidence Quality Scorecard**: Source reliability assessment
+TASK: Brief analysis (max 400 words):
+1. Statistical power assessment
+2. Graph integrity validation
+3. Evidence quality scoring
 
-Generate comprehensive integrity and power analysis report.`;
+Provide concise findings and 2 recommendations.`;
 
   const powerIntegrityAnalysis = context.routeApiCall 
     ? await context.routeApiCall('8B_power_integrity', { 
         stageId: '8B_power_integrity',
-        coverageAnalysis: safeCoverageBiasAnalysis.substring(0, 1000),
         nodeCount: safeNodes.length,
-        maxTokens: 4000 // Limit tokens for this sub-process
+        maxTokens: 1500 // Further reduced token limit
       })
     : `Statistical Power and Integrity Analysis:
 - Statistical power: Adequate methodology with P1.26 compliance
@@ -1365,30 +1355,25 @@ Generate comprehensive integrity and power analysis report.`;
   const safePowerIntegrityAnalysis = String(powerIntegrityAnalysis || '');
 
   // **SUB-PROCESS 8C: Final Audit Synthesis**
-  const auditSynthesisPrompt = `Execute Stage 8C: Final Audit Synthesis and Recommendations.
+  const auditSynthesisPrompt = `Stage 8C: Final Audit Synthesis
 
-RESEARCH TOPIC: "${context.researchContext?.topic || 'Research Analysis'}"
+TOPIC: "${context.researchContext?.topic || 'Research Analysis'}"
 
-COVERAGE & BIAS ANALYSIS:
-${safeCoverageBiasAnalysis.substring(0, 800)}
+8A SUMMARY: ${safeCoverageBiasAnalysis.substring(0, 150)}
 
-POWER & INTEGRITY ANALYSIS:  
-${safePowerIntegrityAnalysis.substring(0, 800)}
+8B SUMMARY: ${safePowerIntegrityAnalysis.substring(0, 150)}
 
-TASK: Synthesize audit findings and generate final recommendations:
-1. **Overall Quality Assessment**: Combined score from all audits
-2. **Critical Issues Identified**: Priority issues requiring attention
-3. **Recommendations**: Specific improvements for research quality
-4. **Validation Status**: Final approval or revision requirements
+TASK: Synthesis (max 300 words):
+1. Overall quality score (0-10)
+2. Top 2 critical issues
+3. Final recommendation (approve/revise)
 
-Generate comprehensive audit synthesis with actionable recommendations.`;
+Brief audit conclusion with validation status.`;
 
   const auditSynthesis = context.routeApiCall 
     ? await context.routeApiCall('8C_audit_synthesis', { 
         stageId: '8C_audit_synthesis',
-        coverageAnalysis: safeCoverageBiasAnalysis.substring(0, 500),
-        powerAnalysis: safePowerIntegrityAnalysis.substring(0, 500),
-        maxTokens: 3000 // Final synthesis with token limit
+        maxTokens: 1000 // Minimal token limit for synthesis
       })
     : `Audit Synthesis:
 - Overall Quality Assessment: High-standard research analysis completed
