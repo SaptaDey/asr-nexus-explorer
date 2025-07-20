@@ -364,6 +364,42 @@ export class CostAwareOrchestrationService {
         outputTokens: 0,
         priceUSD: 0.4
       }
+    },
+    '9_final_analysis': {
+      stage: 'Final Analysis',
+      microPass: undefined,
+      modelCapability: {
+        model: 'gemini-2.5-pro',
+        capability: 'STRUCTURED_OUTPUTS',
+        batchSize: 1,
+        purpose: 'Generate comprehensive final report with integrated visualizations.',
+        outputType: 'FinalReport',
+        maxTokens: 50000,
+        thinkingBudget: 8192
+      },
+      costEstimate: {
+        inputTokens: 60000,
+        outputTokens: 12000,
+        priceUSD: 0.192
+      }
+    },
+    '9_final_analysis_batch': {
+      stage: 'Final Analysis Batch',
+      microPass: undefined,
+      modelCapability: {
+        model: 'gemini-2.5-pro',
+        capability: 'BATCH_PROCESSING',
+        batchSize: 5,
+        purpose: 'Generate comprehensive final report components in batch processing.',
+        outputType: 'FinalReportBatch',
+        maxTokens: 50000,
+        thinkingBudget: 8192
+      },
+      costEstimate: {
+        inputTokens: 300000,
+        outputTokens: 60000,
+        priceUSD: 0.96
+      }
     }
   };
 
