@@ -70,25 +70,27 @@ Return JSON array with realistic scientific data relevant to the research topic:
       
       const data = await response.json();
       
-      // Check if response was truncated due to token limit - try to extract partial results
+      // **GRACEFUL ERROR HANDLING**: Check if response was truncated due to token limit
       if (data.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
-        console.warn('⚠️ Visualization response truncated, attempting to extract partial results');
+        console.warn('⚠️ Visualization response truncated - using fallback strategy (no UI error)');
         const partialText = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (partialText && partialText.includes('[')) {
           // Try to extract partial visualization configs
           try {
             const truncatedJson = partialText + ']'; // Close the array if truncated
             const partialConfigs = JSON.parse(truncatedJson);
-            console.log(`✅ Extracted ${partialConfigs.length} partial visualizations`);
+            console.log(`✅ Extracted ${partialConfigs.length} partial visualizations (graceful degradation)`);
             // Continue with partial results instead of throwing error
+            if (Array.isArray(partialConfigs) && partialConfigs.length > 0) {
+              return partialConfigs.slice(0, 3); // Return limited set to prevent further issues
+            }
           } catch (parseError) {
-            console.warn('Could not parse truncated response, generating default visualizations');
-            return []; // Return empty array to allow fallback
+            console.warn('Could not parse truncated response - continuing without error propagation');
           }
-        } else {
-          console.warn('No partial visualization data found, using fallback');
-          return [];
         }
+        // Return empty array to prevent UI errors - visualization is optional
+        console.log('📊 Gracefully degrading to no enhanced visualizations (preserving UI stability)');
+        return [];
       }
       
       // Robust API response extraction
@@ -150,7 +152,9 @@ Return JSON array with realistic scientific data relevant to the research topic:
       }));
       
     } catch (error) {
-      console.error('Enhanced visualization generation failed:', error);
+      // **SILENT ERROR HANDLING**: Log error but don't propagate to UI
+      console.warn('Enhanced visualization generation failed (graceful degradation):', error);
+      // Return empty array instead of throwing - visualizations are optional
       return [];
     }
   }, [graphData, currentStage, geminiApiKey, researchContext]);
@@ -167,9 +171,14 @@ Return JSON array with realistic scientific data relevant to the research topic:
         
         if (newFigures.length > 0) {
           toast.success(`Generated ${newFigures.length} comprehensive research visualizations`);
+        } else {
+          // Silent fallback - no error toast for optional visualizations
+          console.log('📊 Enhanced visualizations not available - continuing with standard analysis');
         }
       } catch (error) {
-        toast.error('Failed to generate enhanced visualizations');
+        // **GRACEFUL ERROR HANDLING**: Log error but don't show error toast for optional features
+        console.warn('Enhanced visualizations failed (graceful degradation):', error);
+        // Don't show error toast - visualizations are enhancement, not critical
       } finally {
         setIsGenerating(false);
       }

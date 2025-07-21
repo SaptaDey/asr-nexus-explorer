@@ -220,118 +220,126 @@ export class Stage9MultiSubstageGenerator {
   }
 
   /**
-   * Stage 9A: Abstract & Executive Summary
+   * Stage 9A: Abstract & Executive Summary (Chunked)
    */
   private async executeStage9A(): Promise<Stage9SubstageResult> {
-    console.log('🔬 Executing Stage 9A: Abstract & Executive Summary...');
+    console.log('🔬 Executing Stage 9A: Abstract & Executive Summary (Chunked)...');
     const startTime = Date.now();
 
-    const prompt = `Generate a comprehensive academic abstract and executive summary (600-800 words) for the following research analysis:
-
-**Research Topic:** ${this.researchContext.topic}
-**Research Field:** ${this.researchContext.field}
-
-**Key Findings Summary:** ${this.stageResults.slice(0, 2).join('\n').substring(0, 2000)}
-
-**Requirements for Abstract:**
-1. **Background (100-150 words):** Clinical significance of CTCL and current staging limitations
-2. **Objective (50-75 words):** Clear research questions and ASR-GoT framework application
-3. **Methods (100-150 words):** Systematic 9-stage approach with AI orchestration
-4. **Results (200-250 words):** Key quantitative findings with specific statistics:
-   - CNA frequency data across disease stages
-   - Survival analysis results with hazard ratios and confidence intervals
-   - Genomic complexity correlations with clinical outcomes
-   - Risk stratification model performance metrics
-5. **Conclusions (100-150 words):** Clinical implications and practice recommendations
-
-**Executive Summary Requirements:**
-- Research significance and innovation
-- Methodological advantages of ASR-GoT framework
-- Clinical impact potential
-- Practice-changing implications
-
-**Writing Style:** Publication-quality academic prose with precise medical terminology
-**Statistical Reporting:** Include specific numbers, p-values, confidence intervals, effect sizes
-**Clinical Focus:** Emphasize translational relevance and patient care implications
-
-Generate content that would be suitable for a high-impact medical journal abstract.`;
-
-    const content = await callGeminiAPI(prompt, '', 'thinking-structured');
+    // CHUNKED APPROACH: Split into smaller prompts to prevent MAX_TOKENS
+    const chunks = await this.generateAbstractInChunks();
+    const content = chunks.join('\n\n');
     
     return {
       substage: '9A',
       title: 'Abstract & Executive Summary',
       content,
       tokenUsage: this.estimateTokenUsage(content),
-      figuresReferenced: [], // Abstract typically doesn't reference specific figures
+      figuresReferenced: [],
       generationTime: Math.round((Date.now() - startTime) / 1000),
       wordCount: this.countWords(content)
     };
   }
 
+  private async generateAbstractInChunks(): Promise<string[]> {
+    const chunks = [];
+
+    // **ENHANCED CHUNK 1**: Background (400-500 words for comprehensive coverage)
+    const backgroundPrompt = `Generate comprehensive academic background section (400-500 words) for CTCL research:
+
+**Research Topic:** ${this.researchContext.topic}
+**Research Field:** ${this.researchContext.field}
+
+**Requirements:**
+- Clinical significance of CTCL and current diagnostic challenges
+- Disease burden statistics and patient demographics
+- Current staging limitations (TNM-B system inadequacies)
+- Genomic instability role in CTCL progression
+- Research gaps in current literature
+
+**Key Research Context:** ${this.stageResults[0]?.substring(0, 800) || 'Comprehensive systematic analysis of chromosomal instabilities in CTCL'}
+
+**Style:** High-impact medical journal quality with technical precision and clinical relevance.`;
+    
+    chunks.push(await callGeminiAPI(backgroundPrompt, '', 'thinking-structured', undefined, { maxTokens: 6000 }));
+
+    // **ENHANCED CHUNK 2**: Methods & Objectives (450-500 words)
+    const methodsPrompt = `Generate comprehensive methods and objectives section (450-500 words):
+
+**ASR-GoT Framework Details:**
+- 9-stage systematic research approach with graph-based reasoning
+- Multi-AI orchestration: Perplexity Sonar + Gemini 2.5 Pro
+- P1.0-P1.29 parameter optimization for academic rigor
+- Knowledge integration framework (K1-K3 nodes)
+
+**Research Objectives:** ${JSON.stringify(this.researchContext.objectives) || 'Systematic analysis of chromosomal instabilities and clinical correlations'}
+
+**Methodological Innovation:**
+- Real-time evidence synthesis and bias detection
+- Causal inference applications (Pearl's framework)
+- Information theory metrics and confidence scoring
+- Temporal reasoning and pattern detection
+
+**Style:** Methodologically rigorous with sufficient detail for replication.`;
+    
+    chunks.push(await callGeminiAPI(methodsPrompt, '', 'thinking-structured', undefined, { maxTokens: 6000 }));
+
+    // **ENHANCED CHUNK 3**: Results (600-700 words)
+    const resultsPrompt = `Generate comprehensive results section (600-700 words):
+
+**Key Findings:** ${this.stageResults.slice(2, 5).join(' ').substring(0, 1200)}
+
+**Statistical Requirements:**
+- Specific CNA frequency data across CTCL stages with p-values
+- Survival analysis results with hazard ratios and 95% confidence intervals
+- Genomic complexity correlations with clinical outcomes
+- Risk stratification model performance metrics (sensitivity, specificity, AUC)
+- Meta-analytical synthesis with heterogeneity assessment
+
+**Quantitative Focus:**
+- Sample sizes and effect sizes for all major findings
+- Power calculations and statistical significance thresholds
+- Subgroup analyses and clinical correlation coefficients
+- Network analysis metrics and graph-based insights
+
+**Style:** Rigorous quantitative reporting suitable for high-impact publication.`;
+    
+    chunks.push(await callGeminiAPI(resultsPrompt, '', 'thinking-structured', undefined, { maxTokens: 8000 }));
+
+    // **ENHANCED CHUNK 4**: Conclusions (400-500 words)
+    const conclusionsPrompt = `Generate comprehensive conclusions section (400-500 words):
+
+**Clinical Implications:**
+- Immediate practice-changing recommendations for CTCL management
+- Biomarker development potential and clinical implementation pathway
+- Risk stratification improvements and personalized treatment approaches
+- Healthcare system integration considerations
+
+**Research Impact:**
+- Novel contributions to CTCL genomics understanding
+- Methodological innovations with ASR-GoT framework
+- Future research directions and technology integration
+- Long-term vision for precision oncology in CTCL
+
+**Implementation Context:** ${this.stageResults[7]?.substring(0, 600) || 'Comprehensive clinical translation pathway with immediate and long-term applications'}
+
+**Style:** Actionable, impactful conclusions with clear clinical translation pathway.`;
+    
+    chunks.push(await callGeminiAPI(conclusionsPrompt, '', 'thinking-structured', undefined, { maxTokens: 6000 }));
+
+    return chunks;
+  }
+
   /**
-   * Stage 9B: Introduction & Literature Review
+   * Stage 9B: Introduction & Literature Review (Chunked)
    */
   private async executeStage9B(previousResults: Stage9SubstageResult[]): Promise<Stage9SubstageResult> {
-    console.log('📚 Executing Stage 9B: Introduction & Literature Review...');
+    console.log('📚 Executing Stage 9B: Introduction & Literature Review (Chunked)...');
     const startTime = Date.now();
 
-    // Get figures for introduction section
     const introFigures = this.figureMetadata.filter(fig => fig.placement === 'introduction');
-    
-    const prompt = `Generate a comprehensive introduction and literature review section (2000-2500 words) building upon the abstract:
-
-**Previous Context:** ${previousResults[0]?.content.substring(0, 500)}
-**Research Analysis:** ${this.stageResults[0]?.substring(0, 1500)}
-
-**Figures Available for Introduction:**
-${introFigures.map(fig => `Figure ${fig.figureNumber}: ${fig.title} - ${fig.description}`).join('\n')}
-
-**Section Requirements:**
-
-**1. Clinical Background (400-500 words):**
-- CTCL pathophysiology and disease spectrum (MF, SS, variants)
-- Current staging systems (TNM-B) and their limitations
-- Clinical challenges in prognosis and treatment selection
-- Patient population and disease burden statistics
-
-**2. Chromosomal Instability in Cancer (400-500 words):**
-- Mechanisms of chromosomal instability in hematologic malignancies
-- Copy number aberration biology and detection methods
-- Prognostic significance in other cancers
-- Technical considerations for CNA analysis
-
-**3. Current State of CTCL Genomics (500-600 words):**
-- Existing genomic studies in CTCL with specific citation integration
-- Known chromosomal aberrations and their frequencies
-- Limitations of current research (sample sizes, methodologies)
-- Gaps in clinical translation
-
-**4. ASR-GoT Framework Rationale (400-500 words):**
-- Need for systematic research synthesis
-- AI-powered analysis advantages
-- Graph-based reasoning benefits
-- Multi-AI orchestration approach
-
-**5. Research Objectives & Hypotheses (300-400 words):**
-- Primary and secondary research questions
-- Testable hypotheses with expected outcomes
-- Clinical significance and impact potential
-
-**Figure Integration Instructions:**
-- Reference ${introFigures.length > 0 ? `Figure ${introFigures[0]?.figureNumber}` : 'overview figures'} when discussing research framework
-- Use proper academic figure referencing: "(Figure X)"
-- Include figure callouts at appropriate points in the text
-
-**Writing Requirements:**
-- Formal academic tone with extensive literature integration
-- Minimum 30 high-quality references (use placeholder citations)
-- Logical flow from general background to specific research questions
-- Clear rationale for study design and methodology
-
-Generate publication-quality introduction suitable for a leading medical journal.`;
-
-    const content = await callGeminiAPI(prompt, '', 'thinking-search');
+    const chunks = await this.generateIntroductionInChunks(previousResults[0], introFigures);
+    const content = chunks.join('\n\n');
     
     return {
       substage: '9B',
@@ -344,75 +352,122 @@ Generate publication-quality introduction suitable for a leading medical journal
     };
   }
 
+  private async generateIntroductionInChunks(abstractResult: Stage9SubstageResult, introFigures: FigureMetadata[]): Promise<string[]> {
+    const chunks = [];
+
+    // **ENHANCED CHUNK 1**: Clinical Background (700-800 words)
+    const clinicalPrompt = `Generate comprehensive clinical background section (700-800 words):
+
+**Research Topic:** ${this.researchContext.topic}
+**Clinical Focus:** CTCL pathophysiology and current management challenges
+
+**Required Coverage:**
+- Complete CTCL disease spectrum (Mycosis Fungoides, Sézary Syndrome, variants)
+- Current staging systems (TNM-B classification) and documented limitations
+- Clinical challenges in prognosis, treatment selection, and monitoring
+- Patient population demographics, epidemiology, and disease burden
+- Survival statistics and quality of life considerations
+- Current treatment modalities and their efficacy limitations
+
+**Research Context:** ${this.stageResults[0]?.substring(0, 1000)}
+
+**Style:** Comprehensive medical journal review with extensive clinical detail and literature integration.`;
+    chunks.push(await callGeminiAPI(clinicalPrompt, '', 'thinking-search', undefined, { maxTokens: 8000 }));
+
+    // **ENHANCED CHUNK 2**: Chromosomal Instability (700-800 words)
+    const chromosomalPrompt = `Generate comprehensive chromosomal instability section (700-800 words):
+
+**Scientific Focus:** Mechanisms and clinical significance of genomic instability
+
+**Required Coverage:**
+- Molecular mechanisms of chromosomal instability in hematologic malignancies
+- Copy number aberration biology, detection methods, and technical considerations
+- Prognostic significance in other cancers with translational potential
+- DNA repair pathway disruptions and cell cycle checkpoint failures
+- Evolutionary dynamics of tumor genomic landscapes
+- Technology platforms for CNA detection (SNP arrays, NGS, cytogenetics)
+
+**Research Context:** ${this.stageResults[1]?.substring(0, 1000)}
+
+**Style:** Technical precision with mechanistic depth and evidence-based conclusions.`;
+    chunks.push(await callGeminiAPI(chromosomalPrompt, '', 'thinking-search', undefined, { maxTokens: 8000 }));
+
+    // **ENHANCED CHUNK 3**: CTCL Genomics State-of-Field (900-1000 words)
+    const genomicsPrompt = `Generate comprehensive CTCL genomics review (900-1000 words):
+
+**Literature Review Focus:** Current state of CTCL genomic research
+
+**Required Coverage:**
+- Systematic review of existing genomic studies in CTCL with sample sizes and methodologies
+- Known chromosomal aberrations, their frequencies, and clinical associations
+- Molecular subtypes and genomic classification systems
+- Biomarker development efforts and clinical translation attempts
+- Limitations of current research (sample sizes, methodological heterogeneity)
+- Critical gaps in clinical translation and implementation
+- International collaborative efforts and database initiatives
+
+**Research Context:** ${this.stageResults[2]?.substring(0, 1200)}
+**Citations:** Minimum 15-20 high-quality references with placeholder format
+
+**Style:** Comprehensive literature review with critical analysis and gap identification.`;
+    chunks.push(await callGeminiAPI(genomicsPrompt, '', 'thinking-search', undefined, { maxTokens: 10000 }));
+
+    // **ENHANCED CHUNK 4**: ASR-GoT Framework Rationale (700-800 words)
+    const frameworkPrompt = `Generate comprehensive ASR-GoT framework rationale (700-800 words):
+
+**Methodological Innovation:** Systematic research synthesis advantages
+
+**Framework Details:**
+- Need for systematic, reproducible research synthesis in genomics
+- AI-powered analysis advantages over traditional meta-analysis
+- Graph-based reasoning benefits for complex biomedical relationships
+- Multi-AI orchestration approach (Perplexity Sonar + Gemini 2.5 Pro)
+- Real-time evidence integration and bias detection capabilities
+- Causal inference and temporal reasoning applications
+
+**Figure Integration:** ${introFigures.map(f => `Figure ${f.figureNumber}: ${f.title} - Strategic placement for framework visualization`).join('; ')}
+
+**Technical Advantages:**
+- Parameter optimization (P1.0-P1.29) for academic rigor
+- Token management and cost optimization
+- Quality assurance and reproducibility measures
+
+**Style:** Methodological rigor with clear justification for innovative approach.`;
+    chunks.push(await callGeminiAPI(frameworkPrompt, '', 'thinking-structured', undefined, { maxTokens: 8000 }));
+
+    // **ENHANCED CHUNK 5**: Research Objectives & Hypotheses (600-700 words)
+    const objectivesPrompt = `Generate comprehensive objectives and hypotheses section (600-700 words):
+
+**Research Architecture:** Primary and secondary research questions
+
+**Primary Objectives:** ${JSON.stringify(this.researchContext.objectives) || 'Systematic analysis of chromosomal instabilities and clinical correlations in CTCL'}
+
+**Detailed Coverage:**
+- Primary research questions with specific, measurable outcomes
+- Secondary objectives and exploratory analyses
+- Testable hypotheses with expected effect sizes and clinical significance
+- Statistical power considerations and sample size justifications
+- Clinical translation pathway and implementation timeline
+- Success criteria and milestone definitions
+
+**Research Framework Context:** ${abstractResult?.content.substring(0, 600) || 'Comprehensive systematic analysis with immediate clinical applications'}
+
+**Style:** Clear, structured academic presentation with measurable objectives and realistic timelines.`;
+    chunks.push(await callGeminiAPI(objectivesPrompt, '', 'thinking-structured', undefined, { maxTokens: 8000 }));
+
+    return chunks;
+  }
+
   /**
-   * Stage 9C: Methodology & Framework
+   * Stage 9C: Methodology & Framework (Chunked)
    */
   private async executeStage9C(previousResults: Stage9SubstageResult[]): Promise<Stage9SubstageResult> {
-    console.log('🔬 Executing Stage 9C: Methodology & Framework...');
+    console.log('🔬 Executing Stage 9C: Methodology & Framework (Chunked)...');
     const startTime = Date.now();
 
     const methodologyFigures = this.figureMetadata.filter(fig => fig.placement === 'methodology');
-    
-    const prompt = `Generate a comprehensive methodology section (1800-2200 words) detailing the ASR-GoT framework implementation:
-
-**Previous Context:** ${previousResults.slice(0, 2).map(r => r.content.substring(0, 300)).join('\n')}
-**Methodology Data:** ${this.stageResults[1]?.substring(0, 1500)}
-
-**Figures Available for Methodology:**
-${methodologyFigures.map(fig => `Figure ${fig.figureNumber}: ${fig.title} - ${fig.description}`).join('\n')}
-
-**Section Requirements:**
-
-**1. ASR-GoT Framework Overview (400-500 words):**
-- Comprehensive description of 9-stage systematic approach
-- Multi-AI orchestration strategy (Perplexity Sonar + Gemini 2.5 Pro)
-- Graph-based reasoning principles and advantages
-- Knowledge integration framework (K1-K3 nodes)
-
-**2. Systematic Literature Search (300-400 words):**
-- Database selection and search strategy
-- Inclusion/exclusion criteria with specific parameters
-- Quality assessment protocols (GRADE, PRISMA guidelines)
-- Data extraction and validation procedures
-
-**3. Data Analysis Methods (400-500 words):**
-- Graph theory applications and network analysis algorithms
-- Statistical analysis methods with specific software/packages
-- Meta-analytical approaches and heterogeneity assessment
-- Bias detection and mitigation strategies
-
-**4. Evidence Synthesis Process (300-400 words):**
-- Information theory applications (entropy, mutual information)
-- Causal inference methodology (Pearl's framework)
-- Temporal reasoning and pattern detection
-- Confidence scoring and uncertainty quantification
-
-**5. Validation and Quality Control (200-300 words):**
-- Cross-platform verification protocols
-- Reproducibility measures and documentation
-- Expert validation processes
-- Sensitivity analysis procedures
-
-**6. Technical Implementation (200-300 words):**
-- Parameter specifications (P1.0-P1.29) with detailed explanations
-- Token management and cost optimization
-- Processing pipeline and workflow automation
-- Error handling and recovery mechanisms
-
-**Figure Integration:**
-- Reference methodology figures at appropriate points
-- Include detailed figure legends for framework diagrams
-- Cross-reference between text and visual elements
-
-**Technical Rigor:**
-- Provide sufficient detail for replication
-- Include specific parameter values and thresholds
-- Justify methodological choices with literature support
-- Address potential limitations and mitigation strategies
-
-Generate methodology section suitable for peer review in a top-tier journal.`;
-
-    const content = await callGeminiAPI(prompt, '', 'thinking-structured');
+    const chunks = await this.generateMethodologyInChunks(methodologyFigures);
+    const content = chunks.join('\n\n');
     
     return {
       substage: '9C',
@@ -425,82 +480,155 @@ Generate methodology section suitable for peer review in a top-tier journal.`;
     };
   }
 
+  private async generateMethodologyInChunks(methodologyFigures: FigureMetadata[]): Promise<string[]> {
+    const chunks = [];
+
+    // **ENHANCED CHUNK 1**: ASR-GoT Framework Overview (800-900 words)
+    const frameworkPrompt = `Generate comprehensive ASR-GoT framework overview (800-900 words):
+
+**Framework Architecture:** Complete 9-stage systematic approach
+
+**Stage-by-Stage Breakdown:**
+- Stage 1: Initialization with knowledge node creation (K1-K3)
+- Stage 2: Multi-dimensional decomposition and analysis
+- Stage 3: Hypothesis generation and impact scoring
+- Stage 4: Evidence integration with iterative AI loops
+- Stage 5: Graph optimization and pruning strategies
+- Stage 6: Subgraph extraction and complexity analysis
+- Stage 7: Content composition with Vancouver citations
+- Stage 8: Reflection and bias detection protocols
+- Stage 9: Final comprehensive analysis generation
+
+**AI Orchestration:** Perplexity Sonar + Gemini 2.5 Pro integration
+**Graph Reasoning:** K1-K3 knowledge integration framework
+**Parameter System:** Complete P1.0-P1.29 specifications: ${JSON.stringify(this.parameters).substring(0, 800)}
+
+**Style:** Technical depth with implementation-level detail for academic replication.`;
+    chunks.push(await callGeminiAPI(frameworkPrompt, '', 'thinking-structured', undefined, { maxTokens: 8000 }));
+
+    // **ENHANCED CHUNK 2**: Systematic Literature Search (600-700 words)
+    const searchPrompt = `Generate comprehensive systematic literature search methodology (600-700 words):
+
+**Search Strategy Architecture:**
+- Database selection: PubMed, Scopus, Web of Science, Cochrane Library
+- Search terms: Boolean combinations with MeSH headings
+- Inclusion/exclusion criteria with specific parameters
+- PRISMA guideline compliance and quality assessment protocols
+- Data extraction forms and validation procedures
+
+**Quality Assessment:**
+- GRADE methodology for evidence strength
+- Risk of bias assessment tools (RoB 2.0, ROBINS-I)
+- Inter-rater reliability protocols and Kappa statistics
+- Conflict resolution procedures for discrepancies
+
+**Research Context:** ${this.stageResults[1]?.substring(0, 800)}
+**Validation Protocols:** Comprehensive data extraction and verification
+
+**Style:** Methodological rigor meeting systematic review standards.`;
+    chunks.push(await callGeminiAPI(searchPrompt, '', 'thinking-search', undefined, { maxTokens: 8000 }));
+
+    // **ENHANCED CHUNK 3**: Advanced Data Analysis Methods (700-800 words)
+    const analysisPrompt = `Generate comprehensive data analysis methods (700-800 words):
+
+**Statistical Analysis Framework:**
+- Graph theory applications and network analysis algorithms
+- Meta-analytical approaches with random/fixed effects models
+- Heterogeneity assessment (I² statistics, Q-test, τ²)
+- Publication bias detection (funnel plots, Egger's test)
+- Sensitivity analysis and influence diagnostics
+
+**Advanced Analytics:**
+- Machine learning integration for pattern recognition
+- Bayesian approaches for uncertainty quantification
+- Causal inference methodology (Pearl's framework)
+- Information theory applications (entropy, mutual information)
+- Temporal reasoning and dynamic network analysis
+
+**Software and Tools:**
+- R statistical environment with specific packages
+- Python libraries for network analysis and visualization
+- Specialized genomic analysis software
+- Quality control and validation pipelines
+
+**Bias Detection:** Comprehensive mitigation strategies
+
+**Style:** Technical precision with reproducible methodology.`;
+    chunks.push(await callGeminiAPI(analysisPrompt, '', 'thinking-structured', undefined, { maxTokens: 8000 }));
+
+    // **ENHANCED CHUNK 4**: Evidence Synthesis Process (600-700 words)
+    const synthesisPrompt = `Generate comprehensive evidence synthesis process (600-700 words):
+
+**Synthesis Architecture:** Multi-layered evidence integration
+
+**Information Theory Applications:**
+- Entropy calculations for information content assessment
+- Mutual information analysis for variable relationships
+- Minimum description length (MDL) for model selection
+- Complexity metrics and information gain calculations
+
+**Causal Inference Framework:**
+- Pearl's causal hierarchy implementation
+- Confounding variable identification and adjustment
+- Mediation analysis and causal pathway mapping
+- Counterfactual reasoning and causal effect estimation
+
+**Temporal Reasoning:**
+- Time-series pattern detection algorithms
+- Precedence relationship identification
+- Dynamic confidence scoring over time
+- Temporal consistency validation protocols
+
+**Figure Integration:** ${methodologyFigures.map(f => `Figure ${f.figureNumber}: ${f.title} - Methodological workflow visualization`).join('; ')}
+
+**Style:** Advanced methodology with mathematical rigor and implementation detail.`;
+    chunks.push(await callGeminiAPI(synthesisPrompt, '', 'thinking-structured', undefined, { maxTokens: 8000 }));
+
+    // **ENHANCED CHUNK 5**: Validation & Technical Implementation (700-800 words)
+    const validationPrompt = `Generate comprehensive validation and technical implementation (700-800 words):
+
+**Validation Framework:**
+- Cross-platform verification protocols across multiple AI systems
+- Reproducibility measures and documentation standards
+- Expert validation processes with clinical oversight
+- Sensitivity analysis procedures and robustness testing
+- External validation using independent datasets
+
+**Quality Control:**
+- Automated quality assurance pipelines
+- Error detection and correction algorithms
+- Consistency checking across analysis stages
+- Performance monitoring and optimization
+
+**Technical Implementation:**
+- Complete P1.0-P1.29 parameter specifications with justifications
+- Token management and cost optimization strategies
+- Processing pipeline architecture and workflow automation
+- Error handling, recovery mechanisms, and fallback procedures
+- Scalability considerations and performance optimization
+
+**Infrastructure:**
+- Computational requirements and resource allocation
+- Data storage and security protocols
+- Version control and change management
+- Documentation standards and reproducibility guidelines
+
+**Style:** Implementation-level detail suitable for technical replication and peer review.`;
+    chunks.push(await callGeminiAPI(validationPrompt, '', 'thinking-structured', undefined, { maxTokens: 8000 }));
+
+    return chunks;
+  }
+
   /**
-   * Stage 9D: Results & Statistical Analysis
+   * Stage 9D: Results & Statistical Analysis (Chunked)
    */
   private async executeStage9D(previousResults: Stage9SubstageResult[]): Promise<Stage9SubstageResult> {
-    console.log('📊 Executing Stage 9D: Results & Statistical Analysis...');
+    console.log('📊 Executing Stage 9D: Results & Statistical Analysis (Chunked)...');
     const startTime = Date.now();
 
     const resultsFigures = this.figureMetadata.filter(fig => fig.placement === 'results');
-    
-    const prompt = `Generate a comprehensive results section (2500-3000 words) with detailed statistical analysis and figure integration:
-
-**Previous Context:** ${previousResults.slice(0, 3).map(r => r.content.substring(0, 200)).join('\n')}
-**Results Data:** ${this.stageResults.slice(2, 5).join('\n').substring(0, 2000)}
-
-**Available Result Figures (${resultsFigures.length} total):**
-${resultsFigures.map(fig => `Figure ${fig.figureNumber}: ${fig.title} - ${fig.description}`).join('\n')}
-
-**Section Requirements:**
-
-**1. Literature Search Results (300-400 words):**
-- PRISMA flowchart description and study selection process
-- Database search yields and filtering results
-- Final study inclusion with quality assessment summary
-- Geographic and temporal distribution of included studies
-
-**2. Chromosomal Aberration Frequency Analysis (600-700 words):**
-- Systematic presentation of CNA frequencies across CTCL stages
-- Statistical significance testing with exact p-values and confidence intervals
-- Effect size calculations (odds ratios, hazard ratios) with clinical interpretation
-- Age-stratified and subgroup analyses with forest plot descriptions
-- Reference Figures ${resultsFigures.slice(0, 3).map(f => f.figureNumber).join(', ')} for frequency data
-
-**3. Survival Analysis and Prognostic Factors (500-600 words):**
-- Kaplan-Meier survival analysis with log-rank test results
-- Cox proportional hazards modeling with multivariate adjustments
-- Time-to-progression analysis for different genomic signatures
-- Risk stratification model performance (ROC curves, C-index values)
-- Reference Figures ${resultsFigures.slice(3, 6).map(f => f.figureNumber).join(', ')} for survival data
-
-**4. Genomic Complexity Correlation Analysis (500-600 words):**
-- Fraction of Genome Altered (FGA) correlations with clinical parameters
-- Network analysis results with graph metrics and connectivity patterns
-- Co-occurrence analysis of multiple aberrations with statistical interactions
-- Temporal progression modeling with mathematical descriptions
-- Reference Figures ${resultsFigures.slice(6, 9).map(f => f.figureNumber).join(', ')} for network analysis
-
-**5. Biomarker Validation Results (400-500 words):**
-- Cross-platform validation across independent cohorts
-- Sensitivity and specificity analysis for individual biomarkers
-- Composite biomarker performance with machine learning integration
-- Clinical utility assessment with decision curve analysis
-- Reference Figures ${resultsFigures.slice(9, 12).map(f => f.figureNumber).join(', ')} for validation data
-
-**6. Meta-Analytical Synthesis (400-500 words):**
-- Random-effects meta-analysis with heterogeneity assessment (I² statistics)
-- Publication bias evaluation (funnel plots, Egger's test)
-- Subgroup meta-analyses by geographic region and study design
-- Sensitivity analysis excluding outlier studies
-- Reference Figures ${resultsFigures.slice(12).map(f => f.figureNumber).join(', ')} for meta-analysis
-
-**Statistical Reporting Requirements:**
-- All p-values with exact values (not just <0.05)
-- Confidence intervals for all effect estimates
-- Sample sizes and power calculations for key analyses
-- Multiple testing correction methods where applicable
-- Effect size interpretations with clinical significance thresholds
-
-**Figure Integration Protocol:**
-- Systematic figure referencing throughout the text
-- Detailed figure legends embedded near relevant text
-- Cross-references between figures and specific results
-- Table integration where appropriate for numerical data
-
-Generate results section with rigorous statistical reporting suitable for high-impact medical journal publication.`;
-
-    const content = await callGeminiAPI(prompt, '', 'thinking-structured');
+    const chunks = await this.generateResultsInChunks(resultsFigures);
+    const content = chunks.join('\n\n');
     
     return {
       substage: '9D',
@@ -513,87 +641,222 @@ Generate results section with rigorous statistical reporting suitable for high-i
     };
   }
 
+  private async generateResultsInChunks(resultsFigures: FigureMetadata[]): Promise<string[]> {
+    const chunks = [];
+
+    // **ENHANCED CHUNK 1**: Literature Search Results (600-700 words)
+    const searchResultsPrompt = `Generate comprehensive literature search results (600-700 words):
+
+**PRISMA Flow Analysis:**
+- Complete PRISMA flowchart description with exact numbers
+- Database search yields and systematic filtering process
+- Final study inclusion with detailed quality assessment
+- Geographic and temporal distribution of included studies
+- Study design characteristics and methodological quality
+
+**Search Strategy Results:**
+- Initial database hits and deduplication process
+- Title/abstract screening with inter-rater agreement
+- Full-text review and final inclusion decisions
+- Reasons for exclusion with detailed categorization
+
+**Data Context:** ${this.stageResults[2]?.substring(0, 1000)}
+
+**Quality Metrics:**
+- GRADE evidence assessment and risk of bias evaluation
+- Publication bias assessment and funnel plot analysis
+- Heterogeneity evaluation across included studies
+
+**Style:** Systematic review standards with comprehensive reporting.`;
+    chunks.push(await callGeminiAPI(searchResultsPrompt, '', 'thinking-structured', undefined, { maxTokens: 8000 }));
+
+    // **ENHANCED CHUNK 2**: CNA Frequency Analysis (800-900 words)
+    const cnaPrompt = `Generate comprehensive chromosomal aberration frequency analysis (800-900 words):
+
+**Statistical Analysis Framework:**
+- Systematic presentation of CNA frequencies across all CTCL stages
+- Statistical significance testing with exact p-values and 95% confidence intervals
+- Effect size calculations (odds ratios, hazard ratios) with clinical interpretation
+- Age-stratified and gender-stratified subgroup analyses
+- Forest plot descriptions and meta-analytical pooling
+
+**Key Findings Integration:**
+- Stage-specific aberration patterns with frequency distributions
+- Most common genomic regions affected and their functional significance
+- Rare but clinically significant aberrations and their impact
+- Comparison with other hematologic malignancies
+
+**Figure Integration:** Detailed reference to ${resultsFigures.slice(0, 4).map(f => `Figure ${f.figureNumber}: ${f.title}`).join('; ')}
+
+**Research Data:** ${this.stageResults[3]?.substring(0, 1200)}
+
+**Clinical Correlations:**
+- Association with patient demographics and disease characteristics
+- Prognostic implications and survival correlations
+- Treatment response patterns and therapeutic resistance
+
+**Style:** Rigorous quantitative reporting with clinical translation.`;
+    chunks.push(await callGeminiAPI(cnaPrompt, '', 'thinking-structured', undefined, { maxTokens: 10000 }));
+
+    // **ENHANCED CHUNK 3**: Survival Analysis & Prognostic Factors (800-900 words)
+    const survivalPrompt = `Generate comprehensive survival analysis section (800-900 words):
+
+**Survival Analysis Architecture:**
+- Kaplan-Meier survival analysis with detailed log-rank test results
+- Cox proportional hazards modeling with multivariate adjustments
+- Time-to-progression analysis for different genomic signatures
+- Overall survival, progression-free survival, and disease-specific survival
+- Risk stratification model development and performance validation
+
+**Advanced Statistical Modeling:**
+- Competing risks analysis and subdistribution hazards
+- Landmark analysis and time-varying effects
+- Propensity score matching for confounding control
+- Machine learning integration for survival prediction
+
+**Performance Metrics:**
+- ROC curves with area under the curve (AUC) calculations
+- C-index values for discrimination and calibration plots
+- Net reclassification improvement and integrated discrimination
+- Clinical utility assessment with decision curve analysis
+
+**Figure Integration:** Comprehensive reference to ${resultsFigures.slice(4, 8).map(f => `Figure ${f.figureNumber}: ${f.title}`).join('; ')}
+
+**Research Data:** ${this.stageResults[4]?.substring(0, 1200)}
+
+**Clinical Implementation:**
+- Risk score development and validation
+- Cut-point optimization for clinical decision-making
+- External validation requirements and generalizability
+
+**Style:** Advanced clinical statistics with immediate practice applications.`;
+    chunks.push(await callGeminiAPI(survivalPrompt, '', 'thinking-structured', undefined, { maxTokens: 10000 }));
+
+    // **ENHANCED CHUNK 4**: Genomic Complexity & Network Analysis (800-900 words)
+    const genomicPrompt = `Generate comprehensive genomic complexity analysis (800-900 words):
+
+**Network Analysis Framework:**
+- Fraction of Genome Altered (FGA) correlations with clinical parameters
+- Graph-based network analysis with centrality measures
+- Co-occurrence analysis of multiple aberrations with statistical interactions
+- Temporal progression modeling with mathematical descriptions
+- Evolutionary dynamics and clonal architecture assessment
+
+**Advanced Graph Metrics:**
+- Node degree centrality and betweenness centrality calculations
+- Clustering coefficients and modularity analysis
+- Path length distributions and network connectivity patterns
+- Dynamic network evolution and stability analysis
+
+**Complexity Quantification:**
+- Information theory applications for genomic complexity
+- Entropy calculations and mutual information analysis
+- Minimum description length for model complexity
+- Fractal dimension analysis of genomic landscapes
+
+**Figure Integration:** Detailed analysis of ${resultsFigures.slice(8, 12).map(f => `Figure ${f.figureNumber}: ${f.title}`).join('; ')}
+
+**Research Data:** ${this.stageResults[5]?.substring(0, 1200)}
+
+**Clinical Correlations:**
+- Genomic complexity scores and patient outcomes
+- Treatment response prediction based on network metrics
+- Resistance mechanism identification through network analysis
+
+**Style:** Advanced computational biology with clinical translation.`;
+    chunks.push(await callGeminiAPI(genomicPrompt, '', 'thinking-structured', undefined, { maxTokens: 10000 }));
+
+    // **ENHANCED CHUNK 5**: Biomarker Validation & Clinical Utility (700-800 words)
+    const biomarkerPrompt = `Generate comprehensive biomarker validation results (700-800 words):
+
+**Validation Framework:**
+- Cross-platform validation across independent cohorts
+- Analytical validation (precision, accuracy, reproducibility)
+- Clinical validation (sensitivity, specificity, predictive values)
+- Clinical utility assessment with real-world evidence
+
+**Performance Characteristics:**
+- Diagnostic accuracy metrics with 95% confidence intervals
+- Receiver operating characteristic analysis
+- Likelihood ratios and diagnostic odds ratios
+- Predictive value calculations with prevalence adjustments
+
+**Machine Learning Integration:**
+- Ensemble model development and validation
+- Feature selection and dimensionality reduction
+- Cross-validation strategies and overfitting prevention
+- Model interpretability and clinical transparency
+
+**Clinical Decision Support:**
+- Decision curve analysis for clinical utility
+- Net benefit calculations and threshold optimization
+- Integration with existing clinical scoring systems
+- Cost-effectiveness modeling and healthcare economics
+
+**Figure Integration:** Validation results in ${resultsFigures.slice(12, 16).map(f => `Figure ${f.figureNumber}: ${f.title}`).join('; ')}
+
+**Research Data:** ${this.stageResults[6]?.substring(0, 1200)}
+
+**Implementation Pathway:**
+- Regulatory considerations and approval pathway
+- Laboratory implementation requirements
+- Quality assurance and proficiency testing
+
+**Style:** Rigorous validation standards with regulatory compliance.`;
+    chunks.push(await callGeminiAPI(biomarkerPrompt, '', 'thinking-structured', undefined, { maxTokens: 8000 }));
+
+    // **ENHANCED CHUNK 6**: Meta-Analytical Synthesis (700-800 words)
+    const metaPrompt = `Generate comprehensive meta-analytical synthesis (700-800 words):
+
+**Meta-Analysis Architecture:**
+- Random-effects meta-analysis with comprehensive heterogeneity assessment
+- Fixed-effects models for sensitivity analysis
+- Subgroup meta-analyses by geographic region, study design, and population
+- Meta-regression for continuous moderator variables
+
+**Heterogeneity Assessment:**
+- I² statistics with confidence intervals
+- Cochran's Q-test and τ² estimation
+- Prediction intervals for future studies
+- Sources of heterogeneity identification and explanation
+
+**Publication Bias Evaluation:**
+- Funnel plot asymmetry assessment
+- Egger's test and Begg's test for small-study effects
+- Trim-and-fill analysis for missing studies
+- Selection model approaches for bias correction
+
+**Advanced Synthesis Methods:**
+- Network meta-analysis for indirect comparisons
+- Individual patient data meta-analysis where available
+- Bayesian meta-analysis with informative priors
+- Multivariate meta-analysis for correlated outcomes
+
+**Figure Integration:** Meta-analytical results in ${resultsFigures.slice(16).map(f => `Figure ${f.figureNumber}: ${f.title}`).join('; ')}
+
+**Research Data:** ${this.stageResults[7]?.substring(0, 1200)}
+
+**Quality Assessment:**
+- GRADE evidence profiles and summary of findings
+- Confidence in cumulative evidence
+- Clinical importance and magnitude of effects
+
+**Style:** Rigorous meta-analytical methodology with clinical interpretation.`;
+    chunks.push(await callGeminiAPI(metaPrompt, '', 'thinking-structured', undefined, { maxTokens: 8000 }));
+
+    return chunks;
+  }
+
   /**
-   * Stage 9E: Discussion & Clinical Implications
+   * Stage 9E: Discussion & Clinical Implications (Chunked)
    */
   private async executeStage9E(previousResults: Stage9SubstageResult[]): Promise<Stage9SubstageResult> {
-    console.log('💭 Executing Stage 9E: Discussion & Clinical Implications...');
+    console.log('💭 Executing Stage 9E: Discussion & Clinical Implications (Chunked)...');
     const startTime = Date.now();
 
     const discussionFigures = this.figureMetadata.filter(fig => fig.placement === 'discussion');
-    
-    const prompt = `Generate a comprehensive discussion section (2800-3200 words) with deep scientific interpretation and clinical implications:
-
-**Previous Context:** ${previousResults.slice(-2).map(r => r.content.substring(0, 600)).join('\n')}
-**Discussion Analysis:** ${this.stageResults.slice(4, 8).join('\n').substring(0, 5000)}
-**Clinical Context:** ${this.researchContext.field}
-
-**Available Discussion Figures:**
-${discussionFigures.map(fig => `Figure ${fig.figureNumber}: ${fig.title} - ${fig.description}`).join('\n')}
-
-**Section Requirements:**
-
-**1. Principal Findings Interpretation (500-600 words):**
-- Summary of key discoveries with mechanistic insights
-- Novel contributions to CTCL understanding and clinical management
-- Comparison with existing literature and explanation of discrepancies
-- Statistical significance vs. clinical significance discussion
-- Integration with established CTCL pathophysiology
-
-**2. Mechanistic Insights and Biological Significance (600-700 words):**
-- Detailed molecular mechanisms underlying identified chromosomal aberrations
-- Pathway analysis and functional consequences of specific CNAs
-- Cell cycle regulation and DNA repair pathway implications
-- Tumor microenvironment interactions and immune evasion mechanisms
-- Progressive genomic instability patterns and evolutionary dynamics
-
-**3. Clinical Translation and Therapeutic Implications (600-700 words):**
-- Immediate applications for risk stratification and prognosis
-- Biomarker development pathway and clinical implementation strategy
-- Therapeutic target identification and drug development opportunities
-- Personalized medicine approaches based on genomic profiles
-- Treatment selection algorithms and decision support tools
-- Reference ${discussionFigures.length > 0 ? `Figure ${discussionFigures[0]?.figureNumber}` : 'comparison figures'} for clinical correlations
-
-**4. Healthcare System Integration (400-500 words):**
-- Implementation considerations for clinical laboratories
-- Cost-effectiveness analysis and healthcare economics
-- Training requirements for clinicians and laboratory personnel
-- Quality assurance protocols and standardization needs
-- Electronic health record integration and clinical decision support
-
-**5. Methodological Considerations and Study Strengths (300-400 words):**
-- ASR-GoT framework advantages and innovations
-- Systematic approach benefits and quality assurance
-- Multi-AI orchestration advantages over traditional methods
-- Comprehensive literature synthesis and bias mitigation
-- Reproducibility and transparency enhancements
-
-**6. Study Limitations and Future Research Needs (400-500 words):**
-- Data availability limitations and publication bias considerations
-- Technical limitations of current genomic technologies
-- Population diversity and generalizability concerns
-- Temporal evolution of genomic landscapes
-- Integration with emerging technologies (single-cell analysis, spatial genomics)
-- Long-term follow-up requirements and prospective validation needs
-
-**Advanced Discussion Elements:**
-- Cross-reference findings with other hematologic malignancies
-- International perspective on healthcare disparities
-- Regulatory considerations for clinical implementation
-- Ethical implications of genomic testing and counseling
-- Economic impact on healthcare delivery systems
-
-**Scientific Rigor:**
-- Balanced interpretation of positive and negative findings
-- Appropriate discussion of statistical power and effect sizes
-- Integration of conflicting evidence with reasonable explanations
-- Clear distinction between correlation and causation
-- Honest assessment of study limitations without undermining conclusions
-
-Generate discussion section demonstrating deep scientific understanding and clinical expertise suitable for leading medical journal.`;
-
-    const content = await callGeminiAPI(prompt, '', 'thinking-search');
+    const chunks = await this.generateDiscussionInChunks(discussionFigures);
+    const content = chunks.join('\n\n');
     
     return {
       substage: '9E',
@@ -606,6 +869,285 @@ Generate discussion section demonstrating deep scientific understanding and clin
     };
   }
 
+  private async generateDiscussionInChunks(discussionFigures: FigureMetadata[]): Promise<string[]> {
+    const chunks = [];
+
+    // **ENHANCED CHUNK 1**: Principal Findings Interpretation (800-900 words)
+    const findingsPrompt = `Generate comprehensive principal findings interpretation (800-900 words):
+
+**Key Discoveries Framework:**
+- Summary of novel discoveries with mechanistic insights
+- Quantitative findings with statistical significance and clinical importance
+- Novel contributions to CTCL understanding and clinical management
+- Comparison with existing literature and explanation of discrepancies
+- Statistical significance vs. clinical significance discussion
+
+**Integration with CTCL Pathophysiology:**
+- Molecular mechanisms underlying identified chromosomal aberrations
+- Connection to established disease progression pathways
+- Impact on current understanding of CTCL biology
+- Implications for disease classification and staging
+
+**Clinical Significance Assessment:**
+- Immediate clinical applications and practice implications
+- Patient stratification and personalized medicine potential
+- Treatment selection and monitoring applications
+- Prognostic enhancement and survival prediction
+
+**Research Data Integration:** ${this.stageResults.slice(4, 7).join(' ').substring(0, 1500)}
+
+**Comparative Analysis:**
+- Similarities and differences with other hematologic malignancies
+- Unique CTCL-specific findings and their implications
+- Cross-cancer validation and generalizability
+
+**Style:** Deep scientific interpretation with clinical translation focus.`;
+    chunks.push(await callGeminiAPI(findingsPrompt, '', 'thinking-search', undefined, { maxTokens: 10000 }));
+
+    // **ENHANCED CHUNK 2**: Mechanistic Insights & Biological Significance (900-1000 words)
+    const mechanisticPrompt = `Generate comprehensive mechanistic insights section (900-1000 words):
+
+**Molecular Mechanisms Architecture:**
+- Detailed molecular mechanisms underlying identified chromosomal aberrations
+- Pathway analysis and functional consequences of specific CNAs
+- Cell cycle regulation disruptions and checkpoint failures
+- DNA repair pathway implications and genomic instability
+- Epigenetic modifications and chromatin remodeling effects
+
+**Tumor Biology Integration:**
+- Tumor microenvironment interactions and stromal communication
+- Immune evasion mechanisms and immunosuppressive pathways
+- Angiogenesis and metabolic reprogramming
+- Metastatic potential and tissue invasion mechanisms
+
+**Progressive Genomic Evolution:**
+- Evolutionary dynamics and clonal selection pressures
+- Driver vs. passenger mutation identification
+- Temporal sequence of genomic events
+- Resistance mechanism development and adaptation
+
+**Pathway Network Analysis:**
+- Interconnected pathway disruptions and cascade effects
+- Synthetic lethality opportunities and therapeutic vulnerabilities
+- Compensatory mechanism activation and bypass pathways
+- Systems biology integration and network medicine approaches
+
+**Research Data Context:** ${this.stageResults[5]?.substring(0, 1200)}
+
+**Translational Implications:**
+- Therapeutic target identification and druggability assessment
+- Biomarker development potential and clinical utility
+- Resistance prediction and monitoring strategies
+
+**Style:** Deep biological understanding with mechanistic precision.`;
+    chunks.push(await callGeminiAPI(mechanisticPrompt, '', 'thinking-search', undefined, { maxTokens: 12000 }));
+
+    // **ENHANCED CHUNK 3**: Clinical Translation & Therapeutic Implications (900-1000 words)
+    const clinicalPrompt = `Generate comprehensive clinical translation section (900-1000 words):
+
+**Immediate Clinical Applications:**
+- Risk stratification algorithm development and validation
+- Prognostic model enhancement and survival prediction
+- Treatment selection guidance and personalized approaches
+- Monitoring protocol optimization and response assessment
+- Clinical trial design improvements with genomic stratification
+
+**Biomarker Development Pathway:**
+- Discovery to clinical implementation timeline
+- Analytical and clinical validation requirements
+- Regulatory pathway and FDA approval considerations
+- Laboratory implementation and quality assurance
+- Cost-effectiveness analysis and reimbursement strategy
+
+**Therapeutic Target Identification:**
+- Novel drug development opportunities and mechanism-based therapy
+- Existing drug repurposing potential and combination strategies
+- Precision medicine approaches based on genomic profiles
+- Resistance mechanism targeting and prevention strategies
+- Immunotherapy integration and biomarker-guided treatment
+
+**Personalized Medicine Framework:**
+- Genomic signature development for treatment selection
+- Patient stratification algorithms and decision support tools
+- Pharmacogenomic considerations and drug metabolism
+- Companion diagnostic development and validation
+
+**Clinical Decision Support:**
+- Electronic health record integration strategies
+- Clinical decision support system development
+- Point-of-care testing feasibility and implementation
+- Physician education and training requirements
+
+**Figure Integration:** Strategic use of ${discussionFigures.map(f => `Figure ${f.figureNumber}: ${f.title}`).join('; ')} for clinical correlation visualization
+
+**Research Data Context:** ${this.stageResults[6]?.substring(0, 1200)}
+
+**Implementation Timeline:**
+- Short-term (1-2 years), medium-term (3-5 years), and long-term (5-10 years) goals
+- Milestone definitions and success criteria
+- Resource requirements and infrastructure needs
+
+**Style:** Clinical application focus with implementation strategy.`;
+    chunks.push(await callGeminiAPI(clinicalPrompt, '', 'thinking-search', undefined, { maxTokens: 12000 }));
+
+    // **ENHANCED CHUNK 4**: Healthcare System Integration (700-800 words)
+    const healthcarePrompt = `Generate comprehensive healthcare system integration (700-800 words):
+
+**Implementation Framework:**
+- Laboratory infrastructure requirements and workflow integration
+- Technical personnel training and competency requirements
+- Quality assurance protocols and proficiency testing
+- Standardization needs and inter-laboratory variability
+- Technology platform selection and validation
+
+**Economic Considerations:**
+- Cost-effectiveness analysis and budget impact modeling
+- Healthcare economics and return on investment
+- Insurance coverage and reimbursement strategy
+- Resource allocation and capacity planning
+- Health technology assessment and evidence requirements
+
+**Clinical Workflow Integration:**
+- Electronic health record system integration
+- Clinical decision support algorithm implementation
+- Physician order entry and result reporting
+- Multidisciplinary team coordination and communication
+- Patient counseling and genetic consultation requirements
+
+**Global Implementation Challenges:**
+- Healthcare disparities and access considerations
+- International regulatory harmonization
+- Resource-limited setting adaptations
+- Technology transfer and capacity building
+- Collaborative network development and data sharing
+
+**Quality and Safety Considerations:**
+- Patient safety protocols and adverse event monitoring
+- Quality improvement initiatives and outcome tracking
+- Risk management and liability considerations
+- Ethical implications and informed consent processes
+
+**Change Management:**
+- Stakeholder engagement and buy-in strategies
+- Implementation timeline and phased rollout
+- Performance monitoring and continuous improvement
+- Physician adoption and behavioral change
+
+**Style:** Healthcare systems perspective with practical implementation focus.`;
+    chunks.push(await callGeminiAPI(healthcarePrompt, '', 'thinking-structured', undefined, { maxTokens: 8000 }));
+
+    // **ENHANCED CHUNK 5**: Methodological Considerations & Study Strengths (600-700 words)
+    const strengthsPrompt = `Generate comprehensive methodological considerations (600-700 words):
+
+**ASR-GoT Framework Advantages:**
+- Systematic approach benefits and reproducibility enhancements
+- Multi-AI orchestration advantages over traditional meta-analysis
+- Graph-based reasoning benefits for complex biomedical relationships
+- Real-time evidence integration and dynamic updating capabilities
+- Bias detection and mitigation through automated algorithms
+
+**Quality Assurance Framework:**
+- Comprehensive literature synthesis with quality assessment
+- Standardized data extraction and validation procedures
+- Cross-platform verification and consistency checking
+- Expert validation processes with clinical oversight
+- Transparency and reproducibility enhancements
+
+**Methodological Innovations:**
+- Parameter optimization (P1.0-P1.29) for academic rigor
+- Token management and computational efficiency
+- Causal inference applications and temporal reasoning
+- Information theory integration for complexity assessment
+- Network analysis and graph-based evidence synthesis
+
+**Validation Strategies:**
+- Multiple validation cohorts and cross-population studies
+- External validation using independent datasets
+- Sensitivity analysis and robustness testing
+- Inter-rater reliability and consistency assessment
+- Performance monitoring and continuous improvement
+
+**Comparative Advantages:**
+- Speed and efficiency compared to traditional approaches
+- Comprehensiveness and systematic coverage
+- Objectivity and bias reduction
+- Scalability and adaptability to new evidence
+- Cost-effectiveness and resource optimization
+
+**Technical Rigor:**
+- Statistical methodology and analytical approach
+- Data quality assessment and validation procedures
+- Uncertainty quantification and confidence intervals
+- Multiple testing correction and significance thresholds
+
+**Style:** Methodological rigor with innovation emphasis.`;
+    chunks.push(await callGeminiAPI(strengthsPrompt, '', 'thinking-structured', undefined, { maxTokens: 8000 }));
+
+    // **ENHANCED CHUNK 6**: Study Limitations & Future Research Directions (800-900 words)
+    const limitationsPrompt = `Generate comprehensive limitations and future research section (800-900 words):
+
+**Study Limitations Framework:**
+- Data availability limitations and publication bias considerations
+- Technical limitations of current genomic technologies
+- Population diversity and generalizability concerns
+- Temporal evolution of genomic landscapes and technology advances
+- Sample size limitations and statistical power considerations
+
+**Methodological Limitations:**
+- AI model limitations and potential biases
+- Literature search constraints and database coverage
+- Language bias and geographic representation
+- Study design heterogeneity and methodological quality
+- Follow-up duration and outcome measurement variability
+
+**Future Research Priorities:**
+- Integration with emerging technologies (single-cell analysis, spatial genomics)
+- Long-term prospective validation studies and clinical trials
+- Multi-ethnic and international validation cohorts
+- Mechanistic studies and functional validation
+- Technology development and platform optimization
+
+**Emerging Technologies Integration:**
+- Single-cell genomics and tumor heterogeneity analysis
+- Spatial transcriptomics and tissue architecture
+- Liquid biopsy development and circulating tumor DNA
+- Artificial intelligence and machine learning advances
+- Multi-omics integration and systems biology approaches
+
+**Clinical Research Needs:**
+- Prospective clinical trial integration and validation
+- Real-world evidence generation and outcome studies
+- Health economics and cost-effectiveness research
+- Implementation science and adoption studies
+- Patient-reported outcomes and quality of life assessment
+
+**Technology Development:**
+- Next-generation sequencing advances and cost reduction
+- Point-of-care testing development and validation
+- Automation and workflow optimization
+- Data integration and interoperability standards
+- Cloud computing and distributed analysis platforms
+
+**Research Context:** ${this.stageResults[7]?.substring(0, 1000)}
+
+**International Collaboration:**
+- Global consortium development and data sharing
+- Harmonization of protocols and standards
+- Resource sharing and capacity building
+- Regulatory alignment and approval pathways
+
+**Long-term Vision:**
+- Precision oncology integration and personalized medicine
+- Population health applications and screening programs
+- Preventive strategies and risk reduction
+- Therapeutic resistance prediction and management
+
+**Style:** Balanced, forward-looking perspective with realistic timelines.`;
+    chunks.push(await callGeminiAPI(limitationsPrompt, '', 'thinking-search', undefined, { maxTokens: 10000 }));
+
+    return chunks;
+  }
+
   /**
    * Stage 9F: Conclusions & Future Directions
    */
@@ -613,51 +1155,141 @@ Generate discussion section demonstrating deep scientific understanding and clin
     console.log('🎯 Executing Stage 9F: Conclusions & Future Directions...');
     const startTime = Date.now();
 
-    const prompt = `Generate comprehensive conclusions and future directions section (1200-1500 words):
+    const prompt = `Generate comprehensive conclusions and future directions section (2000-2500 words):
 
-**Previous Context Summary:** ${previousResults.slice(-2).map(r => r.content.substring(0, 400)).join('\n')}
-**Final Analysis:** ${this.stageResults[7]?.substring(0, 2000)}
-**Research Objectives Review:** ${JSON.stringify(this.researchContext.objectives)}
+**COMPREHENSIVE CONTEXT INTEGRATION:**
+- Abstract findings: ${previousResults[0]?.content.substring(0, 600)}
+- Introduction insights: ${previousResults[1]?.content.substring(0, 600)}
+- Methodology framework: ${previousResults[2]?.content.substring(0, 600)}
+- Key results summary: ${previousResults[3]?.content.substring(0, 800)}
+- Discussion insights: ${previousResults[4]?.content.substring(0, 800)}
+- Final analysis: ${this.stageResults[7]?.substring(0, 1200)}
+- Research objectives: ${JSON.stringify(this.researchContext.objectives)}
 
-**Section Requirements:**
+**SECTION 1: SUMMARY OF KEY CONTRIBUTIONS (600-700 words):**
 
-**1. Summary of Key Contributions (400-500 words):**
-- Primary research contributions with specific quantitative findings
-- Novel insights into CTCL chromosomal instability mechanisms
-- Clinical significance of identified biomarkers and risk factors
-- Methodological innovations of ASR-GoT framework
-- Evidence-based recommendations for clinical practice
+**Primary Research Contributions:**
+- Comprehensive systematic analysis of chromosomal instabilities in CTCL with novel quantitative findings
+- Clinical correlation identification with immediate prognostic implications and survival prediction
+- Risk stratification model development, validation, and clinical implementation pathway
+- Biomarker identification with therapeutic targeting potential and personalized medicine applications
+- Evidence-based clinical practice recommendations with immediate actionable guidelines
 
-**2. Practice-Changing Implications (300-400 words):**
-- Immediate actionable recommendations for clinicians
-- Risk stratification algorithm improvements
-- Treatment selection guidance and personalized approaches
-- Monitoring and follow-up protocol enhancements
-- Clinical trial design implications with genomic stratification
+**Methodological Innovations:**
+- ASR-GoT framework development and comprehensive validation for systematic evidence synthesis
+- Multi-AI orchestration approach combining Perplexity Sonar and Gemini 2.5 Pro for real-time analysis
+- Graph-based reasoning implementation for complex biomedical relationship mapping
+- Automated bias detection and quality assurance with P1.0-P1.29 parameter optimization
+- Information theory and causal inference integration for advanced analytical rigor
 
-**3. Future Research Priorities (400-500 words):**
-- Short-term research needs (1-2 years) with specific study designs
-- Medium-term goals (3-5 years) including technology integration
-- Long-term vision (5-10 years) for comprehensive genomic medicine
-- Collaborative research opportunities and consortium development
-- Technology advancement requirements (single-cell, spatial genomics)
+**Clinical Significance and Impact:**
+- Immediate practice applications for CTCL diagnosis, staging, and treatment selection
+- Patient stratification improvements enabling personalized medicine and precision oncology
+- Treatment monitoring optimization with genomic biomarker integration
+- Prognostic enhancement with survival prediction and clinical outcome forecasting
+- Healthcare system integration with cost-effectiveness and implementation strategies
 
-**4. Implementation Roadmap (100-200 words):**
-- Immediate next steps for clinical translation
-- Regulatory pathway and approval processes
-- Healthcare system preparation and training requirements
-- Quality assurance and standardization protocols
+**SECTION 2: PRACTICE-CHANGING IMPLICATIONS (500-600 words):**
 
-**Writing Requirements:**
-- Clear, actionable conclusions without overstatement
-- Specific recommendations with implementation timelines
-- Balanced assessment of impact potential and challenges
-- Forward-looking perspective with realistic expectations
-- Integration of all previous findings into coherent narrative
+**Immediate Clinical Recommendations:**
+- Implementation of evidence-based risk stratification algorithms in routine CTCL evaluation
+- Integration of genomic testing protocols into standard diagnostic workflows
+- Treatment selection optimization based on chromosomal aberration patterns and molecular profiles
+- Enhanced monitoring protocols incorporating prognostic genomic markers for response assessment
+- Clinical trial design improvements with genomic stratification for precision medicine approaches
 
-Generate conclusions section that provides clear direction for the field and actionable next steps.`;
+**Healthcare System Integration:**
+- Laboratory infrastructure development and workflow optimization for genomic testing
+- Comprehensive physician training and continuing education program development
+- Quality assurance protocol implementation with inter-laboratory standardization
+- Electronic health record integration strategies with clinical decision support systems
+- Cost-effectiveness analysis and reimbursement strategy development for sustainable implementation
 
-    const content = await callGeminiAPI(prompt, '', 'thinking-structured');
+**Patient Care Enhancement:**
+- Personalized treatment planning with genomic signature integration
+- Improved prognostic counseling and patient communication strategies
+- Risk-adapted follow-up protocols and surveillance optimization
+- Quality of life considerations and patient-reported outcome integration
+- Genetic counseling and family screening protocol development
+
+**SECTION 3: FUTURE RESEARCH PRIORITIES (700-800 words):**
+
+**Short-term Research Needs (1-2 years):**
+- Multi-institutional prospective validation studies with independent patient cohorts
+- Clinical trial integration with biomarker-guided treatment selection and response monitoring
+- Technology platform optimization, standardization, and cost reduction strategies
+- Physician adoption studies and implementation research with behavior change assessment
+- Real-world evidence generation and outcome monitoring in diverse healthcare settings
+
+**Medium-term Research Goals (3-5 years):**
+- Single-cell genomics integration for tumor heterogeneity analysis and clonal evolution tracking
+- Spatial transcriptomics and tissue architecture studies for microenvironment characterization
+- Liquid biopsy development with circulating tumor DNA and minimal residual disease monitoring
+- Advanced artificial intelligence and machine learning integration for predictive modeling
+- Multi-omics integration combining genomics, transcriptomics, proteomics, and metabolomics
+
+**Long-term Vision (5-10 years):**
+- Comprehensive precision oncology implementation across global healthcare systems
+- Population-level screening and prevention programs with genomic risk assessment
+- International consortium development for data sharing and collaborative research
+- Technology democratization and adaptation for resource-limited healthcare settings
+- Integration with emerging technologies including immunotherapy and cell-based treatments
+
+**Global Research Collaboration:**
+- International standardization efforts and harmonized protocol development
+- Resource sharing and capacity building in developing healthcare systems
+- Regulatory pathway optimization and global approval coordination
+- Health equity considerations and accessibility improvement strategies
+
+**SECTION 4: IMPLEMENTATION ROADMAP (400-500 words):**
+
+**Phase 1: Foundation and Validation (6-12 months):**
+- Regulatory submission preparation and approval pathway initiation with FDA and international agencies
+- Clinical laboratory validation studies with analytical and clinical performance assessment
+- Physician education program development and pilot training implementation
+- Electronic health record integration planning and technical infrastructure development
+
+**Phase 2: Clinical Integration and Optimization (1-2 years):**
+- Healthcare system pilot implementation with workflow optimization and refinement
+- Clinical decision support algorithm development and validation
+- Outcome monitoring and performance assessment with continuous quality improvement
+- Cost-effectiveness evaluation and health economics analysis for sustainable implementation
+
+**Phase 3: Scaling and Standardization (2-5 years):**
+- National and international standardization with guideline development and adoption
+- Technology platform optimization with automation and cost reduction strategies
+- Global consortium development and collaborative data sharing initiatives
+- Long-term outcome studies and real-world evidence generation for population health impact
+
+**Implementation Success Metrics:**
+- Clinical adoption rates and physician satisfaction assessments
+- Patient outcome improvements and quality of life enhancements
+- Healthcare system efficiency gains and cost-effectiveness achievements
+- Research advancement and scientific knowledge contribution
+
+**SECTION 5: RESEARCH LEGACY AND IMPACT (300-400 words):**
+
+**Scientific Advancement:**
+- Fundamental advancement in CTCL genomics understanding and clinical translation
+- Methodological innovation in AI-powered systematic research and evidence synthesis
+- Clinical implementation of precision medicine approaches in hematologic malignancies
+- Global health impact through technology democratization and accessibility improvement
+
+**Societal Contribution:**
+- Improved patient outcomes, survival, and quality of life for CTCL patients worldwide
+- Healthcare system efficiency optimization and cost reduction through precision medicine
+- Scientific method advancement and reproducible research framework development
+- Global health equity promotion through technology transfer and capacity building
+
+**Future Impact Potential:**
+- Transformative change in CTCL clinical practice and patient care standards
+- Platform technology application to other cancer types and disease areas
+- Healthcare innovation acceleration and precision medicine adoption
+- Scientific research methodology advancement and evidence synthesis optimization
+
+Generate comprehensive conclusions that provide definitive closure while establishing clear pathways for continued advancement and clinical implementation.`;
+
+    const content = await callGeminiAPI(prompt, '', 'thinking-structured', undefined, { maxTokens: 15000 });
     
     return {
       substage: '9F',
@@ -677,59 +1309,125 @@ Generate conclusions section that provides clear direction for the field and act
     console.log('📖 Executing Stage 9G: References & Technical Appendices...');
     const startTime = Date.now();
 
-    const prompt = `Generate comprehensive references and technical appendices section (1000-1200 words):
+    const prompt = `Generate comprehensive references and technical appendices section (2000-2500 words):
 
-**All Previous Content for Reference Extraction:** ${previousResults.map(r => r.content.substring(0, 300)).join('\n')}
-**Technical Details:** ${JSON.stringify(this.parameters)}
+**COMPREHENSIVE CONTENT INTEGRATION FOR REFERENCE EXTRACTION:**
+- Abstract content: ${previousResults[0]?.content.substring(0, 400)}
+- Introduction literature: ${previousResults[1]?.content.substring(0, 400)}
+- Methodology details: ${previousResults[2]?.content.substring(0, 400)}
+- Results findings: ${previousResults[3]?.content.substring(0, 400)}
+- Discussion insights: ${previousResults[4]?.content.substring(0, 400)}
+- Conclusions synthesis: ${previousResults[5]?.content.substring(0, 400)}
+- Technical parameters: ${JSON.stringify(this.parameters).substring(0, 800)}
 
-**Section Requirements:**
+**SECTION 1: COMPREHENSIVE VANCOUVER-STYLE REFERENCES (1200-1400 words):**
 
-**1. Vancouver-Style References (600-800 words):**
-Generate 50+ comprehensive references in Vancouver format covering:
-- Foundational CTCL literature (pathophysiology, classification, staging)
-- Genomic studies in CTCL with specific CNA findings
-- Methodological papers on genomic analysis techniques
-- Statistical and meta-analytical methodology references
-- AI and graph theory applications in medical research
-- Clinical implementation and biomarker development studies
+**Category A: Foundational CTCL Literature (20-25 references):**
+Generate comprehensive references covering:
+- Classic CTCL pathophysiology and disease classification papers
+- Current staging systems (TNM-B) and clinical guidelines
+- Treatment modalities and therapeutic approaches
+- Epidemiology and population-based studies
+- Quality of life and patient outcome research
+- International consensus statements and clinical practice guidelines
 
-**Reference Categories:**
-- 15-20 core CTCL pathophysiology and clinical papers
-- 15-20 genomic and chromosomal instability studies
-- 10-15 methodology and statistical analysis papers
-- 5-10 AI and computational analysis references
+**Category B: Genomic and Chromosomal Instability Studies (20-25 references):**
+Generate comprehensive references covering:
+- Chromosomal aberration studies in CTCL with specific CNA findings
+- Copy number analysis methodologies and technical approaches
+- Molecular cytogenetics and genome-wide association studies
+- Tumor genomic evolution and clonal architecture analysis
+- Comparative genomic hybridization and SNP array studies
+- Next-generation sequencing applications in CTCL research
 
-**2. Technical Appendices (400-500 words):**
+**Category C: Methodology and Statistical Analysis (15-20 references):**
+Generate comprehensive references covering:
+- Systematic review and meta-analysis methodology
+- Statistical analysis methods for genomic data
+- Bias detection and quality assessment tools
+- Graph theory applications in biomedical research
+- Information theory and causal inference methods
+- Machine learning and artificial intelligence applications
 
-**Appendix A: ASR-GoT Parameter Specifications**
-- Complete P1.0-P1.29 parameter documentation
-- Default values and optimization rationale
-- Sensitivity analysis results for key parameters
+**Category D: Clinical Implementation and Biomarker Development (10-15 references):**
+Generate comprehensive references covering:
+- Biomarker validation and clinical utility assessment
+- Precision medicine implementation strategies
+- Healthcare technology assessment and cost-effectiveness
+- Clinical decision support system development
+- Laboratory standardization and quality assurance
+- Regulatory approval pathways and FDA guidance
 
-**Appendix B: Statistical Analysis Details**
-- Complete statistical methodology with software versions
-- Power calculation details and sample size justifications
-- Multiple testing correction procedures and thresholds
+**Category E: AI and Computational Analysis (10-15 references):**
+Generate comprehensive references covering:
+- Artificial intelligence applications in medical research
+- Natural language processing and evidence synthesis
+- Graph neural networks and network analysis
+- Multi-AI orchestration and ensemble methods
+- Automated systematic review and meta-analysis
+- Computational biology and bioinformatics tools
 
-**Appendix C: Quality Assessment Criteria**
-- Study inclusion/exclusion criteria with specific parameters
-- Quality scoring methodology and inter-rater reliability
-- Bias assessment tools and validation procedures
+**REFERENCE FORMATTING REQUIREMENTS:**
+- Strict Vancouver citation format with DOI inclusion when available
+- Proper journal abbreviations according to Index Medicus standards
+- Alphabetical ordering within each category
+- Consistent punctuation and formatting
+- Author limits: 6 authors maximum, then et al.
+- Complete citation information including volume, issue, page numbers
 
-**Appendix D: Supplementary Tables**
-- Comprehensive study characteristics table
-- Detailed statistical results with confidence intervals
-- Sensitivity analysis results and robustness testing
+**SECTION 2: COMPREHENSIVE TECHNICAL APPENDICES (800-1000 words):**
 
-**Formatting Requirements:**
-- Proper Vancouver citation format with DOI when available
-- Alphabetical ordering within categories
-- Consistent formatting and punctuation
-- Journal abbreviations according to Index Medicus
+**Appendix A: Complete ASR-GoT Parameter Specifications (250-300 words):**
+- Comprehensive P1.0-P1.29 parameter documentation with technical specifications
+- Default parameter values and optimization rationale with mathematical justifications
+- Sensitivity analysis results for critical parameters with confidence intervals
+- Parameter interdependencies and cascade effects analysis
+- Computational complexity and resource requirement assessments
+- Version control and parameter evolution documentation
 
-Generate academically rigorous references and appendices suitable for peer review.`;
+**Appendix B: Advanced Statistical Analysis Details (200-250 words):**
+- Complete statistical methodology with software versions and package specifications
+- Detailed power calculation procedures and sample size justification methodology
+- Multiple testing correction procedures with family-wise error rate control
+- Effect size calculations and clinical significance thresholds
+- Confidence interval methodology and uncertainty quantification
+- Robustness testing and sensitivity analysis protocols
 
-    const content = await callGeminiAPI(prompt, '', 'thinking-structured');
+**Appendix C: Quality Assessment and Validation Criteria (150-200 words):**
+- Comprehensive study inclusion and exclusion criteria with specific parameters
+- Quality scoring methodology with inter-rater reliability assessments
+- Bias assessment tools and validation procedures with Kappa statistics
+- GRADE evidence assessment and recommendation strength
+- Risk of bias evaluation using standardized tools (RoB 2.0, ROBINS-I)
+- Expert validation processes and clinical oversight protocols
+
+**Appendix D: Supplementary Data Tables and Figures (100-150 words):**
+- Comprehensive study characteristics table with detailed methodology
+- Complete statistical results with confidence intervals and p-values
+- Sensitivity analysis results and robustness testing outcomes
+- Meta-analysis forest plots and funnel plot assessments
+- Network analysis visualizations and graph metrics
+- Clinical correlation matrices and prognostic model performance
+
+**Appendix E: Technical Implementation Details (100-150 words):**
+- Software environment specifications and computational requirements
+- Hardware infrastructure and scalability considerations
+- API integration specifications and rate limiting protocols
+- Error handling and recovery mechanism documentation
+- Security protocols and data protection measures
+- Version control and reproducibility guidelines
+
+**ACADEMIC FORMATTING STANDARDS:**
+- Adherence to international medical journal standards
+- Consistent numbering and cross-referencing systems
+- Professional formatting suitable for peer review submission
+- Complete technical documentation for replication studies
+- Comprehensive appendices supporting manuscript claims
+- Publication-ready format with journal-specific adaptations
+
+Generate academically rigorous references and appendices that meet the highest standards for peer review and publication in top-tier medical journals.`;
+
+    const content = await callGeminiAPI(prompt, '', 'thinking-structured', undefined, { maxTokens: 15000 });
     
     return {
       substage: '9G',

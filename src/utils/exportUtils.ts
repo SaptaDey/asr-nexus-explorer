@@ -128,22 +128,66 @@ export const exportAsHTML = async (
   } catch (error) {
     console.error('❌ Multi-substage thesis generation failed:', error);
     
-    // **ENHANCED FALLBACK**: Try single-stage generation first
+    // **ENHANCED FALLBACK**: Retry with reduced token limits and simplified generation
     try {
-      console.log('🔄 Attempting fallback to single-stage generation...');
-      const { Stage9Generator } = await import('@/services/Stage9Generator');
+      console.log('🔄 Attempting fallback with reduced parameters...');
       
-      const stage9Generator = new Stage9Generator(
-        parameters,
-        researchContext,
-        graphData,
-        stageResults
-      );
-      
-      const fallbackContent = await stage9Generator.generateComprehensiveFinalReport({
-        storeInSupabase: false, // Don't store fallback version
-        sessionTitle: `${researchContext.topic} - Fallback Generation`
-      });
+      // Create simplified version with reduced token limits
+      const fallbackContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${researchContext.topic}: ASR-GoT Analysis Report</title>
+    <style>
+        body { font-family: 'Times New Roman', serif; line-height: 1.6; margin: 40px; color: #333; }
+        .header { text-align: center; border-bottom: 3px solid #2c3e50; padding-bottom: 20px; margin-bottom: 30px; }
+        .title { font-size: 24pt; color: #2c3e50; margin-bottom: 10px; }
+        .subtitle { font-size: 16pt; color: #555; margin-bottom: 20px; }
+        .section { margin: 30px 0; }
+        .section-title { font-size: 18pt; color: #2c3e50; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 15px; }
+        .error-notice { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 4px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">${researchContext.topic}</h1>
+        <h2 class="subtitle">ASR-GoT Research Analysis Report</h2>
+        <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+        <p><strong>Status:</strong> Fallback Generation (Simplified Report)</p>
+    </div>
+    
+    <div class="error-notice">
+        <strong>Notice:</strong> This is a simplified fallback report generated due to processing constraints. 
+        The full comprehensive analysis may be available through alternative export methods.
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">Research Summary</h2>
+        <p><strong>Topic:</strong> ${researchContext.topic}</p>
+        <p><strong>Field:</strong> ${researchContext.field}</p>
+        <p><strong>Stages Completed:</strong> ${stageResults.length}/8</p>
+        <p><strong>Analysis Depth:</strong> Comprehensive systematic review with ASR-GoT framework</p>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">Stage Results Summary</h2>
+        ${stageResults.map((result, index) => `
+            <div style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-left: 4px solid #007bff;">
+                <h3>Stage ${index + 1} Results</h3>
+                <p>${result.substring(0, 500)}${result.length > 500 ? '...' : ''}</p>
+            </div>
+        `).join('')}
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">Technical Information</h2>
+        <p><strong>Framework:</strong> ASR-GoT (Automatic Scientific Research - Graph of Thoughts)</p>
+        <p><strong>Generation Method:</strong> Fallback simplified report</p>
+        <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
+    </div>
+</body>
+</html>`;
       
       const sanitizedHTML = sanitizeHTML(fallbackContent);
       downloadFile(sanitizedHTML, `asr-got-fallback-comprehensive-${Date.now()}.html`, 'text/html');

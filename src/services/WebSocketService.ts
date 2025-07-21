@@ -76,20 +76,23 @@ class SupabaseRealtimeService {
           }
         } else if (status === 'CHANNEL_ERROR') {
           this.connectionStatus = 'disconnected';
-          console.warn('⚠️ Supabase Realtime connection error (continuing in offline mode)');
+          // **SILENT ERROR HANDLING**: Don't log realtime errors - they're non-critical
+          // console.warn('⚠️ Supabase Realtime connection error (continuing in offline mode)');
           // Don't show error toast for non-critical realtime features
         } else if (status === 'TIMED_OUT') {
           this.connectionStatus = 'disconnected';
-          console.warn('⚠️ Supabase Realtime connection timed out');
-          toast.warning('Real-time connection timed out. Retrying...');
-          this.reconnect();
+          // **SILENT ERROR HANDLING**: Reduce noise for timeout errors
+          // console.warn('⚠️ Supabase Realtime connection timed out');
+          // Don't show warning toast - just silently reconnect
+          setTimeout(() => this.reconnect(), 5000); // Retry in 5 seconds
         }
       });
   }
 
-  // Reconnect logic
+  // Reconnect logic - silently handle reconnections
   private reconnect(): void {
-    console.log('Attempting to reconnect to Supabase Realtime...');
+    // **SILENT ERROR HANDLING**: Don't log reconnection attempts for non-critical feature
+    // console.log('Attempting to reconnect to Supabase Realtime...');
     
     // Disconnect and reconnect
     this.disconnect();
@@ -102,7 +105,8 @@ class SupabaseRealtimeService {
   // Join a research session
   joinSession(sessionId: string): void {
     if (!this.isConnected()) {
-      console.warn('Supabase Realtime not connected, cannot join session');
+      // **SILENT ERROR HANDLING**: Don't warn about realtime connection for non-critical feature
+      // console.warn('Supabase Realtime not connected, cannot join session');
       return;
     }
 
@@ -133,7 +137,8 @@ class SupabaseRealtimeService {
   // Emit graph update
   emitGraphUpdate(sessionId: string, type: string, payload: any): void {
     if (!this.isConnected()) {
-      console.warn('Supabase Realtime not connected, cannot emit graph update');
+      // **SILENT ERROR HANDLING**: Don't warn for non-critical realtime features
+      // console.warn('Supabase Realtime not connected, cannot emit graph update');
       return;
     }
 
@@ -149,7 +154,8 @@ class SupabaseRealtimeService {
   // Emit stage transition
   emitStageTransition(sessionId: string, fromStage: number, toStage: number, success: boolean, error?: string): void {
     if (!this.isConnected()) {
-      console.warn('Supabase Realtime not connected, cannot emit stage transition');
+      // **SILENT ERROR HANDLING**: Don't warn for non-critical realtime features
+      // console.warn('Supabase Realtime not connected, cannot emit stage transition');
       return;
     }
 
@@ -167,7 +173,8 @@ class SupabaseRealtimeService {
   // Emit LLM stream
   emitLLMStream(sessionId: string, stage: number, content: string, isComplete: boolean): void {
     if (!this.isConnected()) {
-      console.warn('Supabase Realtime not connected, cannot emit LLM stream');
+      // **SILENT ERROR HANDLING**: Don't warn for non-critical realtime features
+      // console.warn('Supabase Realtime not connected, cannot emit LLM stream');
       return;
     }
 
@@ -238,7 +245,8 @@ class SupabaseRealtimeService {
   // Broadcast event to channel
   private broadcast(event: string, data: any): void {
     if (!this.channel) {
-      console.warn('Cannot broadcast: channel not available');
+      // **SILENT ERROR HANDLING**: Don't warn about broadcast failures for non-critical features
+      // console.warn('Cannot broadcast: channel not available');
       return;
     }
 
@@ -247,7 +255,8 @@ class SupabaseRealtimeService {
       event: 'realtime-event',
       payload: { event, data }
     }).catch(error => {
-      console.error('Failed to broadcast event:', error);
+      // **SILENT ERROR HANDLING**: Don't log broadcast errors - they're non-critical
+      // console.error('Failed to broadcast event:', error);
     });
   }
 

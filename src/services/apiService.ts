@@ -53,8 +53,11 @@ export const callGeminiAPI = async (
   apiKey: string, 
   capability: GeminiCapability = 'thinking-only',
   schema?: any,
-  options: { thinkingBudget?: number; stageId?: string; graphHash?: string; temperature?: number; maxTokens?: number } = {}
+  options: { thinkingBudget?: number; stageId?: string; graphHash?: string; temperature?: number; maxTokens?: number; retryCount?: number } = {}
 ): Promise<string> => {
+  const maxRetries = 3;
+  const currentRetry = options.retryCount || 0;
+
   // Validate API key
   if (!apiKey || !validateAPIKey(apiKey, 'gemini')) {
     throw new Error('Invalid Gemini API key');
@@ -68,14 +71,29 @@ export const callGeminiAPI = async (
   // Validate and sanitize input
   const sanitizedPrompt = validateInput(prompt, 'prompt');
 
+  // **TOKEN LIMIT PREVENTION**: Aggressive input chunking for large prompts
+  const estimatedInputTokens = Math.ceil(sanitizedPrompt.length / 4);
+  const MAX_INPUT_TOKENS = 32000; // Conservative limit to prevent MAX_TOKENS errors
+  
+  if (estimatedInputTokens > MAX_INPUT_TOKENS) {
+    console.warn(`⚠️ Input too large (${estimatedInputTokens} tokens), implementing chunking strategy`);
+    return await handleLargePromptChunking(sanitizedPrompt, apiKey, capability, schema, options);
+  }
+
   // Rate limiting
   if (!apiRateLimiter.isAllowed('gemini')) {
     throw new Error('Rate limit exceeded for Gemini API');
   }
 
-  // Estimate token count (rough approximation: 1 token ≈ 4 characters)
-  const estimatedInputTokens = Math.ceil(sanitizedPrompt.length / 4);
-  const estimatedOutputTokens = Math.ceil((options.maxTokens || 65536) / 2); // Assume half max output
+  // **DYNAMIC OUTPUT TOKEN ADJUSTMENT**: Reduce output tokens based on input size
+  let dynamicMaxTokens = options.maxTokens || 8000; // Much more conservative default
+  if (estimatedInputTokens > 20000) {
+    dynamicMaxTokens = Math.min(dynamicMaxTokens, 4000); // Very conservative for large inputs
+  } else if (estimatedInputTokens > 10000) {
+    dynamicMaxTokens = Math.min(dynamicMaxTokens, 6000); // Conservative for medium inputs
+  }
+
+  const estimatedOutputTokens = Math.ceil(dynamicMaxTokens / 2);
   const totalEstimatedTokens = estimatedInputTokens + estimatedOutputTokens;
 
   // Check cost guardrails
@@ -100,7 +118,7 @@ export const callGeminiAPI = async (
       ],
       generationConfig: {
         temperature: options.temperature || 0.4,
-        maxOutputTokens: options.maxTokens || 65536 // Keep this at 65536 as it's the actual API limit
+        maxOutputTokens: dynamicMaxTokens // Use dynamic token limit to prevent MAX_TOKENS errors
       },
       systemInstruction: {
         parts: [
@@ -188,19 +206,31 @@ export const callGeminiAPI = async (
     
     const candidate = data.candidates[0];
     
-    // Handle MAX_TOKENS finish reason - attempt to extract partial content
+    // **RETRY LOGIC**: Handle MAX_TOKENS finish reason with automatic retry and smaller token limits
     if (candidate.finishReason === 'MAX_TOKENS') {
-      console.warn('⚠️ API response truncated due to MAX_TOKENS limit, extracting partial content');
+      console.warn(`⚠️ MAX_TOKENS hit (attempt ${currentRetry + 1}/${maxRetries}), implementing retry strategy`);
       
-      // Try to extract partial content if available
-      if (candidate.content && candidate.content.parts && candidate.content.parts[0]?.text) {
-        const partialContent = candidate.content.parts[0].text;
-        console.log(`✅ Extracted ${partialContent.length} characters from truncated response`);
-        return partialContent + '\n\n[Note: Response was truncated due to token limit. Consider breaking down the request into smaller chunks.]';
+      if (currentRetry < maxRetries) {
+        // Retry with significantly reduced token limits
+        const retryMaxTokens = Math.max(1000, Math.floor(dynamicMaxTokens * 0.5)); // Reduce by 50%
+        console.log(`🔄 Retrying with reduced token limit: ${retryMaxTokens} (was ${dynamicMaxTokens})`);
+        
+        return await callGeminiAPI(prompt, apiKey, capability, schema, {
+          ...options,
+          maxTokens: retryMaxTokens,
+          retryCount: currentRetry + 1
+        });
       }
       
-      // If no content can be extracted, throw error with better message
-      throw new Error(`API response truncated due to MAX_TOKENS limit. Try reducing input size or breaking into smaller requests. Candidate: ${JSON.stringify(candidate)}`);
+      // If we've exhausted retries, try to extract partial content
+      if (candidate.content && candidate.content.parts && candidate.content.parts[0]?.text) {
+        const partialContent = candidate.content.parts[0].text;
+        console.log(`✅ Extracted ${partialContent.length} characters from final truncated response`);
+        return partialContent + '\n\n[Note: Response was truncated after multiple retry attempts. Content may be incomplete.]';
+      }
+      
+      // Final fallback error
+      throw new Error(`MAX_TOKENS limit exceeded after ${maxRetries} retry attempts. Input size: ${estimatedInputTokens} tokens. Consider breaking into smaller chunks.`);
     }
     
     if (!candidate.content || !candidate.content.parts || !Array.isArray(candidate.content.parts) || candidate.content.parts.length === 0) {
@@ -226,6 +256,48 @@ export const callGeminiAPI = async (
     throw error;
   }
 };
+
+// **LARGE PROMPT CHUNKING**: Handle oversized prompts by intelligent chunking
+async function handleLargePromptChunking(
+  prompt: string,
+  apiKey: string,
+  capability: GeminiCapability,
+  schema?: any,
+  options: any = {}
+): Promise<string> {
+  console.log('📄 Implementing large prompt chunking strategy');
+  
+  // Split prompt into manageable chunks (approximately 20k tokens each)
+  const CHUNK_SIZE = 20000 * 4; // 20k tokens * 4 chars/token
+  const chunks = [];
+  
+  for (let i = 0; i < prompt.length; i += CHUNK_SIZE) {
+    chunks.push(prompt.slice(i, i + CHUNK_SIZE));
+  }
+  
+  console.log(`📦 Split large prompt into ${chunks.length} chunks`);
+  
+  const results = [];
+  for (let i = 0; i < chunks.length; i++) {
+    const chunkPrompt = `Part ${i + 1}/${chunks.length} of a large analysis request:\n\n${chunks[i]}\n\nGenerate a focused response for this section. If this is not the final part, end with "... [Continued in next part]"`;
+    
+    try {
+      const chunkResult = await callGeminiAPI(chunkPrompt, apiKey, capability, schema, {
+        ...options,
+        maxTokens: 4000, // Conservative token limit for chunks
+        retryCount: 0 // Reset retry count for each chunk
+      });
+      results.push(chunkResult);
+      console.log(`✅ Chunk ${i + 1}/${chunks.length} completed (${chunkResult.length} chars)`);
+    } catch (error) {
+      console.error(`❌ Chunk ${i + 1}/${chunks.length} failed:`, error);
+      results.push(`[Error processing chunk ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}]`);
+    }
+  }
+  
+  // Combine results with proper formatting
+  return results.join('\n\n---\n\n');
+}
 
 // Helper function for cache key generation (RULE 4)
 async function generateCacheKey(prompt: string, stageId: string, graphHash: string): Promise<string> {
