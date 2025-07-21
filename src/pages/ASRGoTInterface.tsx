@@ -39,6 +39,8 @@ import { costAwareOrchestration } from '@/services/CostAwareOrchestrationService
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { APICredentials } from '@/types/asrGotTypes';
+import { backendService } from '@/services/backend/BackendService';
+import { historyManager } from '@/services/backend/HistoryManager';
 
 const ASRGoTInterface: React.FC = () => {
   const {
@@ -72,8 +74,94 @@ const ASRGoTInterface: React.FC = () => {
   const [showStage9Progress, setShowStage9Progress] = useState(false);
   const [showBiasAudit, setShowBiasAudit] = useState(false);
   const [exportContent, setExportContent] = useState<string>('');
+  const [backendStatus, setBackendStatus] = useState<any>(null);
+  const [backendHealthy, setBackendHealthy] = useState(false);
   
   const { mode, toggleMode, isAutomatic } = useProcessingMode('manual');
+
+  // Initialize backend and monitor health
+  useEffect(() => {
+    const initializeBackend = async () => {
+      try {
+        console.log('🚀 Initializing backend services...');
+        const status = await backendService.initialize();
+        setBackendStatus(status);
+        setBackendHealthy(backendService.isHealthy());
+        
+        if (status.errors.length > 0) {
+          console.warn('⚠️ Backend initialized with errors:', status.errors);
+          toast.warning('Backend services initialized with some limitations');
+        } else {
+          toast.success('Backend services connected successfully');
+        }
+      } catch (error) {
+        console.error('❌ Backend initialization failed:', error);
+        toast.error('Backend connection failed. Some features may be limited.');
+        setBackendHealthy(false);
+      }
+    };
+
+    initializeBackend();
+
+    // Set up periodic health checks
+    const healthCheckInterval = setInterval(async () => {
+      const healthy = backendService.isHealthy();
+      if (healthy !== backendHealthy) {
+        setBackendHealthy(healthy);
+        if (!healthy) {
+          toast.warning('Backend connection issue detected');
+        }
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(healthCheckInterval);
+  }, []);
+
+  // Create session when research starts
+  useEffect(() => {
+    if (researchContext?.topic && currentStage === 0 && backendHealthy) {
+      const createSession = async () => {
+        try {
+          const sessionId = await historyManager.createSession(
+            researchContext.topic.substring(0, 100),
+            `ASR-GoT analysis on ${researchContext.field || 'research'} topic`,
+            researchContext,
+            parameters
+          );
+          
+          if (sessionId) {
+            console.log('✅ Session created:', sessionId);
+            historyManager.setCurrentSessionId(sessionId);
+          }
+        } catch (error) {
+          console.warn('⚠️ Could not create session:', error);
+        }
+      };
+
+      createSession();
+    }
+  }, [researchContext?.topic, currentStage, backendHealthy]);
+
+  // Update session progress
+  useEffect(() => {
+    const sessionId = historyManager.getCurrentSessionId();
+    if (sessionId && currentStage > 0 && backendHealthy) {
+      const updateSession = async () => {
+        try {
+          await historyManager.updateSession(sessionId, {
+            current_stage: currentStage,
+            status: isProcessing ? 'running' : 'paused',
+            stage_results: stageResults,
+            graph_data: graphData
+          });
+        } catch (error) {
+          console.warn('⚠️ Could not update session:', error);
+        }
+      };
+
+      updateSession();
+    }
+  }, [currentStage, stageResults, graphData, isProcessing, backendHealthy]);
 
   // Auto-switch to export tab when all 9 stages are completed
   useEffect(() => {
@@ -1222,7 +1310,30 @@ Make the data realistic and scientifically meaningful for the research domain.
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">ASR-GoT Research Framework</h1>
-                <p className="text-gray-600">Advanced Scientific Reasoning with Graph of Thoughts</p>
+                <p className="text-gray-600 flex items-center gap-2">
+                  Advanced Scientific Reasoning with Graph of Thoughts
+                  {/* Backend Status Indicator */}
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    backendHealthy 
+                      ? 'bg-green-100 text-green-800' 
+                      : backendStatus?.initialized 
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
+                  }`}>
+                    <div className={`w-2 h-2 rounded-full mr-1 ${
+                      backendHealthy 
+                        ? 'bg-green-500' 
+                        : backendStatus?.initialized 
+                          ? 'bg-yellow-500' 
+                          : 'bg-red-500'
+                    }`}></div>
+                    {backendHealthy 
+                      ? 'Backend Online' 
+                      : backendStatus?.initialized 
+                        ? 'Limited Mode' 
+                        : 'Connecting...'}
+                  </span>
+                </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button

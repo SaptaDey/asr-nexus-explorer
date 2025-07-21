@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      completion_rates_by_field: {
+        Row: {
+          field: string | null
+          total_sessions: number | null
+          completed_sessions: number | null
+          completion_rate_percent: number | null
+        }
+        Insert: {
+          field?: string | null
+          total_sessions?: number | null
+          completed_sessions?: number | null
+          completion_rate_percent?: number | null
+        }
+        Update: {
+          field?: string | null
+          total_sessions?: number | null
+          completed_sessions?: number | null
+          completion_rate_percent?: number | null
+        }
+        Relationships: []
+      }
       graph_data: {
         Row: {
           created_at: string
@@ -52,6 +73,24 @@ export type Database = {
           },
         ]
       }
+      popular_tags: {
+        Row: {
+          tag: string | null
+          usage_count: number | null
+          completed_count: number | null
+        }
+        Insert: {
+          tag?: string | null
+          usage_count?: number | null
+          completed_count?: number | null
+        }
+        Update: {
+          tag?: string | null
+          usage_count?: number | null
+          completed_count?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -81,6 +120,175 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      query_figures: {
+        Row: {
+          id: string
+          session_id: string
+          stage: number
+          title: string
+          description: string
+          figure_type: string
+          data_url: string
+          file_path: string
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          stage: number
+          title: string
+          description?: string
+          figure_type: string
+          data_url: string
+          file_path: string
+          metadata: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          stage?: number
+          title?: string
+          description?: string
+          figure_type?: string
+          data_url?: string
+          file_path?: string
+          metadata?: Json
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "query_figures_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "query_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      query_session_analytics: {
+        Row: {
+          date: string | null
+          total_queries: number | null
+          completed_queries: number | null
+          paused_queries: number | null
+          failed_queries: number | null
+          avg_completion_time_minutes: number | null
+          avg_tokens_used: number | null
+        }
+        Insert: {
+          date?: string | null
+          total_queries?: number | null
+          completed_queries?: number | null
+          paused_queries?: number | null
+          failed_queries?: number | null
+          avg_completion_time_minutes?: number | null
+          avg_tokens_used?: number | null
+        }
+        Update: {
+          date?: string | null
+          total_queries?: number | null
+          completed_queries?: number | null
+          paused_queries?: number | null
+          failed_queries?: number | null
+          avg_completion_time_minutes?: number | null
+          avg_tokens_used?: number | null
+        }
+        Relationships: []
+      }
+      query_sessions: {
+        Row: {
+          id: string
+          query: string
+          status: string
+          current_stage: number
+          total_stages: number
+          created_at: string
+          updated_at: string
+          completed_at: string | null
+          research_context: Json
+          graph_data: Json
+          stage_results: Json
+          metadata: Json
+          user_id: string | null
+          tags: string[]
+        }
+        Insert: {
+          id?: string
+          query: string
+          status?: string
+          current_stage?: number
+          total_stages?: number
+          created_at?: string
+          updated_at?: string
+          completed_at?: string | null
+          research_context: Json
+          graph_data: Json
+          stage_results: Json
+          metadata: Json
+          user_id?: string | null
+          tags: string[]
+        }
+        Update: {
+          id?: string
+          query?: string
+          status?: string
+          current_stage?: number
+          total_stages?: number
+          created_at?: string
+          updated_at?: string
+          completed_at?: string | null
+          research_context?: Json
+          graph_data?: Json
+          stage_results?: Json
+          metadata?: Json
+          user_id?: string | null
+          tags?: string[]
+        }
+        Relationships: []
+      }
+      query_tables: {
+        Row: {
+          id: string
+          session_id: string
+          stage: number
+          title: string
+          description: string
+          data: Json
+          schema: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          stage: number
+          title: string
+          description?: string
+          data: Json
+          schema: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          stage?: number
+          title?: string
+          description?: string
+          data?: Json
+          schema?: Json
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "query_tables_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "query_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       research_sessions: {
         Row: {
@@ -161,7 +369,35 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      completion_rates_by_field: {
+        Row: {
+          field: string | null
+          total_sessions: number | null
+          completed_sessions: number | null
+          completion_rate_percent: number | null
+        }
+        Relationships: []
+      }
+      popular_tags: {
+        Row: {
+          tag: string | null
+          usage_count: number | null
+          completed_count: number | null
+        }
+        Relationships: []
+      }
+      query_session_analytics: {
+        Row: {
+          date: string | null
+          total_queries: number | null
+          completed_queries: number | null
+          paused_queries: number | null
+          failed_queries: number | null
+          avg_completion_time_minutes: number | null
+          avg_tokens_used: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
