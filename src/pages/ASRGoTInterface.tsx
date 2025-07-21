@@ -61,6 +61,7 @@ const ASRGoTInterface: React.FC = () => {
     isComplete,
     hasResults,
     canExportHtml,
+    currentSessionId,
     queryHistorySessionId,
     pauseSession,
     resumeFromHistory,
