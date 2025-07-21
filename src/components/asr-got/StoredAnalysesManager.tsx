@@ -38,11 +38,18 @@ export const StoredAnalysesManager: React.FC<{ currentSessionId?: string | null;
     try {
       setLoading(true);
       setError(null);
+      console.log('Loading stored analyses...');
       const storedAnalyses = await supabaseStorage.listStoredAnalyses(50);
+      console.log('Loaded analyses:', storedAnalyses);
       setAnalyses(storedAnalyses);
     } catch (err) {
-      setError('Failed to load stored analyses');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load stored analyses';
+      setError(errorMessage);
       console.error('Error loading analyses:', err);
+      // Show a user-friendly message
+      if (errorMessage.includes('permission') || errorMessage.includes('RLS')) {
+        setError('Unable to access stored analyses. Please check your permissions.');
+      }
     } finally {
       setLoading(false);
     }

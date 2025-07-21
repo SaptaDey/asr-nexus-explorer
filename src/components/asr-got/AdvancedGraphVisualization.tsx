@@ -5,7 +5,6 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import Cytoscape from '@/utils/cytoscapeSetup';
 import CytoscapeComponent from 'react-cytoscapejs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +15,21 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { GraphData, GraphNode, GraphEdge, HyperEdge, ASRGoTParameters, ResearchContext } from '@/types/asrGotTypes';
 import { Layers, Target, Zap, TrendingUp, Network, Eye, EyeOff } from 'lucide-react';
 
-// Cytoscape extensions are initialized in cytoscapeSetup.ts
+// Import and register Cytoscape extensions
+import Cytoscape from 'cytoscape';
+import dagre from 'cytoscape-dagre';
+
+// Register the dagre extension immediately - simple approach
+let isRegistered = false;
+try {
+  if (!isRegistered) {
+    Cytoscape.use(dagre);
+    isRegistered = true;
+    console.log('✅ Cytoscape dagre extension registered successfully');
+  }
+} catch (error) {
+  console.error('❌ Failed to register Cytoscape dagre extension:', error);
+}
 
 interface AdvancedGraphVisualizationProps {
   graphData: GraphData;
@@ -175,16 +188,19 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
     return [...nodes, ...edges, ...hyperedges];
   }, [graphData, layerVisibility]);
 
-  // Cytoscape layout configuration
-  const cytoscapeLayout = {
-    name: 'dagre',
-    fit: true,
-    directed: true,
-    padding: 50,
-    spacingFactor: 1.5,
-    rankDir: 'TB',
-    ranker: 'longest-path'
-  };
+  // Cytoscape layout configuration - Use grid as fallback
+  const cytoscapeLayout = useMemo(() => {
+    // Always try dagre first, fallback to grid if it fails
+    return {
+      name: 'dagre',
+      fit: true,
+      directed: true,
+      padding: 50,
+      spacingFactor: 1.5,
+      rankDir: 'TB',
+      ranker: 'longest-path'
+    };
+  }, []);
 
   // Cytoscape stylesheet
   const cytoscapeStyle = [
@@ -351,17 +367,27 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
           </Card>
         </div>
 
-        {/* Cytoscape Graph */}
-        <CytoscapeComponent
-          elements={cytoscapeElements}
-          layout={cytoscapeLayout}
-          style={{ width: '100%', height: '100%' }}
-          stylesheet={cytoscapeStyle}
-          cy={(cy) => setCytoscapeRef(cy)}
-          boxSelectionEnabled={true}
-          autoungrabify={false}
-          autounselectify={false}
-        />
+        {/* Cytoscape Graph with Error Boundary */}
+        {cytoscapeElements.length > 0 ? (
+          <CytoscapeComponent
+            elements={cytoscapeElements}
+            layout={cytoscapeLayout}
+            style={{ width: '100%', height: '100%' }}
+            stylesheet={cytoscapeStyle}
+            cy={(cy) => setCytoscapeRef(cy)}
+            boxSelectionEnabled={true}
+            autoungrabify={false}
+            autounselectify={false}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full text-muted-foreground">
+            <div className="text-center">
+              <Network className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No graph data to display</p>
+              <p className="text-sm">Run analysis stages to generate graph visualization</p>
+            </div>
+          </div>
+        )}
 
         {/* Legends Container - Positioned to avoid overlap */}
         <div className="absolute bottom-4 left-4 right-4 z-10 flex flex-wrap gap-4 justify-between">
