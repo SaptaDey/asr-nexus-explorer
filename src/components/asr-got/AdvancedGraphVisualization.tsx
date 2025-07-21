@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import cytoscapeWithExtensions from '@/utils/cytoscapeSetup';
+import Cytoscape from '@/utils/cytoscapeSetup';
 import CytoscapeComponent from 'react-cytoscapejs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

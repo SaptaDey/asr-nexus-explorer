@@ -22,7 +22,7 @@ interface StoredAnalysisItem {
   content_length: number;
 }
 
-export const StoredAnalysesManager: React.FC = () => {
+export const StoredAnalysesManager: React.FC<{ currentSessionId?: string | null; onLoadAnalysis?: (analysisId: string) => void }> = ({ currentSessionId, onLoadAnalysis }) => {
   const [analyses, setAnalyses] = useState<StoredAnalysisItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
