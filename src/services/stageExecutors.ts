@@ -14,6 +14,7 @@ export interface StageExecutorContext {
   setGraphData: (updater: (prev: GraphData) => GraphData) => void;
   setResearchContext: (updater: (prev: ResearchContext) => ResearchContext) => void;
   routeApiCall?: (prompt: string, additionalParams?: any) => Promise<any>;
+  currentSessionId?: string | null;
 }
 
 export const initializeGraph = async (
@@ -1619,8 +1620,10 @@ export const generateFinalAnalysis = async (context: StageExecutorContext): Prom
         }
       };
       
-      // Generate session ID if not exists
-      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Use current session ID from context, or generate new one if not available
+      const sessionId = context.currentSessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      console.log(`💾 Using session ID for storage: ${sessionId}${context.currentSessionId ? ' (from current session)' : ' (generated)'}`);
       
       // Store complete analysis
       const analysisId = await supabaseStorage.storeCompleteAnalysis(

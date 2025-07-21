@@ -53,19 +53,22 @@ export class Stage9MultiSubstageGenerator {
   private stageResults: string[];
   private figureMetadata: FigureMetadata[] = [];
   private progressCallback?: (substage: string, progress: number) => void;
+  private sessionId?: string;
 
   constructor(
     parameters: ASRGoTParameters,
     researchContext: ResearchContext,
     graphData: GraphData,
     stageResults: string[],
-    progressCallback?: (substage: string, progress: number) => void
+    progressCallback?: (substage: string, progress: number) => void,
+    sessionId?: string
   ) {
     this.parameters = parameters;
     this.researchContext = researchContext;
     this.graphData = graphData;
     this.stageResults = stageResults;
     this.progressCallback = progressCallback;
+    this.sessionId = sessionId;
   }
 
   /**
@@ -1050,8 +1053,10 @@ Generate academically rigorous references and appendices suitable for peer revie
         }
       };
 
-      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const sessionId = this.sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const title = sessionTitle || `${report.title} - Multi-Substage Analysis`;
+      
+      console.log(`💾 Using session ID for storage: ${sessionId}${this.sessionId ? ' (from session)' : ' (generated)'}`);
 
       await supabaseStorage.storeCompleteAnalysis(sessionId, title, analysisData);
       console.log('✅ Comprehensive thesis report stored successfully');

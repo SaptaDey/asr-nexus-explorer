@@ -28,6 +28,7 @@ interface UseStageExecutionProps {
   setFinalReport: (report: string) => void;
   advanceStage: () => void;
   currentStage: number;
+  currentSessionId: string | null;
 }
 
 export const useStageExecution = ({
@@ -42,7 +43,8 @@ export const useStageExecution = ({
   updateStageResults,
   setFinalReport,
   advanceStage,
-  currentStage
+  currentStage,
+  currentSessionId
 }: UseStageExecutionProps) => {
   
   // Create context for stage executors
@@ -52,8 +54,9 @@ export const useStageExecution = ({
     researchContext,
     stageResults,
     setGraphData,
-    setResearchContext
-  }), [apiKeys, graphData, researchContext, stageResults, setGraphData, setResearchContext]);
+    setResearchContext,
+    currentSessionId
+  }), [apiKeys, graphData, researchContext, stageResults, setGraphData, setResearchContext, currentSessionId]);
 
   // ASR-GoT 8-Stage Execution Engine
   const executeStage = useCallback(async (stageIndex: number, input?: any) => {

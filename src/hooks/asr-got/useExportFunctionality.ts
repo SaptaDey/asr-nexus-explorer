@@ -14,6 +14,7 @@ interface UseExportFunctionalityProps {
   researchContext: ResearchContext;
   finalReport: string;
   parameters: ASRGoTParameters;
+  currentSessionId?: string | null;
 }
 
 export const useExportFunctionality = ({
@@ -21,7 +22,8 @@ export const useExportFunctionality = ({
   graphData,
   researchContext,
   finalReport,
-  parameters
+  parameters,
+  currentSessionId
 }: UseExportFunctionalityProps) => {
   
   const exportResults = useCallback(async (format?: 'html' | 'json' | 'svg') => {
@@ -34,7 +36,7 @@ export const useExportFunctionality = ({
     try {
       switch (exportFormat) {
         case 'html':
-          await exportResultsAsHTML(stageResults, graphData, researchContext, finalReport, parameters);
+          await exportResultsAsHTML(stageResults, graphData, researchContext, finalReport, parameters, currentSessionId || undefined);
           toast.success('Comprehensive HTML report exported successfully');
           break;
         case 'svg':

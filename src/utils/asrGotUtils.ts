@@ -74,9 +74,10 @@ export const exportResultsAsHTML = async (
   graphData: GraphData,
   researchContext: ResearchContext,
   finalReport: string,
-  parameters: ASRGoTParameters
+  parameters: ASRGoTParameters,
+  sessionId?: string
 ) => {
-  await exportAsHTML(stageResults, graphData, researchContext, finalReport, parameters);
+  await exportAsHTML(stageResults, graphData, researchContext, finalReport, parameters, sessionId);
 };
 
 export const exportResultsAsJSON = (

@@ -35,6 +35,7 @@ interface UseCostAwareStageExecutionProps {
   setFinalReport: (report: string) => void;
   advanceStage: () => void;
   currentStage: number;
+  currentSessionId: string | null;
 }
 
 export const useCostAwareStageExecution = ({
@@ -49,7 +50,8 @@ export const useCostAwareStageExecution = ({
   updateStageResults,
   setFinalReport,
   advanceStage,
-  currentStage
+  currentStage,
+  currentSessionId
 }: UseCostAwareStageExecutionProps) => {
   
   // Map stage numbers to detailed stage names for cost orchestration (per Cost-Aware-Orchestration.md)
@@ -92,6 +94,7 @@ export const useCostAwareStageExecution = ({
       stageResults,
       setGraphData,
       setResearchContext,
+      currentSessionId,
       routeApiCall: async (prompt: string, additionalParams?: any) => {
         const stageName = stageMapping[currentStage as keyof typeof stageMapping];
         if (!stageName) {
@@ -223,6 +226,7 @@ export const useCostAwareStageExecution = ({
         stageResults,
         setGraphData,
         setResearchContext,
+        currentSessionId,
         routeApiCall: async (prompt: string, additionalParams?: any) => {
           // Check if this is a substage call (9A-9G)
           const substageId = additionalParams?.stageId;

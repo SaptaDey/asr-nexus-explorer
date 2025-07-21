@@ -50,7 +50,8 @@ export const exportAsHTML = async (
   graphData: GraphData,
   researchContext: ResearchContext,
   finalReport: string,
-  parameters: ASRGoTParameters
+  parameters: ASRGoTParameters,
+  sessionId?: string
 ): Promise<void> => {
   // Import the new multi-substage Stage 9 generator
   const { Stage9MultiSubstageGenerator } = await import('@/services/Stage9MultiSubstageGenerator');
@@ -75,7 +76,8 @@ export const exportAsHTML = async (
       researchContext,
       graphData,
       stageResults,
-      progressCallback
+      progressCallback,
+      sessionId
     );
     
     // **GENERATE COMPREHENSIVE 150+ PAGE THESIS using progressive substages**

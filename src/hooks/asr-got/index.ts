@@ -33,7 +33,8 @@ export const useASRGoT = () => {
     updateStageResults: stateHook.updateStageResults,
     setFinalReport: stateHook.setFinalReport,
     advanceStage: stateHook.advanceStage,
-    currentStage: stateHook.currentStage
+    currentStage: stateHook.currentStage,
+    currentSessionId: stateHook.currentSessionId
   });
 
   // Auto-execute next stage in auto mode
@@ -66,7 +67,8 @@ export const useASRGoT = () => {
     graphData: stateHook.graphData,
     researchContext: stateHook.researchContext,
     finalReport: stateHook.finalReport,
-    parameters: stateHook.parameters
+    parameters: stateHook.parameters,
+    currentSessionId: stateHook.currentSessionId
   });
 
   // Initialize Stage Engine when API keys are available
