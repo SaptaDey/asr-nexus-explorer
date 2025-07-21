@@ -188,9 +188,19 @@ export const callGeminiAPI = async (
     
     const candidate = data.candidates[0];
     
-    // Handle MAX_TOKENS finish reason specifically
+    // Handle MAX_TOKENS finish reason - attempt to extract partial content
     if (candidate.finishReason === 'MAX_TOKENS') {
-      throw new Error(`API response truncated due to MAX_TOKENS limit. Increase token limit. Candidate: ${JSON.stringify(candidate)}`);
+      console.warn('⚠️ API response truncated due to MAX_TOKENS limit, extracting partial content');
+      
+      // Try to extract partial content if available
+      if (candidate.content && candidate.content.parts && candidate.content.parts[0]?.text) {
+        const partialContent = candidate.content.parts[0].text;
+        console.log(`✅ Extracted ${partialContent.length} characters from truncated response`);
+        return partialContent + '\n\n[Note: Response was truncated due to token limit. Consider breaking down the request into smaller chunks.]';
+      }
+      
+      // If no content can be extracted, throw error with better message
+      throw new Error(`API response truncated due to MAX_TOKENS limit. Try reducing input size or breaking into smaller requests. Candidate: ${JSON.stringify(candidate)}`);
     }
     
     if (!candidate.content || !candidate.content.parts || !Array.isArray(candidate.content.parts) || candidate.content.parts.length === 0) {

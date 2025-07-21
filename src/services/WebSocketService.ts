@@ -76,8 +76,8 @@ class SupabaseRealtimeService {
           }
         } else if (status === 'CHANNEL_ERROR') {
           this.connectionStatus = 'disconnected';
-          console.error('❌ Supabase Realtime connection error');
-          toast.error('Real-time connection failed. Operating in offline mode.');
+          console.warn('⚠️ Supabase Realtime connection error (continuing in offline mode)');
+          // Don't show error toast for non-critical realtime features
         } else if (status === 'TIMED_OUT') {
           this.connectionStatus = 'disconnected';
           console.warn('⚠️ Supabase Realtime connection timed out');

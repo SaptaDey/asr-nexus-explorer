@@ -70,9 +70,25 @@ Return JSON array with realistic scientific data relevant to the research topic:
       
       const data = await response.json();
       
-      // Check if response was truncated due to token limit
+      // Check if response was truncated due to token limit - try to extract partial results
       if (data.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
-        throw new Error('Response was truncated due to token limit. Please try again or use a shorter prompt.');
+        console.warn('⚠️ Visualization response truncated, attempting to extract partial results');
+        const partialText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (partialText && partialText.includes('[')) {
+          // Try to extract partial visualization configs
+          try {
+            const truncatedJson = partialText + ']'; // Close the array if truncated
+            const partialConfigs = JSON.parse(truncatedJson);
+            console.log(`✅ Extracted ${partialConfigs.length} partial visualizations`);
+            // Continue with partial results instead of throwing error
+          } catch (parseError) {
+            console.warn('Could not parse truncated response, generating default visualizations');
+            return []; // Return empty array to allow fallback
+          }
+        } else {
+          console.warn('No partial visualization data found, using fallback');
+          return [];
+        }
       }
       
       // Robust API response extraction

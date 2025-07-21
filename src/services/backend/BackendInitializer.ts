@@ -63,7 +63,7 @@ export class BackendInitializer {
       this.isInitialized = true;
       console.log('✅ Backend initialization completed successfully');
       
-      if (this.healthStatus.errors.length === 0) {
+      if (this.healthStatus.errors && this.healthStatus.errors.length === 0) {
         toast.success('Backend connected successfully');
       } else {
         toast.warning(`Backend connected with ${this.healthStatus.errors.length} warnings`);

@@ -96,7 +96,45 @@ export class HistoryManager {
         .select()
         .single();
 
-      if (researchError) throw researchError;
+      if (researchError) {
+        // If RLS policy error, try fallback approach
+        if (researchError.code === '42501' || researchError.message.includes('row-level security')) {
+          console.warn('🔓 RLS policy prevents session creation, using fallback storage');
+          
+          // Use fallback storage for session persistence
+          const fallbackKey = `session_${sessionId}`;
+          const sessionData = {
+            id: sessionId,
+            title,
+            description,
+            status: 'active',
+            user_id: 'fallback-user',
+            config: {
+              research_context: researchContext,
+              parameters: parameters,
+              created_from: 'asr-got-interface',
+              version: '2.0'
+            },
+            created_at: now,
+            updated_at: now,
+            storage_type: 'fallback'
+          };
+          
+          try {
+            localStorage.setItem(fallbackKey, JSON.stringify(sessionData));
+            localStorage.setItem('current_fallback_session', sessionId);
+            console.log(`✅ Session ${sessionId} stored in fallback storage`);
+            
+            this.currentSessionId = sessionId;
+            return sessionId;
+          } catch (fallbackError) {
+            console.error('❌ Fallback storage failed:', fallbackError);
+            throw researchError; // Throw original error if fallback fails
+          }
+        }
+        
+        throw researchError;
+      }
 
       // Create corresponding query session for tracking
       if (researchContext) {

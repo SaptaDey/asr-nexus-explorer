@@ -1699,8 +1699,8 @@ async function executeSubstage9A(
 RESEARCH TOPIC: "${context.researchContext?.topic || 'Research Analysis'}"
 FIELD: ${context.researchContext?.field || 'Interdisciplinary Science'}
 
-COMPLETE RESEARCH DATA (${completeContent.length} characters):
-${completeContent.substring(0, 4000)}...
+RESEARCH DATA SUMMARY (${completeContent.length} characters):
+${completeContent.substring(0, 2000)}...
 
 GRAPH ANALYSIS:
 - Knowledge Nodes: ${nodes.length}
@@ -1802,7 +1802,7 @@ async function executeSubstage9C(
   const prompt = `You are a PhD-level researcher writing a detailed METHODOLOGY & FRAMEWORK section.
 
 RESEARCH TOPIC: "${context.researchContext?.topic || 'Research Analysis'}"
-PARAMETERS: ${JSON.stringify(context.parameters || {}).substring(0, 1000)}
+PARAMETERS: ${JSON.stringify(context.parameters || {}).substring(0, 500)}
 
 TASK: Write a comprehensive METHODOLOGY & FRAMEWORK section (1800-2200 words) that includes:
 
@@ -1857,8 +1857,8 @@ async function executeSubstage9D(
 RESEARCH TOPIC: "${context.researchContext?.topic || 'Research Analysis'}"
 AVAILABLE FIGURES: ${figures.length} visualizations
 
-COMPLETE ANALYSIS RESULTS:
-${completeContent.substring(0, 5000)}...
+ANALYSIS RESULTS SUMMARY:
+${completeContent.substring(0, 2500)}...
 
 TASK: Write comprehensive RESULTS & STATISTICAL ANALYSIS (2500-3000 words) that includes:
 
