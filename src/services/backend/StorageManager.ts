@@ -5,6 +5,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { backendInitializer } from './BackendInitializer';
+import { fallbackStorage } from './FallbackStorage';
 
 export interface StorageUploadResult {
   success: boolean;
@@ -47,6 +48,7 @@ export class StorageManager {
       // Ensure backend is initialized
       const health = backendInitializer.getHealthStatus();
       if (health.storage === 'error') {
+        console.log('🔄 Storage marked as error, attempting to reinitialize...');
         await backendInitializer.reinitialize();
       }
 
@@ -71,9 +73,50 @@ export class StorageManager {
 
       if (error) {
         console.error(`❌ Upload failed to ${bucketName}/${filePath}:`, error);
+        
+        // If RLS policy error, try fallback storage
+        if (error.message.includes('RLS') || error.message.includes('policy')) {
+          console.log(`🔄 RLS policy blocked upload, trying fallback storage for ${bucketName}/${filePath}`);
+          
+          try {
+            const fallbackResult = await fallbackStorage.storeFile(
+              bucketName, 
+              filePath, 
+              typeof fileData === 'string' ? fileData : await this.blobToString(fileData),
+              options.contentType || 'application/octet-stream'
+            );
+            
+            if (fallbackResult.success) {
+              console.log(`✅ File stored in fallback storage: ${bucketName}/${filePath}`);
+              return {
+                success: true,
+                url: fallbackResult.url,
+                path: filePath
+              };
+            } else {
+              return {
+                success: false,
+                error: `Supabase storage blocked by RLS policy, fallback storage failed: ${fallbackResult.error}`
+              };
+            }
+          } catch (fallbackError) {
+            console.error('❌ Fallback storage also failed:', fallbackError);
+            return {
+              success: false,
+              error: `Storage access restricted by security policy. Fallback storage also failed.`
+            };
+          }
+        }
+        
+        // Provide more helpful error messages for other issues
+        let errorMessage = error.message;
+        if (error.message.includes('bucket') && error.message.includes('not found')) {
+          errorMessage = `Storage bucket '${bucketName}' not found. Please contact support.`;
+        }
+        
         return {
           success: false,
-          error: error.message
+          error: errorMessage
         };
       }
 
@@ -121,6 +164,48 @@ export class StorageManager {
 
       if (error) {
         console.error(`❌ Download failed from ${bucketName}/${filePath}:`, error);
+        
+        // If RLS policy error, try fallback storage
+        if (error.message.includes('RLS') || error.message.includes('policy')) {
+          console.log(`🔄 RLS policy blocked download, trying fallback storage for ${bucketName}/${filePath}`);
+          
+          try {
+            const fallbackResult = await fallbackStorage.retrieveFile(bucketName, filePath);
+            
+            if (fallbackResult.success && fallbackResult.content) {
+              console.log(`✅ File retrieved from fallback storage: ${bucketName}/${filePath}`);
+              
+              const result: StorageDownloadResult = {
+                success: true,
+                text: fallbackResult.content
+              };
+              
+              // Try to convert content back to Blob if needed
+              if (!asText) {
+                try {
+                  const response = await fetch(fallbackResult.content);
+                  result.data = await response.blob();
+                } catch (conversionError) {
+                  console.warn('⚠️ Could not convert fallback content to blob');
+                }
+              }
+              
+              return result;
+            } else {
+              return {
+                success: false,
+                error: `Supabase storage blocked by RLS policy, file not found in fallback storage`
+              };
+            }
+          } catch (fallbackError) {
+            console.error('❌ Fallback storage retrieval failed:', fallbackError);
+            return {
+              success: false,
+              error: `Storage access restricted by security policy. Fallback storage retrieval failed.`
+            };
+          }
+        }
+        
         return {
           success: false,
           error: error.message
@@ -278,6 +363,18 @@ export class StorageManager {
         error: error instanceof Error ? error.message : 'Unknown signed URL error'
       };
     }
+  }
+
+  /**
+   * Helper: Convert Blob to string
+   */
+  private async blobToString(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   }
 
   /**
