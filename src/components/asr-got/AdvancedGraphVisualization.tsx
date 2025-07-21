@@ -23,6 +23,7 @@ import dagre from 'cytoscape-dagre';
 let isRegistered = false;
 try {
   if (!isRegistered) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     Cytoscape.use(dagre);
     isRegistered = true;
     console.log('✅ Cytoscape dagre extension registered successfully');

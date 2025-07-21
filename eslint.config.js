@@ -34,6 +34,7 @@ export default tseslint.config(
       "no-async-promise-executor": "off",
       "react-hooks/exhaustive-deps": "warn",
       "@typescript-eslint/no-empty-object-type": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
     },
   }
 );
