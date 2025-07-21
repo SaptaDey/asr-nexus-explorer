@@ -7,7 +7,6 @@ let initialized = false;
 const setupCytoscapeExtensions = () => {
   if (!initialized) {
     try {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
       Cytoscape.use(dagre);
       initialized = true;
       console.log('✅ Cytoscape dagre extension registered successfully');

@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import Cytoscape from '@/utils/cytoscapeSetup';
+import cytoscapeWithExtensions from '@/utils/cytoscapeSetup';
 import CytoscapeComponent from 'react-cytoscapejs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -85,7 +85,7 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
   });
   const [showConfidenceBars, setShowConfidenceBars] = useState(true);
   const [showImpactScores, setShowImpactScores] = useState(true);
-  const [cytoscapeRef, setCytoscapeRef] = useState<Cytoscape.Core | null>(null);
+  const [cytoscapeRef, setCytoscapeRef] = useState<any | null>(null);
 
   // Convert graph data to Cytoscape format
   const cytoscapeElements = useMemo(() => {
