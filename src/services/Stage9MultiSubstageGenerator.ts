@@ -1549,7 +1549,7 @@ Generate academically rigorous references and appendices that meet the highest s
             </div>
             
             <div class="figure-content">
-                <img src=".png/${figure.filename}" alt="Figure ${figure.figureNumber}: ${figure.title}" class="figure-image" />
+                <img src="./png_results/${figure.filename}" alt="Figure ${figure.figureNumber}: ${figure.title}" class="figure-image" />
             </div>
             
             <div class="figure-legend">
