@@ -17,45 +17,63 @@ export const MermaidChart: React.FC<MermaidChartProps> = ({ chart, className = '
       theme: 'base',
       themeVariables: {
         primaryColor: '#f1f5f9',
-        primaryTextColor: '#334155',
+        primaryTextColor: '#1e293b',
         primaryBorderColor: '#cbd5e1',
         lineColor: '#64748b',
         sectionBkColor: '#ffffff',
         altSectionBkColor: '#f8fafc',
         gridColor: '#e2e8f0',
-        tertiaryColor: '#f1f5f9'
+        tertiaryColor: '#f1f5f9',
+        // Enhanced font settings
+        fontFamily: '"Inter", "Arial", sans-serif',
+        fontSize: '18px',
+        fontWeight: '700'
       },
       flowchart: {
         htmlLabels: true,
         curve: 'basis',
-        padding: 20
+        padding: 40,
+        nodeSpacing: 100,
+        rankSpacing: 80,
+        fontSize: '18px',
+        fontWeight: '700'
       },
       sequence: {
-        diagramMarginX: 50,
-        diagramMarginY: 10,
-        actorMargin: 50,
-        width: 150,
-        height: 65,
-        boxMargin: 10,
-        boxTextMargin: 5,
-        noteMargin: 10,
-        messageMargin: 35
+        diagramMarginX: 80,
+        diagramMarginY: 20,
+        actorMargin: 80,
+        width: 250,
+        height: 100,
+        boxMargin: 20,
+        boxTextMargin: 10,
+        noteMargin: 20,
+        messageMargin: 50,
+        fontSize: '18px',
+        fontWeight: '700'
       },
       mindmap: {
-        padding: 10,
-        maxNodeWidth: 200
+        padding: 30,
+        maxNodeWidth: 400,
+        fontSize: '20px',
+        fontWeight: '800'
       },
       journey: {
-        diagramMarginX: 50,
-        diagramMarginY: 10,
-        leftMargin: 150,
-        width: 150,
-        height: 50,
-        boxMargin: 10,
-        boxTextMargin: 5,
-        noteMargin: 10,
-        messageMargin: 35,
-        bottomMarginAdj: 1
+        diagramMarginX: 80,
+        diagramMarginY: 20,
+        leftMargin: 250,
+        width: 250,
+        height: 80,
+        boxMargin: 20,
+        boxTextMargin: 10,
+        noteMargin: 20,
+        messageMargin: 50,
+        bottomMarginAdj: 2,
+        fontSize: '18px',
+        fontWeight: '700'
+      },
+      graph: {
+        fontSize: '18px',
+        fontWeight: '700'
       }
     });
 
@@ -77,7 +95,10 @@ export const MermaidChart: React.FC<MermaidChartProps> = ({ chart, className = '
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: '200px'
+        minHeight: '500px',
+        width: '100%',
+        fontSize: '18px',
+        fontWeight: '700'
       }}
     />
   );
