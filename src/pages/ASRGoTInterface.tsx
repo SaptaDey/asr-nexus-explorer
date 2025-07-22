@@ -1109,16 +1109,16 @@ Make the data realistic and scientifically meaningful for the research domain.
       {/* Main Interface */}
       <div className={`container mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-3 transition-all duration-300 ${showBiasAudit ? 'sm:mr-96' : ''}`}>
         
-        {/* Compact Header with Authentication */}
-        <div className="mb-3">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-2">
+        {/* Ultra Compact Header with Authentication */}
+        <div className="mb-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-1">
             {/* Logo and Title */}
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-md">
-                <Brain className="h-5 w-5 text-white" />
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-md">
+                <Brain className="h-4 w-4 text-white" />
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                   Scientific Reasoning
                 </h1>
               </div>
@@ -1175,7 +1175,7 @@ Make the data realistic and scientifically meaningful for the research domain.
           </div>
 
           {/* API Setup Alert */}
-          {!(apiKeys.gemini && apiKeys.perplexity) && !hasBackendApiKeys && <Alert className="mb-4 rounded-sm">
+          {!(apiKeys.gemini && apiKeys.perplexity) && !hasBackendApiKeys && <Alert className="mb-2 rounded-sm">
               <Key className="h-4 w-4" />
               <AlertDescription>
                 To start research, configure API keys. 
@@ -1201,7 +1201,7 @@ Make the data realistic and scientifically meaningful for the research domain.
             </Alert>}
 
           {/* Usage Stats for Authenticated Users */}
-          {user && usageStats && <div className="bg-white/50 backdrop-blur-sm rounded-lg p-3 mb-4 border border-gray-200">
+          {user && usageStats && <div className="bg-white/50 backdrop-blur-sm rounded-lg p-2 mb-2 border border-gray-200">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">API Usage:</span>
                 <div className="flex items-center space-x-2">
@@ -1213,7 +1213,7 @@ Make the data realistic and scientifically meaningful for the research domain.
                   </Badge>
                 </div>
               </div>
-              <Progress value={usageStats.usagePercentage} className="mt-2 h-2" />
+              <Progress value={usageStats.usagePercentage} className="mt-1 h-2" />
             </div>}
         </div>
         
@@ -1223,14 +1223,14 @@ Make the data realistic and scientifically meaningful for the research domain.
         </div>
         
         {/* Responsive Hero Section */}
-        <div className="text-center mb-8">
-          <div className="relative mb-4 sm:mb-8 overflow-hidden rounded-xl sm:rounded-3xl">
+        <div className="text-center mb-4">
+          <div className="relative mb-2 sm:mb-4 overflow-hidden rounded-xl sm:rounded-3xl">
             {/* Responsive Hero Container with proper aspect ratios */}
             <div className="relative w-full">
               {/* Responsive Hero Image - Optimized for all screen sizes */}
-              <div className="aspect-video min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] bg-gradient-to-br from-blue-50 via-teal-50 to-green-50">
+              <div className="aspect-video min-h-[150px] sm:min-h-[200px] lg:min-h-[250px] bg-gradient-to-br from-blue-50 via-teal-50 to-green-50">
                 <div className="absolute inset-0 w-full h-full" style={{
-                  backgroundImage: 'url("/img/logo.png")',
+                  backgroundImage: 'url("/img/Backgroutd_theme.png")',
                   backgroundSize: 'contain',
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat',
@@ -1275,13 +1275,13 @@ Make the data realistic and scientifically meaningful for the research domain.
             <div className="absolute inset-0 z-10 flex items-center justify-center">
               <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Main Title */}
-                <div className="mb-10">
-                  <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6 text-slate-900" style={{
+                <div className="mb-6">
+                  <h1 className="text-3xl lg:text-5xl font-bold leading-tight mb-4 text-slate-900" style={{
                     textShadow: '2px 2px 4px rgba(255,255,255,0.8)'
                   }}>
                     Scientific Reasoning
                   </h1>
-                  <p className="text-2xl lg:text-4xl mb-8 font-semibold text-slate-700" style={{
+                  <p className="text-xl lg:text-2xl mb-4 font-semibold text-slate-700" style={{
                     textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
                   }}>
                     Graph of Thoughts Framework
@@ -1289,7 +1289,7 @@ Make the data realistic and scientifically meaningful for the research domain.
                 </div>
                 
                 {/* Interactive Feature Tags */}
-                <div className="flex flex-wrap justify-center gap-4 mb-10">
+                <div className="flex flex-wrap justify-center gap-3 mb-6">
                   <Link to="/ai-powered">
                     <span className="px-5 py-2 bg-blue-100 text-blue-700 rounded-full text-base font-medium shadow-sm border border-blue-200 hover:bg-blue-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105">🤖 AI-Powered</span>
                   </Link>
@@ -1327,15 +1327,15 @@ Make the data realistic and scientifically meaningful for the research domain.
           </div>
           
           {/* Hero Base Description */}
-          <div className="text-center mb-8">
-            <p className="text-lg sm:text-xl text-slate-500 font-light leading-relaxed max-w-4xl mx-auto px-4">
+          <div className="text-center mb-4">
+            <p className="text-base sm:text-lg text-slate-500 font-light leading-relaxed max-w-4xl mx-auto px-4">
               🚀 Next-Generation AI Reasoning Framework leveraging graph structures to transform scientific research methodologies
             </p>
           </div>
           
           {/* Clean Status Indicators */}
-          <div className="flex items-center justify-center gap-6 mb-8">
-            <div className="bg-white/90 backdrop-blur-sm rounded-xl px-6 py-3 shadow-lg border border-gray-200">
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2 shadow-lg border border-gray-200">
               <div className="flex items-center gap-4">
                 <Badge className="bg-blue-500 text-white text-sm px-3 py-1 rounded-full font-medium">
                   Stage {currentStage + 1}/9
@@ -1349,7 +1349,7 @@ Make the data realistic and scientifically meaningful for the research domain.
           </div>
           
           {/* Clean Interactive Controls */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-4">
             {/* Mode Toggle */}
             <div className="w-full sm:w-auto bg-white/90 backdrop-blur-sm rounded-lg px-4 sm:px-6 py-3 shadow-lg border border-gray-200">
               <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
