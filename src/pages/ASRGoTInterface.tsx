@@ -1100,7 +1100,16 @@ Make the data realistic and scientifically meaningful for the research domain.
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
             {/* Logo and Title */}
-            
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg">
+                <Brain className="h-7 w-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  Scientific Reasoning
+                </h1>
+              </div>
+            </div>
 
             {/* Authentication and Status */}
             <div className="flex items-center space-x-3">
@@ -1279,13 +1288,7 @@ Make the data realistic and scientifically meaningful for the research domain.
                   </Link>
                 </div>
                 
-                {/* Description */}
-                <div className="max-w-5xl mx-auto mb-10">
-                  <p className="text-lg lg:text-xl mb-8 leading-relaxed font-medium text-slate-800" style={{
-                    textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
-                  }}>
-                    🚀 Next-Generation AI Reasoning Framework leveraging graph structures to transform scientific research methodologies
-                  </p>
+                {/* Description - Removed from here, will be moved to hero base */}
                   
                   {/* Elegant Call-to-Action Buttons */}
                   <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -1308,6 +1311,13 @@ Make the data realistic and scientifically meaningful for the research domain.
                 </div>
               </div>
             </div>
+          </div>
+          
+          {/* Hero Base Description */}
+          <div className="text-center mb-8">
+            <p className="text-lg sm:text-xl text-slate-500 font-light leading-relaxed max-w-4xl mx-auto px-4">
+              🚀 Next-Generation AI Reasoning Framework leveraging graph structures to transform scientific research methodologies
+            </p>
           </div>
           
           {/* Clean Status Indicators */}
@@ -1405,8 +1415,36 @@ Make the data realistic and scientifically meaningful for the research domain.
           </div>
         </div>
 
-        {/* Interactive Workflow Diagram */}
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 py-16 px-4 sm:px-6 lg:px-8 mb-8 rounded-3xl shadow-xl">
+        {/* Research Query Section - Moved Above Pipeline */}
+        <div className="bg-white/80 backdrop-blur-sm py-12 px-4 sm:px-6 lg:px-8 mb-8 rounded-3xl shadow-lg border border-gray-200">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-slate-800">
+              🔍 Start Your Scientific Research
+            </h2>
+            <p className="text-lg text-slate-600 mb-8">
+              Enter your research question to begin the 9-stage AI-powered scientific analysis
+            </p>
+            
+            {/* Research Interface Component */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-gray-100">
+              <ResearchInterface 
+                currentStage={currentStage} 
+                graphData={graphData} 
+                onExecuteStage={executeStage} 
+                isProcessing={isProcessing} 
+                stageResults={stageResults} 
+                researchContext={researchContext} 
+                apiKeys={apiKeys} 
+                processingMode={mode} 
+                onShowApiModal={() => setShowAPICredentialsModal(true)} 
+                onSwitchToExport={() => setActiveTab('export')} 
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced Pipeline Visualization */}
+        <div className="bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 py-16 px-4 sm:px-6 lg:px-8 mb-8 rounded-3xl shadow-xl border border-orange-100">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-slate-800">
@@ -1419,87 +1457,97 @@ Make the data realistic and scientifically meaningful for the research domain.
 
             {/* Visual Workflow */}
             <div className="relative">
-              {/* Desktop Flow */}
+              {/* Desktop Flow - Enhanced with Color-blind Friendly Pastels */}
               <div className="hidden lg:block">
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center justify-between mb-12">
                   {/* Stage 1-3 */}
-                  <div className="flex-1">
-                    <div className="bg-blue-600 text-white rounded-2xl p-6 shadow-lg border-4 border-blue-200 relative">
-                      <div className="text-2xl font-bold mb-2">🎯 Stages 1-3</div>
-                      <div className="text-lg font-semibold">Initialization & Analysis</div>
-                      <div className="text-sm mt-2 opacity-90">Setup → Decomposition → Hypothesis</div>
-                      <div className="absolute -right-4 top-1/2 transform -translate-y-1/2 text-blue-600 text-4xl">→</div>
+                  <div className="flex-1 relative">
+                    <div className="bg-gradient-to-br from-sky-200 to-blue-300 text-slate-800 rounded-3xl p-8 shadow-2xl border-2 border-sky-100 relative transform hover:scale-105 transition-all duration-300">
+                      <div className="text-4xl mb-4">🎯</div>
+                      <div className="text-2xl font-bold mb-3 text-slate-900">Stages 1-3</div>
+                      <div className="text-xl font-semibold mb-2 text-slate-700">Initialization & Analysis</div>
+                      <div className="text-base text-slate-600 leading-relaxed">Setup → Decomposition → Hypothesis</div>
+                      <div className="absolute -right-6 top-1/2 transform -translate-y-1/2 text-sky-400 text-5xl font-bold animate-pulse">→</div>
                     </div>
                   </div>
                   
                   {/* Stage 4-6 */}
-                  <div className="flex-1 mx-8">
-                    <div className="bg-green-600 text-white rounded-2xl p-6 shadow-lg border-4 border-green-200 relative">
-                      <div className="text-2xl font-bold mb-2">🔍 Stages 4-6</div>
-                      <div className="text-lg font-semibold">Evidence & Processing</div>
-                      <div className="text-sm mt-2 opacity-90">Integration → Pruning → Extraction</div>
-                      <div className="absolute -right-4 top-1/2 transform -translate-y-1/2 text-green-600 text-4xl">→</div>
+                  <div className="flex-1 mx-12 relative">
+                    <div className="bg-gradient-to-br from-emerald-200 to-green-300 text-slate-800 rounded-3xl p-8 shadow-2xl border-2 border-emerald-100 relative transform hover:scale-105 transition-all duration-300">
+                      <div className="text-4xl mb-4">🔍</div>
+                      <div className="text-2xl font-bold mb-3 text-slate-900">Stages 4-6</div>
+                      <div className="text-xl font-semibold mb-2 text-slate-700">Evidence & Processing</div>
+                      <div className="text-base text-slate-600 leading-relaxed">Integration → Pruning → Extraction</div>
+                      <div className="absolute -right-6 top-1/2 transform -translate-y-1/2 text-emerald-400 text-5xl font-bold animate-pulse">→</div>
                     </div>
                   </div>
                   
                   {/* Stage 7-9 */}
                   <div className="flex-1">
-                    <div className="bg-purple-600 text-white rounded-2xl p-6 shadow-lg border-4 border-purple-200">
-                      <div className="text-2xl font-bold mb-2">📋 Stages 7-9</div>
-                      <div className="text-lg font-semibold">Synthesis & Output</div>
-                      <div className="text-sm mt-2 opacity-90">Composition → Reflection → Analysis</div>
+                    <div className="bg-gradient-to-br from-violet-200 to-purple-300 text-slate-800 rounded-3xl p-8 shadow-2xl border-2 border-violet-100 transform hover:scale-105 transition-all duration-300">
+                      <div className="text-4xl mb-4">📋</div>
+                      <div className="text-2xl font-bold mb-3 text-slate-900">Stages 7-9</div>
+                      <div className="text-xl font-semibold mb-2 text-slate-700">Synthesis & Output</div>
+                      <div className="text-base text-slate-600 leading-relaxed">Composition → Reflection → Analysis</div>
                     </div>
                   </div>
                 </div>
                 
-                {/* AI Orchestration Layer */}
-                <div className="bg-slate-800 text-white rounded-2xl p-8 shadow-xl">
+                {/* AI Orchestration Layer - Enhanced */}
+                <div className="bg-gradient-to-r from-slate-100 to-gray-100 text-slate-800 rounded-3xl p-10 shadow-2xl border-2 border-slate-200">
                   <div className="text-center">
-                    <h3 className="text-2xl font-bold mb-4">🤖 Multi-AI Orchestration Layer</h3>
-                    <div className="grid grid-cols-2 gap-8">
-                      <div className="bg-blue-700/30 rounded-xl p-4">
-                        <div className="text-xl font-bold text-blue-200 mb-2">Perplexity Sonar</div>
-                        <div className="text-blue-100">Real-time web research & evidence collection</div>
+                    <h3 className="text-3xl font-bold mb-8 text-slate-900">🤖 Multi-AI Orchestration Layer</h3>
+                    <div className="grid grid-cols-2 gap-10">
+                      <div className="bg-gradient-to-br from-cyan-100 to-sky-200 rounded-2xl p-6 shadow-lg border border-cyan-200 hover:shadow-xl transition-all duration-300">
+                        <div className="text-2xl mb-3">🌐</div>
+                        <div className="text-2xl font-bold text-slate-900 mb-3">Perplexity Sonar</div>
+                        <div className="text-lg text-slate-700 leading-relaxed">Real-time web research & evidence collection</div>
                       </div>
-                      <div className="bg-green-700/30 rounded-xl p-4">
-                        <div className="text-xl font-bold text-green-200 mb-2">Gemini 2.5 Pro</div>
-                        <div className="text-green-100">Advanced reasoning & synthesis</div>
+                      <div className="bg-gradient-to-br from-teal-100 to-emerald-200 rounded-2xl p-6 shadow-lg border border-teal-200 hover:shadow-xl transition-all duration-300">
+                        <div className="text-2xl mb-3">🧠</div>
+                        <div className="text-2xl font-bold text-slate-900 mb-3">Gemini 2.5 Pro</div>
+                        <div className="text-lg text-slate-700 leading-relaxed">Advanced reasoning & synthesis</div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Mobile Flow */}
-              <div className="lg:hidden space-y-6">
-                <div className="bg-blue-600 text-white rounded-2xl p-6 shadow-lg">
-                  <div className="text-2xl font-bold mb-2">🎯 Stages 1-3</div>
-                  <div className="text-lg font-semibold">Initialization & Analysis</div>
-                  <div className="text-sm mt-2">Setup → Decomposition → Hypothesis</div>
+              {/* Mobile Flow - Enhanced with Color-blind Friendly Pastels */}
+              <div className="lg:hidden space-y-8">
+                <div className="bg-gradient-to-br from-sky-200 to-blue-300 text-slate-800 rounded-3xl p-6 shadow-xl border-2 border-sky-100">
+                  <div className="text-3xl mb-3">🎯</div>
+                  <div className="text-2xl font-bold mb-2 text-slate-900">Stages 1-3</div>
+                  <div className="text-lg font-semibold text-slate-700 mb-2">Initialization & Analysis</div>
+                  <div className="text-base text-slate-600">Setup → Decomposition → Hypothesis</div>
                 </div>
-                <div className="text-center text-blue-600 text-3xl">↓</div>
-                <div className="bg-green-600 text-white rounded-2xl p-6 shadow-lg">
-                  <div className="text-2xl font-bold mb-2">🔍 Stages 4-6</div>
-                  <div className="text-lg font-semibold">Evidence & Processing</div>
-                  <div className="text-sm mt-2">Integration → Pruning → Extraction</div>
+                <div className="text-center text-sky-400 text-4xl font-bold animate-bounce">↓</div>
+                <div className="bg-gradient-to-br from-emerald-200 to-green-300 text-slate-800 rounded-3xl p-6 shadow-xl border-2 border-emerald-100">
+                  <div className="text-3xl mb-3">🔍</div>
+                  <div className="text-2xl font-bold mb-2 text-slate-900">Stages 4-6</div>
+                  <div className="text-lg font-semibold text-slate-700 mb-2">Evidence & Processing</div>
+                  <div className="text-base text-slate-600">Integration → Pruning → Extraction</div>
                 </div>
-                <div className="text-center text-green-600 text-3xl">↓</div>
-                <div className="bg-purple-600 text-white rounded-2xl p-6 shadow-lg">
-                  <div className="text-2xl font-bold mb-2">📋 Stages 7-9</div>
-                  <div className="text-lg font-semibold">Synthesis & Output</div>
-                  <div className="text-sm mt-2">Composition → Reflection → Analysis</div>
+                <div className="text-center text-emerald-400 text-4xl font-bold animate-bounce">↓</div>
+                <div className="bg-gradient-to-br from-violet-200 to-purple-300 text-slate-800 rounded-3xl p-6 shadow-xl border-2 border-violet-100">
+                  <div className="text-3xl mb-3">📋</div>
+                  <div className="text-2xl font-bold mb-2 text-slate-900">Stages 7-9</div>
+                  <div className="text-lg font-semibold text-slate-700 mb-2">Synthesis & Output</div>
+                  <div className="text-base text-slate-600">Composition → Reflection → Analysis</div>
                 </div>
-                <div className="text-center text-purple-600 text-3xl">↓</div>
-                <div className="bg-slate-800 text-white rounded-2xl p-6 shadow-xl">
-                  <h3 className="text-xl font-bold mb-4 text-center">🤖 Multi-AI Orchestration</h3>
+                <div className="text-center text-violet-400 text-4xl font-bold animate-bounce">↓</div>
+                <div className="bg-gradient-to-r from-slate-100 to-gray-100 text-slate-800 rounded-3xl p-8 shadow-xl border-2 border-slate-200">
+                  <h3 className="text-2xl font-bold mb-6 text-center text-slate-900">🤖 Multi-AI Orchestration</h3>
                   <div className="space-y-4">
-                    <div className="bg-blue-700/30 rounded-xl p-4">
-                      <div className="font-bold text-blue-200 mb-1">Perplexity Sonar</div>
-                      <div className="text-sm text-blue-100">Real-time research</div>
+                    <div className="bg-gradient-to-br from-cyan-100 to-sky-200 rounded-2xl p-4 border border-cyan-200">
+                      <div className="text-xl mb-2">🌐</div>
+                      <div className="font-bold text-slate-900 mb-2">Perplexity Sonar</div>
+                      <div className="text-sm text-slate-700">Real-time research</div>
                     </div>
-                    <div className="bg-green-700/30 rounded-xl p-4">
-                      <div className="font-bold text-green-200 mb-1">Gemini 2.5 Pro</div>
-                      <div className="text-sm text-green-100">Advanced reasoning</div>
+                    <div className="bg-gradient-to-br from-teal-100 to-emerald-200 rounded-2xl p-4 border border-teal-200">
+                      <div className="text-xl mb-2">🧠</div>
+                      <div className="font-bold text-slate-900 mb-2">Gemini 2.5 Pro</div>
+                      <div className="text-sm text-slate-700">Advanced reasoning</div>
                     </div>
                   </div>
                 </div>
@@ -1509,13 +1557,13 @@ Make the data realistic and scientifically meaningful for the research domain.
         </div>
 
         {/* Revolutionary Features Showcase */}
-        <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white py-16 px-4 sm:px-6 lg:px-8 mb-8 rounded-3xl shadow-2xl">
+        <div className="bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 text-slate-800 py-16 px-4 sm:px-6 lg:px-8 mb-8 rounded-3xl shadow-xl border border-indigo-200">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-4xl sm:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-200 to-green-200 bg-clip-text text-transparent">
+              <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-slate-900">
                 🧠 Revolutionary Scientific AI Platform
               </h2>
-              <p className="text-xl sm:text-2xl text-blue-100 max-w-4xl mx-auto leading-relaxed">
+              <p className="text-xl sm:text-2xl text-slate-700 max-w-4xl mx-auto leading-relaxed">
                 ✨ Completely redesigned with cutting-edge features developed over the past two weeks
               </p>
             </div>
@@ -1524,10 +1572,10 @@ Make the data realistic and scientifically meaningful for the research domain.
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
               
               {/* 9-Stage Pipeline */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-slate-200">
                 <div className="text-4xl mb-4">🚀</div>
-                <h3 className="text-2xl font-bold mb-4 text-white">9-Stage Mandatory Pipeline</h3>
-                <p className="text-blue-100 text-lg leading-relaxed">
+                <h3 className="text-2xl font-bold mb-4 text-slate-900">9-Stage Mandatory Pipeline</h3>
+                <p className="text-slate-700 text-lg leading-relaxed">
                   Structured scientific reasoning through <strong>Initialization → Decomposition → Hypothesis → Evidence → Pruning → Extraction → Composition → Reflection → Final Analysis</strong>
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -1537,10 +1585,10 @@ Make the data realistic and scientifically meaningful for the research domain.
               </div>
 
               {/* Multi-AI System */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-slate-200">
                 <div className="text-4xl mb-4">🤖</div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Multi-AI Orchestration</h3>
-                <p className="text-blue-100 text-lg leading-relaxed">
+                <h3 className="text-2xl font-bold mb-4 text-slate-900">Multi-AI Orchestration</h3>
+                <p className="text-slate-700 text-lg leading-relaxed">
                   <strong>Perplexity Sonar</strong> for real-time research + <strong>Gemini 2.5 Pro</strong> for advanced reasoning with intelligent fallback systems
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -1550,10 +1598,10 @@ Make the data realistic and scientifically meaningful for the research domain.
               </div>
 
               {/* Graph Visualization */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-slate-200">
                 <div className="text-4xl mb-4">🌳</div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Advanced Graph Systems</h3>
-                <p className="text-blue-100 text-lg leading-relaxed">
+                <h3 className="text-2xl font-bold mb-4 text-slate-900">Advanced Graph Systems</h3>
+                <p className="text-slate-700 text-lg leading-relaxed">
                   <strong>3D Botanical Trees</strong>, <strong>Cytoscape Networks</strong>, and <strong>Interactive Analytics</strong> with hyperedges and causal inference
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -1563,10 +1611,10 @@ Make the data realistic and scientifically meaningful for the research domain.
               </div>
 
               {/* Authentication & Backend */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-slate-200">
                 <div className="text-4xl mb-4">🔐</div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Enterprise Authentication</h3>
-                <p className="text-blue-100 text-lg leading-relaxed">
+                <h3 className="text-2xl font-bold mb-4 text-slate-900">Enterprise Authentication</h3>
+                <p className="text-slate-700 text-lg leading-relaxed">
                   <strong>Supabase Integration</strong> with secure user management, session persistence, and cloud synchronization
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -1576,10 +1624,10 @@ Make the data realistic and scientifically meaningful for the research domain.
               </div>
 
               {/* Advanced Parameters */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-slate-200">
                 <div className="text-4xl mb-4">⚙️</div>
-                <h3 className="text-2xl font-bold mb-4 text-white">29 Parameter System</h3>
-                <p className="text-blue-100 text-lg leading-relaxed">
+                <h3 className="text-2xl font-bold mb-4 text-slate-900">29 Parameter System</h3>
+                <p className="text-slate-700 text-lg leading-relaxed">
                   Complete control system (<strong>P1.0-P1.29</strong>) covering framework execution, graph operations, and advanced analytics
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -1589,10 +1637,10 @@ Make the data realistic and scientifically meaningful for the research domain.
               </div>
 
               {/* Export & Analytics */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-slate-200">
                 <div className="text-4xl mb-4">📊</div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Multi-Format Export</h3>
-                <p className="text-blue-100 text-lg leading-relaxed">
+                <h3 className="text-2xl font-bold mb-4 text-slate-900">Multi-Format Export</h3>
+                <p className="text-slate-700 text-lg leading-relaxed">
                   <strong>HTML, SVG, PNG</strong> exports with embedded visualizations, Vancouver citations, and comprehensive analytics
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -1604,160 +1652,16 @@ Make the data realistic and scientifically meaningful for the research domain.
 
             {/* Technology Stack */}
             <div className="text-center">
-              <h3 className="text-3xl font-bold mb-8 text-white">🛠️ Cutting-Edge Technology Stack</h3>
+              <h3 className="text-3xl font-bold mb-8 text-slate-900">🛠️ Cutting-Edge Technology Stack</h3>
               <div className="flex flex-wrap justify-center gap-4 mb-8">
-                <span className="bg-blue-600/30 text-blue-200 px-6 py-3 rounded-xl text-lg font-semibold border border-blue-400/30">React 18</span>
-                <span className="bg-indigo-600/30 text-indigo-200 px-6 py-3 rounded-xl text-lg font-semibold border border-indigo-400/30">TypeScript</span>
-                <span className="bg-teal-600/30 text-teal-200 px-6 py-3 rounded-xl text-lg font-semibold border border-teal-400/30">Supabase</span>
-                <span className="bg-purple-600/30 text-purple-200 px-6 py-3 rounded-xl text-lg font-semibold border border-purple-400/30">Cytoscape.js</span>
-                <span className="bg-green-600/30 text-green-200 px-6 py-3 rounded-xl text-lg font-semibold border border-green-400/30">D3.js</span>
-                <span className="bg-orange-600/30 text-orange-200 px-6 py-3 rounded-xl text-lg font-semibold border border-orange-400/30">Tailwind CSS</span>
+                <span className="bg-blue-200 text-blue-900 px-6 py-3 rounded-xl text-lg font-semibold border border-blue-400/30">React 18</span>
+                <span className="bg-indigo-200 text-indigo-900 px-6 py-3 rounded-xl text-lg font-semibold border border-indigo-400/30">TypeScript</span>
+                <span className="bg-teal-200 text-teal-900 px-6 py-3 rounded-xl text-lg font-semibold border border-teal-400/30">Supabase</span>
+                <span className="bg-purple-200 text-purple-900 px-6 py-3 rounded-xl text-lg font-semibold border border-purple-400/30">Cytoscape.js</span>
+                <span className="bg-green-200 text-green-900 px-6 py-3 rounded-xl text-lg font-semibold border border-green-400/30">D3.js</span>
+                <span className="bg-orange-200 text-orange-900 px-6 py-3 rounded-xl text-lg font-semibold border border-orange-400/30">Tailwind CSS</span>
               </div>
               
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
-                <h4 className="text-2xl font-bold mb-4 text-yellow-200">⚡ Performance Highlights</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                  <div>
-                    <div className="text-4xl font-bold text-green-300 mb-2">3000+</div>
-                    <div className="text-blue-200 text-lg">Token Limit per API Call</div>
-                  </div>
-                  <div>
-                    <div className="text-4xl font-bold text-green-300 mb-2">12+</div>
-                    <div className="text-blue-200 text-lg">Interactive Tabs & Features</div>
-                  </div>
-                  <div>
-                    <div className="text-4xl font-bold text-green-300 mb-2">100%</div>
-                    <div className="text-blue-200 text-lg">Responsive Design</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Revolutionary Features Showcase */}
-        <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white py-16 px-4 sm:px-6 lg:px-8 mb-8 rounded-3xl shadow-2xl">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl sm:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-200 to-green-200 bg-clip-text text-transparent">
-                🧠 Revolutionary Scientific AI Platform
-              </h2>
-              <p className="text-xl sm:text-2xl text-blue-100 max-w-4xl mx-auto leading-relaxed">
-                ✨ Completely redesigned with cutting-edge features developed over the past two weeks
-              </p>
-            </div>
-
-            {/* Feature Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-              
-              {/* 9-Stage Pipeline */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
-                <div className="text-4xl mb-4">🚀</div>
-                <h3 className="text-2xl font-bold mb-4 text-white">9-Stage Mandatory Pipeline</h3>
-                <p className="text-blue-100 text-lg leading-relaxed">
-                  Structured scientific reasoning through <strong className="text-white">Initialization → Decomposition → Hypothesis → Evidence → Pruning → Extraction → Composition → Reflection → Final Analysis</strong>
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="bg-blue-500/20 text-blue-200 px-3 py-1 rounded-full text-sm font-medium">AI Orchestration</span>
-                  <span className="bg-green-500/20 text-green-200 px-3 py-1 rounded-full text-sm font-medium">PhD-Level Reports</span>
-                </div>
-              </div>
-
-              {/* Multi-AI System */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
-                <div className="text-4xl mb-4">🤖</div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Multi-AI Orchestration</h3>
-                <p className="text-blue-100 text-lg leading-relaxed">
-                  <strong className="text-white">Perplexity Sonar</strong> for real-time research + <strong className="text-white">Gemini 2.5 Pro</strong> for advanced reasoning with intelligent fallback systems
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="bg-purple-500/20 text-purple-200 px-3 py-1 rounded-full text-sm font-medium">Smart Routing</span>
-                  <span className="bg-orange-500/20 text-orange-200 px-3 py-1 rounded-full text-sm font-medium">Auto Fallback</span>
-                </div>
-              </div>
-
-              {/* Graph Visualization */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
-                <div className="text-4xl mb-4">🌳</div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Advanced Graph Systems</h3>
-                <p className="text-blue-100 text-lg leading-relaxed">
-                  <strong className="text-white">3D Botanical Trees</strong>, <strong className="text-white">Cytoscape Networks</strong>, and <strong className="text-white">Interactive Analytics</strong> with hyperedges and causal inference
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="bg-teal-500/20 text-teal-200 px-3 py-1 rounded-full text-sm font-medium">3D Visualization</span>
-                  <span className="bg-yellow-500/20 text-yellow-200 px-3 py-1 rounded-full text-sm font-medium">Causal Inference</span>
-                </div>
-              </div>
-
-              {/* Authentication & Backend */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
-                <div className="text-4xl mb-4">🔐</div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Enterprise Authentication</h3>
-                <p className="text-blue-100 text-lg leading-relaxed">
-                  <strong className="text-white">Supabase Integration</strong> with secure user management, session persistence, and cloud synchronization
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="bg-indigo-500/20 text-indigo-200 px-3 py-1 rounded-full text-sm font-medium">Cloud Sync</span>
-                  <span className="bg-pink-500/20 text-pink-200 px-3 py-1 rounded-full text-sm font-medium">Session Management</span>
-                </div>
-              </div>
-
-              {/* Advanced Parameters */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
-                <div className="text-4xl mb-4">⚙️</div>
-                <h3 className="text-2xl font-bold mb-4 text-white">29 Parameter System</h3>
-                <p className="text-blue-100 text-lg leading-relaxed">
-                  Complete control system (<strong className="text-white">P1.0-P1.29</strong>) covering framework execution, graph operations, and advanced analytics
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="bg-red-500/20 text-red-200 px-3 py-1 rounded-full text-sm font-medium">Fine-tuning</span>
-                  <span className="bg-cyan-500/20 text-cyan-200 px-3 py-1 rounded-full text-sm font-medium">Expert Mode</span>
-                </div>
-              </div>
-
-              {/* Export & Analytics */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
-                <div className="text-4xl mb-4">📊</div>
-                <h3 className="text-2xl font-bold mb-4 text-white">Multi-Format Export</h3>
-                <p className="text-blue-100 text-lg leading-relaxed">
-                  <strong className="text-white">HTML, SVG, PNG</strong> exports with embedded visualizations, Vancouver citations, and comprehensive analytics
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="bg-emerald-500/20 text-emerald-200 px-3 py-1 rounded-full text-sm font-medium">Publication Ready</span>
-                  <span className="bg-violet-500/20 text-violet-200 px-3 py-1 rounded-full text-sm font-medium">Interactive Reports</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Technology Stack */}
-            <div className="text-center">
-              <h3 className="text-3xl font-bold mb-8 text-white">🛠️ Cutting-Edge Technology Stack</h3>
-              <div className="flex flex-wrap justify-center gap-4 mb-8">
-                <span className="bg-blue-600/30 text-blue-200 px-6 py-3 rounded-xl text-lg font-semibold border border-blue-400/30">React 18</span>
-                <span className="bg-indigo-600/30 text-indigo-200 px-6 py-3 rounded-xl text-lg font-semibold border border-indigo-400/30">TypeScript</span>
-                <span className="bg-teal-600/30 text-teal-200 px-6 py-3 rounded-xl text-lg font-semibold border border-teal-400/30">Supabase</span>
-                <span className="bg-purple-600/30 text-purple-200 px-6 py-3 rounded-xl text-lg font-semibold border border-purple-400/30">Cytoscape.js</span>
-                <span className="bg-green-600/30 text-green-200 px-6 py-3 rounded-xl text-lg font-semibold border border-green-400/30">D3.js</span>
-                <span className="bg-orange-600/30 text-orange-200 px-6 py-3 rounded-xl text-lg font-semibold border border-orange-400/30">Tailwind CSS</span>
-              </div>
-              
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
-                <h4 className="text-2xl font-bold mb-4 text-yellow-200">⚡ Performance Highlights</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                  <div>
-                    <div className="text-4xl font-bold text-green-300 mb-2">3000+</div>
-                    <div className="text-blue-200 text-lg font-semibold">Token Limit per API Call</div>
-                  </div>
-                  <div>
-                    <div className="text-4xl font-bold text-green-300 mb-2">12+</div>
-                    <div className="text-blue-200 text-lg font-semibold">Interactive Tabs & Features</div>
-                  </div>
-                  <div>
-                    <div className="text-4xl font-bold text-green-300 mb-2">100%</div>
-                    <div className="text-blue-200 text-lg font-semibold">Responsive Design</div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
