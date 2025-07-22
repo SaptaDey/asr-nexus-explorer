@@ -1425,26 +1425,55 @@ Make the data realistic and scientifically meaningful for the research domain.
           <DebugButton />
         </div>
         
-        {/* Hero Section */}
+        {/* Responsive Hero Section */}
         <div className="text-center mb-8">
-          <div className="relative mb-4 sm:mb-8 overflow-hidden rounded-xl sm:rounded-3xl" style={{ minHeight: 'clamp(300px, 50vh, 500px)' }}>
-            {/* Logo as Hero Image */}
-            <div 
-              className="absolute inset-0 bg-contain bg-center bg-no-repeat"
-              style={{
-                backgroundImage: 'url("/img/logo.png")',
-                backgroundSize: 'contain',
-                backgroundPosition: 'center'
-              }}
-            ></div>
+          <div className="relative mb-4 sm:mb-8 overflow-hidden rounded-xl sm:rounded-3xl">
+            {/* Responsive Hero Container with proper aspect ratios */}
+            <div className="relative w-full">
+              {/* Responsive Hero Image - Optimized for all screen sizes */}
+              <div className="aspect-video min-h-[300px] sm:min-h-[400px] lg:min-h-[500px]">
+                <div 
+                  className="absolute inset-0 w-full h-full"
+                  style={{
+                    backgroundImage: 'url("/img/hero.png")',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundAttachment: 'scroll',
+                    imageRendering: 'optimizeQuality'
+                  }}
+                ></div>
+                
+                {/* Additional responsive background for ultra-wide screens */}
+                <style jsx>{`
+                  @media (min-width: 1920px) {
+                    div {
+                      background-size: cover !important;
+                      background-position: center center !important;
+                    }
+                  }
+                  @media (max-width: 640px) and (orientation: portrait) {
+                    div {
+                      background-size: cover !important;
+                      background-position: center top !important;
+                    }
+                  }
+                  @media (max-width: 640px) and (orientation: landscape) {
+                    div {
+                      background-size: cover !important;
+                      background-position: center center !important;
+                    }
+                  }
+                `}</style>
+              </div>
+              
+              {/* Responsive overlay for text contrast */}
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/5 to-transparent"></div>
+            </div>
             
-            {/* Gentle overlays for text visibility */}
-            <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-transparent to-white/70"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-white/60 via-transparent to-white/60"></div>
-            
-            {/* Hero Content */}
-            <div className="relative z-10 p-12 lg:p-20">
-              <div className="max-w-6xl mx-auto">
+            {/* Hero Content - Responsive positioning */}
+            <div className="absolute inset-0 z-10 flex items-center justify-center">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Main Title */}
                 <div className="mb-10">
                   <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6 text-slate-900" style={{ textShadow: '2px 2px 4px rgba(255,255,255,0.8)' }}>
