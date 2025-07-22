@@ -1428,12 +1428,12 @@ Make the data realistic and scientifically meaningful for the research domain.
         {/* Hero Section */}
         <div className="text-center mb-8">
           <div className="relative mb-4 sm:mb-8 overflow-hidden rounded-xl sm:rounded-3xl" style={{ minHeight: 'clamp(300px, 50vh, 500px)' }}>
-            {/* Hero Background Image */}
+            {/* Logo as Hero Image */}
             <div 
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+              className="absolute inset-0 bg-contain bg-center bg-no-repeat"
               style={{
-                backgroundImage: 'url("/img/hero.png")',
-                backgroundSize: 'cover',
+                backgroundImage: 'url("/img/logo.png")',
+                backgroundSize: 'contain',
                 backgroundPosition: 'center'
               }}
             ></div>
