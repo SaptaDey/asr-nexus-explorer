@@ -105,8 +105,8 @@ const ASRGoTInterface: React.FC = () => {
         const status = await backendService.initialize();
         setBackendStatus(status);
         setBackendHealthy(backendService.isHealthy());
-        if (status.errors.length > 0) {
-          console.warn('⚠️ Backend initialized with errors:', status.errors);
+        if (status.health.errors.length > 0) {
+          console.warn('⚠️ Backend initialized with errors:', status.health.errors);
           toast.warning('Backend services initialized with some limitations');
         } else {
           toast.success('Backend services connected successfully');
@@ -2027,4 +2027,5 @@ journey
     </div>
   );
 };
+
 export default ASRGoTInterface;

@@ -155,19 +155,7 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
               </div>
             </div> : <Card>
               <CardContent className="p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    {activeItem?.icon}
-                    <div>
-                      <h2 className="text-2xl font-semibold text-gray-900">{activeItem?.label}</h2>
-                      {activeItem?.description && <p className="text-gray-600 mt-1">{activeItem.description}</p>}
-                    </div>
-                    {activeItem?.badge && <Badge variant="secondary" className="ml-auto">{activeItem.badge}</Badge>}
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={() => setIsFullscreen(true)}>
-                    <Maximize2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                
                 {children}
               </CardContent>
             </Card>}
