@@ -1,8 +1,8 @@
 
-import EnhancedASRGoTInterface from "@/pages/EnhancedASRGoTInterface";
+import ASRGoTInterface from "@/pages/ASRGoTInterface";
 
 const Index = () => {
-  return <EnhancedASRGoTInterface />;
+  return <ASRGoTInterface />;
 };
 
 export default Index;

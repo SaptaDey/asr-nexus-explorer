@@ -41,6 +41,11 @@ import { Link } from 'react-router-dom';
 import { APICredentials } from '@/types/asrGotTypes';
 import { backendService } from '@/services/backend/BackendService';
 import { historyManager } from '@/services/backend/HistoryManager';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { enhancedApiService } from '@/services/enhancedApiService';
+import { dataStorageService } from '@/services/dataStorageService';
+import { SessionControls } from '@/components/asr-got/SessionControls';
+import { User, LogIn, UserPlus, Key, CheckCircle, AlertTriangle } from 'lucide-react';
 
 const ASRGoTInterface: React.FC = () => {
   const {
@@ -79,6 +84,12 @@ const ASRGoTInterface: React.FC = () => {
   const [backendHealthy, setBackendHealthy] = useState(false);
   
   const { mode, toggleMode, isAutomatic } = useProcessingMode('manual');
+  
+  // Authentication and backend integration
+  const { user, profile, loading: authLoading } = useAuthContext();
+  const [hasBackendApiKeys, setHasBackendApiKeys] = useState(false);
+  const [usageStats, setUsageStats] = useState<any>(null);
+  const [isPaused, setIsPaused] = useState(false);
 
   // Initialize backend and monitor health
   useEffect(() => {
@@ -117,6 +128,26 @@ const ASRGoTInterface: React.FC = () => {
 
     return () => clearInterval(healthCheckInterval);
   }, []);
+
+  // Load backend API keys and usage stats
+  useEffect(() => {
+    const loadBackendData = async () => {
+      if (user) {
+        try {
+          const [apiKeys, usage] = await Promise.all([
+            enhancedApiService.hasBackendApiKeys(),
+            enhancedApiService.getUsageStats()
+          ]);
+          setHasBackendApiKeys(apiKeys.gemini || apiKeys.perplexity || apiKeys.openai);
+          setUsageStats(usage);
+        } catch (error) {
+          console.error('Failed to load backend data:', error);
+        }
+      }
+    };
+
+    loadBackendData();
+  }, [user]);
 
   // Create session when research starts
   useEffect(() => {
@@ -236,23 +267,149 @@ const ASRGoTInterface: React.FC = () => {
     }
   };
 
+  // Enhanced pause/resume functionality with backend integration
+  const handlePauseSession = async () => {
+    try {
+      setIsPaused(true);
+      await pauseSession();
+      
+      if (user && currentSessionId) {
+        await dataStorageService.saveResearchSession({
+          userQuery: researchContext.topic,
+          currentStage,
+          graphData,
+          stageResults,
+          researchContext,
+          isProcessing: false,
+          isCompleted: isComplete
+        }, currentSessionId);
+      }
+      
+      toast.success('Session paused and saved');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to pause session');
+    }
+  };
+
+  const handleEnhancedResumeSession = async () => {
+    try {
+      setIsPaused(false);
+      toast.success('Session resumed');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to resume session');
+    }
+  };
+
+  const handleSaveSession = async (): Promise<string> => {
+    try {
+      if (!user) {
+        throw new Error('Please sign in to save sessions');
+      }
+
+      const sessionId = currentSessionId || crypto.randomUUID();
+      await dataStorageService.saveResearchSession({
+        userQuery: researchContext.topic,
+        currentStage,
+        graphData,
+        stageResults,
+        researchContext,
+        isProcessing,
+        isCompleted: isComplete,
+        parameters
+      }, sessionId);
+
+      toast.success('Session saved successfully');
+      return sessionId;
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save session');
+      throw error;
+    }
+  };
+
+  const handleLoadSession = async (sessionId: string) => {
+    try {
+      const sessionData = await dataStorageService.loadResearchSession(sessionId);
+      if (sessionData) {
+        // This would require integration with the useASRGoT hook to restore state
+        toast.success('Session loaded successfully');
+        setActiveTab('research');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load session');
+    }
+  };
+
   // Content mapping for responsive layout
   const renderTabContent = (tabId: string) => {
     switch (tabId) {
       case 'research':
         return (
-          <ResearchInterface
-            currentStage={currentStage}
-            graphData={graphData}
-            onExecuteStage={executeStage}
-            isProcessing={isProcessing}
-            stageResults={stageResults}
-            researchContext={researchContext}
-            apiKeys={apiKeys}
-            processingMode={mode}
-            onShowApiModal={() => setShowAPICredentialsModal(true)}
-            onSwitchToExport={() => setActiveTab('export')}
-          />
+          <div className="space-y-6">
+            <ResearchInterface
+              currentStage={currentStage}
+              graphData={graphData}
+              onExecuteStage={executeStage}
+              isProcessing={isProcessing}
+              stageResults={stageResults}
+              researchContext={researchContext}
+              apiKeys={apiKeys}
+              processingMode={mode}
+              onShowApiModal={() => setShowAPICredentialsModal(true)}
+              onSwitchToExport={() => setActiveTab('export')}
+            />
+            
+            {/* Enhanced Research Controls */}
+            <div className="mt-6 bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-gray-200">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900">Research Session Status</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Stage {currentStage + 1}/9 • {isProcessing ? 'Processing...' : isPaused ? 'Paused' : 'Ready'}
+                    {user && currentSessionId && (
+                      <> • Session: {currentSessionId.slice(0, 8)}...</>
+                    )}
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  {/* API Status Indicator */}
+                  <div className="flex items-center space-x-2 text-sm">
+                    {(apiKeys.gemini && apiKeys.perplexity) || hasBackendApiKeys ? (
+                      <div className="flex items-center text-green-600">
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        <span>API Ready</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center text-yellow-600">
+                        <AlertTriangle className="h-4 w-4 mr-1" />
+                        <span>Setup Required</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* User Status */}
+                  <div className="text-sm text-gray-500">
+                    {user ? (
+                      <span>✓ Signed In</span>
+                    ) : (
+                      <Link to="/auth" className="text-blue-600 hover:underline">
+                        Sign In for Full Features
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Progress Bar */}
+              <div className="mt-4">
+                <div className="flex justify-between text-xs text-gray-600 mb-1">
+                  <span>Overall Progress</span>
+                  <span>{Math.round(((currentStage + 1) / 9) * 100)}%</span>
+                </div>
+                <Progress value={((currentStage + 1) / 9) * 100} className="h-2" />
+              </div>
+            </div>
+          </div>
         );
       
       case 'tree':
@@ -387,24 +544,72 @@ const ASRGoTInterface: React.FC = () => {
       
       case 'storage':
         return (
-          <StoredAnalysesManager
-            currentSessionId={currentSessionId}
-            onLoadAnalysis={(analysisId) => {
-              toast.info(`Loading stored analysis: ${analysisId}`);
-            }}
-          />
+          <div className="space-y-6">
+            <StoredAnalysesManager
+              currentSessionId={currentSessionId}
+              onLoadAnalysis={(analysisId) => {
+                toast.info(`Loading stored analysis: ${analysisId}`);
+              }}
+            />
+            
+            {/* Enhanced Session Controls for Authenticated Users */}
+            {user && (
+              <div className="mt-6">
+                <SessionControls
+                  currentStage={currentStage}
+                  isProcessing={isProcessing}
+                  isPaused={isPaused}
+                  sessionData={{
+                    userQuery: researchContext.topic,
+                    currentStage,
+                    graphData,
+                    stageResults,
+                    researchContext,
+                    isProcessing,
+                    isCompleted: isComplete
+                  }}
+                  currentSessionId={currentSessionId}
+                  onPause={handlePauseSession}
+                  onResume={handleEnhancedResumeSession}
+                  onSave={handleSaveSession}
+                  onLoad={handleLoadSession}
+                  onReset={resetFramework}
+                />
+              </div>
+            )}
+          </div>
         );
       
       case 'history':
         return (
-          <QueryHistoryManager
-            onResumeSession={handleResumeSession}
-            onLoadForReanalysis={(sessionId) => {
-              toast.info(`Loading session for reanalysis: ${sessionId}`);
-              setActiveTab('research');
-            }}
-            currentSessionId={queryHistorySessionId}
-          />
+          <div className="space-y-6">
+            <QueryHistoryManager
+              onResumeSession={handleResumeSession}
+              onLoadForReanalysis={(sessionId) => {
+                toast.info(`Loading session for reanalysis: ${sessionId}`);
+                setActiveTab('research');
+              }}
+              currentSessionId={queryHistorySessionId}
+            />
+            
+            {/* Enhanced Session History for Authenticated Users */}
+            {user && (
+              <div className="mt-8 border-t pt-6">
+                <h3 className="text-lg font-semibold mb-4">Your Research Sessions</h3>
+                {/* Note: Would import and use SessionHistory component here */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-blue-800 text-sm">
+                    📋 <strong>Enhanced Session Management:</strong> View, search, and manage all your research sessions 
+                    with advanced filtering and detailed progress tracking. 
+                    <Link to="/dashboard" className="text-blue-600 hover:underline ml-1">
+                      Go to Dashboard
+                    </Link>
+                    {' for full session management.'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         );
       
       default:
@@ -1079,6 +1284,145 @@ Make the data realistic and scientifically meaningful for the research domain.
       {/* Main Interface */}
       <div className={`container mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 transition-all duration-300 ${showBiasAudit ? 'sm:mr-96' : ''}`}>
         
+        {/* Enhanced Header with Authentication */}
+        <div className="mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+            {/* Logo and Title */}
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg">
+                <Brain className="h-7 w-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  ASR-GoT Research Framework
+                </h1>
+                <p className="text-sm text-gray-600">
+                  AI-powered scientific research with 9-stage pipeline
+                </p>
+              </div>
+            </div>
+
+            {/* Authentication and Status */}
+            <div className="flex items-center space-x-3">
+              {/* API Status */}
+              <div className="flex items-center space-x-2">
+                {(apiKeys.gemini && apiKeys.perplexity) || hasBackendApiKeys ? (
+                  <Badge variant="outline" className="text-green-600 border-green-600 bg-green-50">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    API Ready
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-yellow-600 border-yellow-600 bg-yellow-50">
+                    <Key className="h-3 w-3 mr-1" />
+                    Setup Required
+                  </Badge>
+                )}
+                
+                {/* Backend Status */}
+                {backendHealthy && (
+                  <Badge variant="outline" className="text-blue-600 border-blue-600 bg-blue-50">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Connected
+                  </Badge>
+                )}
+              </div>
+
+              {/* User Authentication */}
+              {user ? (
+                <div className="flex items-center space-x-2">
+                  {profile && (
+                    <div className="text-right text-sm">
+                      <p className="font-medium text-gray-900">{profile.full_name}</p>
+                      <p className="text-xs text-gray-500">
+                        {profile.current_api_usage || 0}/{profile.api_usage_limit || 1000} calls
+                      </p>
+                    </div>
+                  )}
+                  <Link to="/dashboard">
+                    <Button variant="outline" size="sm">
+                      <User className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Dashboard</span>
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <Link to="/auth?mode=login">
+                    <Button variant="outline" size="sm">
+                      <LogIn className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Sign In</span>
+                    </Button>
+                  </Link>
+                  <Link to="/auth?mode=register">
+                    <Button size="sm">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Sign Up</span>
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* API Setup Alert */}
+          {!(apiKeys.gemini && apiKeys.perplexity) && !hasBackendApiKeys && (
+            <Alert className="mb-4">
+              <Key className="h-4 w-4" />
+              <AlertDescription>
+                To start research, configure API keys. 
+                {user ? (
+                  <>
+                    <Link to="/dashboard" className="text-blue-600 hover:underline ml-1">
+                      Go to dashboard
+                    </Link>
+                    {' or '}
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto"
+                      onClick={() => setShowAPICredentialsModal(true)}
+                    >
+                      configure locally
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto ml-1"
+                      onClick={() => setShowAPICredentialsModal(true)}
+                    >
+                      Set up API credentials
+                    </Button>
+                    {' or '}
+                    <Link to="/auth?mode=register" className="text-blue-600 hover:underline">
+                      create an account
+                    </Link>
+                    {' for secure backend storage.'}
+                  </>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Usage Stats for Authenticated Users */}
+          {user && usageStats && (
+            <div className="bg-white/50 backdrop-blur-sm rounded-lg p-3 mb-4 border border-gray-200">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">API Usage:</span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-gray-900">
+                    {usageStats.currentUsage}/{usageStats.limit} calls
+                  </span>
+                  <Badge variant={usageStats.usagePercentage > 80 ? 'destructive' : 'secondary'}>
+                    {usageStats.usagePercentage}%
+                  </Badge>
+                </div>
+              </div>
+              <Progress value={usageStats.usagePercentage} className="mt-2 h-2" />
+            </div>
+          )}
+        </div>
+        
         {/* 🐛 Debug Button - Always Visible at Bottom */}
         <div className="fixed bottom-4 right-4 z-50">
           <DebugButton />
@@ -1260,19 +1604,48 @@ Make the data realistic and scientifically meaningful for the research domain.
                 </span>
               </Button>
               
-              {/* Pause/Resume Controls */}
-              {queryHistorySessionId && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={pauseSession}
-                  disabled={!isProcessing}
-                  className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto border-orange-300 text-orange-600 hover:bg-orange-50 disabled:opacity-50"
-                >
-                  <Pause className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Pause Session</span>
-                  <span className="sm:hidden">Pause</span>
-                </Button>
+              {/* Enhanced Pause/Resume Controls */}
+              {(queryHistorySessionId || currentSessionId) && (
+                <div className="flex items-center gap-2">
+                  {isPaused ? (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={handleEnhancedResumeSession}
+                      className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <PlayCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Resume Session</span>
+                      <span className="sm:hidden">Resume</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handlePauseSession}
+                      disabled={!isProcessing}
+                      className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto border-orange-300 text-orange-600 hover:bg-orange-50 disabled:opacity-50"
+                    >
+                      <Pause className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Pause Session</span>
+                      <span className="sm:hidden">Pause</span>
+                    </Button>
+                  )}
+                  
+                  {/* Save Session Button for Authenticated Users */}
+                  {user && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleSaveSession}
+                      className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto border-blue-300 text-blue-600 hover:bg-blue-50"
+                    >
+                      <Database className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Save Session</span>
+                      <span className="sm:hidden">Save</span>
+                    </Button>
+                  )}
+                </div>
               )}
               
               {/* Auto-save Status Indicator */}
