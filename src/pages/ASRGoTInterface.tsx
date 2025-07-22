@@ -1435,28 +1435,29 @@ Make the data realistic and scientifically meaningful for the research domain.
         </ResponsiveLayout>
 
         {/* Scientific Reasoning Architecture Overview */}
-        <div className="bg-white py-16 px-4 sm:px-6 lg:px-8 mb-8 rounded-3xl shadow-lg border border-gray-200">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-slate-900">
+        <div className="bg-white py-8 px-3 sm:px-4 lg:px-6 mb-6 rounded-2xl shadow-lg border border-gray-200">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-slate-900">
                 🧬 Scientific Reasoning: Complete AI Solution
               </h2>
-              <p className="text-xl text-slate-600 max-w-4xl mx-auto leading-relaxed">
+              <p className="text-base text-slate-600 max-w-3xl mx-auto leading-relaxed">
                 The first production-ready platform that transforms complex research problems into systematic, graph-based knowledge discovery pipelines
               </p>
             </div>
             
             {/* Scientific Reasoning Overview Section */}
-            <div className="mb-16">
-              <div className="text-center mb-8">
-                <h3 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">🧬 Scientific Reasoning Overview</h3>
-                <p className="text-lg text-slate-600 max-w-3xl mx-auto">
+            <div className="mb-8">
+              <div className="text-center mb-4">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">🧬 Scientific Reasoning Overview</h3>
+                <p className="text-sm text-slate-600 max-w-2xl mx-auto">
                   See how our platform transforms complex research problems into systematic discoveries
                 </p>
               </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-slate-200">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
                 <MermaidChart
                   chart={`
+%%{init: {'theme':'base', 'themeVariables': {'fontSize': '24px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
 graph TD
     A[🔬 Research Problem] --> B[🧬 Scientific Reasoning Platform]
     B --> C[📊 9-Stage Framework]
@@ -1481,16 +1482,17 @@ graph TD
             </div>
 
             {/* Core Innovation Pillars Section */}
-            <div className="mb-16">
-              <div className="text-center mb-8">
-                <h3 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">🌟 Core Innovation Pillars</h3>
-                <p className="text-lg text-slate-600 max-w-3xl mx-auto">
+            <div className="mb-8">
+              <div className="text-center mb-4">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">🌟 Core Innovation Pillars</h3>
+                <p className="text-sm text-slate-600 max-w-2xl mx-auto">
                   Eight interconnected pillars that form the foundation of our AI-powered research platform
                 </p>
               </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-slate-200">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
                 <MermaidChart
                   chart={`
+%%{init: {'theme':'base', 'themeVariables': {'fontSize': '24px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
 flowchart LR
     subgraph " 🎯 Scientific Reasoning Core "
         A[🧠 Graph Theory] <--> B[🔬 Scientific Method]
@@ -1517,26 +1519,26 @@ flowchart LR
         </div>
 
         {/* Enhanced Pipeline Visualization */}
-        <div className="bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 py-16 px-4 sm:px-6 lg:px-8 mb-8 rounded-3xl shadow-xl border border-orange-100">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-slate-800">
+        <div className="bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 py-8 px-3 sm:px-4 lg:px-6 mb-6 rounded-2xl shadow-xl border border-orange-100">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-slate-800">
                 🔬 The 9-Stage Research Framework
               </h2>
-              <p className="text-xl text-slate-600 max-w-4xl mx-auto">
+              <p className="text-base text-slate-600 max-w-3xl mx-auto">
                 Advanced AI orchestration through 9 mandatory stages of scientific analysis
               </p>
             </div>
 
             {/* 9-Stage Framework Section */}
-            <div className="mb-16">
-              <div className="text-center mb-8">
-                <h3 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">🔬 9-Stage Research Framework</h3>
-                <p className="text-lg text-slate-600 max-w-3xl mx-auto">
+            <div className="mb-8">
+              <div className="text-center mb-4">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">🔬 9-Stage Research Framework</h3>
+                <p className="text-sm text-slate-600 max-w-2xl mx-auto">
                   Advanced AI orchestration through 9 mandatory stages of comprehensive scientific analysis
                 </p>
               </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-slate-200">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
                 <MermaidChart
                   chart={`
 flowchart TD
@@ -1575,28 +1577,29 @@ flowchart TD
         </div>
 
         {/* Technical Architecture Connectome */}
-        <div className="bg-gradient-to-r from-slate-100 to-gray-100 py-16 px-4 sm:px-6 lg:px-8 mb-8 rounded-3xl shadow-xl border border-slate-200">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-slate-900">
+        <div className="bg-gradient-to-r from-slate-100 to-gray-100 py-8 px-3 sm:px-4 lg:px-6 mb-6 rounded-2xl shadow-xl border border-slate-200">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-slate-900">
                 🏗️ Technical Architecture Connectome
               </h2>
-              <p className="text-xl text-slate-600 max-w-4xl mx-auto">
+              <p className="text-base text-slate-600 max-w-3xl mx-auto">
                 Complete system architecture showing how all components work together
               </p>
             </div>
             
             {/* Technical Architecture Section */}
-            <div className="mb-16">
-              <div className="text-center mb-8">
-                <h3 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">🏗️ Technical Architecture Connectome</h3>
-                <p className="text-lg text-slate-600 max-w-3xl mx-auto">
+            <div className="mb-8">
+              <div className="text-center mb-4">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">🏗️ Technical Architecture Connectome</h3>
+                <p className="text-sm text-slate-600 max-w-2xl mx-auto">
                   Complete system architecture showing how all components interconnect and work together
                 </p>
               </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-slate-200">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
                 <MermaidChart
                   chart={`
+%%{init: {'theme':'base', 'themeVariables': {'fontSize': '24px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
 graph TB
     subgraph "🎯 User Interface Layer"
         UI1[React 18 Frontend]
@@ -1661,16 +1664,17 @@ graph TB
             </div>
 
             {/* Research Methodology Mind Map Section */}
-            <div className="mb-16">
-              <div className="text-center mb-8">
-                <h3 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">🧠 Research Methodology Mind Map</h3>
-                <p className="text-lg text-slate-600 max-w-3xl mx-auto">
+            <div className="mb-8">
+              <div className="text-center mb-4">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">🧠 Research Methodology Mind Map</h3>
+                <p className="text-sm text-slate-600 max-w-2xl mx-auto">
                   Comprehensive visualization of our methodology covering graph theory, scientific rigor, and AI integration
                 </p>
               </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-slate-200">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
                 <MermaidChart
                   chart={`
+%%{init: {'theme':'base', 'themeVariables': {'fontSize': '20px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
 mindmap
   root((ASR-GoT Scientific Reasoning Framework))
     Graph Theory & Knowledge Architecture
@@ -1984,28 +1988,29 @@ mindmap
 
 
         {/* User Journey & Domain Applications */}
-        <div className="bg-white py-16 px-4 sm:px-6 lg:px-8 mb-8 rounded-3xl shadow-lg border border-gray-200">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-slate-900">
+        <div className="bg-white py-8 px-3 sm:px-4 lg:px-6 mb-6 rounded-2xl shadow-lg border border-gray-200">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-slate-900">
                 🚀 Research Discovery Journey
               </h2>
-              <p className="text-xl text-slate-600 max-w-4xl mx-auto">
+              <p className="text-base text-slate-600 max-w-3xl mx-auto">
                 From question to breakthrough - see how Scientific Reasoning transforms your research process
               </p>
             </div>
             
             {/* User Journey Section */}
-            <div className="mb-16">
-              <div className="text-center mb-8">
-                <h3 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">🎆 User Research Journey</h3>
-                <p className="text-lg text-slate-600 max-w-3xl mx-auto">
+            <div className="mb-8">
+              <div className="text-center mb-4">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">🎆 User Research Journey</h3>
+                <p className="text-sm text-slate-600 max-w-2xl mx-auto">
                   Interactive journey mapping from initial research question to final insights and publication
                 </p>
               </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-slate-200">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
                 <MermaidChart
                   chart={`
+%%{init: {'theme':'base', 'themeVariables': {'fontSize': '24px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
 journey
     title Research Discovery Journey
     section Initialization
