@@ -1222,113 +1222,97 @@ Make the data realistic and scientifically meaningful for the research domain.
           <DebugButton />
         </div>
         
-        {/* Responsive Hero Section */}
-        <div className="text-center mb-4">
-          <div className="relative mb-2 sm:mb-4 overflow-hidden rounded-xl sm:rounded-3xl">
-            {/* Responsive Hero Container with proper aspect ratios */}
-            <div className="relative w-full">
-              {/* Responsive Hero Image - Optimized for all screen sizes */}
-              <div className="aspect-video min-h-[150px] sm:min-h-[200px] lg:min-h-[250px] bg-gradient-to-br from-blue-50 via-teal-50 to-green-50">
-                <div className="absolute inset-0 w-full h-full" style={{
-                  backgroundImage: 'url("/img/Backgroutd_theme.png")',
-                  backgroundSize: 'contain',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundAttachment: 'scroll',
-                  imageRendering: 'optimizeQuality'
-                }}></div>
-                
-                {/* Responsive background optimization for logo */}
-                <style jsx>{`
-                  @media (min-width: 1920px) {
-                    div {
-                      background-size: contain !important;
-                      background-position: center center !important;
-                    }
-                  }
-                  @media (max-width: 640px) and (orientation: portrait) {
-                    div {
-                      background-size: contain !important;
-                      background-position: center center !important;
-                    }
-                  }
-                  @media (max-width: 640px) and (orientation: landscape) {
-                    div {
-                      background-size: contain !important;
-                      background-position: center center !important;
-                    }
-                  }
-                  @media (min-width: 640px) and (max-width: 1024px) {
-                    div {
-                      background-size: contain !important;
-                      background-position: center center !important;
-                    }
-                  }
-                `}</style>
-              </div>
+        {/* Compact Hero Section with Side-by-Side Layout */}
+        <div className="mb-4">
+          <div className="relative mb-2 sm:mb-3 overflow-hidden rounded-lg sm:rounded-xl">
+            {/* Compact Hero Container - Reduced height by ~50% */}
+            <div className="relative w-full h-[200px] sm:h-[250px] lg:h-[300px] bg-gradient-to-r from-blue-50 via-purple-50 to-teal-50">
               
-              {/* Responsive overlay for text contrast */}
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/5 to-transparent"></div>
-            </div>
-            
-            {/* Hero Content - Responsive positioning */}
-            <div className="absolute inset-0 z-10 flex items-center justify-center">
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Main Title */}
-                <div className="mb-6">
-                  <h1 className="text-3xl lg:text-5xl font-bold leading-tight mb-4 text-slate-900" style={{
-                    textShadow: '2px 2px 4px rgba(255,255,255,0.8)'
-                  }}>
-                    Scientific Reasoning
-                  </h1>
-                  <p className="text-xl lg:text-2xl mb-4 font-semibold text-slate-700" style={{
-                    textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
-                  }}>
-                    Graph of Thoughts Framework
-                  </p>
-                </div>
-                
-                {/* Interactive Feature Tags */}
-                <div className="flex flex-wrap justify-center gap-3 mb-6">
-                  <Link to="/ai-powered">
-                    <span className="px-5 py-2 bg-blue-100 text-blue-700 rounded-full text-base font-medium shadow-sm border border-blue-200 hover:bg-blue-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105">🤖 AI-Powered</span>
-                  </Link>
-                  <Link to="/research-framework">
-                    <span className="px-5 py-2 bg-purple-100 text-purple-700 rounded-full text-base font-medium shadow-sm border border-purple-200 hover:bg-purple-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105">🧠 Research Framework</span>
-                  </Link>
-                  <Link to="/graph-neural-networks">
-                    <span className="px-5 py-2 bg-green-100 text-green-700 rounded-full text-base font-medium shadow-sm border border-green-200 hover:bg-green-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105">🔗 Graph Neural Networks</span>
-                  </Link>
-                </div>
-                
-                {/* Description - Removed from here, will be moved to hero base */}
-                  
-                  {/* Elegant Call-to-Action Buttons */}
-                  <div className="flex flex-col sm:flex-row justify-center gap-4">
-                    <Link to="/guide">
-                      <Button size="lg" className="bg-blue-500 hover:bg-blue-600 text-white shadow-lg text-lg px-8 py-3 rounded-lg font-semibold transition-all duration-200 hover:shadow-xl">
-                        <BookOpen className="h-5 w-5 mr-2" />
-                        Learn How It Works
-                      </Button>
-                    </Link>
-                    <Button size="lg" className="bg-purple-500 hover:bg-purple-600 text-white shadow-lg text-lg px-8 py-3 rounded-lg font-semibold transition-all duration-200 hover:shadow-xl" onClick={() => {
-                      setActiveTab('research');
-                      document.getElementById('research-section')?.scrollIntoView({
-                        behavior: 'smooth'
-                      });
-                    }}>
-                      <Brain className="h-5 w-5 mr-2" />
-                      Explore Features
-                    </Button>
+              {/* Smooth Color Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-100/40 via-purple-100/20 to-transparent"></div>
+              
+              {/* Side-by-Side Layout Container */}
+              <div className="absolute inset-0 z-10 flex items-center">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
+                    
+                    {/* Left Side - Text and Tags */}
+                    <div className="text-center lg:text-left order-2 lg:order-1">
+                      {/* Main Title */}
+                      <div className="mb-4">
+                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight mb-2 text-slate-900" style={{
+                          textShadow: '1px 1px 3px rgba(255,255,255,0.8)'
+                        }}>
+                          Scientific Reasoning
+                        </h1>
+                        <p className="text-lg sm:text-xl lg:text-2xl mb-3 font-semibold text-slate-700" style={{
+                          textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
+                        }}>
+                          Graph of Thoughts Framework
+                        </p>
+                      </div>
+                      
+                      {/* Interactive Feature Tags */}
+                      <div className="flex flex-wrap justify-center lg:justify-start gap-2 mb-4">
+                        <Link to="/ai-powered">
+                          <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium shadow-sm border border-blue-200 hover:bg-blue-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105">🤖 AI-Powered</span>
+                        </Link>
+                        <Link to="/research-framework">
+                          <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium shadow-sm border border-purple-200 hover:bg-purple-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105">🧠 Research Framework</span>
+                        </Link>
+                        <Link to="/graph-neural-networks">
+                          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium shadow-sm border border-green-200 hover:bg-green-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105">🔗 Graph Neural Networks</span>
+                        </Link>
+                      </div>
+                      
+                      {/* Compact Call-to-Action Buttons */}
+                      <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-3">
+                        <Link to="/guide">
+                          <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white shadow-lg text-sm px-4 py-2 rounded-lg font-semibold transition-all duration-200 hover:shadow-xl">
+                            <BookOpen className="h-4 w-4 mr-2" />
+                            Learn How It Works
+                          </Button>
+                        </Link>
+                        <Button size="sm" className="bg-purple-500 hover:bg-purple-600 text-white shadow-lg text-sm px-4 py-2 rounded-lg font-semibold transition-all duration-200 hover:shadow-xl" onClick={() => {
+                          setActiveTab('research');
+                          document.getElementById('research-section')?.scrollIntoView({
+                            behavior: 'smooth'
+                          });
+                        }}>
+                          <Brain className="h-4 w-4 mr-2" />
+                          Explore Features
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* Right Side - New Logo Image */}
+                    <div className="flex justify-center lg:justify-end order-1 lg:order-2">
+                      <div className="relative">
+                        <div 
+                          className="w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 bg-contain bg-no-repeat bg-center rounded-full shadow-2xl" 
+                          style={{
+                            backgroundImage: 'url("/img/new_logo.png")',
+                            backgroundSize: 'contain',
+                            backgroundPosition: 'center',
+                            imageRendering: 'optimizeQuality',
+                            filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.1))'
+                          }}
+                        ></div>
+                        {/* Subtle glow effect */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-200/30 via-purple-200/20 to-teal-200/30 rounded-full blur-xl -z-10"></div>
+                      </div>
+                    </div>
+                    
                   </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
           
-          {/* Hero Base Description */}
-          <div className="text-center mb-4">
-            <p className="text-base sm:text-lg text-slate-500 font-light leading-relaxed max-w-4xl mx-auto px-4">
+        {/* Hero Base Description */}
+          <div className="text-center mb-3">
+            <p className="text-sm sm:text-base text-slate-500 font-light leading-relaxed max-w-3xl mx-auto px-4">
               🚀 Next-Generation AI Reasoning Framework leveraging graph structures to transform scientific research methodologies
             </p>
           </div>
