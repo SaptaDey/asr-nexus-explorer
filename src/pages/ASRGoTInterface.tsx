@@ -404,9 +404,9 @@ const ASRGoTInterface: React.FC = () => {
               <div className="mt-4">
                 <div className="flex justify-between text-xs text-gray-600 mb-1">
                   <span>Overall Progress</span>
-                  <span>{Math.round(((currentStage + 1) / 9) * 100)}%</span>
+                  <span>{researchContext?.topic && stageResults.length > 0 ? Math.round(((currentStage + 1) / 9) * 100) : 0}%</span>
                 </div>
-                <Progress value={((currentStage + 1) / 9) * 100} className="h-2" />
+                <Progress value={researchContext?.topic && stageResults.length > 0 ? ((currentStage + 1) / 9) * 100 : 0} className="h-2" />
               </div>
             </div>
           </div>
