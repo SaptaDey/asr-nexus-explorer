@@ -1430,6 +1430,11 @@ Make the data realistic and scientifically meaningful for the research domain.
         </div>
 
 
+        {/* New Responsive Layout */}
+        <ResponsiveLayout navigationItems={defaultNavigationItems} activeTab={activeTab} onTabChange={setActiveTab}>
+          {renderTabContent(activeTab)}
+        </ResponsiveLayout>
+
         {/* Scientific Reasoning Architecture Overview */}
         <div className="bg-white py-16 px-4 sm:px-6 lg:px-8 mb-8 rounded-3xl shadow-lg border border-gray-200">
           <div className="max-w-7xl mx-auto">
@@ -2029,11 +2034,6 @@ journey
 
           </div>
         </div>
-
-        {/* New Responsive Layout */}
-        <ResponsiveLayout navigationItems={defaultNavigationItems} activeTab={activeTab} onTabChange={setActiveTab}>
-          {renderTabContent(activeTab)}
-        </ResponsiveLayout>
 
         {/* Stage 9 Progress Indicator */}
         {showStage9Progress && <Stage9ProgressIndicator currentStage={currentStage} isProcessing={isProcessing} onComplete={() => setShowStage9Progress(false)} />}
