@@ -1473,10 +1473,8 @@ Make the data realistic and scientifically meaningful for the research domain.
                 `}</style>
               </div>
               
-              {/* Gradient fade overlay for text readability */}
-              <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/60 to-white/80"></div>
-              <div className="absolute inset-0 bg-gradient-to-r from-white/70 via-transparent to-white/70"></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-white/75 via-transparent to-white/50"></div>
+              {/* Responsive overlay for text contrast */}
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/5 to-transparent"></div>
             </div>
             
             {/* Hero Content - Responsive positioning */}
@@ -1484,10 +1482,10 @@ Make the data realistic and scientifically meaningful for the research domain.
               <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Main Title */}
                 <div className="mb-10">
-                  <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6 text-slate-900" style={{ textShadow: '2px 2px 8px rgba(255,255,255,0.9), 0 0 16px rgba(255,255,255,0.7)' }}>
+                  <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6 text-slate-900" style={{ textShadow: '2px 2px 4px rgba(255,255,255,0.8)' }}>
                     Scientific Reasoning
                   </h1>
-                  <p className="text-2xl lg:text-4xl mb-8 font-semibold text-slate-700" style={{ textShadow: '2px 2px 6px rgba(255,255,255,0.9), 0 0 12px rgba(255,255,255,0.6)' }}>
+                  <p className="text-2xl lg:text-4xl mb-8 font-semibold text-slate-700" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.8)' }}>
                     Graph of Thoughts Framework
                   </p>
                 </div>
@@ -1495,19 +1493,19 @@ Make the data realistic and scientifically meaningful for the research domain.
                 {/* Interactive Feature Tags */}
                 <div className="flex flex-wrap justify-center gap-4 mb-10">
                   <Link to="/ai-powered">
-                    <span className="px-5 py-2 bg-white/90 text-blue-700 rounded-full text-base font-medium shadow-lg border border-blue-200/50 hover:bg-blue-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105 backdrop-blur-sm">🤖 AI-Powered</span>
+                    <span className="px-5 py-2 bg-blue-100 text-blue-700 rounded-full text-base font-medium shadow-sm border border-blue-200 hover:bg-blue-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105">🤖 AI-Powered</span>
                   </Link>
                   <Link to="/research-framework">
-                    <span className="px-5 py-2 bg-white/90 text-purple-700 rounded-full text-base font-medium shadow-lg border border-purple-200/50 hover:bg-purple-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105 backdrop-blur-sm">🧠 Research Framework</span>
+                    <span className="px-5 py-2 bg-purple-100 text-purple-700 rounded-full text-base font-medium shadow-sm border border-purple-200 hover:bg-purple-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105">🧠 Research Framework</span>
                   </Link>
                   <Link to="/graph-neural-networks">
-                    <span className="px-5 py-2 bg-white/90 text-green-700 rounded-full text-base font-medium shadow-lg border border-green-200/50 hover:bg-green-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105 backdrop-blur-sm">🔗 Graph Neural Networks</span>
+                    <span className="px-5 py-2 bg-green-100 text-green-700 rounded-full text-base font-medium shadow-sm border border-green-200 hover:bg-green-500 hover:text-white transition-all duration-200 cursor-pointer hover:scale-105">🔗 Graph Neural Networks</span>
                   </Link>
                 </div>
                 
                 {/* Description */}
                 <div className="max-w-5xl mx-auto mb-10">
-                  <p className="text-lg lg:text-xl mb-8 leading-relaxed font-medium text-slate-800 bg-white/30 backdrop-blur-sm rounded-2xl p-6 shadow-lg" style={{ textShadow: '2px 2px 4px rgba(255,255,255,0.9)' }}>
+                  <p className="text-lg lg:text-xl mb-8 leading-relaxed font-medium text-slate-800" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.8)' }}>
                     🚀 Next-Generation AI Reasoning Framework leveraging graph structures to transform scientific research methodologies
                   </p>
                   
