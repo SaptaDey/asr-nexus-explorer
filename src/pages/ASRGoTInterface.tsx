@@ -1425,9 +1425,8 @@ Make the data realistic and scientifically meaningful for the research domain.
           <DebugButton />
         </div>
         
-        {/* Spectacular Hero Section with Multiple Images */}
+        {/* Hero Section */}
         <div className="text-center mb-8">
-          {/* Hero Section with Prominent Logo */}
           <div className="relative mb-4 sm:mb-8 overflow-hidden rounded-xl sm:rounded-3xl" style={{ minHeight: 'clamp(300px, 50vh, 500px)' }}>
             {/* Hero Background Image */}
             <div 
@@ -1435,26 +1434,7 @@ Make the data realistic and scientifically meaningful for the research domain.
               style={{
                 backgroundImage: 'url("/img/hero.png")',
                 backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                filter: 'brightness(0.8)'
-              }}
-            ></div>
-            
-            {/* Main Logo - Centered and Prominent */}
-            <div 
-              className="absolute inset-0 bg-contain bg-no-repeat bg-center opacity-50"
-              style={{
-                backgroundImage: 'url("/img/logo.png")',
-                backgroundSize: 'contain',
                 backgroundPosition: 'center'
-              }}
-            ></div>
-            
-            {/* Subtle Logo Fade Effect - Lighter Radial Gradient */}
-            <div 
-              className="absolute inset-0"
-              style={{
-                background: 'radial-gradient(circle at center, transparent 25%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.7) 75%, rgba(255,255,255,0.85) 90%)'
               }}
             ></div>
             
