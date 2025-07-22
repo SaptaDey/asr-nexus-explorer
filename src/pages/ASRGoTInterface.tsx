@@ -328,10 +328,8 @@ const ASRGoTInterface: React.FC = () => {
     switch (tabId) {
       case 'research':
         return <div className="space-y-6">
-            <ResearchInterface currentStage={currentStage} graphData={graphData} onExecuteStage={executeStage} isProcessing={isProcessing} stageResults={stageResults} researchContext={researchContext} apiKeys={apiKeys} processingMode={mode} onShowApiModal={() => setShowAPICredentialsModal(true)} onSwitchToExport={() => setActiveTab('export')} />
-            
-            {/* Enhanced Research Controls */}
-            <div className="mt-6 bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-gray-200">
+            {/* Research Session Status Only */}
+            <div className="bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-gray-200">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex-1">
                   <h3 className="font-medium text-gray-900">Research Session Status</h3>
