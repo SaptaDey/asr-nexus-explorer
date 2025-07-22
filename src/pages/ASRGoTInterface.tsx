@@ -1294,11 +1294,8 @@ Make the data realistic and scientifically meaningful for the research domain.
               </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                  ASR-GoT Research Framework
+                  Scientific Reasoning
                 </h1>
-                <p className="text-sm text-gray-600">
-                  AI-powered scientific research with 9-stage pipeline
-                </p>
               </div>
             </div>
 
