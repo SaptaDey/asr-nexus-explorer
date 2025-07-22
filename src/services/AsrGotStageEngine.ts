@@ -19,9 +19,21 @@ export class AsrGotStageEngine {
   private researchContext: ResearchContext;
   private stageContexts: StageExecutionContext[] = [];
 
-  constructor(credentials: APICredentials, initialGraph: GraphData) {
-    this.credentials = credentials;
-    this.graphData = initialGraph;
+  constructor(credentials?: APICredentials, initialGraph?: GraphData) {
+    this.credentials = credentials || { gemini: '', perplexity: '', openai: '' };
+    this.graphData = initialGraph || {
+      nodes: [],
+      edges: [],
+      metadata: {
+        version: '1.0.0',
+        created: new Date().toISOString(),
+        last_updated: new Date().toISOString(),
+        stage: 0,
+        total_nodes: 0,
+        total_edges: 0,
+        graph_metrics: {}
+      }
+    };
     this.researchContext = {
       field: '',
       topic: '',
