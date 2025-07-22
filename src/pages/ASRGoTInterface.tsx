@@ -1513,7 +1513,13 @@ flowchart LR
             </div>
 
             {/* 9-Stage Framework Section */}
-            <div className="mb-12">
+            <div className="mb-16">
+              <div className="text-center mb-8">
+                <h3 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">🔬 9-Stage Research Framework</h3>
+                <p className="text-lg text-slate-600 max-w-3xl mx-auto">
+                  Advanced AI orchestration through 9 mandatory stages of comprehensive scientific analysis
+                </p>
+              </div>
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-slate-200">
                 <MermaidChart
                   chart={`
@@ -1566,6 +1572,12 @@ flowchart TD
             
             {/* Technical Architecture Section */}
             <div className="mb-16">
+              <div className="text-center mb-8">
+                <h3 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">🏗️ Technical Architecture Connectome</h3>
+                <p className="text-lg text-slate-600 max-w-3xl mx-auto">
+                  Complete system architecture showing how all components interconnect and work together
+                </p>
+              </div>
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-slate-200">
                 <MermaidChart
                   chart={`
@@ -1644,206 +1656,307 @@ graph TB
                 <MermaidChart
                   chart={`
 mindmap
-  root((Scientific Reasoning Methodology))
-    Graph Theory & Knowledge Representation
-      Node Architecture
-        Hypothesis Nodes
-          Testable Statements
-          Falsifiable Claims
-          Predictive Models
-          Alternative Theories
-        Evidence Nodes
-          Empirical Data
-          Experimental Results
-          Observational Studies
-          Meta-Analysis
-          Expert Opinions
-        Dimensional Nodes
-          Scope Analysis
-          Objective Mapping
-          Constraint Identification
-          Bias Detection
-        Bridge Nodes
-          Cross-Domain Links
-          Interdisciplinary Connections
-          Knowledge Transfer
-          Conceptual Bridging
-      Edge Relationships
-        Causal Relationships
+  root((ASR-GoT Scientific Reasoning Framework))
+    Graph Theory & Knowledge Architecture
+      Advanced Node Taxonomy
+        Primary Research Nodes
+          Hypothesis Nodes
+            Testable Statements
+            Falsifiable Claims
+            Predictive Models
+            Alternative Theories
+            Null Hypotheses
+            Research Questions
+          Evidence Nodes
+            Empirical Data
+            Experimental Results
+            Observational Studies
+            Meta-Analysis Results
+            Expert Opinions
+            Historical Data
+            Real-time Data Streams
+          Dimensional Analysis Nodes
+            Scope Analysis
+            Objective Mapping
+            Constraint Identification
+            Bias Detection
+            Resource Assessment
+            Timeline Analysis
+        Secondary Support Nodes
+          Bridge Nodes
+            Cross-Domain Links
+            Interdisciplinary Connections
+            Knowledge Transfer Points
+            Conceptual Bridging
+            Translation Mechanisms
+          Context Nodes
+            Background Information
+            Domain Knowledge
+            Methodological Context
+            Historical Context
+            Cultural Factors
+          Validation Nodes
+            Peer Review Points
+            Quality Checkpoints
+            Verification Steps
+            Audit Trails
+      Complex Edge Relationships
+        Causal Relationship Network
           Direct Causation
+            Cause-Effect Pairs
+            Mechanism Pathways
+            Intervention Points
           Indirect Effects
-          Confounding Variables
-          Mediating Factors
-        Temporal Dynamics
+            Mediation Chains
+            Confounding Variables
+            Moderating Factors
+            Spurious Correlations
+          Counterfactual Reasoning
+            Alternative Scenarios
+            What-if Analysis
+            Intervention Modeling
+            Outcome Prediction
+        Temporal Dynamics Network
           Sequential Dependencies
+            Time-ordered Events
+            Process Chains
+            Development Stages
+            Evolutionary Patterns
           Cyclic Patterns
-          Delayed Effects
-          Time-Series Analysis
-        Correlative Links
-          Statistical Correlation
-          Spurious Relationships
-          Hidden Variables
-          Correlation Strength
-        Logical Connections
-          Deductive Reasoning
-          Inductive Inference
-          Abductive Logic
-          Analogical Reasoning
-      Multi-Layer Architecture
-        Conceptual Layer
+            Feedback Loops
+            Iterative Processes
+            Seasonal Variations
+            Periodic Phenomena
+          Complex Temporal Relations
+            Delayed Effects
+            Time-Series Analysis
+            Lag Relationships
+            Duration Dependencies
+        Statistical & Logical Relations
+          Correlation Networks
+            Statistical Correlation
+            Partial Correlations
+            Multiple Correlations
+            Correlation Matrices
+          Logical Connections
+            Deductive Reasoning
+            Inductive Inference
+            Abductive Logic
+            Analogical Reasoning
+            Syllogistic Structures
+      Multi-Dimensional Layer Architecture
+        Conceptual Knowledge Layer
           Abstract Concepts
           Theoretical Models
           Paradigm Structures
           Ontological Frameworks
-        Methodological Layer
-          Research Design
-          Data Collection
+          Philosophical Foundations
+          Conceptual Hierarchies
+        Methodological Framework Layer
+          Research Design Patterns
+          Data Collection Methods
           Analysis Protocols
-          Validation Methods
-        Empirical Layer
-          Raw Data
+          Validation Procedures
+          Quality Control Systems
+          Experimental Procedures
+        Empirical Evidence Layer
+          Raw Data Collections
           Processed Results
           Experimental Evidence
           Field Observations
-        Theoretical Layer
+          Survey Data
+          Measurement Records
+        Theoretical Foundation Layer
           Scientific Laws
           Theoretical Frameworks
           Mathematical Models
           Predictive Theories
-        Bridge Layer
+          Formal Systems
+          Axiomatic Structures
+        Integration & Translation Layer
           Cross-Layer Links
           Integration Points
           Synthesis Nodes
           Translation Mechanisms
-    Scientific Rigor & Quality Assurance
-      Hypothesis Development
-        Falsifiability Criteria
+          Bridging Concepts
+          Unified Models
+    Comprehensive Scientific Rigor Framework
+      Advanced Hypothesis Development
+        Falsifiability & Testability
           Karl Popper Principle
           Testable Predictions
           Refutation Conditions
           Disconfirming Evidence
-        Statistical Power Analysis
+          Null Hypothesis Testing
+          Alternative Explanations
+        Statistical Power & Design
           Effect Size Calculation
           Sample Size Determination
           Type I/II Error Control
           Power Curve Analysis
-        Confidence Frameworks
-          Bayesian Confidence
-          Frequentist Intervals
+          Multiple Comparison Corrections
+          Bayesian Power Analysis
+        Confidence & Uncertainty
+          Bayesian Confidence Intervals
+          Frequentist Confidence Regions
           Credible Regions
           Uncertainty Propagation
-        Research Design
-          Experimental Control
-          Randomization
-          Blinding Protocols
+          Error Analysis
+          Sensitivity Testing
+        Robust Research Design
+          Experimental Control Systems
+          Randomization Protocols
+          Blinding Procedures
           Replication Studies
-      Comprehensive Bias Mitigation
-        Cognitive Biases
+          Cross-validation Methods
+          Robustness Testing
+      Multi-Level Bias Detection & Mitigation
+        Cognitive Bias Taxonomy
           Confirmation Bias
           Availability Heuristic
           Anchoring Effects
           Overconfidence Bias
           Hindsight Bias
-        Selection Biases
+          Representative Bias
+          Framing Effects
+        Selection & Sampling Biases
           Sampling Bias
           Survivorship Bias
           Attrition Bias
           Volunteer Bias
-        Publication Biases
+          Self-selection Bias
+          Geographic Bias
+        Publication & Communication Biases
           Positive Result Bias
           Language Bias
           Citation Bias
           Time-Lag Bias
-        Methodological Biases
+          Journal Bias
+          Funding Bias
+        Methodological & Measurement Biases
           Measurement Bias
           Recall Bias
           Observer Bias
           Reporting Bias
-      Multi-Level Quality Control
-        Peer Review Process
-          Expert Evaluation
-          Double-Blind Review
-          Open Peer Review
+          Instrument Bias
+          Calibration Errors
+      Comprehensive Quality Assurance
+        Multi-Stage Peer Review
+          Expert Evaluation Panels
+          Double-Blind Review Process
+          Open Peer Review Systems
           Post-Publication Review
+          Community Review Platforms
+          Continuous Review Cycles
         Reproducibility Standards
           Computational Reproducibility
           Statistical Reproducibility
           Conceptual Replication
           Direct Replication
-        Transparency Protocols
+          Systematic Replication
+          Cross-Laboratory Validation
+        Transparency & Documentation
           Open Data Policies
           Code Availability
           Method Documentation
-          Result Reporting
-        Audit Trail Systems
-          Version Control
+          Result Reporting Standards
+          FAIR Data Principles
+          Version Control Systems
+        Audit & Tracking Systems
           Decision Tracking
           Change Logs
           Provenance Records
-    AI Integration & Automation
-      Advanced Bayesian Engine
-        Prior Knowledge Integration
-          Expert Elicitation
-          Literature-Based Priors
-          Empirical Priors
-          Reference Priors
-        Evidence Synthesis
-          Likelihood Functions
-          Posterior Updates
-          Model Averaging
-          Hierarchical Models
-        Uncertainty Quantification
-          Epistemic Uncertainty
-          Aleatoric Uncertainty
-          Model Uncertainty
-          Parameter Uncertainty
-        Decision Making
-          Expected Utility
-          Risk Assessment
-          Sensitivity Analysis
-          Value of Information
-      Intelligent Pattern Recognition
-        Temporal Pattern Detection
-          Trend Analysis
-          Seasonality Detection
-          Cyclical Patterns
-          Anomaly Detection
-        Causal Pattern Discovery
+          Quality Metrics
+          Performance Monitoring
+          Compliance Checking
+    AI Integration & Intelligent Automation
+      Advanced Bayesian Reasoning Engine
+        Multi-Source Prior Integration
+          Expert Knowledge Elicitation
+          Literature-Based Prior Construction
+          Empirical Prior Estimation
+          Reference Prior Development
+          Hierarchical Prior Structures
+          Dynamic Prior Updating
+        Evidence Synthesis & Updating
+          Likelihood Function Construction
+          Posterior Distribution Updates
+          Model Averaging Techniques
+          Hierarchical Bayesian Models
+          Markov Chain Monte Carlo
+          Variational Inference Methods
+        Comprehensive Uncertainty Quantification
+          Epistemic Uncertainty Analysis
+          Aleatoric Uncertainty Modeling
+          Model Uncertainty Assessment
+          Parameter Uncertainty Propagation
+          Predictive Uncertainty Bounds
+          Uncertainty Visualization
+        Decision Support Systems
+          Expected Utility Maximization
+          Risk Assessment Frameworks
+          Sensitivity Analysis Tools
+          Value of Information Analysis
+          Multi-Criteria Decision Making
+          Optimal Stopping Problems
+      Intelligent Pattern Recognition & Discovery
+        Advanced Temporal Analysis
+          Trend Detection Algorithms
+          Seasonality Identification
+          Cyclical Pattern Mining
+          Anomaly Detection Systems
+          Change Point Detection
+          Time Series Forecasting
+        Sophisticated Causal Discovery
           Causal Discovery Algorithms
-          Intervention Analysis
-          Counterfactual Reasoning
-          Mechanism Identification
+          Intervention Analysis Methods
+          Counterfactual Reasoning Systems
+          Mechanism Identification Tools
+          Causal Network Learning
+          Structural Equation Modeling
         Cross-Domain Pattern Mining
-          Transfer Learning
-          Domain Adaptation
-          Analogical Reasoning
-          Pattern Generalization
-        Knowledge Gap Identification
+          Transfer Learning Applications
+          Domain Adaptation Techniques
+          Analogical Reasoning Systems
+          Pattern Generalization Methods
+          Multi-Domain Knowledge Fusion
+          Concept Mapping Algorithms
+        Knowledge Gap & Opportunity Identification
           Literature Gap Analysis
           Research Opportunity Detection
-          Methodological Gaps
-          Theoretical Inconsistencies
-      Comprehensive Automation
-        Literature Intelligence
+          Methodological Gap Assessment
+          Theoretical Inconsistency Detection
+          Innovation Potential Scoring
+          Future Research Prediction
+      Comprehensive Research Automation
+        Intelligent Literature Processing
           Automated Literature Search
-          Paper Classification
-          Citation Analysis
-          Knowledge Extraction
-        Hypothesis Generation
-          Automated Theory Building
-          Pattern-Based Hypotheses
+          Smart Paper Classification
+          Citation Network Analysis
+          Knowledge Extraction Systems
+          Semantic Literature Mining
+          Research Trend Prediction
+        Automated Hypothesis Generation
+          Theory-Driven Hypothesis Building
+          Pattern-Based Hypothesis Formation
           Analogy-Driven Generation
           Constraint-Based Reasoning
-        Evidence Synthesis
-          Meta-Analysis Automation
-          Data Integration
-          Result Aggregation
-          Conflict Resolution
-        Report Generation
-          Automated Writing
-          Template-Based Reports
-          Dynamic Visualization
-          Interactive Dashboards
+          Evolutionary Hypothesis Development
+          Multi-Modal Hypothesis Integration
+        Advanced Evidence Synthesis
+          Automated Meta-Analysis
+          Intelligent Data Integration
+          Result Aggregation Systems
+          Conflict Resolution Algorithms
+          Evidence Quality Assessment
+          Synthesis Quality Control
+        Intelligent Report Generation
+          Automated Scientific Writing
+          Template-Based Report Systems
+          Dynamic Visualization Generation
+          Interactive Dashboard Creation
+          Multi-Format Output Systems
+          Quality-Controlled Documentation
                   `}
                   className="w-full h-auto"
                   id="methodology-mindmap"
