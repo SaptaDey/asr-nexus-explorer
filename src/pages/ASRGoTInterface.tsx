@@ -1084,7 +1084,7 @@ Make the data realistic and scientifically meaningful for the research domain.
       <div className="relative z-10">
 
       {/* Unified API Credentials Modal */}
-      <UnifiedAPICredentialsModal open={showAPICredentialsModal} onOpenChange={setShowAPICredentialsModal} onCredentialsSave={handleAPICredentialsSave} existingCredentials={apiKeys} />
+      <UnifiedAPICredentialsModal open={showAPICredentialsModal} onOpenChange={setShowAPICredentialsModal} onCredentialsSave={handleAPICredentialsSave} existingCredentials={apiKeys} className="text-cyan-50 text-4xl text-center font-extrabold" />
 
       {/* Bias Auditing Sidebar */}
       {showBiasAudit && <div className="fixed right-0 top-0 bottom-0 z-20 bg-background border-l shadow-lg w-full sm:w-96">
