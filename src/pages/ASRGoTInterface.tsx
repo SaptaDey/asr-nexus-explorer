@@ -337,7 +337,7 @@ const ASRGoTInterface: React.FC = () => {
               stageResults={stageResults}
               researchContext={researchContext}
               apiKeys={apiKeys}
-              processingMode={processingMode}
+              processingMode={mode}
               onShowApiModal={() => setShowApiModal(true)}
               onSwitchToExport={() => setActiveTab('export')}
             />
