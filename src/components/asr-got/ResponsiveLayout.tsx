@@ -9,7 +9,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
-
 interface ResponsiveLayoutProps {
   navigationItems: NavigationItem[];
   activeTab: string;
@@ -18,7 +17,6 @@ interface ResponsiveLayoutProps {
   headerContent?: React.ReactNode;
   className?: string;
 }
-
 export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
   navigationItems,
   activeTab,
@@ -41,15 +39,12 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
         setSidebarCollapsed(true);
       }
     };
-    
     checkIsMobile();
     window.addEventListener('resize', checkIsMobile);
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
-
   const sidebarWidth = sidebarCollapsed ? 'w-16' : 'w-80';
   const contentMargin = sidebarCollapsed ? 'ml-16' : 'ml-80';
-
   const findActiveItem = (items: NavigationItem[], targetId: string): NavigationItem | null => {
     for (const item of items) {
       if (item.id === targetId) return item;
@@ -60,200 +55,123 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
     }
     return null;
   };
-
   const activeItem = findActiveItem(navigationItems, activeTab);
-
   if (isMobile) {
-    return (
-      <div className={`min-h-screen bg-gray-50 ${className}`}>
+    return <div className={`min-h-screen bg-gray-50 ${className}`}>
         {/* Mobile Navigation */}
-        <ResponsiveNavigation
-          activeTab={activeTab}
-          onTabChange={onTabChange}
-          navigationItems={navigationItems}
-          className="sticky top-0 z-40 bg-white border-b"
-        />
+        <ResponsiveNavigation activeTab={activeTab} onTabChange={onTabChange} navigationItems={navigationItems} className="sticky top-0 z-40 bg-white border-b" />
         
         {/* Mobile Content */}
         <div className="relative">
           {/* Header Content */}
-          {headerContent && (
-            <div className="bg-white border-b p-4">
+          {headerContent && <div className="bg-white border-b p-4">
               {headerContent}
-            </div>
-          )}
+            </div>}
           
           {/* Main Content */}
           <div className="p-4">
-            {isFullscreen ? (
-              <div className="fixed inset-0 z-50 bg-white overflow-auto">
+            {isFullscreen ? <div className="fixed inset-0 z-50 bg-white overflow-auto">
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       {activeItem?.icon}
                       <h2 className="text-lg font-semibold">{activeItem?.label}</h2>
-                      {activeItem?.badge && (
-                        <Badge variant="secondary">{activeItem.badge}</Badge>
-                      )}
+                      {activeItem?.badge && <Badge variant="secondary">{activeItem.badge}</Badge>}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsFullscreen(false)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => setIsFullscreen(false)}>
                       <Minimize2 className="h-4 w-4" />
                     </Button>
                   </div>
                   {children}
                 </div>
-              </div>
-            ) : (
-              <Card>
+              </div> : <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       {activeItem?.icon}
                       <h2 className="text-lg font-semibold">{activeItem?.label}</h2>
-                      {activeItem?.badge && (
-                        <Badge variant="secondary">{activeItem.badge}</Badge>
-                      )}
+                      {activeItem?.badge && <Badge variant="secondary">{activeItem.badge}</Badge>}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsFullscreen(true)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => setIsFullscreen(true)}>
                       <Maximize2 className="h-4 w-4" />
                     </Button>
                   </div>
-                  {activeItem?.description && (
-                    <p className="text-sm text-gray-600 mb-4">{activeItem.description}</p>
-                  )}
+                  {activeItem?.description && <p className="text-sm text-gray-600 mb-4">{activeItem.description}</p>}
                   {children}
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
 
   // Desktop Layout
-  return (
-    <div className={`min-h-screen bg-gray-50 ${className}`}>
+  return <div className={`min-h-screen bg-gray-50 ${className}`}>
       {/* Desktop Sidebar */}
       <div className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-30 ${sidebarWidth}`}>
-        {sidebarCollapsed ? (
-          // Collapsed Sidebar
-          <div className="p-4">
+        {sidebarCollapsed ?
+      // Collapsed Sidebar
+      <div className="p-4">
             <div className="space-y-4">
-              {navigationItems.map((item) => (
-                <Button
-                  key={item.id}
-                  variant={activeTab === item.id ? "default" : "ghost"}
-                  size="sm"
-                  className="w-full h-12 p-0"
-                  onClick={() => onTabChange(item.id)}
-                  title={item.label}
-                >
+              {navigationItems.map(item => <Button key={item.id} variant={activeTab === item.id ? "default" : "ghost"} size="sm" onClick={() => onTabChange(item.id)} title={item.label} className="w-full h-12 p-0 text-cyan-950 font-extrabold rounded-full">
                   {item.icon}
-                </Button>
-              ))}
+                </Button>)}
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mt-6 w-full"
-              onClick={() => setSidebarCollapsed(false)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setSidebarCollapsed(false)} className="mt-6 w-full text-cyan-950 text-center font-extrabold rounded-full">
               <ChevronRight className="h-4 w-4" />
             </Button>
-          </div>
-        ) : (
-          // Expanded Sidebar
-          <div className="relative h-full">
-            <ResponsiveNavigation
-              activeTab={activeTab}
-              onTabChange={onTabChange}
-              navigationItems={navigationItems}
-              className="h-full"
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute top-6 right-2"
-              onClick={() => setSidebarCollapsed(true)}
-            >
+          </div> :
+      // Expanded Sidebar
+      <div className="relative h-full">
+            <ResponsiveNavigation activeTab={activeTab} onTabChange={onTabChange} navigationItems={navigationItems} className="h-full" />
+            <Button variant="ghost" size="sm" className="absolute top-6 right-2" onClick={() => setSidebarCollapsed(true)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-          </div>
-        )}
+          </div>}
       </div>
 
       {/* Desktop Content Area */}
       <div className={`transition-all duration-300 ${contentMargin}`}>
         {/* Header Content */}
-        {headerContent && (
-          <div className="bg-white border-b p-6 sticky top-0 z-20">
+        {headerContent && <div className="bg-white border-b p-6 sticky top-0 z-20">
             {headerContent}
-          </div>
-        )}
+          </div>}
         
         {/* Main Content */}
         <div className="p-6">
-          {isFullscreen ? (
-            <div className="fixed inset-0 z-50 bg-white overflow-auto">
+          {isFullscreen ? <div className="fixed inset-0 z-50 bg-white overflow-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     {activeItem?.icon}
                     <h2 className="text-2xl font-semibold">{activeItem?.label}</h2>
-                    {activeItem?.badge && (
-                      <Badge variant="secondary">{activeItem.badge}</Badge>
-                    )}
+                    {activeItem?.badge && <Badge variant="secondary">{activeItem.badge}</Badge>}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsFullscreen(false)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => setIsFullscreen(false)}>
                     <Minimize2 className="h-4 w-4" />
                   </Button>
                 </div>
                 {children}
               </div>
-            </div>
-          ) : (
-            <Card>
+            </div> : <Card>
               <CardContent className="p-8">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     {activeItem?.icon}
                     <div>
                       <h2 className="text-2xl font-semibold text-gray-900">{activeItem?.label}</h2>
-                      {activeItem?.description && (
-                        <p className="text-gray-600 mt-1">{activeItem.description}</p>
-                      )}
+                      {activeItem?.description && <p className="text-gray-600 mt-1">{activeItem.description}</p>}
                     </div>
-                    {activeItem?.badge && (
-                      <Badge variant="secondary" className="ml-auto">{activeItem.badge}</Badge>
-                    )}
+                    {activeItem?.badge && <Badge variant="secondary" className="ml-auto">{activeItem.badge}</Badge>}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsFullscreen(true)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => setIsFullscreen(true)}>
                     <Maximize2 className="h-4 w-4" />
                   </Button>
                 </div>
                 {children}
               </CardContent>
-            </Card>
-          )}
+            </Card>}
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
