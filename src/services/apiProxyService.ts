@@ -26,7 +26,7 @@ class ApiProxyService {
   private baseUrl: string
 
   constructor() {
-    this.baseUrl = `${process.env.VITE_SUPABASE_URL}/functions/v1`
+    this.baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
   }
 
   async makeApiCall(request: ApiProxyRequest): Promise<ApiProxyResponse> {
