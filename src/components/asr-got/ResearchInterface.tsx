@@ -102,16 +102,6 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
             <Label htmlFor="task-description" className="text-lg font-semibold">Research Question or Topic</Label>
             <Textarea id="task-description" placeholder="Enter your scientific research question or topic of interest. The AI will automatically analyze the field, generate hypotheses, and conduct comprehensive research..." value={taskDescription} onChange={e => setTaskDescription(e.target.value)} rows={4} className="mt-2" />
           </div>
-          <div className="p-4 rounded-lg border border-purple-200 bg-sky-100">
-            <h4 className="font-semibold mb-2 text-sky-800">🎯 Key Features</h4>
-            <ul className="text-sm text-purple-700 space-y-1">
-              <li>• Automatic field identification and background research</li>
-              
-              
-              
-              
-            </ul>
-          </div>
           <Button onClick={handleStartResearch} disabled={isProcessing} className="w-full gradient-bg bg-cyan-800 hover:bg-cyan-700">
             {isProcessing ? <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
