@@ -46,6 +46,7 @@ import { enhancedApiService } from '@/services/enhancedApiService';
 import { dataStorageService } from '@/services/dataStorageService';
 import { SessionControls } from '@/components/asr-got/SessionControls';
 import { User, LogIn, UserPlus, Key, CheckCircle, AlertTriangle } from 'lucide-react';
+import MermaidChart from '@/components/ui/MermaidChart';
 const ASRGoTInterface: React.FC = () => {
   const {
     currentStage,
@@ -1443,16 +1444,117 @@ Make the data realistic and scientifically meaningful for the research domain.
           </div>
         </div>
 
+        {/* Scientific Reasoning Architecture Overview */}
+        <div className="bg-white py-16 px-4 sm:px-6 lg:px-8 mb-8 rounded-3xl shadow-lg border border-gray-200">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-slate-900">
+                🧬 Scientific Reasoning: Complete AI Solution
+              </h2>
+              <p className="text-xl text-slate-600 max-w-4xl mx-auto leading-relaxed">
+                The first production-ready platform that transforms complex research problems into systematic, graph-based knowledge discovery pipelines
+              </p>
+            </div>
+            
+            <div className="mb-16">
+              <MermaidChart
+                chart={`
+graph TD
+    A[🔬 Research Problem] --> B[🧬 Scientific Reasoning Platform]
+    B --> C[📊 9-Stage Framework]
+    B --> D[🤖 AI Graph Reasoning]
+    B --> E[📈 Statistical Rigor]
+    
+    C --> F[🎯 Systematic Discovery]
+    D --> F
+    E --> F
+    
+    F --> G[✨ Breakthrough Results]
+    
+    style A fill:#fef2f2,stroke:#dc2626
+    style B fill:#f0fdf4,stroke:#16a34a
+    style F fill:#eff6ff,stroke:#2563eb
+    style G fill:#fffbeb,stroke:#d97706
+                `}
+                className="w-full h-auto"
+                id="scientific-reasoning-overview"
+              />
+            </div>
+
+            {/* Core Innovation Pillars */}
+            <div className="mb-16">
+              <h3 className="text-3xl font-bold text-center mb-8 text-slate-900">🌟 Core Innovation Pillars</h3>
+              <MermaidChart
+                chart={`
+flowchart LR
+    subgraph " 🎯 Scientific Reasoning Core "
+        A[🧠 Graph Theory] <--> B[🔬 Scientific Method]
+        C[📊 Bayesian Analysis] <--> D[🤖 AI Reasoning]
+        E[🔍 Bias Detection] <--> F[📈 Statistical Power]
+        G[⏰ Temporal Analysis] <--> H[🌐 Cross-Domain Bridge]
+    end
+    
+    style A fill:#e1f5fe,stroke:#01579b
+    style B fill:#f3e5f5,stroke:#4a148c
+    style C fill:#e8f5e8,stroke:#1b5e20
+    style D fill:#fff3e0,stroke:#e65100
+    style E fill:#fce4ec,stroke:#880e4f
+    style F fill:#e0f2f1,stroke:#004d40
+    style G fill:#f1f8e9,stroke:#33691e
+    style H fill:#e3f2fd,stroke:#0277bd
+                `}
+                className="w-full h-auto"
+                id="innovation-pillars"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Enhanced Pipeline Visualization */}
         <div className="bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 py-16 px-4 sm:px-6 lg:px-8 mb-8 rounded-3xl shadow-xl border border-orange-100">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-slate-800">
-                🔬 Scientific Reasoning Pipeline
+                🔬 The 9-Stage Research Framework
               </h2>
               <p className="text-xl text-slate-600 max-w-4xl mx-auto">
                 Advanced AI orchestration through 9 mandatory stages of scientific analysis
               </p>
+            </div>
+
+            {/* Comprehensive Pipeline Mermaid Diagram */}
+            <div className="mb-12">
+              <MermaidChart
+                chart={`
+flowchart TD
+    subgraph "🎯 Scientific Reasoning Methodology"
+        S1[🎯 Stage 1<br/>Initialization<br/>📝 Task Definition] 
+        S2[🔍 Stage 2<br/>Decomposition<br/>📊 Multi-Dimensional Analysis]
+        S3[💡 Stage 3<br/>Hypothesis Planning<br/>🧠 AI-Generated Theories]
+        S4[📈 Stage 4<br/>Evidence Integration<br/>🔬 Bayesian Updates]
+        S5[✂️ Stage 5<br/>Pruning & Merging<br/>⚡ Graph Optimization]
+        S6[🎯 Stage 6<br/>Subgraph Extraction<br/>🚀 High-Value Pathways]
+        S7[📝 Stage 7<br/>Composition<br/>📋 Narrative Generation]
+        S8[🔍 Stage 8<br/>Reflection<br/>✅ Quality Audit]
+        S9[📊 Stage 9<br/>Final Analysis<br/>🎓 PhD-Level Report]
+    end
+    
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8 --> S9
+    S8 -.-> S1
+    
+    style S1 fill:#ffebee,stroke:#d32f2f
+    style S2 fill:#f3e5f5,stroke:#7b1fa2
+    style S3 fill:#e8f5e8,stroke:#388e3c
+    style S4 fill:#e1f5fe,stroke:#0288d1
+    style S5 fill:#fff3e0,stroke:#f57c00
+    style S6 fill:#fce4ec,stroke:#c2185b
+    style S7 fill:#e0f2f1,stroke:#00695c
+    style S8 fill:#f1f8e9,stroke:#558b2f
+    style S9 fill:#e8eaf6,stroke:#3f51b5
+                `}
+                className="w-full h-auto"
+                id="nine-stage-framework"
+              />
             </div>
 
             {/* Visual Workflow */}
@@ -1552,6 +1654,146 @@ Make the data realistic and scientifically meaningful for the research domain.
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Technical Architecture Connectome */}
+        <div className="bg-gradient-to-r from-slate-100 to-gray-100 py-16 px-4 sm:px-6 lg:px-8 mb-8 rounded-3xl shadow-xl border border-slate-200">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-slate-900">
+                🏗️ Technical Architecture Connectome
+              </h2>
+              <p className="text-xl text-slate-600 max-w-4xl mx-auto">
+                Complete system architecture showing how all components work together
+              </p>
+            </div>
+            
+            <div className="mb-16">
+              <MermaidChart
+                chart={`
+graph TB
+    subgraph "🎯 User Interface Layer"
+        UI1[React 18 Frontend]
+        UI2[Responsive Design]
+        UI3[API Dashboard]
+    end
+    
+    subgraph "🧠 Core Engine"
+        CE1[Graph-of-Thoughts Processor]
+        CE2[Bayesian Confidence Engine]
+        CE3[Causal Inference Module]
+        CE4[Bias Detection AI]
+    end
+    
+    subgraph "📊 Data Layer"
+        DL1[Knowledge Graphs]
+        DL2[Evidence Database]
+        DL3[Citation Network]
+        DL4[Temporal Patterns]
+    end
+    
+    subgraph "🔧 Infrastructure"
+        IN1[Supabase Backend]
+        IN2[Real-time Processing]
+        IN3[Export Engines]
+        IN4[Security Layer]
+    end
+    
+    subgraph "🤖 AI Orchestra"
+        AI1[Perplexity Sonar]
+        AI2[Gemini 2.5 Pro]
+        AI3[Smart Routing]
+        AI4[Fallback Systems]
+    end
+    
+    UI1 --> CE1
+    UI2 --> CE2
+    UI3 --> CE3
+    CE1 --> DL1
+    CE2 --> DL2
+    CE3 --> DL3
+    CE4 --> DL4
+    DL1 --> IN1
+    DL2 --> IN2
+    DL3 --> IN3
+    DL4 --> IN4
+    CE1 --> AI1
+    CE2 --> AI2
+    CE3 --> AI3
+    CE4 --> AI4
+    
+    style UI1 fill:#e3f2fd,stroke:#01579b
+    style CE1 fill:#e8f5e8,stroke:#1b5e20
+    style DL1 fill:#fff3e0,stroke:#e65100
+    style IN1 fill:#fce4ec,stroke:#880e4f
+    style AI1 fill:#f3e5f5,stroke:#4a148c
+                `}
+                className="w-full h-auto"
+                id="technical-architecture"
+              />
+            </div>
+
+            {/* Research Methodology Mind Map */}
+            <div className="mb-16">
+              <h3 className="text-3xl font-bold text-center mb-8 text-slate-900">🧠 Research Methodology Mind Map</h3>
+              <MermaidChart
+                chart={`
+mindmap
+  root((Scientific Reasoning Methodology))
+    Graph Theory
+      Node Types
+        Hypothesis
+        Evidence
+        Dimension
+        Bridge
+      Edge Types
+        Causal
+        Temporal
+        Correlative
+        Logical
+      Multi-Layer
+        Conceptual
+        Methodological
+        Empirical
+        Theoretical
+    Scientific Rigor
+      Hypothesis Testing
+        Falsifiability
+        Statistical Power
+        Effect Size
+        Confidence Intervals
+      Bias Mitigation
+        Cognitive Bias
+        Selection Bias
+        Confirmation Bias
+        Publication Bias
+      Quality Control
+        Peer Review
+        Reproducibility
+        Transparency
+        Audit Trails
+    AI Integration
+      Bayesian Engine
+        Prior Beliefs
+        Evidence Updates
+        Posterior Distributions
+        Uncertainty Quantification
+      Pattern Recognition
+        Temporal Patterns
+        Causal Patterns
+        Cross-Domain Links
+        Knowledge Gaps
+      Automation
+        Literature Mining
+        Hypothesis Generation
+        Evidence Synthesis
+        Report Generation
+                `}
+                className="w-full h-auto"
+                id="methodology-mindmap"
+              />
             </div>
           </div>
         </div>
@@ -1662,6 +1904,126 @@ Make the data realistic and scientifically meaningful for the research domain.
                 <span className="bg-orange-200 text-orange-900 px-6 py-3 rounded-xl text-lg font-semibold border border-orange-400/30">Tailwind CSS</span>
               </div>
               
+            </div>
+          </div>
+        </div>
+
+        {/* User Journey & Domain Applications */}
+        <div className="bg-white py-16 px-4 sm:px-6 lg:px-8 mb-8 rounded-3xl shadow-lg border border-gray-200">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-slate-900">
+                🚀 Research Discovery Journey
+              </h2>
+              <p className="text-xl text-slate-600 max-w-4xl mx-auto">
+                From question to breakthrough - see how Scientific Reasoning transforms your research process
+              </p>
+            </div>
+            
+            {/* User Journey */}
+            <div className="mb-16">
+              <MermaidChart
+                chart={`
+journey
+    title Research Discovery Journey
+    section Initialization
+      Research Question: 5: Researcher
+      Graph Setup: 4: System
+      Domain Config: 4: Researcher
+    section Discovery
+      Task Decomposition: 5: System
+      Hypothesis Generation: 5: AI Engine
+      Evidence Search: 4: Researcher
+    section Analysis
+      Bayesian Updates: 5: System
+      Bias Detection: 4: AI Engine
+      Pattern Analysis: 5: System
+    section Results
+      Insight Generation: 5: System
+      Quality Validation: 4: System
+      Export & Share: 5: Researcher
+                `}
+                className="w-full h-auto"
+                id="user-journey"
+              />
+            </div>
+
+            {/* Domain Applications */}
+            <div className="mb-16">
+              <h3 className="text-3xl font-bold text-center mb-8 text-slate-900">🎯 Cross-Domain Applications</h3>
+              <MermaidChart
+                chart={`
+graph LR
+    subgraph "🏥 Medical Research"
+        M1[Immunology]
+        M2[Dermatology]
+        M3[Oncology]
+        M4[Drug Discovery]
+    end
+    
+    subgraph "🧬 Life Sciences"
+        L1[Genomics]
+        L2[Proteomics]
+        L3[Microbiome]
+        L4[Systems Biology]
+    end
+    
+    subgraph "🤖 AI & Computing"
+        A1[Machine Learning]
+        A2[NLP Research]
+        A3[Computer Vision]
+        A4[Robotics]
+    end
+    
+    subgraph "🌍 Cross-Domain"
+        C1[Climate Science]
+        C2[Social Sciences]
+        C3[Economics]
+        C4[Psychology]
+    end
+    
+    M1 --> SR[🧬 Scientific Reasoning]
+    M2 --> SR
+    L1 --> SR
+    L2 --> SR
+    A1 --> SR
+    A2 --> SR
+    C1 --> SR
+    C2 --> SR
+    
+    style SR fill:#ffebee,stroke:#d32f2f,stroke-width:4px
+    style M1 fill:#e8f5e8,stroke:#388e3c
+    style L1 fill:#e1f5fe,stroke:#0288d1
+    style A1 fill:#fff3e0,stroke:#f57c00
+    style C1 fill:#f1f8e9,stroke:#558b2f
+                `}
+                className="w-full h-auto"
+                id="domain-applications"
+              />
+            </div>
+
+            {/* Quick Start Workflow */}
+            <div className="mb-16">
+              <h3 className="text-3xl font-bold text-center mb-8 text-slate-900">⚡ Quick Start Workflow</h3>
+              <MermaidChart
+                chart={`
+flowchart LR
+    A[🚀 Enter Research Query] --> B[⚙️ Configure APIs]
+    B --> C[❓ AI Processes Question]
+    C --> D[🤖 Execute 9 Stages]
+    D --> E[📊 Generate Insights]
+    E --> F[🔍 Explore Results]
+    F --> G[📈 Export Report]
+    
+    style A fill:#e8f5e8,stroke:#388e3c
+    style C fill:#e1f5fe,stroke:#0288d1
+    style D fill:#fff3e0,stroke:#f57c00
+    style E fill:#f1f8e9,stroke:#558b2f
+    style G fill:#ffebee,stroke:#d32f2f
+                `}
+                className="w-full h-auto"
+                id="quick-start"
+              />
             </div>
           </div>
         </div>
