@@ -105,8 +105,8 @@ const ASRGoTInterface: React.FC = () => {
         const status = await backendService.initialize();
         setBackendStatus(status);
         setBackendHealthy(backendService.isHealthy());
-        if (status.errors.length > 0) {
-          console.warn('⚠️ Backend initialized with errors:', status.errors);
+        if (status.health.errors.length > 0) {
+          console.warn('⚠️ Backend initialized with errors:', status.health.errors);
           toast.warning('Backend services initialized with some limitations');
         } else {
           toast.success('Backend services connected successfully');
@@ -1067,7 +1067,8 @@ Make the data realistic and scientifically meaningful for the research domain.
     URL.revokeObjectURL(url);
     toast.success('HTML report downloaded successfully');
   };
-  return <div className="min-h-screen relative overflow-hidden">
+  return (
+    <div className="min-h-screen relative overflow-hidden">
       {/* Soft Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50"></div>
       
@@ -2033,10 +2034,11 @@ flowchart LR
           {renderTabContent(activeTab)}
         </ResponsiveLayout>
       </div>
-      </div>
 
       {/* Stage 9 Progress Indicator */}
       {showStage9Progress && <Stage9ProgressIndicator currentStage={currentStage} isProcessing={isProcessing} onComplete={() => setShowStage9Progress(false)} />}
-    </div>;
+    </div>
+  );
 };
+
 export default ASRGoTInterface;
