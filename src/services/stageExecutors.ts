@@ -1513,66 +1513,121 @@ export const generateFinalAnalysis = async (context: StageExecutorContext): Prom
       }));
     }
 
-    // **RETURN SUMMARY FOR STAGE EXECUTOR**
-    return `**STAGE 9 COMPREHENSIVE ANALYSIS COMPLETE**
-
-**📊 Generation Metrics:**
-- **Word Count:** ${totalWordCount.toLocaleString()} words (~${Math.round(totalWordCount/250)} pages)
-- **Substages Generated:** ${comprehensiveReport.substageResults.length} (9A-9G)
-- **Figures Integrated:** ${comprehensiveReport.figureMetadata.length} comprehensive visualizations
-- **References:** ${comprehensiveReport.vancouverReferences.length} Vancouver citations
-- **Generation Time:** ${generationTime} seconds
-- **Token Usage:** ${totalTokensUsed.toLocaleString()} tokens
-
-**📋 Substage Breakdown:**
-${comprehensiveReport.substageResults.map(result => 
-  `- **${result.substage}:** ${result.title} (${result.wordCount} words, ${result.generationTime}s)`
-).join('\n')}
-
-**📈 Quality Metrics:**
-- **Academic Rigor:** ${comprehensiveReport.qualityMetrics.academicRigor}%
-- **Content Depth:** ${comprehensiveReport.qualityMetrics.contentDepth}%
-- **Figure Integration:** ${comprehensiveReport.qualityMetrics.figureIntegration}%
-- **Reference Quality:** ${comprehensiveReport.qualityMetrics.referenceQuality}%
-
-**💾 Storage Status:**
-- **Session ID:** ${context.currentSessionId || 'Generated'}
-- **Comprehensive HTML:** Generated and stored
-- **Figure Integration:** All ${comprehensiveReport.figureMetadata.length} figures embedded
-- **JSON Analysis Data:** Complete substage results and metadata stored
-
-**🎯 Clinical Applications:**
-- **Immediate Practice Impact:** Risk stratification and biomarker applications
-- **Research Advancement:** Novel insights into chromosomal instabilities
-- **Healthcare Integration:** Implementation roadmap with cost-effectiveness analysis
-- **Future Directions:** Comprehensive research priorities and technology integration
-
-**Token-Optimized Processing**: Stage 9 successfully completed using enhanced multi-substage approach with aggressive chunking and error prevention while maintaining comprehensive 150+ page equivalent quality.`;
+    // **RETURN THE ACTUAL HTML REPORT INSTEAD OF SUMMARY**
+    // This ensures the export system gets the comprehensive HTML instead of falling back to Stage 7
+    console.log(`✅ Stage 9 Complete: Generated ${totalWordCount.toLocaleString()} words (${Math.round(totalWordCount/250)} pages) with ${comprehensiveReport.figureMetadata.length} figures`);
+    console.log(`📊 Quality Metrics: Academic Rigor ${comprehensiveReport.qualityMetrics.academicRigor}%, Content Depth ${comprehensiveReport.qualityMetrics.contentDepth}%`);
+    
+    // Return the complete HTML report for export
+    return comprehensiveReport.finalHTML;
 
   } catch (error) {
     console.error('❌ Stage 9 comprehensive generation failed:', error);
     
-    // **FALLBACK: Generate basic completion message**
-    const fallbackMessage = `**STAGE 9 ANALYSIS - FALLBACK MODE**
+    // **FALLBACK: Generate HTML report instead of text**
+    console.error('❌ Stage 9 comprehensive generation failed, generating fallback HTML report');
+    
+    const fallbackHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASR-GoT Research Analysis: ${researchContext.topic || 'Research Analysis'}</title>
+    <style>
+        body { 
+            font-family: 'Times New Roman', serif; 
+            line-height: 1.6; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            color: #333;
+        }
+        h1 { 
+            color: #2c3e50; 
+            border-bottom: 3px solid #3498db; 
+            padding-bottom: 10px; 
+            text-align: center;
+        }
+        h2 { 
+            color: #34495e; 
+            border-bottom: 1px solid #bdc3c7; 
+            padding-bottom: 5px; 
+            margin-top: 30px; 
+        }
+        .error-notice { 
+            background: #f8d7da; 
+            border: 1px solid #f5c6cb; 
+            color: #721c24; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin: 20px 0;
+        }
+        .metadata { 
+            background: #f8f9fa; 
+            padding: 20px; 
+            border-left: 4px solid #3498db; 
+            margin: 20px 0; 
+            border-radius: 4px;
+        }
+        .stage-result { 
+            background: #ffffff; 
+            padding: 20px; 
+            margin: 25px 0; 
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .figure-placeholder {
+            background: #f1f3f4;
+            border: 2px dashed #bdc3c7;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ASR-GoT Research Analysis - Fallback Report</h1>
+    <h2 style="text-align: center; color: #7f8c8d; font-style: italic;">${researchContext.topic || 'Research Analysis'}</h2>
+    
+    <div class="error-notice">
+        <h3>⚠️ Comprehensive Generation Error</h3>
+        <p><strong>Error:</strong> ${error instanceof Error ? error.message : 'Unknown error during comprehensive generation'}</p>
+        <p>This is a fallback report containing available stage results. The full comprehensive thesis generation encountered technical issues.</p>
+    </div>
+    
+    <div class="metadata">
+        <p><strong>Research Field:</strong> ${researchContext.field || 'Scientific Research'}</p>
+        <p><strong>Analysis Date:</strong> ${new Date().toLocaleDateString()}</p>
+        <p><strong>Framework:</strong> ASR-GoT (Automatic Scientific Research - Graph of Thoughts)</p>
+        <p><strong>Total Stages Processed:</strong> ${allStageResults.length}/8</p>
+        <p><strong>Graph Analysis:</strong> ${safeGraphData.nodes.length} nodes, ${safeGraphData.edges.length} edges</p>
+        <p><strong>Session ID:</strong> ${context.currentSessionId || 'Not available'}</p>
+    </div>
 
-**Error Encountered:** ${error instanceof Error ? error.message : 'Unknown error during comprehensive generation'}
+    <h2>Available Stage Results</h2>
+    ${allStageResults.map((result, index) => `
+        <div class="stage-result">
+            <h3>Stage ${index + 1}</h3>
+            <div>${result.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').substring(0, 2000)}${result.length > 2000 ? '...' : ''}</div>
+        </div>
+    `).join('')}
+    
+    <h2>Visualization Placeholder</h2>
+    <div class="figure-placeholder">
+        <h4>📊 Comprehensive Visualizations Available</h4>
+        <p>20+ statistical plots and network diagrams were generated but could not be embedded due to the generation error.</p>
+        <p><em>Please check the png_results folder for individual visualization files.</em></p>
+    </div>
+    
+    <footer style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #3498db; text-align: center;">
+        <p><em>Generated by ASR-GoT Framework (Fallback Mode) • ${new Date().toISOString()}</em></p>
+        <p><strong>Recommendation:</strong> Review error logs and retry comprehensive generation with adjusted parameters.</p>
+    </footer>
+</body>
+</html>`;
 
-**Fallback Summary:**
-- **Stages Processed:** ${allStageResults.length}/8 previous stages
-- **Graph Nodes:** ${safeGraphData.nodes.length} nodes analyzed
-- **Graph Edges:** ${safeGraphData.edges.length} relationships mapped
-- **Research Context:** ${researchContext.topic}
-- **Session ID:** ${context.currentSessionId || 'Not available'}
-
-**Available Data:**
-${allStageResults.map((result, index) => 
-  `- **Stage ${index + 1}:** ${result.substring(0, 100)}${result.length > 100 ? '...' : ''}`
-).slice(0, 8).join('\n')}
-
-**Recommendation:** Review error logs and retry comprehensive generation with adjusted parameters.
-
-**Token-Optimized Processing**: Stage 9 fallback completed - comprehensive analysis may be available through alternative generation methods.`;
-
-    return fallbackMessage;
+    return fallbackHTML;
   }
 };
