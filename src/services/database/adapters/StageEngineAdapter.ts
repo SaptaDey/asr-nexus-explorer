@@ -13,7 +13,7 @@ export class StageEngineAdapter {
 
   constructor(databaseService: DatabaseService, apiKey: string) {
     this.db = databaseService;
-    this.stageEngine = new AsrGotStageEngine(apiKey);
+    this.stageEngine = new AsrGotStageEngine({ gemini: apiKey, perplexity: '', openai: '' });
   }
 
   /**
