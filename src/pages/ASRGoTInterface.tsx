@@ -1431,12 +1431,12 @@ Make the data realistic and scientifically meaningful for the research domain.
             {/* Responsive Hero Container with proper aspect ratios */}
             <div className="relative w-full">
               {/* Responsive Hero Image - Optimized for all screen sizes */}
-              <div className="aspect-video min-h-[300px] sm:min-h-[400px] lg:min-h-[500px]">
+              <div className="aspect-video min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] bg-gradient-to-br from-blue-50 via-teal-50 to-green-50">
                 <div 
                   className="absolute inset-0 w-full h-full"
                   style={{
-                    backgroundImage: 'url("/img/hero.png")',
-                    backgroundSize: 'cover',
+                    backgroundImage: 'url("/img/logo.png")',
+                    backgroundSize: 'contain',
                     backgroundPosition: 'center',
                     backgroundRepeat: 'no-repeat',
                     backgroundAttachment: 'scroll',
@@ -1444,23 +1444,29 @@ Make the data realistic and scientifically meaningful for the research domain.
                   }}
                 ></div>
                 
-                {/* Additional responsive background for ultra-wide screens */}
+                {/* Responsive background optimization for logo */}
                 <style jsx>{`
                   @media (min-width: 1920px) {
                     div {
-                      background-size: cover !important;
+                      background-size: contain !important;
                       background-position: center center !important;
                     }
                   }
                   @media (max-width: 640px) and (orientation: portrait) {
                     div {
-                      background-size: cover !important;
-                      background-position: center top !important;
+                      background-size: contain !important;
+                      background-position: center center !important;
                     }
                   }
                   @media (max-width: 640px) and (orientation: landscape) {
                     div {
-                      background-size: cover !important;
+                      background-size: contain !important;
+                      background-position: center center !important;
+                    }
+                  }
+                  @media (min-width: 640px) and (max-width: 1024px) {
+                    div {
+                      background-size: contain !important;
                       background-position: center center !important;
                     }
                   }
