@@ -1,5 +1,5 @@
 
-@import './styles/TreeStyles.css';
+/* TreeStyles.css import removed - tree components archived for performance optimization */
 
 @tailwind base;
 @tailwind components;

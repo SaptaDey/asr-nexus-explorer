@@ -14,7 +14,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Brain, Database, FileText, Download, Zap, Settings, Network, Play, RotateCcw, Mail, ToggleLeft, BookOpen, Bug, Clock, Pause, PlayCircle } from 'lucide-react';
-import { TreeOfReasoningVisualization } from '@/components/asr-got/TreeOfReasoningVisualization';
+// Tree visualization temporarily disabled for performance optimization
+// import { TreeOfReasoningVisualization } from '@/components/asr-got/TreeOfReasoningVisualization';
 import { ResearchInterface } from '@/components/asr-got/ResearchInterface';
 import { EnhancedGraphVisualization } from '@/components/asr-got/EnhancedGraphVisualization';
 import { AdvancedGraphVisualization } from '@/components/asr-got/AdvancedGraphVisualization';
@@ -384,10 +385,11 @@ const ASRGoTInterface: React.FC = () => {
               </div>
             </div>
           </div>;
-      case 'tree':
-        return <div className="tree-scene" data-testid="tree-scene">
-            <TreeOfReasoningVisualization graphData={graphData} currentStage={currentStage} isProcessing={isProcessing} stageResults={stageResults} researchContext={researchContext} parameters={parameters} />
-          </div>;
+      // Tree view temporarily disabled for performance optimization
+      // case 'tree':
+      //   return <div className="tree-scene" data-testid="tree-scene">
+      //       <TreeOfReasoningVisualization graphData={graphData} currentStage={currentStage} isProcessing={isProcessing} stageResults={stageResults} researchContext={researchContext} parameters={parameters} />
+      //     </div>;
       case 'advanced':
       case 'advanced-multi':
         return <div className="h-full" style={{

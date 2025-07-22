@@ -167,11 +167,12 @@ export const defaultNavigationItems: NavigationItem[] = [{
     description: 'View analysis results'
   }]
 }, {
-  id: 'tree',
-  label: 'Tree View',
-  icon: <TreePine className="h-5 w-5" />,
-  description: 'Botanical tree visualization of reasoning'
-}, {
+  // Tree view temporarily disabled for performance optimization
+  // id: 'tree',
+  // label: 'Tree View',
+  // icon: <TreePine className="h-5 w-5" />,
+  // description: 'Botanical tree visualization of reasoning'
+// }, {
   id: 'advanced',
   label: 'Advanced Graphs',
   icon: <Network className="h-5 w-5" />,
