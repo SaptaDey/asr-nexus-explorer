@@ -46,7 +46,6 @@ import { enhancedApiService } from '@/services/enhancedApiService';
 import { dataStorageService } from '@/services/dataStorageService';
 import { SessionControls } from '@/components/asr-got/SessionControls';
 import { User, LogIn, UserPlus, Key, CheckCircle, AlertTriangle } from 'lucide-react';
-
 const ASRGoTInterface: React.FC = () => {
   const {
     currentStage,
@@ -74,7 +73,6 @@ const ASRGoTInterface: React.FC = () => {
     isAutoSaveEnabled,
     lastSaveTime
   } = useASRGoT();
-
   const [showAPICredentialsModal, setShowAPICredentialsModal] = useState(false);
   const [activeTab, setActiveTab] = useState('research');
   const [showStage9Progress, setShowStage9Progress] = useState(false);
@@ -82,11 +80,18 @@ const ASRGoTInterface: React.FC = () => {
   const [exportContent, setExportContent] = useState<string>('');
   const [backendStatus, setBackendStatus] = useState<any>(null);
   const [backendHealthy, setBackendHealthy] = useState(false);
-  
-  const { mode, toggleMode, isAutomatic } = useProcessingMode('manual');
-  
+  const {
+    mode,
+    toggleMode,
+    isAutomatic
+  } = useProcessingMode('manual');
+
   // Authentication and backend integration
-  const { user, profile, loading: authLoading } = useAuthContext();
+  const {
+    user,
+    profile,
+    loading: authLoading
+  } = useAuthContext();
   const [hasBackendApiKeys, setHasBackendApiKeys] = useState(false);
   const [usageStats, setUsageStats] = useState<any>(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -99,7 +104,6 @@ const ASRGoTInterface: React.FC = () => {
         const status = await backendService.initialize();
         setBackendStatus(status);
         setBackendHealthy(backendService.isHealthy());
-        
         if (status.errors.length > 0) {
           console.warn('⚠️ Backend initialized with errors:', status.errors);
           toast.warning('Backend services initialized with some limitations');
@@ -112,7 +116,6 @@ const ASRGoTInterface: React.FC = () => {
         setBackendHealthy(false);
       }
     };
-
     initializeBackend();
 
     // Set up periodic health checks
@@ -134,10 +137,7 @@ const ASRGoTInterface: React.FC = () => {
     const loadBackendData = async () => {
       if (user) {
         try {
-          const [apiKeys, usage] = await Promise.all([
-            enhancedApiService.hasBackendApiKeys(),
-            enhancedApiService.getUsageStats()
-          ]);
+          const [apiKeys, usage] = await Promise.all([enhancedApiService.hasBackendApiKeys(), enhancedApiService.getUsageStats()]);
           setHasBackendApiKeys(apiKeys.gemini || apiKeys.perplexity || apiKeys.openai);
           setUsageStats(usage);
         } catch (error) {
@@ -145,7 +145,6 @@ const ASRGoTInterface: React.FC = () => {
         }
       }
     };
-
     loadBackendData();
   }, [user]);
 
@@ -154,13 +153,7 @@ const ASRGoTInterface: React.FC = () => {
     if (researchContext?.topic && currentStage === 0 && backendHealthy) {
       const createSession = async () => {
         try {
-          const sessionId = await historyManager.createSession(
-            researchContext.topic.substring(0, 100),
-            `ASR-GoT analysis on ${researchContext.field || 'research'} topic`,
-            researchContext,
-            parameters
-          );
-          
+          const sessionId = await historyManager.createSession(researchContext.topic.substring(0, 100), `ASR-GoT analysis on ${researchContext.field || 'research'} topic`, researchContext, parameters);
           if (sessionId) {
             console.log('✅ Session created:', sessionId);
             historyManager.setCurrentSessionId(sessionId);
@@ -169,7 +162,6 @@ const ASRGoTInterface: React.FC = () => {
           console.warn('⚠️ Could not create session:', error);
         }
       };
-
       createSession();
     }
   }, [researchContext?.topic, currentStage, backendHealthy]);
@@ -190,7 +182,6 @@ const ASRGoTInterface: React.FC = () => {
           console.warn('⚠️ Could not update session:', error);
         }
       };
-
       updateSession();
     }
   }, [currentStage, stageResults, graphData, isProcessing, backendHealthy]);
@@ -203,7 +194,7 @@ const ASRGoTInterface: React.FC = () => {
       if (completedStages >= 9) {
         setActiveTab('export');
         toast.success('🎉 All 9 stages completed! Switched to Export tab to view your HTML report.');
-        
+
         // Automatically complete the query history session
         handleCompleteSession();
       }
@@ -213,7 +204,10 @@ const ASRGoTInterface: React.FC = () => {
   // Handle automatic Supabase storage events
   useEffect(() => {
     const handleAnalysisStored = (event: CustomEvent) => {
-      const { analysisId, sessionId } = event.detail;
+      const {
+        analysisId,
+        sessionId
+      } = event.detail;
       toast.success(`✅ Analysis automatically saved to Supabase! ID: ${analysisId.substring(0, 8)}...`, {
         duration: 5000,
         action: {
@@ -222,9 +216,10 @@ const ASRGoTInterface: React.FC = () => {
         }
       });
     };
-
     const handleStorageFailed = (event: CustomEvent) => {
-      const { error } = event.detail;
+      const {
+        error
+      } = event.detail;
       toast.error(`❌ Automatic storage failed: ${error}`, {
         duration: 8000,
         description: 'Your analysis is still available for manual export.'
@@ -234,19 +229,15 @@ const ASRGoTInterface: React.FC = () => {
     // Listen for storage events
     window.addEventListener('analysis-stored', handleAnalysisStored as EventListener);
     window.addEventListener('analysis-storage-failed', handleStorageFailed as EventListener);
-
     return () => {
       window.removeEventListener('analysis-stored', handleAnalysisStored as EventListener);
       window.removeEventListener('analysis-storage-failed', handleStorageFailed as EventListener);
     };
   }, []);
-
-
   const handleAPICredentialsSave = (credentials: APICredentials) => {
     updateApiKeys(credentials);
     toast.success('✅ API credentials saved successfully.');
   };
-
   const handleResumeSession = async (sessionId: string) => {
     try {
       const success = await resumeFromHistory(sessionId);
@@ -259,7 +250,6 @@ const ASRGoTInterface: React.FC = () => {
       console.error('Resume error:', error);
     }
   };
-
   const handleCompleteSession = async () => {
     if (isComplete && queryHistorySessionId) {
       await completeSession();
@@ -272,7 +262,6 @@ const ASRGoTInterface: React.FC = () => {
     try {
       setIsPaused(true);
       await pauseSession();
-      
       if (user && currentSessionId) {
         await dataStorageService.saveResearchSession({
           userQuery: researchContext.topic,
@@ -284,13 +273,11 @@ const ASRGoTInterface: React.FC = () => {
           isCompleted: isComplete
         }, currentSessionId);
       }
-      
       toast.success('Session paused and saved');
     } catch (error: any) {
       toast.error(error.message || 'Failed to pause session');
     }
   };
-
   const handleEnhancedResumeSession = async () => {
     try {
       setIsPaused(false);
@@ -299,13 +286,11 @@ const ASRGoTInterface: React.FC = () => {
       toast.error(error.message || 'Failed to resume session');
     }
   };
-
   const handleSaveSession = async (): Promise<string> => {
     try {
       if (!user) {
         throw new Error('Please sign in to save sessions');
       }
-
       const sessionId = currentSessionId || crypto.randomUUID();
       await dataStorageService.saveResearchSession({
         userQuery: researchContext.topic,
@@ -317,7 +302,6 @@ const ASRGoTInterface: React.FC = () => {
         isCompleted: isComplete,
         parameters
       }, sessionId);
-
       toast.success('Session saved successfully');
       return sessionId;
     } catch (error: any) {
@@ -325,7 +309,6 @@ const ASRGoTInterface: React.FC = () => {
       throw error;
     }
   };
-
   const handleLoadSession = async (sessionId: string) => {
     try {
       const sessionData = await dataStorageService.loadResearchSession(sessionId);
@@ -343,20 +326,8 @@ const ASRGoTInterface: React.FC = () => {
   const renderTabContent = (tabId: string) => {
     switch (tabId) {
       case 'research':
-        return (
-          <div className="space-y-6">
-            <ResearchInterface
-              currentStage={currentStage}
-              graphData={graphData}
-              onExecuteStage={executeStage}
-              isProcessing={isProcessing}
-              stageResults={stageResults}
-              researchContext={researchContext}
-              apiKeys={apiKeys}
-              processingMode={mode}
-              onShowApiModal={() => setShowAPICredentialsModal(true)}
-              onSwitchToExport={() => setActiveTab('export')}
-            />
+        return <div className="space-y-6">
+            <ResearchInterface currentStage={currentStage} graphData={graphData} onExecuteStage={executeStage} isProcessing={isProcessing} stageResults={stageResults} researchContext={researchContext} apiKeys={apiKeys} processingMode={mode} onShowApiModal={() => setShowAPICredentialsModal(true)} onSwitchToExport={() => setActiveTab('export')} />
             
             {/* Enhanced Research Controls */}
             <div className="mt-6 bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-gray-200">
@@ -365,37 +336,27 @@ const ASRGoTInterface: React.FC = () => {
                   <h3 className="font-medium text-gray-900">Research Session Status</h3>
                   <p className="text-sm text-gray-600 mt-1">
                     Stage {currentStage + 1}/9 • {isProcessing ? 'Processing...' : isPaused ? 'Paused' : 'Ready'}
-                    {user && currentSessionId && (
-                      <> • Session: {currentSessionId.slice(0, 8)}...</>
-                    )}
+                    {user && currentSessionId && <> • Session: {currentSessionId.slice(0, 8)}...</>}
                   </p>
                 </div>
                 
                 <div className="flex items-center gap-3">
                   {/* API Status Indicator */}
                   <div className="flex items-center space-x-2 text-sm">
-                    {(apiKeys.gemini && apiKeys.perplexity) || hasBackendApiKeys ? (
-                      <div className="flex items-center text-green-600">
+                    {apiKeys.gemini && apiKeys.perplexity || hasBackendApiKeys ? <div className="flex items-center text-green-600">
                         <CheckCircle className="h-4 w-4 mr-1" />
                         <span>API Ready</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center text-yellow-600">
+                      </div> : <div className="flex items-center text-yellow-600">
                         <AlertTriangle className="h-4 w-4 mr-1" />
                         <span>Setup Required</span>
-                      </div>
-                    )}
+                      </div>}
                   </div>
                   
                   {/* User Status */}
                   <div className="text-sm text-gray-500">
-                    {user ? (
-                      <span>✓ Signed In</span>
-                    ) : (
-                      <Link to="/auth" className="text-blue-600 hover:underline">
+                    {user ? <span>✓ Signed In</span> : <Link to="/auth" className="text-blue-600 hover:underline">
                         Sign In for Full Features
-                      </Link>
-                    )}
+                      </Link>}
                   </div>
                 </div>
               </div>
@@ -404,197 +365,85 @@ const ASRGoTInterface: React.FC = () => {
               <div className="mt-4">
                 <div className="flex justify-between text-xs text-gray-600 mb-1">
                   <span>Overall Progress</span>
-                  <span>{researchContext?.topic && stageResults.length > 0 ? Math.round(((currentStage + 1) / 9) * 100) : 0}%</span>
+                  <span>{researchContext?.topic && stageResults.length > 0 ? Math.round((currentStage + 1) / 9 * 100) : 0}%</span>
                 </div>
-                <Progress value={researchContext?.topic && stageResults.length > 0 ? ((currentStage + 1) / 9) * 100 : 0} className="h-2" />
+                <Progress value={researchContext?.topic && stageResults.length > 0 ? (currentStage + 1) / 9 * 100 : 0} className="h-2" />
               </div>
             </div>
-          </div>
-        );
-      
+          </div>;
       case 'tree':
-        return (
-          <div className="tree-scene" data-testid="tree-scene">
-            <TreeOfReasoningVisualization 
-              graphData={graphData}
-              currentStage={currentStage}
-              isProcessing={isProcessing}
-              stageResults={stageResults}
-              researchContext={researchContext}
-              parameters={parameters}
-            />
-          </div>
-        );
-      
+        return <div className="tree-scene" data-testid="tree-scene">
+            <TreeOfReasoningVisualization graphData={graphData} currentStage={currentStage} isProcessing={isProcessing} stageResults={stageResults} researchContext={researchContext} parameters={parameters} />
+          </div>;
       case 'advanced':
       case 'advanced-multi':
-        return (
-          <div className="h-full" style={{ height: '600px' }}>
-            <AdvancedGraphVisualization 
-              graphData={graphData}
-              showParameters={true}
-              currentStage={currentStage}
-              isProcessing={isProcessing}
-              stageResults={stageResults}
-              researchContext={researchContext}
-              parameters={parameters}
-            />
-          </div>
-        );
-      
+        return <div className="h-full" style={{
+          height: '600px'
+        }}>
+            <AdvancedGraphVisualization graphData={graphData} showParameters={true} currentStage={currentStage} isProcessing={isProcessing} stageResults={stageResults} researchContext={researchContext} parameters={parameters} />
+          </div>;
       case 'advanced-enhanced':
-        return (
-          <EnhancedGraphVisualization 
-            graphData={graphData}
-            currentStage={currentStage}
-            isProcessing={isProcessing}
-          />
-        );
-      
+        return <EnhancedGraphVisualization graphData={graphData} currentStage={currentStage} isProcessing={isProcessing} />;
       case 'analytics':
       case 'analytics-standard':
-        return (
-          <VisualAnalytics
-            graphData={graphData}
-            currentStage={currentStage}
-            geminiApiKey={apiKeys.gemini}
-            stageResults={stageResults}
-            researchContext={researchContext}
-          />
-        );
-      
+        return <VisualAnalytics graphData={graphData} currentStage={currentStage} geminiApiKey={apiKeys.gemini} stageResults={stageResults} researchContext={researchContext} />;
       case 'analytics-meta':
-        return (
-          <MetaAnalysisVisualAnalytics
-            graphData={graphData}
-            stageResults={stageResults}
-            researchContext={researchContext}
-            geminiApiKey={apiKeys.gemini}
-            perplexityApiKey={apiKeys.perplexity}
-          />
-        );
-      
+        return <MetaAnalysisVisualAnalytics graphData={graphData} stageResults={stageResults} researchContext={researchContext} geminiApiKey={apiKeys.gemini} perplexityApiKey={apiKeys.perplexity} />;
       case 'parameters':
-        return (
-          <ParametersPane
-            parameters={parameters}
-            onParametersChange={setParameters}
-            currentStage={currentStage}
-            isProcessing={isProcessing}
-          />
-        );
-      
+        return <ParametersPane parameters={parameters} onParametersChange={setParameters} currentStage={currentStage} isProcessing={isProcessing} />;
       case 'developer':
-        return (
-          <DeveloperMode
-            graphData={graphData}
-            parameters={parameters}
-            currentStage={currentStage}
-            stageResults={stageResults}
-            researchContext={researchContext}
-            onParametersChange={setParameters}
-          />
-        );
-      
+        return <DeveloperMode graphData={graphData} parameters={parameters} currentStage={currentStage} stageResults={stageResults} researchContext={researchContext} onParametersChange={setParameters} />;
       case 'export':
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button
-                onClick={handleExportHTML}
-                disabled={!hasResults}
-                size="lg"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
-              >
+              <Button onClick={handleExportHTML} disabled={!hasResults} size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg">
                 <Download className="h-5 w-5 mr-2" />
                 Generate & Export HTML Report
               </Button>
               
-              <Button
-                onClick={() => exportResults('json')}
-                disabled={!hasResults}
-                variant="outline"
-                size="lg"
-              >
+              <Button onClick={() => exportResults('json')} disabled={!hasResults} variant="outline" size="lg">
                 <FileText className="h-5 w-5 mr-2" />
                 Export JSON Data
               </Button>
             </div>
             
-            {exportContent && (
-              <div className="mt-4">
-                <InAppPreview
-                  content={exportContent}
-                  title={`ASR-GoT Report - ${researchContext.topic || 'Analysis'}`}
-                  type="html"
-                  onDownload={handleExportHTML}
-                  className="w-full"
-                />
-              </div>
-            )}
+            {exportContent && <div className="mt-4">
+                <InAppPreview content={exportContent} title={`ASR-GoT Report - ${researchContext.topic || 'Analysis'}`} type="html" onDownload={handleExportHTML} className="w-full" />
+              </div>}
             
-            {isComplete && (
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+            {isComplete && <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
                 <h3 className="font-semibold text-green-800 mb-2">Analysis Complete!</h3>
                 <p className="text-green-700">Your comprehensive report is ready for export and sharing.</p>
-              </div>
-            )}
-          </div>
-        );
-      
+              </div>}
+          </div>;
       case 'storage':
-        return (
-          <div className="space-y-6">
-            <StoredAnalysesManager
-              currentSessionId={currentSessionId}
-              onLoadAnalysis={(analysisId) => {
-                toast.info(`Loading stored analysis: ${analysisId}`);
-              }}
-            />
+        return <div className="space-y-6">
+            <StoredAnalysesManager currentSessionId={currentSessionId} onLoadAnalysis={analysisId => {
+            toast.info(`Loading stored analysis: ${analysisId}`);
+          }} />
             
             {/* Enhanced Session Controls for Authenticated Users */}
-            {user && (
-              <div className="mt-6">
-                <SessionControls
-                  currentStage={currentStage}
-                  isProcessing={isProcessing}
-                  isPaused={isPaused}
-                  sessionData={{
-                    userQuery: researchContext.topic,
-                    currentStage,
-                    graphData,
-                    stageResults,
-                    researchContext,
-                    isProcessing,
-                    isCompleted: isComplete
-                  }}
-                  currentSessionId={currentSessionId}
-                  onPause={handlePauseSession}
-                  onResume={handleEnhancedResumeSession}
-                  onSave={handleSaveSession}
-                  onLoad={handleLoadSession}
-                  onReset={resetFramework}
-                />
-              </div>
-            )}
-          </div>
-        );
-      
+            {user && <div className="mt-6">
+                <SessionControls currentStage={currentStage} isProcessing={isProcessing} isPaused={isPaused} sessionData={{
+              userQuery: researchContext.topic,
+              currentStage,
+              graphData,
+              stageResults,
+              researchContext,
+              isProcessing,
+              isCompleted: isComplete
+            }} currentSessionId={currentSessionId} onPause={handlePauseSession} onResume={handleEnhancedResumeSession} onSave={handleSaveSession} onLoad={handleLoadSession} onReset={resetFramework} />
+              </div>}
+          </div>;
       case 'history':
-        return (
-          <div className="space-y-6">
-            <QueryHistoryManager
-              onResumeSession={handleResumeSession}
-              onLoadForReanalysis={(sessionId) => {
-                toast.info(`Loading session for reanalysis: ${sessionId}`);
-                setActiveTab('research');
-              }}
-              currentSessionId={queryHistorySessionId}
-            />
+        return <div className="space-y-6">
+            <QueryHistoryManager onResumeSession={handleResumeSession} onLoadForReanalysis={sessionId => {
+            toast.info(`Loading session for reanalysis: ${sessionId}`);
+            setActiveTab('research');
+          }} currentSessionId={queryHistorySessionId} />
             
             {/* Enhanced Session History for Authenticated Users */}
-            {user && (
-              <div className="mt-8 border-t pt-6">
+            {user && <div className="mt-8 border-t pt-6">
                 <h3 className="text-lg font-semibold mb-4">Your Research Sessions</h3>
                 {/* Note: Would import and use SessionHistory component here */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -607,53 +456,45 @@ const ASRGoTInterface: React.FC = () => {
                     {' for full session management.'}
                   </p>
                 </div>
-              </div>
-            )}
-          </div>
-        );
-      
+              </div>}
+          </div>;
       default:
         return <div>Select a tab to view content</div>;
     }
   };
-
-
   const handleExportHTML = async () => {
     if (!hasResults) {
       toast.error('No results to export yet - run some analysis stages first');
       return;
     }
-    
+
     // Show Stage 9 multi-substage progress indicator
     setShowStage9Progress(true);
     toast.info('Starting comprehensive multi-substage thesis generation (9A-9G)...', {
       duration: 3000
     });
-    
+
     // Check if we have a comprehensive HTML report from stage 9 (index 8)
     let htmlReport = null;
-    
+
     // First check Stage 9 results for complete HTML
-    if (stageResults[8] && 
-        (stageResults[8].includes('<!DOCTYPE html') || 
-         stageResults[8].includes('<html'))) {
+    if (stageResults[8] && (stageResults[8].includes('<!DOCTYPE html') || stageResults[8].includes('<html'))) {
       htmlReport = stageResults[8];
       console.log('✅ Found complete HTML report from Stage 9');
     }
     // Fallback to Stage 7 if Stage 9 doesn't have HTML
-    else if (stageResults[6] && 
-             (stageResults[6].includes('<!DOCTYPE html') || 
-              stageResults[6].includes('<html'))) {
+    else if (stageResults[6] && (stageResults[6].includes('<!DOCTYPE html') || stageResults[6].includes('<html'))) {
       htmlReport = stageResults[6];
       console.log('✅ Found HTML report from Stage 7 (fallback)');
     }
-    
     if (htmlReport) {
       // Hide progress indicator since we have the report
       setShowStage9Progress(false);
-      
+
       // Export the comprehensive HTML report directly
-      const blob = new Blob([htmlReport], { type: 'text/html' });
+      const blob = new Blob([htmlReport], {
+        type: 'text/html'
+      });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -662,11 +503,10 @@ const ASRGoTInterface: React.FC = () => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
       toast.success('✅ Comprehensive HTML report exported successfully', {
         description: `Report contains ${Math.round(htmlReport.length / 1000)}K characters with full 9A-9G content`
       });
-      
+
       // Also offer PDF conversion using browser print
       setTimeout(() => {
         const userWantsPdf = window.confirm('Would you like to generate a PDF version now?\n\nClick OK to open the report in a new window where you can print to PDF.');
@@ -676,60 +516,53 @@ const ASRGoTInterface: React.FC = () => {
           if (newWindow) {
             newWindow.document.write(htmlReport);
             newWindow.document.close();
-            
+
             // Wait for content to load then trigger print dialog
             setTimeout(() => {
               newWindow.print();
             }, 1000);
-            
             toast.info('💡 In the print dialog, select "Save as PDF" as your destination');
           }
         }
       }, 1000);
-      
       return;
     }
-    
+
     // If no HTML report exists, trigger Stage 9 execution
     if (currentStage < 8) {
       setShowStage9Progress(false);
       toast.error('Please complete all 9 stages first before exporting the comprehensive report');
       return;
     }
-    
+
     // Execute Stage 9 if not already done
     try {
       console.log('🚀 Triggering Stage 9 execution for comprehensive report generation');
       await executeStage(8); // Execute Stage 9 (index 8)
-      
+
       // Wait for Stage 9 completion and then retry export
       setTimeout(() => {
         handleExportHTML();
       }, 2000);
-      
     } catch (error) {
       setShowStage9Progress(false);
       toast.error('Failed to generate comprehensive report: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
-    
+
     // Fallback to basic report generation if no HTML report available
     const reportContent = stageResults.length > 0 ? stageResults.join('\n\n---\n\n') : 'No analysis completed yet';
-    
+
     // Generate embedded charts and figures with scientific visualizations
     const embedCharts = async () => {
       const charts = [];
-      
+
       // Generate scientific charts based on research context
       const generateScientificCharts = async () => {
         if (!apiKeys.gemini || !researchContext.topic) {
           return [];
         }
-
         const evidenceNodes = graphData.nodes.filter(n => n.type === 'evidence');
-        const evidenceDescriptions = evidenceNodes.slice(0, 5).map(node => 
-          `- ${node.label}: ${node.description || 'Evidence source'}`
-        ).join('\n');
-
+        const evidenceDescriptions = evidenceNodes.slice(0, 5).map(node => `- ${node.label}: ${node.description || 'Evidence source'}`).join('\n');
         const analysisPrompt = `
 Generate 12-15 publication-ready scientific charts based on the evidence collected for the research topic "${researchContext.topic}" in the field of ${researchContext.field || 'General Science'}:
 
@@ -792,43 +625,43 @@ Focus on generating charts that show:
 
 Make the data realistic and scientifically meaningful for the research domain.
 `;
-
         try {
           const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKeys.gemini}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
-              contents: [{ parts: [{ text: analysisPrompt }] }],
-              generationConfig: { 
+              contents: [{
+                parts: [{
+                  text: analysisPrompt
+                }]
+              }],
+              generationConfig: {
                 maxOutputTokens: 8000,
                 temperature: 0.2
               }
             })
           });
-
           if (!response.ok) throw new Error('Failed to generate scientific charts');
-          
           const data = await response.json();
           const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          
           if (!responseText) {
             throw new Error('No response from Gemini API');
           }
-          
+
           // Extract JSON from response
           const jsonMatch = responseText.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/) || responseText.match(/(\[[\s\S]*?\])/);
           const extractedJson = jsonMatch ? jsonMatch[1] : responseText;
-          
           return JSON.parse(extractedJson);
         } catch (error) {
           console.error('Failed to generate scientific charts:', error);
           return [];
         }
       };
-
       try {
         const scientificCharts = await generateScientificCharts();
-        
+
         // Also include cached figures from Analytics tab
         const getCachedAnalyticsCharts = () => {
           const cacheKey = `${researchContext.topic}-${currentStage}`;
@@ -843,13 +676,10 @@ Make the data realistic and scientifically meaningful for the research domain.
           }
           return [];
         };
-        
         const cachedAnalyticsCharts = getCachedAnalyticsCharts();
         const allCharts = [...scientificCharts, ...cachedAnalyticsCharts];
-        
         if (allCharts.length > 0) {
           const figureSection = [];
-          
           figureSection.push(`
             <div class="scientific-visualizations-section">
               <h2 style="color: #1e40af; margin: 2rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid #e5e7eb;">
@@ -861,7 +691,7 @@ Make the data realistic and scientifically meaningful for the research domain.
               </p>
               <div class="figures-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 2rem;">
           `);
-          
+
           // Create Plotly figures for each chart
           for (let i = 0; i < allCharts.length; i++) {
             const chart = allCharts[i];
@@ -900,13 +730,12 @@ Make the data realistic and scientifically meaningful for the research domain.
               </div>
             </div>
           `);
-          
           charts.push(figureSection.join(''));
         }
       } catch (error) {
         console.warn('Error generating scientific charts:', error);
       }
-      
+
       // Add methodology summary at the end
       charts.push(`
         <div style="background: white; border-radius: 10px; padding: 1.5rem; margin: 2rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
@@ -919,13 +748,11 @@ Make the data realistic and scientifically meaningful for the research domain.
           </div>
         </div>
       `);
-      
       return charts.join('');
     };
-    
+
     // Generate charts asynchronously
     const chartsContent = await embedCharts();
-    
     const htmlContent = `
       <!DOCTYPE html>
       <html lang="en">
@@ -1183,7 +1010,7 @@ Make the data realistic and scientifically meaningful for the research domain.
                     <div class="metadata-label">Scientific Figures</div>
                   </div>
                   <div class="metadata-item">
-                    <div class="metadata-value">${Math.round(((stageResults.filter(r => r && r.trim()).length / 9) * 100))}%</div>
+                    <div class="metadata-value">${Math.round(stageResults.filter(r => r && r.trim()).length / 9 * 100)}%</div>
                     <div class="metadata-label">Completion Rate</div>
                   </div>
                   <div class="metadata-item">
@@ -1223,11 +1050,12 @@ Make the data realistic and scientifically meaningful for the research domain.
         </body>
       </html>
     `;
-    
+
     // Store content for preview
     setExportContent(htmlContent);
-    
-    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const blob = new Blob([htmlContent], {
+      type: 'text/html'
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -1238,48 +1066,32 @@ Make the data realistic and scientifically meaningful for the research domain.
     URL.revokeObjectURL(url);
     toast.success('HTML report downloaded successfully');
   };
-
-
-  return (
-    <div className="min-h-screen relative overflow-hidden">
+  return <div className="min-h-screen relative overflow-hidden">
       {/* Soft Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50"></div>
       
       {/* Subtle Pattern Overlay */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 25% 25%, rgba(147, 197, 253, 0.3) 0%, transparent 50%), 
+        backgroundImage: `radial-gradient(circle at 25% 25%, rgba(147, 197, 253, 0.3) 0%, transparent 50%), 
                            radial-gradient(circle at 75% 75%, rgba(196, 181, 253, 0.3) 0%, transparent 50%),
                            radial-gradient(circle at 50% 50%, rgba(134, 239, 172, 0.3) 0%, transparent 50%)`,
-          animation: 'float 30s ease-in-out infinite'
-        }}></div>
+        animation: 'float 30s ease-in-out infinite'
+      }}></div>
       </div>
       
       {/* Main Content */}
       <div className="relative z-10">
 
       {/* Unified API Credentials Modal */}
-      <UnifiedAPICredentialsModal
-        open={showAPICredentialsModal}
-        onOpenChange={setShowAPICredentialsModal}
-        onCredentialsSave={handleAPICredentialsSave}
-        existingCredentials={apiKeys}
-      />
+      <UnifiedAPICredentialsModal open={showAPICredentialsModal} onOpenChange={setShowAPICredentialsModal} onCredentialsSave={handleAPICredentialsSave} existingCredentials={apiKeys} />
 
       {/* Bias Auditing Sidebar */}
-      {showBiasAudit && (
-        <div className="fixed right-0 top-0 bottom-0 z-20 bg-background border-l shadow-lg w-full sm:w-96">
-          <BiasAuditingSidebar
-            graphData={graphData}
-            researchContext={researchContext}
-            currentStage={currentStage}
-            geminiApiKey={apiKeys.gemini}
-            onRefreshAudit={() => {
-              toast.info('Refreshing bias audit...');
-            }}
-          />
-        </div>
-      )}
+      {showBiasAudit && <div className="fixed right-0 top-0 bottom-0 z-20 bg-background border-l shadow-lg w-full sm:w-96">
+          <BiasAuditingSidebar graphData={graphData} researchContext={researchContext} currentStage={currentStage} geminiApiKey={apiKeys.gemini} onRefreshAudit={() => {
+          toast.info('Refreshing bias audit...');
+        }} />
+        </div>}
 
       {/* Main Interface */}
       <div className={`container mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 transition-all duration-300 ${showBiasAudit ? 'sm:mr-96' : ''}`}>
@@ -1288,62 +1100,42 @@ Make the data realistic and scientifically meaningful for the research domain.
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
             {/* Logo and Title */}
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg">
-                <Brain className="h-7 w-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                  Scientific Reasoning
-                </h1>
-              </div>
-            </div>
+            
 
             {/* Authentication and Status */}
             <div className="flex items-center space-x-3">
               {/* API Status */}
               <div className="flex items-center space-x-2">
-                {(apiKeys.gemini && apiKeys.perplexity) || hasBackendApiKeys ? (
-                  <Badge variant="outline" className="text-green-600 border-green-600 bg-green-50">
+                {apiKeys.gemini && apiKeys.perplexity || hasBackendApiKeys ? <Badge variant="outline" className="text-green-600 border-green-600 bg-green-50">
                     <CheckCircle className="h-3 w-3 mr-1" />
                     API Ready
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-yellow-600 border-yellow-600 bg-yellow-50">
+                  </Badge> : <Badge variant="outline" className="text-yellow-600 border-yellow-600 bg-yellow-50">
                     <Key className="h-3 w-3 mr-1" />
                     Setup Required
-                  </Badge>
-                )}
+                  </Badge>}
                 
                 {/* Backend Status */}
-                {backendHealthy && (
-                  <Badge variant="outline" className="text-blue-600 border-blue-600 bg-blue-50">
+                {backendHealthy && <Badge variant="outline" className="text-blue-600 border-blue-600 bg-blue-50">
                     <CheckCircle className="h-3 w-3 mr-1" />
                     Connected
-                  </Badge>
-                )}
+                  </Badge>}
               </div>
 
               {/* User Authentication */}
-              {user ? (
-                <div className="flex items-center space-x-2">
-                  {profile && (
-                    <div className="text-right text-sm">
+              {user ? <div className="flex items-center space-x-2">
+                  {profile && <div className="text-right text-sm">
                       <p className="font-medium text-gray-900">{profile.full_name}</p>
                       <p className="text-xs text-gray-500">
                         {profile.current_api_usage || 0}/{profile.api_usage_limit || 1000} calls
                       </p>
-                    </div>
-                  )}
+                    </div>}
                   <Link to="/dashboard">
                     <Button variant="outline" size="sm">
                       <User className="h-4 w-4 mr-2" />
                       <span className="hidden sm:inline">Dashboard</span>
                     </Button>
                   </Link>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
+                </div> : <div className="flex items-center space-x-2">
                   <Link to="/auth?mode=login">
                     <Button variant="outline" size="sm">
                       <LogIn className="h-4 w-4 mr-2" />
@@ -1356,38 +1148,25 @@ Make the data realistic and scientifically meaningful for the research domain.
                       <span className="hidden sm:inline">Sign Up</span>
                     </Button>
                   </Link>
-                </div>
-              )}
+                </div>}
             </div>
           </div>
 
           {/* API Setup Alert */}
-          {!(apiKeys.gemini && apiKeys.perplexity) && !hasBackendApiKeys && (
-            <Alert className="mb-4">
+          {!(apiKeys.gemini && apiKeys.perplexity) && !hasBackendApiKeys && <Alert className="mb-4 rounded-sm">
               <Key className="h-4 w-4" />
               <AlertDescription>
                 To start research, configure API keys. 
-                {user ? (
-                  <>
+                {user ? <>
                     <Link to="/dashboard" className="text-blue-600 hover:underline ml-1">
                       Go to dashboard
                     </Link>
                     {' or '}
-                    <Button 
-                      variant="link" 
-                      className="p-0 h-auto"
-                      onClick={() => setShowAPICredentialsModal(true)}
-                    >
+                    <Button variant="link" className="p-0 h-auto" onClick={() => setShowAPICredentialsModal(true)}>
                       configure locally
                     </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button 
-                      variant="link" 
-                      className="p-0 h-auto ml-1"
-                      onClick={() => setShowAPICredentialsModal(true)}
-                    >
+                  </> : <>
+                    <Button variant="link" className="p-0 h-auto ml-1" onClick={() => setShowAPICredentialsModal(true)}>
                       Set up API credentials
                     </Button>
                     {' or '}
@@ -1395,15 +1174,12 @@ Make the data realistic and scientifically meaningful for the research domain.
                       create an account
                     </Link>
                     {' for secure backend storage.'}
-                  </>
-                )}
+                  </>}
               </AlertDescription>
-            </Alert>
-          )}
+            </Alert>}
 
           {/* Usage Stats for Authenticated Users */}
-          {user && usageStats && (
-            <div className="bg-white/50 backdrop-blur-sm rounded-lg p-3 mb-4 border border-gray-200">
+          {user && usageStats && <div className="bg-white/50 backdrop-blur-sm rounded-lg p-3 mb-4 border border-gray-200">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">API Usage:</span>
                 <div className="flex items-center space-x-2">
@@ -1416,8 +1192,7 @@ Make the data realistic and scientifically meaningful for the research domain.
                 </div>
               </div>
               <Progress value={usageStats.usagePercentage} className="mt-2 h-2" />
-            </div>
-          )}
+            </div>}
         </div>
         
         {/* 🐛 Debug Button - Always Visible at Bottom */}
@@ -1432,17 +1207,14 @@ Make the data realistic and scientifically meaningful for the research domain.
             <div className="relative w-full">
               {/* Responsive Hero Image - Optimized for all screen sizes */}
               <div className="aspect-video min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] bg-gradient-to-br from-blue-50 via-teal-50 to-green-50">
-                <div 
-                  className="absolute inset-0 w-full h-full"
-                  style={{
-                    backgroundImage: 'url("/img/logo.png")',
-                    backgroundSize: 'contain',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundAttachment: 'scroll',
-                    imageRendering: 'optimizeQuality'
-                  }}
-                ></div>
+                <div className="absolute inset-0 w-full h-full" style={{
+                  backgroundImage: 'url("/img/logo.png")',
+                  backgroundSize: 'contain',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundAttachment: 'scroll',
+                  imageRendering: 'optimizeQuality'
+                }}></div>
                 
                 {/* Responsive background optimization for logo */}
                 <style jsx>{`
@@ -1482,10 +1254,14 @@ Make the data realistic and scientifically meaningful for the research domain.
               <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Main Title */}
                 <div className="mb-10">
-                  <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6 text-slate-900" style={{ textShadow: '2px 2px 4px rgba(255,255,255,0.8)' }}>
+                  <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6 text-slate-900" style={{
+                    textShadow: '2px 2px 4px rgba(255,255,255,0.8)'
+                  }}>
                     Scientific Reasoning
                   </h1>
-                  <p className="text-2xl lg:text-4xl mb-8 font-semibold text-slate-700" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.8)' }}>
+                  <p className="text-2xl lg:text-4xl mb-8 font-semibold text-slate-700" style={{
+                    textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
+                  }}>
                     Graph of Thoughts Framework
                   </p>
                 </div>
@@ -1505,7 +1281,9 @@ Make the data realistic and scientifically meaningful for the research domain.
                 
                 {/* Description */}
                 <div className="max-w-5xl mx-auto mb-10">
-                  <p className="text-lg lg:text-xl mb-8 leading-relaxed font-medium text-slate-800" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.8)' }}>
+                  <p className="text-lg lg:text-xl mb-8 leading-relaxed font-medium text-slate-800" style={{
+                    textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
+                  }}>
                     🚀 Next-Generation AI Reasoning Framework leveraging graph structures to transform scientific research methodologies
                   </p>
                   
@@ -1517,14 +1295,12 @@ Make the data realistic and scientifically meaningful for the research domain.
                         Learn How It Works
                       </Button>
                     </Link>
-                    <Button 
-                      size="lg" 
-                      className="bg-purple-500 hover:bg-purple-600 text-white shadow-lg text-lg px-8 py-3 rounded-lg font-semibold transition-all duration-200 hover:shadow-xl"
-                      onClick={() => {
-                        setActiveTab('research');
-                        document.getElementById('research-section')?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                    >
+                    <Button size="lg" className="bg-purple-500 hover:bg-purple-600 text-white shadow-lg text-lg px-8 py-3 rounded-lg font-semibold transition-all duration-200 hover:shadow-xl" onClick={() => {
+                      setActiveTab('research');
+                      document.getElementById('research-section')?.scrollIntoView({
+                        behavior: 'smooth'
+                      });
+                    }}>
                       <Brain className="h-5 w-5 mr-2" />
                       Explore Features
                     </Button>
@@ -1542,11 +1318,9 @@ Make the data realistic and scientifically meaningful for the research domain.
                   Stage {currentStage + 1}/9
                 </Badge>
                 <Progress value={stageProgress} className="w-32 h-2" />
-                {isProcessing && (
-                  <Badge className="bg-orange-500 text-white px-3 py-1 rounded-full font-medium">
+                {isProcessing && <Badge className="bg-orange-500 text-white px-3 py-1 rounded-full font-medium">
                     Processing...
-                  </Badge>
-                )}
+                  </Badge>}
               </div>
             </div>
           </div>
@@ -1557,26 +1331,15 @@ Make the data realistic and scientifically meaningful for the research domain.
             <div className="w-full sm:w-auto bg-white/90 backdrop-blur-sm rounded-lg px-4 sm:px-6 py-3 shadow-lg border border-gray-200">
               <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
                 <div className={`transition-all duration-300 ${isAutomatic ? 'text-green-600' : 'text-blue-600'}`}>
-                  {isAutomatic ? 
-                    <div className="flex items-center gap-2">
+                  {isAutomatic ? <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <span className="text-xs sm:text-sm font-semibold">AUTO MODE</span>
-                    </div> :
-                    <div className="flex items-center gap-2">
+                    </div> : <div className="flex items-center gap-2">
                       <ToggleLeft className="h-4 w-4" />
                       <span className="text-xs sm:text-sm font-semibold">MANUAL MODE</span>
-                    </div>
-                  }
+                    </div>}
                 </div>
-                <Button
-                  onClick={toggleMode}
-                  className={`transition-all duration-300 ${
-                    isAutomatic 
-                      ? 'bg-green-500 hover:bg-green-600' 
-                      : 'bg-blue-500 hover:bg-blue-600'
-                  } text-white font-medium rounded-md px-3 sm:px-4 py-2 text-xs sm:text-sm`}
-                  size="sm"
-                >
+                <Button onClick={toggleMode} className={`transition-all duration-300 ${isAutomatic ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white font-medium rounded-md px-3 sm:px-4 py-2 text-xs sm:text-sm`} size="sm">
                   <span className="hidden sm:inline">Switch to {isAutomatic ? 'Manual' : 'Auto'}</span>
                   <span className="sm:hidden">{isAutomatic ? 'Manual' : 'Auto'}</span>
                 </Button>
@@ -1586,10 +1349,7 @@ Make the data realistic and scientifically meaningful for the research domain.
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
               <Link to="/contact">
-                <Button 
-                  size="sm"
-                  className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto"
-                >
+                <Button size="sm" className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto">
                   <Mail className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Contact Us</span>
                   <span className="sm:hidden">Contact</span>
@@ -1597,117 +1357,63 @@ Make the data realistic and scientifically meaningful for the research domain.
               </Link>
               
               {/* API Configuration Button */}
-              <Button
-                size="sm"
-                variant={(apiKeys.gemini && apiKeys.perplexity) ? "default" : "outline"}
-                onClick={() => setShowAPICredentialsModal(true)}
-                className={`shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto ${
-                  (apiKeys.gemini && apiKeys.perplexity)
-                    ? 'bg-green-600 hover:bg-green-700 text-white' 
-                    : 'border-blue-300 text-blue-600 hover:bg-blue-50'
-                }`}
-              >
+              <Button size="sm" variant={apiKeys.gemini && apiKeys.perplexity ? "default" : "outline"} onClick={() => setShowAPICredentialsModal(true)} className={`shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto ${apiKeys.gemini && apiKeys.perplexity ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-blue-300 text-blue-600 hover:bg-blue-50'}`}>
                 <Settings className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">
-                  {(apiKeys.gemini && apiKeys.perplexity) ? 'API Setup ✓' : 'Configure APIs'}
+                  {apiKeys.gemini && apiKeys.perplexity ? 'API Setup ✓' : 'Configure APIs'}
                 </span>
                 <span className="sm:hidden">
-                  {(apiKeys.gemini && apiKeys.perplexity) ? 'APIs ✓' : 'APIs'}
+                  {apiKeys.gemini && apiKeys.perplexity ? 'APIs ✓' : 'APIs'}
                 </span>
               </Button>
               
               {/* Enhanced Pause/Resume Controls */}
-              {(queryHistorySessionId || currentSessionId) && (
-                <div className="flex items-center gap-2">
-                  {isPaused ? (
-                    <Button
-                      size="sm"
-                      variant="default"
-                      onClick={handleEnhancedResumeSession}
-                      className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
-                    >
+              {(queryHistorySessionId || currentSessionId) && <div className="flex items-center gap-2">
+                  {isPaused ? <Button size="sm" variant="default" onClick={handleEnhancedResumeSession} className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white">
                       <PlayCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
                       <span className="hidden sm:inline">Resume Session</span>
                       <span className="sm:hidden">Resume</span>
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handlePauseSession}
-                      disabled={!isProcessing}
-                      className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto border-orange-300 text-orange-600 hover:bg-orange-50 disabled:opacity-50"
-                    >
+                    </Button> : <Button size="sm" variant="outline" onClick={handlePauseSession} disabled={!isProcessing} className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto border-orange-300 text-orange-600 hover:bg-orange-50 disabled:opacity-50">
                       <Pause className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
                       <span className="hidden sm:inline">Pause Session</span>
                       <span className="sm:hidden">Pause</span>
-                    </Button>
-                  )}
+                    </Button>}
                   
                   {/* Save Session Button for Authenticated Users */}
-                  {user && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleSaveSession}
-                      className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto border-blue-300 text-blue-600 hover:bg-blue-50"
-                    >
+                  {user && <Button size="sm" variant="outline" onClick={handleSaveSession} className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto border-blue-300 text-blue-600 hover:bg-blue-50">
                       <Database className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
                       <span className="hidden sm:inline">Save Session</span>
                       <span className="sm:hidden">Save</span>
-                    </Button>
-                  )}
-                </div>
-              )}
+                    </Button>}
+                </div>}
               
               {/* Auto-save Status Indicator */}
-              {isAutoSaveEnabled && (
-                <div className="flex items-center px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+              {isAutoSaveEnabled && <div className="flex items-center px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
                   <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
                   <span className="text-xs text-green-700 font-medium">
                     <span className="hidden sm:inline">Auto-saving</span>
                     <span className="sm:hidden">Auto</span>
                   </span>
-                </div>
-              )}
+                </div>}
               
-              {currentStage >= 8 && (
-                <Button
-                  size="sm"
-                  variant={showBiasAudit ? "default" : "outline"}
-                  onClick={() => setShowBiasAudit(!showBiasAudit)}
-                  className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto"
-                >
+              {currentStage >= 8 && <Button size="sm" variant={showBiasAudit ? "default" : "outline"} onClick={() => setShowBiasAudit(!showBiasAudit)} className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto">
                   <Zap className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">{showBiasAudit ? 'Hide' : 'Show'} Bias Audit</span>
                   <span className="sm:hidden">{showBiasAudit ? 'Hide' : 'Show'} Audit</span>
-                </Button>
-              )}
+                </Button>}
             </div>
           </div>
         </div>
 
         {/* New Responsive Layout */}
-        <ResponsiveLayout
-          navigationItems={defaultNavigationItems}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        >
+        <ResponsiveLayout navigationItems={defaultNavigationItems} activeTab={activeTab} onTabChange={setActiveTab}>
           {renderTabContent(activeTab)}
         </ResponsiveLayout>
       </div>
       </div>
 
       {/* Stage 9 Progress Indicator */}
-      {showStage9Progress && (
-        <Stage9ProgressIndicator 
-          currentStage={currentStage}
-          isProcessing={isProcessing}
-          onComplete={() => setShowStage9Progress(false)}
-        />
-      )}
-    </div>
-  );
+      {showStage9Progress && <Stage9ProgressIndicator currentStage={currentStage} isProcessing={isProcessing} onComplete={() => setShowStage9Progress(false)} />}
+    </div>;
 };
-
 export default ASRGoTInterface;
