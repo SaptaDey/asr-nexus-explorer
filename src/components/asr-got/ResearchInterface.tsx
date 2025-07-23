@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,6 +68,21 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
     knowledge_gaps: [],
     auto_generated: false
   });
+
+  // Auto-switch to results tab when research completes
+  useEffect(() => {
+    const isCompleted = currentStage >= 8 && stageResults.length >= 9 && 
+                      stageResults.filter(result => result && result.trim()).length >= 9;
+    
+    if (isCompleted && activeTab === 'progress') {
+      // Small delay to let users see the completion animation
+      setTimeout(() => {
+        setActiveTab('results');
+        toast.success('🎉 Research analysis complete! Switched to Results tab.');
+      }, 2000);
+    }
+  }, [currentStage, stageResults, activeTab]);
+
   const handleStartResearch = async () => {
     if (!taskDescription.trim()) {
       toast.error('Please provide a research question or topic');
@@ -193,7 +208,21 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
   };
   return <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        
+        {/* Tab Navigation - Always Visible */}
+        <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsTrigger value="input" className="flex items-center gap-2">
+            <Search className="h-4 w-4" />
+            Input & Setup
+          </TabsTrigger>
+          <TabsTrigger value="progress" className="flex items-center gap-2">
+            <Brain className="h-4 w-4" />
+            AI Analysis
+          </TabsTrigger>
+          <TabsTrigger value="results" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Results
+          </TabsTrigger>
+        </TabsList>
 
         <TabsContent value="input" className="space-y-6">
           <Card className="card-gradient">
@@ -213,7 +242,132 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
         </TabsContent>
 
         <TabsContent value="progress" className="space-y-6">
-          
+          <Card className="card-gradient">
+            <CardHeader>
+              <CardTitle className="gradient-text flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                AI Analysis Progress
+              </CardTitle>
+              <CardDescription>
+                Real-time monitoring of the 9-stage scientific research pipeline
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Overall Progress */}
+              <div className="mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold">Overall Progress</span>
+                  <span className="text-sm text-muted-foreground">
+                    {Math.min(stageResults.length, 9)}/9 stages completed
+                  </span>
+                </div>
+                <Progress value={(Math.min(stageResults.length, 9) / 9) * 100} className="h-2" />
+              </div>
+
+              {/* Stage-by-Stage Progress */}
+              <div className="space-y-4">
+                {stageNames.map((stageName, index) => {
+                  const isCompleted = stageResults[index] && stageResults[index].trim();
+                  const isCurrent = index === currentStage && isProcessing;
+                  const isPending = index > currentStage || (!isCompleted && !isCurrent);
+                  
+                  return (
+                    <div key={index} className={`p-4 rounded-lg border-2 transition-all ${
+                      isCompleted ? 'border-green-200 bg-green-50' :
+                      isCurrent ? 'border-blue-200 bg-blue-50 animate-pulse' :
+                      'border-gray-200 bg-gray-50'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                          isCompleted ? 'bg-green-500 text-white' :
+                          isCurrent ? 'bg-blue-500 text-white' :
+                          'bg-gray-300 text-gray-600'
+                        }`}>
+                          {isCompleted ? (
+                            <CheckCircle className="h-4 w-4" />
+                          ) : isCurrent ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            index + 1
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold">
+                            Stage {index + 1}: {stageName}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            {isCompleted ? 'Completed successfully' :
+                             isCurrent ? 'Currently processing...' :
+                             'Pending'}
+                          </p>
+                        </div>
+                        <Badge variant={
+                          isCompleted ? 'default' :
+                          isCurrent ? 'secondary' :
+                          'outline'
+                        }>
+                          {isCompleted ? 'Done' :
+                           isCurrent ? 'Processing' :
+                           'Waiting'}
+                        </Badge>
+                      </div>
+                      
+                      {/* Show result preview for completed stages */}
+                      {isCompleted && stageResults[index] && (
+                        <div className="mt-3 pt-3 border-t">
+                          <details className="cursor-pointer">
+                            <summary className="text-sm font-medium text-blue-600 hover:text-blue-800">
+                              View stage result preview
+                            </summary>
+                            <div className="mt-2 p-3 bg-white rounded border text-sm">
+                              <ReactMarkdown 
+                                remarkPlugins={[remarkGfm]}
+                                className="prose prose-sm max-w-none"
+                              >
+                                {stageResults[index].substring(0, 300)}
+                                {stageResults[index].length > 300 ? '...' : ''}
+                              </ReactMarkdown>
+                            </div>
+                          </details>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Processing Status */}
+              {isProcessing && (
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-blue-800">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="font-semibold">AI is actively researching...</span>
+                  </div>
+                  <p className="text-sm text-blue-600 mt-1">
+                    This comprehensive analysis typically takes 20-25 minutes. 
+                    The AI is conducting thorough research, analysis, and generating insights.
+                  </p>
+                </div>
+              )}
+
+              {/* Process Complete */}
+              {currentStage >= 8 && stageResults.length >= 9 && (
+                <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-center">
+                  <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                  <h3 className="font-bold text-green-800">Analysis Complete!</h3>
+                  <p className="text-sm text-green-600">
+                    All 9 stages completed successfully. Check the Results tab for your comprehensive report.
+                  </p>
+                  <Button 
+                    onClick={() => setActiveTab('results')} 
+                    className="mt-3 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    View Results
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="results" className="space-y-6">
