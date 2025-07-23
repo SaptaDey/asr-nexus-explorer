@@ -209,7 +209,8 @@ export class AuthService {
             research_interests: data.researchInterests,
             expertise_areas: data.expertiseAreas,
             institution: data.institution
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/auth?confirmed=true`
         }
       });
 

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { userService } from '@/services/userService'
+import { useAuthContext } from '@/contexts/AuthContext'
 import { Loader2, Eye, EyeOff, Check } from 'lucide-react'
 
 interface RegisterFormProps {
@@ -17,6 +17,7 @@ interface RegisterFormProps {
 }
 
 export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: RegisterFormProps) {
+  const { signUp } = useAuthContext()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -28,6 +29,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [registrationSuccess, setRegistrationSuccess] = useState(false)
 
   const validatePassword = (password: string) => {
     const requirements = [
@@ -60,13 +62,23 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
     setLoading(true)
 
     try {
-      await userService.registerUser({
+      // Register the user using AuthContext
+      const result = await signUp({
         email: formData.email,
         password: formData.password,
         fullName: formData.fullName,
-        subscriptionTier: formData.subscriptionTier
+        researchInterests: [],
+        expertiseAreas: [],
+        institution: ''
       })
-      onSuccess?.()
+      
+      if (!result.success) {
+        setError(result.error || 'Registration failed')
+        return
+      }
+      
+      // Show success message instead of immediately calling onSuccess
+      setRegistrationSuccess(true)
     } catch (err: any) {
       setError(err.message || 'Registration failed')
     } finally {
@@ -98,6 +110,16 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
+          {registrationSuccess && (
+            <Alert className="border-green-200 bg-green-50">
+              <Check className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                Registration successful! Please check your email ({formData.email}) for a confirmation link to activate your account. 
+                Once confirmed, you can sign in to access the ASR-GoT platform.
+              </AlertDescription>
             </Alert>
           )}
 

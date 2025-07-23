@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { userService } from '@/services/userService'
+import { useAuthContext } from '@/contexts/AuthContext'
 import { Loader2, Eye, EyeOff } from 'lucide-react'
 
 interface LoginFormProps {
@@ -16,6 +16,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSuccess, onSwitchToRegister, className = '' }: LoginFormProps) {
+  const { signIn } = useAuthContext()
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -30,7 +31,13 @@ export function LoginForm({ onSuccess, onSwitchToRegister, className = '' }: Log
     setLoading(true)
 
     try {
-      await userService.loginUser(formData)
+      const result = await signIn(formData)
+      
+      if (!result.success) {
+        setError(result.error || 'Login failed')
+        return
+      }
+      
       onSuccess?.()
     } catch (err: any) {
       setError(err.message || 'Login failed')

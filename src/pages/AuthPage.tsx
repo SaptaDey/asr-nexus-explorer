@@ -9,7 +9,7 @@ import { RegisterForm } from '@/components/auth/RegisterForm'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Brain, ArrowLeft } from 'lucide-react'
+import { Brain, ArrowLeft, CheckCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export default function AuthPage() {
@@ -17,9 +17,13 @@ export default function AuthPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user, loading } = useAuthContext()
+  const [emailConfirmed, setEmailConfirmed] = useState(false)
 
   // Check for redirect parameter
   const redirectTo = searchParams.get('redirect') || '/dashboard'
+  
+  // Check if user just confirmed their email
+  const isConfirmed = searchParams.get('confirmed') === 'true'
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -34,7 +38,13 @@ export default function AuthPage() {
     if (authMode === 'register') {
       setMode('register')
     }
-  }, [searchParams])
+    
+    // If user came from email confirmation, show success message and switch to login
+    if (isConfirmed) {
+      setEmailConfirmed(true)
+      setMode('login')
+    }
+  }, [searchParams, isConfirmed])
 
   const handleAuthSuccess = () => {
     navigate(redirectTo)
@@ -79,6 +89,16 @@ export default function AuthPage() {
               }
             </p>
           </div>
+
+          {/* Email Confirmation Success */}
+          {emailConfirmed && (
+            <Alert className="border-green-200 bg-green-50 mb-6">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                Email confirmed successfully! You can now sign in to your account.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Mode Toggle */}
           <div className="flex rounded-lg bg-gray-100 p-1 mb-6">
