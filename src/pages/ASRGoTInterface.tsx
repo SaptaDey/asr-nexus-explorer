@@ -693,6 +693,7 @@ If no quantitative data exists in the evidence content, return empty array [].
         };
         const cachedAnalyticsCharts = getCachedAnalyticsCharts();
         const allCharts = [...scientificCharts, ...cachedAnalyticsCharts];
+        
         if (allCharts.length > 0) {
           const figureSection = [];
           figureSection.push(`

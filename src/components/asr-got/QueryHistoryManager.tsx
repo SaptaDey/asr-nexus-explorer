@@ -73,7 +73,13 @@ export const QueryHistoryManager: React.FC<QueryHistoryManagerProps> = ({
   const loadHistory = useCallback(async () => {
     try {
       setLoading(true);
-      const { sessions: loadedSessions, total } = await queryHistoryService.getQueryHistory(
+      
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      );
+      
+      const queryPromise = queryHistoryService.getQueryHistory(
         pageSize,
         currentPage * pageSize,
         searchTerm || undefined,
@@ -83,11 +89,25 @@ export const QueryHistoryManager: React.FC<QueryHistoryManagerProps> = ({
         tagFilter !== 'all' ? [tagFilter] : undefined
       );
 
+      const { sessions: loadedSessions, total } = await Promise.race([
+        queryPromise,
+        timeoutPromise
+      ]) as { sessions: QuerySession[], total: number };
+
       setSessions(loadedSessions);
       setTotalSessions(total);
     } catch (error) {
-      toast.error('Failed to load query history');
       console.error('Failed to load history:', error);
+      
+      // Fallback to empty state instead of infinite loading
+      setSessions([]);
+      setTotalSessions(0);
+      
+      if (error instanceof Error && error.message === 'Request timeout') {
+        toast.error('Loading query history timed out. Please check your connection.');
+      } else {
+        toast.error('Failed to load query history. Using offline mode.');
+      }
     } finally {
       setLoading(false);
     }

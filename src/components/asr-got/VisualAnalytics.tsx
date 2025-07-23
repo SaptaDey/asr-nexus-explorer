@@ -825,29 +825,11 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
       }
     };
 
-    // **LAZY LOADING with intersection observer (moved outside for React rules compliance)**
-    React.useEffect(() => {
-      if (!shouldRender || isAlreadyRendered) return;
-      
-      const container = document.getElementById(containerId);
-      if (!container) return;
-      
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting && !isAlreadyRendered && !isCurrentlyRendering) {
-              renderChart();
-              observer.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.1, rootMargin: '50px' }
-      );
-      
-      observer.observe(container);
-      
-      return () => observer.disconnect();
-    }, [containerId, shouldRender, isAlreadyRendered, isCurrentlyRendering, renderChart]);
+    // Render immediately if should render (removed useEffect to comply with React hooks rules)
+    if (shouldRender && !isAlreadyRendered && !isCurrentlyRendering) {
+      // Trigger async render
+      setTimeout(() => renderChart(), 0);
+    }
 
     return (
       <div

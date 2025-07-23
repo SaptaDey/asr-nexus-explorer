@@ -39,15 +39,33 @@ export const StoredAnalysesManager: React.FC<{ currentSessionId?: string | null;
       setLoading(true);
       setError(null);
       console.log('Loading stored analyses...');
-      const storedAnalyses = await supabaseStorage.listStoredAnalyses(50);
+      
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      );
+      
+      const analysesPromise = supabaseStorage.listStoredAnalyses(50);
+      
+      const storedAnalyses = await Promise.race([
+        analysesPromise,
+        timeoutPromise
+      ]) as StoredAnalysisItem[];
+      
       console.log('Loaded analyses:', storedAnalyses);
       setAnalyses(storedAnalyses);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load stored analyses';
       setError(errorMessage);
       console.error('Error loading analyses:', err);
+      
+      // Fallback to empty state
+      setAnalyses([]);
+      
       // Show a user-friendly message
-      if (errorMessage.includes('permission') || errorMessage.includes('RLS')) {
+      if (errorMessage === 'Request timeout') {
+        setError('Loading stored analyses timed out. Please check your connection.');
+      } else if (errorMessage.includes('permission') || errorMessage.includes('RLS')) {
         setError('Unable to access stored analyses. Please check your permissions.');
       }
     } finally {
