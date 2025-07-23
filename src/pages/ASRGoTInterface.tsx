@@ -46,7 +46,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { enhancedApiService } from '@/services/enhancedApiService';
 import { dataStorageService } from '@/services/dataStorageService';
 import { SessionControls } from '@/components/asr-got/SessionControls';
-import { User, LogIn, UserPlus, Key, CheckCircle, AlertTriangle, BookOpen, ArrowRight } from 'lucide-react';
+import { User, LogIn, UserPlus, Key, CheckCircle, AlertTriangle, ArrowRight } from 'lucide-react';
 import MermaidChart from '@/components/ui/MermaidChart';
 const ASRGoTInterface: React.FC = () => {
   const {
