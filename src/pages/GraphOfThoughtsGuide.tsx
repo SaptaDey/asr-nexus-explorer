@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { Brain, Network, Zap, Database, Search, BookOpen, ArrowRight, Target, CheckCircle, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import MermaidChart from '@/components/ui/MermaidChart';
 
 const GraphOfThoughtsGuide = () => {
   return (
@@ -254,6 +255,184 @@ const GraphOfThoughtsGuide = () => {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Detailed Architecture Visualizations */}
+        <Card className="card-gradient">
+          <CardHeader>
+            <CardTitle className="gradient-text flex items-center gap-2">
+              <Network className="h-5 w-5" />
+              Detailed Architecture & System Design
+            </CardTitle>
+            <CardDescription>
+              Comprehensive visualizations showing the complete technical architecture and research methodology
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            
+            {/* Scientific Reasoning Overview */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4 text-center">🧬 Scientific Reasoning Overview</h4>
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
+                <MermaidChart
+                  chart={`
+%%{init: {'theme':'base', 'themeVariables': {'fontSize': '24px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
+graph TD
+    A[🔬 Research Problem] --> B[🧬 Scientific Reasoning Platform]
+    B --> C[📊 9-Stage Framework]
+    B --> D[🤖 AI Graph Reasoning]
+    B --> E[📈 Statistical Rigor]
+    
+    C --> F[🎯 Systematic Discovery]
+    D --> F
+    E --> F
+    
+    F --> G[✨ Breakthrough Results]
+    
+    style A fill:#fef2f2,stroke:#dc2626
+    style B fill:#f0fdf4,stroke:#16a34a
+    style F fill:#eff6ff,stroke:#2563eb
+    style G fill:#fffbeb,stroke:#d97706
+                  `}
+                  className="w-full h-auto"
+                  id="scientific-reasoning-overview"
+                />
+              </div>
+            </div>
+
+            {/* Core Innovation Pillars */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4 text-center">🌟 Core Innovation Pillars</h4>
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
+                <MermaidChart
+                  chart={`
+%%{init: {'theme':'base', 'themeVariables': {'fontSize': '24px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
+flowchart LR
+    subgraph " 🎯 Scientific Reasoning Core "
+        A[🧠 Graph Theory] <--> B[🔬 Scientific Method]
+        C[📊 Bayesian Analysis] <--> D[🤖 AI Reasoning]
+        E[🔍 Bias Detection] <--> F[📈 Statistical Power]
+        G[⏰ Temporal Analysis] <--> H[🌐 Cross-Domain Bridge]
+    end
+    
+    style A fill:#e1f5fe,stroke:#01579b
+    style B fill:#f3e5f5,stroke:#4a148c
+    style C fill:#e8f5e8,stroke:#1b5e20
+    style D fill:#fff3e0,stroke:#e65100
+    style E fill:#fce4ec,stroke:#880e4f
+    style F fill:#e0f2f1,stroke:#004d40
+    style G fill:#f1f8e9,stroke:#33691e
+    style H fill:#e3f2fd,stroke:#0277bd
+                  `}
+                  className="w-full h-auto"
+                  id="innovation-pillars"
+                />
+              </div>
+            </div>
+
+            {/* Technical Architecture Connectome */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4 text-center">🏗️ Technical Architecture Connectome</h4>
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
+                <MermaidChart
+                  chart={`
+%%{init: {'theme':'base', 'themeVariables': {'fontSize': '20px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
+graph TB
+    subgraph "🎯 User Interface Layer"
+        UI1[React 18 Frontend]
+        UI2[Responsive Design]
+        UI3[API Dashboard]
+    end
+    
+    subgraph "🧠 Core Engine"
+        CE1[Graph-of-Thoughts Processor]
+        CE2[Bayesian Confidence Engine]
+        CE3[Causal Inference Module]
+        CE4[Bias Detection AI]
+    end
+    
+    subgraph "📊 Data Layer"
+        DL1[Knowledge Graphs]
+        DL2[Evidence Database]
+        DL3[Citation Network]
+        DL4[Temporal Patterns]
+    end
+    
+    subgraph "🔧 Infrastructure"
+        IN1[Supabase Backend]
+        IN2[Real-time Processing]
+        IN3[Export Engines]
+        IN4[Security Layer]
+    end
+    
+    subgraph "🤖 AI Orchestra"
+        AI1[Perplexity Sonar]
+        AI2[Gemini 2.5 Pro]
+        AI3[Smart Routing]
+        AI4[Fallback Systems]
+    end
+    
+    UI1 --> CE1
+    UI2 --> CE2
+    UI3 --> CE3
+    CE1 --> DL1
+    CE2 --> DL2
+    CE3 --> DL3
+    CE4 --> DL4
+    DL1 --> IN1
+    DL2 --> IN2
+    DL3 --> IN3
+    DL4 --> IN4
+    CE1 --> AI1
+    CE2 --> AI2
+    CE3 --> AI3
+    CE4 --> AI4
+    
+    style UI1 fill:#e3f2fd,stroke:#01579b
+    style CE1 fill:#e8f5e8,stroke:#1b5e20
+    style DL1 fill:#fff3e0,stroke:#e65100
+    style IN1 fill:#fce4ec,stroke:#880e4f
+    style AI1 fill:#f3e5f5,stroke:#4a148c
+                  `}
+                  className="w-full h-auto"
+                  id="technical-architecture"
+                />
+              </div>
+            </div>
+
+            {/* User Research Journey */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4 text-center">🎆 User Research Journey</h4>
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
+                <MermaidChart
+                  chart={`
+%%{init: {'theme':'base', 'themeVariables': {'fontSize': '24px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
+journey
+    title Research Discovery Journey
+    section Initialization
+      Research Question: 5: Researcher
+      Graph Setup: 4: System
+      Domain Config: 4: Researcher
+    section Discovery
+      Task Decomposition: 5: System
+      Hypothesis Generation: 5: AI Engine
+      Evidence Search: 4: Researcher
+    section Analysis
+      Bayesian Updates: 5: System
+      Bias Detection: 4: AI Engine
+      Pattern Analysis: 5: System
+    section Results
+      Insight Generation: 5: System
+      Quality Validation: 4: System
+      Export & Share: 5: Researcher
+                  `}
+                  className="w-full h-auto"
+                  id="user-journey"
+                />
+              </div>
+            </div>
+
           </CardContent>
         </Card>
 

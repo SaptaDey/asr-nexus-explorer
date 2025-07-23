@@ -46,7 +46,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { enhancedApiService } from '@/services/enhancedApiService';
 import { dataStorageService } from '@/services/dataStorageService';
 import { SessionControls } from '@/components/asr-got/SessionControls';
-import { User, LogIn, UserPlus, Key, CheckCircle, AlertTriangle } from 'lucide-react';
+import { User, LogIn, UserPlus, Key, CheckCircle, AlertTriangle, BookOpen, ArrowRight } from 'lucide-react';
 import MermaidChart from '@/components/ui/MermaidChart';
 const ASRGoTInterface: React.FC = () => {
   const {
@@ -1282,7 +1282,7 @@ If no quantitative data exists in the evidence content, return empty array [].
                           });
                         }}>
                           <Brain className="h-4 w-4 mr-2" />
-                          Explore Features
+                          Start Research
                         </Button>
                       </div>
                     </div>
@@ -1420,111 +1420,29 @@ If no quantitative data exists in the evidence content, return empty array [].
           {renderTabContent(activeTab)}
         </ResponsiveLayout>
 
-        {/* Scientific Reasoning Architecture Overview */}
-        <div className="bg-white py-8 px-3 sm:px-4 lg:px-6 mb-6 rounded-2xl shadow-lg border border-gray-200">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-slate-900">
-                🧬 Scientific Reasoning: Complete AI Solution
-              </h2>
-              <p className="text-base text-slate-600 max-w-3xl mx-auto leading-relaxed">
-                The first production-ready platform that transforms complex research problems into systematic, graph-based knowledge discovery pipelines
-              </p>
-            </div>
-            
-            {/* Scientific Reasoning Overview Section */}
-            <div className="mb-8">
-              <div className="text-center mb-4">
-                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">🧬 Scientific Reasoning Overview</h3>
-                <p className="text-sm text-slate-600 max-w-2xl mx-auto">
-                  See how our platform transforms complex research problems into systematic discoveries
-                </p>
-              </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
-                <MermaidChart
-                  chart={`
-%%{init: {'theme':'base', 'themeVariables': {'fontSize': '24px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
-graph TD
-    A[🔬 Research Problem] --> B[🧬 Scientific Reasoning Platform]
-    B --> C[📊 9-Stage Framework]
-    B --> D[🤖 AI Graph Reasoning]
-    B --> E[📈 Statistical Rigor]
-    
-    C --> F[🎯 Systematic Discovery]
-    D --> F
-    E --> F
-    
-    F --> G[✨ Breakthrough Results]
-    
-    style A fill:#fef2f2,stroke:#dc2626
-    style B fill:#f0fdf4,stroke:#16a34a
-    style F fill:#eff6ff,stroke:#2563eb
-    style G fill:#fffbeb,stroke:#d97706
-                  `}
-                  className="w-full h-auto"
-                  id="scientific-reasoning-overview"
-                />
-              </div>
-            </div>
-
-            {/* Core Innovation Pillars Section */}
-            <div className="mb-8">
-              <div className="text-center mb-4">
-                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">🌟 Core Innovation Pillars</h3>
-                <p className="text-sm text-slate-600 max-w-2xl mx-auto">
-                  Eight interconnected pillars that form the foundation of our AI-powered research platform
-                </p>
-              </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
-                <MermaidChart
-                  chart={`
-%%{init: {'theme':'base', 'themeVariables': {'fontSize': '24px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
-flowchart LR
-    subgraph " 🎯 Scientific Reasoning Core "
-        A[🧠 Graph Theory] <--> B[🔬 Scientific Method]
-        C[📊 Bayesian Analysis] <--> D[🤖 AI Reasoning]
-        E[🔍 Bias Detection] <--> F[📈 Statistical Power]
-        G[⏰ Temporal Analysis] <--> H[🌐 Cross-Domain Bridge]
-    end
-    
-    style A fill:#e1f5fe,stroke:#01579b
-    style B fill:#f3e5f5,stroke:#4a148c
-    style C fill:#e8f5e8,stroke:#1b5e20
-    style D fill:#fff3e0,stroke:#e65100
-    style E fill:#fce4ec,stroke:#880e4f
-    style F fill:#e0f2f1,stroke:#004d40
-    style G fill:#f1f8e9,stroke:#33691e
-    style H fill:#e3f2fd,stroke:#0277bd
-                  `}
-                  className="w-full h-auto"
-                  id="innovation-pillars"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Enhanced Pipeline Visualization */}
+        {/* Essential Framework Charts - Side by Side */}
         <div className="bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 py-8 px-3 sm:px-4 lg:px-6 mb-6 rounded-2xl shadow-xl border border-orange-100">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-7xl mx-auto">
             <div className="text-center mb-6">
               <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-slate-800">
-                🔬 The 9-Stage Research Framework
+                🔬 Core ASR-GoT Framework
               </h2>
               <p className="text-base text-slate-600 max-w-3xl mx-auto">
-                Advanced AI orchestration through 9 mandatory stages of scientific analysis
+                Essential framework components: 9-stage methodology and comprehensive research approach
               </p>
             </div>
 
-            {/* 9-Stage Framework Section */}
-            <div className="mb-8">
-              <div className="text-center mb-4">
-                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">🔬 9-Stage Research Framework</h3>
-                <p className="text-sm text-slate-600 max-w-2xl mx-auto">
-                  Advanced AI orchestration through 9 mandatory stages of comprehensive scientific analysis
-                </p>
-              </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
+            {/* Side-by-side Framework Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* 9-Stage Framework */}
+              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-slate-200">
+                <div className="text-center mb-4">
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">🔬 9-Stage Research Framework</h3>
+                  <p className="text-sm text-slate-600">
+                    Advanced AI orchestration through 9 mandatory stages
+                  </p>
+                </div>
+
                 <MermaidChart
                   chart={`
 flowchart TD
@@ -1557,473 +1475,77 @@ flowchart TD
                   id="nine-stage-framework"
                 />
               </div>
-            </div>
 
-          </div>
-        </div>
-
-        {/* Technical Architecture Connectome */}
-        <div className="bg-gradient-to-r from-slate-100 to-gray-100 py-8 px-3 sm:px-4 lg:px-6 mb-6 rounded-2xl shadow-xl border border-slate-200">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-slate-900">
-                🏗️ Technical Architecture Connectome
-              </h2>
-              <p className="text-base text-slate-600 max-w-3xl mx-auto">
-                Complete system architecture showing how all components work together
-              </p>
-            </div>
-            
-            {/* Technical Architecture Section */}
-            <div className="mb-8">
-              <div className="text-center mb-4">
-                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">🏗️ Technical Architecture Connectome</h3>
-                <p className="text-sm text-slate-600 max-w-2xl mx-auto">
-                  Complete system architecture showing how all components interconnect and work together
-                </p>
-              </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
+              {/* Research Methodology Mind Map */}
+              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-slate-200">
+                <div className="text-center mb-4">
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">🧠 Research Methodology Mind Map</h3>
+                  <p className="text-sm text-slate-600">
+                    Comprehensive methodology covering graph theory and AI integration
+                  </p>
+                </div>
                 <MermaidChart
                   chart={`
-%%{init: {'theme':'base', 'themeVariables': {'fontSize': '24px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
-graph TB
-    subgraph "🎯 User Interface Layer"
-        UI1[React 18 Frontend]
-        UI2[Responsive Design]
-        UI3[API Dashboard]
-    end
-    
-    subgraph "🧠 Core Engine"
-        CE1[Graph-of-Thoughts Processor]
-        CE2[Bayesian Confidence Engine]
-        CE3[Causal Inference Module]
-        CE4[Bias Detection AI]
-    end
-    
-    subgraph "📊 Data Layer"
-        DL1[Knowledge Graphs]
-        DL2[Evidence Database]
-        DL3[Citation Network]
-        DL4[Temporal Patterns]
-    end
-    
-    subgraph "🔧 Infrastructure"
-        IN1[Supabase Backend]
-        IN2[Real-time Processing]
-        IN3[Export Engines]
-        IN4[Security Layer]
-    end
-    
-    subgraph "🤖 AI Orchestra"
-        AI1[Perplexity Sonar]
-        AI2[Gemini 2.5 Pro]
-        AI3[Smart Routing]
-        AI4[Fallback Systems]
-    end
-    
-    UI1 --> CE1
-    UI2 --> CE2
-    UI3 --> CE3
-    CE1 --> DL1
-    CE2 --> DL2
-    CE3 --> DL3
-    CE4 --> DL4
-    DL1 --> IN1
-    DL2 --> IN2
-    DL3 --> IN3
-    DL4 --> IN4
-    CE1 --> AI1
-    CE2 --> AI2
-    CE3 --> AI3
-    CE4 --> AI4
-    
-    style UI1 fill:#e3f2fd,stroke:#01579b
-    style CE1 fill:#e8f5e8,stroke:#1b5e20
-    style DL1 fill:#fff3e0,stroke:#e65100
-    style IN1 fill:#fce4ec,stroke:#880e4f
-    style AI1 fill:#f3e5f5,stroke:#4a148c
-                  `}
-                  className="w-full h-auto"
-                  id="technical-architecture"
-                />
-              </div>
-            </div>
-
-            {/* Research Methodology Mind Map Section */}
-            <div className="mb-8">
-              <div className="text-center mb-4">
-                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">🧠 Research Methodology Mind Map</h3>
-                <p className="text-sm text-slate-600 max-w-2xl mx-auto">
-                  Comprehensive visualization of our methodology covering graph theory, scientific rigor, and AI integration
-                </p>
-              </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
-                <MermaidChart
-                  chart={`
-%%{init: {'theme':'base', 'themeVariables': {'fontSize': '20px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
+%%{init: {'theme':'base', 'themeVariables': {'fontSize': '16px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
 mindmap
-  root((ASR-GoT Scientific Reasoning Framework))
-    Graph Theory & Knowledge Architecture
-      Advanced Node Taxonomy
-        Primary Research Nodes
-          Hypothesis Nodes
-            Testable Statements
-            Falsifiable Claims
-            Predictive Models
-            Alternative Theories
-            Null Hypotheses
-            Research Questions
-          Evidence Nodes
-            Empirical Data
-            Experimental Results
-            Observational Studies
-            Meta-Analysis Results
-            Expert Opinions
-            Historical Data
-            Real-time Data Streams
-          Dimensional Analysis Nodes
-            Scope Analysis
-            Objective Mapping
-            Constraint Identification
-            Bias Detection
-            Resource Assessment
-            Timeline Analysis
-        Secondary Support Nodes
-          Bridge Nodes
-            Cross-Domain Links
-            Interdisciplinary Connections
-            Knowledge Transfer Points
-            Conceptual Bridging
-            Translation Mechanisms
-          Context Nodes
-            Background Information
-            Domain Knowledge
-            Methodological Context
-            Historical Context
-            Cultural Factors
-          Validation Nodes
-            Peer Review Points
-            Quality Checkpoints
-            Verification Steps
-            Audit Trails
-      Complex Edge Relationships
-        Causal Relationship Network
-          Direct Causation
-            Cause-Effect Pairs
-            Mechanism Pathways
-            Intervention Points
-          Indirect Effects
-            Mediation Chains
-            Confounding Variables
-            Moderating Factors
-            Spurious Correlations
-          Counterfactual Reasoning
-            Alternative Scenarios
-            What-if Analysis
-            Intervention Modeling
-            Outcome Prediction
-        Temporal Dynamics Network
-          Sequential Dependencies
-            Time-ordered Events
-            Process Chains
-            Development Stages
-            Evolutionary Patterns
-          Cyclic Patterns
-            Feedback Loops
-            Iterative Processes
-            Seasonal Variations
-            Periodic Phenomena
-          Complex Temporal Relations
-            Delayed Effects
-            Time-Series Analysis
-            Lag Relationships
-            Duration Dependencies
-        Statistical & Logical Relations
-          Correlation Networks
-            Statistical Correlation
-            Partial Correlations
-            Multiple Correlations
-            Correlation Matrices
-          Logical Connections
-            Deductive Reasoning
-            Inductive Inference
-            Abductive Logic
-            Analogical Reasoning
-            Syllogistic Structures
-      Multi-Dimensional Layer Architecture
-        Conceptual Knowledge Layer
-          Abstract Concepts
-          Theoretical Models
-          Paradigm Structures
-          Ontological Frameworks
-          Philosophical Foundations
-          Conceptual Hierarchies
-        Methodological Framework Layer
-          Research Design Patterns
-          Data Collection Methods
-          Analysis Protocols
-          Validation Procedures
-          Quality Control Systems
-          Experimental Procedures
-        Empirical Evidence Layer
-          Raw Data Collections
-          Processed Results
-          Experimental Evidence
-          Field Observations
-          Survey Data
-          Measurement Records
-        Theoretical Foundation Layer
-          Scientific Laws
-          Theoretical Frameworks
-          Mathematical Models
-          Predictive Theories
-          Formal Systems
-          Axiomatic Structures
-        Integration & Translation Layer
-          Cross-Layer Links
-          Integration Points
-          Synthesis Nodes
-          Translation Mechanisms
-          Bridging Concepts
-          Unified Models
-    Comprehensive Scientific Rigor Framework
-      Advanced Hypothesis Development
-        Falsifiability & Testability
-          Karl Popper Principle
-          Testable Predictions
-          Refutation Conditions
-          Disconfirming Evidence
-          Null Hypothesis Testing
-          Alternative Explanations
-        Statistical Power & Design
-          Effect Size Calculation
-          Sample Size Determination
-          Type I/II Error Control
-          Power Curve Analysis
-          Multiple Comparison Corrections
-          Bayesian Power Analysis
-        Confidence & Uncertainty
-          Bayesian Confidence Intervals
-          Frequentist Confidence Regions
-          Credible Regions
-          Uncertainty Propagation
-          Error Analysis
-          Sensitivity Testing
-        Robust Research Design
-          Experimental Control Systems
-          Randomization Protocols
-          Blinding Procedures
-          Replication Studies
-          Cross-validation Methods
-          Robustness Testing
-      Multi-Level Bias Detection & Mitigation
-        Cognitive Bias Taxonomy
-          Confirmation Bias
-          Availability Heuristic
-          Anchoring Effects
-          Overconfidence Bias
-          Hindsight Bias
-          Representative Bias
-          Framing Effects
-        Selection & Sampling Biases
-          Sampling Bias
-          Survivorship Bias
-          Attrition Bias
-          Volunteer Bias
-          Self-selection Bias
-          Geographic Bias
-        Publication & Communication Biases
-          Positive Result Bias
-          Language Bias
-          Citation Bias
-          Time-Lag Bias
-          Journal Bias
-          Funding Bias
-        Methodological & Measurement Biases
-          Measurement Bias
-          Recall Bias
-          Observer Bias
-          Reporting Bias
-          Instrument Bias
-          Calibration Errors
-      Comprehensive Quality Assurance
-        Multi-Stage Peer Review
-          Expert Evaluation Panels
-          Double-Blind Review Process
-          Open Peer Review Systems
-          Post-Publication Review
-          Community Review Platforms
-          Continuous Review Cycles
-        Reproducibility Standards
-          Computational Reproducibility
-          Statistical Reproducibility
-          Conceptual Replication
-          Direct Replication
-          Systematic Replication
-          Cross-Laboratory Validation
-        Transparency & Documentation
-          Open Data Policies
-          Code Availability
-          Method Documentation
-          Result Reporting Standards
-          FAIR Data Principles
-          Version Control Systems
-        Audit & Tracking Systems
-          Decision Tracking
-          Change Logs
-          Provenance Records
-          Quality Metrics
-          Performance Monitoring
-          Compliance Checking
-    AI Integration & Intelligent Automation
-      Advanced Bayesian Reasoning Engine
-        Multi-Source Prior Integration
-          Expert Knowledge Elicitation
-          Literature-Based Prior Construction
-          Empirical Prior Estimation
-          Reference Prior Development
-          Hierarchical Prior Structures
-          Dynamic Prior Updating
-        Evidence Synthesis & Updating
-          Likelihood Function Construction
-          Posterior Distribution Updates
-          Model Averaging Techniques
-          Hierarchical Bayesian Models
-          Markov Chain Monte Carlo
-          Variational Inference Methods
-        Comprehensive Uncertainty Quantification
-          Epistemic Uncertainty Analysis
-          Aleatoric Uncertainty Modeling
-          Model Uncertainty Assessment
-          Parameter Uncertainty Propagation
-          Predictive Uncertainty Bounds
-          Uncertainty Visualization
-        Decision Support Systems
-          Expected Utility Maximization
-          Risk Assessment Frameworks
-          Sensitivity Analysis Tools
-          Value of Information Analysis
-          Multi-Criteria Decision Making
-          Optimal Stopping Problems
-      Intelligent Pattern Recognition & Discovery
-        Advanced Temporal Analysis
-          Trend Detection Algorithms
-          Seasonality Identification
-          Cyclical Pattern Mining
-          Anomaly Detection Systems
-          Change Point Detection
-          Time Series Forecasting
-        Sophisticated Causal Discovery
-          Causal Discovery Algorithms
-          Intervention Analysis Methods
-          Counterfactual Reasoning Systems
-          Mechanism Identification Tools
-          Causal Network Learning
-          Structural Equation Modeling
-        Cross-Domain Pattern Mining
-          Transfer Learning Applications
-          Domain Adaptation Techniques
-          Analogical Reasoning Systems
-          Pattern Generalization Methods
-          Multi-Domain Knowledge Fusion
-          Concept Mapping Algorithms
-        Knowledge Gap & Opportunity Identification
-          Literature Gap Analysis
-          Research Opportunity Detection
-          Methodological Gap Assessment
-          Theoretical Inconsistency Detection
-          Innovation Potential Scoring
-          Future Research Prediction
-      Comprehensive Research Automation
-        Intelligent Literature Processing
-          Automated Literature Search
-          Smart Paper Classification
-          Citation Network Analysis
-          Knowledge Extraction Systems
-          Semantic Literature Mining
-          Research Trend Prediction
-        Automated Hypothesis Generation
-          Theory-Driven Hypothesis Building
-          Pattern-Based Hypothesis Formation
-          Analogy-Driven Generation
-          Constraint-Based Reasoning
-          Evolutionary Hypothesis Development
-          Multi-Modal Hypothesis Integration
-        Advanced Evidence Synthesis
-          Automated Meta-Analysis
-          Intelligent Data Integration
-          Result Aggregation Systems
-          Conflict Resolution Algorithms
-          Evidence Quality Assessment
-          Synthesis Quality Control
-        Intelligent Report Generation
-          Automated Scientific Writing
-          Template-Based Report Systems
-          Dynamic Visualization Generation
-          Interactive Dashboard Creation
-          Multi-Format Output Systems
-          Quality-Controlled Documentation
+  root((ASR-GoT Framework))
+    Graph Theory
+      Node Types
+        Hypothesis Nodes
+        Evidence Nodes
+        Analysis Nodes
+      Edge Relations
+        Supportive Links
+        Contradictory Links
+        Causal Relations
+      Graph Operations
+        Pruning
+        Merging
+        Extraction
+    AI Integration
+      Multi-AI Orchestration
+        Perplexity Sonar
+        Gemini 2.5 Pro
+        Smart Routing
+      Reasoning Methods
+        Bayesian Updates
+        Causal Inference
+        Pattern Recognition
+      Quality Control
+        Bias Detection
+        Confidence Scoring
+        Validation Checks
+    Scientific Method
+      9-Stage Pipeline
+        Initialization
+        Decomposition
+        Hypothesis Planning
+      Evidence Processing
+        Real-time Search
+        Citation Management
+        Statistical Analysis
+      Report Generation
+        PhD-level Quality
+        Vancouver Citations
+        Multi-format Export
                   `}
                   className="w-full h-auto"
-                  id="methodology-mindmap"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-
-        {/* User Journey & Domain Applications */}
-        <div className="bg-white py-8 px-3 sm:px-4 lg:px-6 mb-6 rounded-2xl shadow-lg border border-gray-200">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-slate-900">
-                🚀 Research Discovery Journey
-              </h2>
-              <p className="text-base text-slate-600 max-w-3xl mx-auto">
-                From question to breakthrough - see how Scientific Reasoning transforms your research process
-              </p>
-            </div>
-            
-            {/* User Journey Section */}
-            <div className="mb-8">
-              <div className="text-center mb-4">
-                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">🎆 User Research Journey</h3>
-                <p className="text-sm text-slate-600 max-w-2xl mx-auto">
-                  Interactive journey mapping from initial research question to final insights and publication
-                </p>
-              </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200">
-                <MermaidChart
-                  chart={`
-%%{init: {'theme':'base', 'themeVariables': {'fontSize': '24px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
-journey
-    title Research Discovery Journey
-    section Initialization
-      Research Question: 5: Researcher
-      Graph Setup: 4: System
-      Domain Config: 4: Researcher
-    section Discovery
-      Task Decomposition: 5: System
-      Hypothesis Generation: 5: AI Engine
-      Evidence Search: 4: Researcher
-    section Analysis
-      Bayesian Updates: 5: System
-      Bias Detection: 4: AI Engine
-      Pattern Analysis: 5: System
-    section Results
-      Insight Generation: 5: System
-      Quality Validation: 4: System
-      Export & Share: 5: Researcher
-                  `}
-                  className="w-full h-auto"
-                  id="user-journey"
+                  id="methodology-mindmap-compact"
                 />
               </div>
             </div>
 
+            {/* Learn More Link */}
+            <div className="text-center mt-8">
+              <Link to="/graph-of-thoughts-guide" className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105">
+                <BookOpen className="h-5 w-5 mr-2" />
+                Learn How It Works - Detailed Architecture
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </Link>
+            </div>
           </div>
         </div>
+
 
         {/* Stage 9 Progress Indicator */}
         {showStage9Progress && <Stage9ProgressIndicator currentStage={currentStage} isProcessing={isProcessing} onComplete={() => setShowStage9Progress(false)} />}
