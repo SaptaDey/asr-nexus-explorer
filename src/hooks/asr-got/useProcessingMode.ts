@@ -23,3 +23,5 @@ export const useProcessingMode = (initialMode: ProcessingMode = 'manual') => {
     setAutoStageDelay
   };
 };
+
+export default useProcessingMode;

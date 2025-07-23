@@ -1346,6 +1346,7 @@ Generate the complete 150+ page thesis-quality HTML scientific report now.`;
       this.stageContexts.push(stageContext);
       throw error;
     }
+  }
 
   // Helper method to calculate average confidence across all nodes
   private calculateAverageConfidence(): number {
