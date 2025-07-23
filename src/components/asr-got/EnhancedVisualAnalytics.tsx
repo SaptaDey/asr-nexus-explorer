@@ -124,46 +124,8 @@ Return JSON array with charts based ONLY on actual evidence data:
         throw new Error('Invalid API response structure');
       }
       
-      // Multiple extraction strategies for JSON with robust parsing
-      let extractedJson = responseText.trim();
-      
-      // Remove leading/trailing markdown code blocks
-      extractedJson = extractedJson.replace(/^```(?:json|javascript)?\s*/i, '');
-      extractedJson = extractedJson.replace(/\s*```$/i, '');
-      
-      // Extract JSON array from various formats
-      const patterns = [
-        /```(?:json|javascript)?\s*(\[[\s\S]*?\])\s*```/i,  // Code blocks
-        /^\s*(\[[\s\S]*?\])\s*$/,                           // Direct array
-        /json\s*(\[[\s\S]*?\])/i,                          // After "json" keyword
-        /(\[[\s\S]*?\])/                                    // Any array pattern
-      ];
-      
-      for (const pattern of patterns) {
-        const match = responseText.match(pattern);
-        if (match) {
-          extractedJson = match[1];
-          break;
-        }
-      }
-      
-      // Final cleanup
-      extractedJson = extractedJson.trim();
-      
-      let chartConfigs;
-      try {
-        chartConfigs = JSON.parse(extractedJson);
-      } catch (parseError) {
-        console.error('JSON Parse Error:', parseError);
-        console.error('Raw response:', responseText);
-        console.error('Extracted JSON:', extractedJson);
-        throw new Error(`JSON parsing failed: ${parseError}`);
-      }
-      
-      // Validate array structure
-      if (!Array.isArray(chartConfigs)) {
-        throw new Error('Response is not a valid array of chart configurations');
-      }
+      // **ROBUST JSON PARSING with Progressive Fallback**
+      const chartConfigs = await parseEnhancedResponseWithFallback(responseText, 4);
       
       return chartConfigs.map((config: any, index: number) => ({
         id: `enhanced_${index}_${Date.now()}`,
@@ -177,9 +139,144 @@ Return JSON array with charts based ONLY on actual evidence data:
       }));
       
     } catch (error) {
-      // **SILENT ERROR HANDLING**: Log error but don't propagate to UI
-      console.warn('Enhanced visualization generation failed (graceful degradation):', error);
-      // Return empty array instead of throwing - visualizations are optional
+      console.warn('Enhanced visualization generation failed, attempting progressive fallback:', error);
+      // **PROGRESSIVE FALLBACK**: Try simpler requests instead of returning empty
+      return await attemptEnhancedFallback();
+    }
+
+    // **ROBUST JSON PARSING for Enhanced Analytics**
+    async function parseEnhancedResponseWithFallback(responseText: string, maxCharts: number): Promise<any[]> {
+      console.log('🔍 Enhanced Analytics: Parsing AI response with robust extraction...');
+      
+      // Strategy 1: Multiple JSON extraction patterns
+      const extractionPatterns = [
+        /```(?:json|javascript)?\s*(\[[\s\S]*?\])\s*```/i,  // Code blocks
+        /^\s*(\[[\s\S]*?\])\s*$/,                            // Direct array
+        /json\s*:?\s*(\[[\s\S]*?\])/i,                       // After "json:" keyword
+        /(\[[\s\S]*?\])/                                     // Any array pattern
+      ];
+
+      for (const pattern of extractionPatterns) {
+        try {
+          const match = responseText.match(pattern);
+          if (match) {
+            let extractedJson = match[1] || match[0];
+            
+            // Clean up common JSON formatting issues
+            extractedJson = extractedJson
+              .replace(/,\s*}/g, '}')      // Remove trailing commas in objects
+              .replace(/,\s*]/g, ']')      // Remove trailing commas in arrays
+              .replace(/([{,]\s*)(\w+):/g, '$1"$2":')  // Quote unquoted keys
+              .trim();
+
+            const parsed = JSON.parse(extractedJson);
+            
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              console.log(`✅ Enhanced: Successfully parsed ${parsed.length} charts`);
+              return parsed.slice(0, maxCharts);
+            }
+          }
+        } catch (parseError) {
+          console.warn(`⚠️ Enhanced: Parse attempt failed:`, parseError);
+          continue;
+        }
+      }
+
+      // Strategy 2: Extract individual objects
+      try {
+        const objectMatches = responseText.match(/\{[^{}]*"title"[^{}]*\}/g);
+        if (objectMatches && objectMatches.length > 0) {
+          const charts = [];
+          for (const objStr of objectMatches.slice(0, maxCharts)) {
+            try {
+              const cleanObj = objStr
+                .replace(/,\s*}/g, '}')
+                .replace(/([{,]\s*)(\w+):/g, '$1"$2":');
+              const parsed = JSON.parse(cleanObj);
+              if (parsed.title && parsed.type) {
+                charts.push(parsed);
+              }
+            } catch (err) {
+              continue;
+            }
+          }
+          if (charts.length > 0) {
+            console.log(`✅ Enhanced: Extracted ${charts.length} individual objects`);
+            return charts;
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Enhanced: Individual object extraction failed:', error);
+      }
+
+      throw new Error('All JSON parsing strategies failed');
+    }
+
+    // **PROGRESSIVE FALLBACK for Enhanced Analytics**
+    async function attemptEnhancedFallback(): Promise<AnalyticsFigure[]> {
+      const fallbackStrategies = [
+        { charts: 2, description: '2 simple charts' },
+        { charts: 1, description: 'single chart' }
+      ];
+
+      for (const strategy of fallbackStrategies) {
+        try {
+          console.log(`🔄 Enhanced Fallback: Requesting ${strategy.charts} charts`);
+          
+          const fallbackPrompt = `
+Create ${strategy.charts} simple chart(s) for research topic "${researchContext.topic}".
+
+Use basic chart types and valid JSON format:
+[{"title": "Research Overview", "type": "bar", "data": [{"x": ["Category A", "Category B"], "y": [5, 8], "type": "bar"}], "layout": {"title": "Research Analysis", "xaxis": {"title": "Categories"}, "yaxis": {"title": "Values"}}}]
+`;
+
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: fallbackPrompt }] }],
+              generationConfig: { 
+                maxOutputTokens: 3000,
+                temperature: 0.1
+              }
+            })
+          });
+
+          if (!response.ok) continue;
+          
+          const data = await response.json();
+          const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          
+          if (responseText) {
+            const charts = await parseEnhancedResponseWithFallback(responseText, strategy.charts);
+            if (charts.length > 0) {
+              console.log(`✅ Enhanced Fallback success: ${charts.length} charts`);
+              toast.success(`Generated ${charts.length} enhanced charts (simplified)`, {
+                description: `Fallback: ${strategy.description}`
+              });
+              return charts.map((config: any, index: number) => ({
+                id: `enhanced_fallback_${index}_${Date.now()}`,
+                title: config.title || 'Research Analysis',
+                code: JSON.stringify(config, null, 2),
+                data: config.data || [{"x": ["Research"], "y": [1], "type": "bar"}],
+                layout: config.layout || {"title": "Research Analysis"},
+                type: config.type || 'bar',
+                nodeId: 'enhanced_fallback',
+                generated: new Date().toISOString()
+              }));
+            }
+          }
+        } catch (error) {
+          console.warn(`⚠️ Enhanced fallback failed (${strategy.description}):`, error);
+          continue;
+        }
+      }
+
+      // Final fallback: return empty array with info message
+      console.log('🔧 All enhanced fallback attempts failed, skipping enhanced charts');
+      toast.info('Enhanced visualizations unavailable', {
+        description: 'Using standard evidence-based charts instead'
+      });
       return [];
     }
   }, [graphData, currentStage, geminiApiKey, researchContext]);

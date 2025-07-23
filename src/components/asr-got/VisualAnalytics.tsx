@@ -189,11 +189,8 @@ JSON format: [{"title": "Evidence-Based Analysis Title", "type": "bar|scatter|li
           throw new Error('Gemini API returned invalid response structure');
         }
         
-        // Extract JSON from code block if wrapped
-        const jsonMatch = responseText.match(/```(?:javascript|json)?\s*(\[[\s\S]*\])\s*```/);
-        const extractedJson = jsonMatch ? jsonMatch[1] : responseText;
-        
-        const chartConfigs = safeJSONParse(extractedJson, []);
+        // **ROBUST JSON PARSING with Progressive Fallback**
+        const chartConfigs = await parseAIResponseWithFallback(responseText, maxCharts, evidenceNodes);
         
         return chartConfigs.map((config: any, index: number) => ({
           id: `evidence-enhanced-${index}`,
@@ -201,8 +198,8 @@ JSON format: [{"title": "Evidence-Based Analysis Title", "type": "bar|scatter|li
           type: config.type,
           data: config.data,
           layout: config.layout,
-          isLoading: false,
-          error: null,
+          nodeId: config.nodeId || 'evidence-analysis',
+          generated: new Date().toISOString(),
           metadata: {
             source: 'evidence-enhanced-ai',
             confidence: 0.8,
@@ -212,9 +209,216 @@ JSON format: [{"title": "Evidence-Based Analysis Title", "type": "bar|scatter|li
         }));
         
       } catch (error) {
-        console.error('AI-enhanced chart generation failed:', error);
-        throw new Error(`Evidence-enhanced analysis failed: ${error}`);
+        console.error('AI-enhanced chart generation failed, attempting fallback:', error);
+        // **GRACEFUL FALLBACK**: Try progressive retry with fewer charts
+        return await attemptProgressiveFallback(evidenceNodes, maxCharts);
       }
+    }
+
+    // **ROBUST JSON PARSING with Multiple Extraction Strategies**
+    async function parseAIResponseWithFallback(responseText: string, maxCharts: number, evidenceNodes: GraphNode[]): Promise<any[]> {
+      console.log('🔍 Attempting to parse AI response with robust extraction...');
+      
+      // Strategy 1: Try multiple JSON extraction patterns
+      const extractionPatterns = [
+        /```(?:json|javascript)?\s*(\[[\s\S]*?\])\s*```/i,  // Code blocks
+        /^\s*(\[[\s\S]*?\])\s*$/,                            // Direct array
+        /json\s*:?\s*(\[[\s\S]*?\])/i,                       // After "json:" keyword
+        /(\[[\s\S]*?\])/,                                     // Any array pattern
+        /\{[\s\S]*?\}/g                                       // Individual objects (to build array)
+      ];
+
+      for (const pattern of extractionPatterns) {
+        try {
+          const match = responseText.match(pattern);
+          if (match) {
+            let extractedJson = match[1] || match[0];
+            
+            // Clean up common JSON formatting issues
+            extractedJson = extractedJson
+              .replace(/,\s*}/g, '}')      // Remove trailing commas in objects
+              .replace(/,\s*]/g, ']')      // Remove trailing commas in arrays
+              .replace(/([{,]\s*)(\w+):/g, '$1"$2":')  // Quote unquoted keys
+              .trim();
+
+            console.log(`📄 Trying extraction pattern: ${pattern.source.substring(0, 30)}...`);
+            const parsed = JSON.parse(extractedJson);
+            
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              console.log(`✅ Successfully parsed ${parsed.length} charts with pattern`);
+              return parsed.slice(0, maxCharts); // Limit to requested count
+            }
+          }
+        } catch (parseError) {
+          console.warn(`⚠️ Parse attempt failed with pattern ${pattern.source.substring(0, 20)}:`, parseError);
+          continue;
+        }
+      }
+
+      // Strategy 2: Try to extract individual chart objects and build array
+      try {
+        console.log('🔄 Attempting individual object extraction...');
+        const objectMatches = responseText.match(/\{[^{}]*"title"[^{}]*\}/g);
+        if (objectMatches && objectMatches.length > 0) {
+          const charts = [];
+          for (const objStr of objectMatches.slice(0, maxCharts)) {
+            try {
+              const cleanObj = objStr
+                .replace(/,\s*}/g, '}')
+                .replace(/([{,]\s*)(\w+):/g, '$1"$2":');
+              const parsed = JSON.parse(cleanObj);
+              if (parsed.title && parsed.type) {
+                charts.push(parsed);
+              }
+            } catch (err) {
+              console.warn('⚠️ Failed to parse individual object:', err);
+            }
+          }
+          if (charts.length > 0) {
+            console.log(`✅ Extracted ${charts.length} individual chart objects`);
+            return charts;
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Individual object extraction failed:', error);
+      }
+
+      // Strategy 3: Last resort - generate minimal charts from evidence
+      console.log('🚨 JSON parsing failed completely, generating minimal evidence charts...');
+      return generateMinimalEvidenceCharts(evidenceNodes, Math.min(3, maxCharts));
+    }
+
+    // **PROGRESSIVE FALLBACK STRATEGY**
+    async function attemptProgressiveFallback(evidenceNodes: GraphNode[], originalMaxCharts: number): Promise<AnalyticsFigure[]> {
+      const fallbackStrategies = [
+        { charts: Math.ceil(originalMaxCharts / 2), description: 'half the charts' },
+        { charts: Math.ceil(originalMaxCharts / 3), description: 'one-third the charts' },
+        { charts: 3, description: '3 simple charts' },
+        { charts: 1, description: 'single chart' }
+      ];
+
+      for (const strategy of fallbackStrategies) {
+        try {
+          console.log(`🔄 Fallback attempt: Requesting ${strategy.charts} charts (${strategy.description})`);
+          
+          const fallbackPrompt = `
+Based on the research topic "${researchContext.topic}", analyze the evidence and create EXACTLY ${strategy.charts} simple chart(s):
+
+EVIDENCE:
+${evidenceNodes.slice(0, 3).map((node, i) => `
+${i + 1}. ${node.label}: ${node.metadata?.value?.substring(0, 200) || 'Evidence data'}
+`).join('')}
+
+Create ${strategy.charts} chart(s) with simple structure. Use ONLY valid JSON format:
+[{"title": "Simple Evidence Chart", "type": "bar", "data": [{"x": ["Category 1", "Category 2"], "y": [1, 2], "type": "bar"}], "layout": {"title": "Evidence Analysis", "xaxis": {"title": "Categories"}, "yaxis": {"title": "Values"}}}]
+`;
+
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: fallbackPrompt }] }],
+              generationConfig: { 
+                maxOutputTokens: 5000, // Reduced for simpler response
+                temperature: 0.1
+              }
+            })
+          });
+
+          if (!response.ok) continue;
+          
+          const data = await response.json();
+          const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          
+          if (responseText) {
+            const charts = await parseAIResponseWithFallback(responseText, strategy.charts, evidenceNodes);
+            if (charts.length > 0) {
+              console.log(`✅ Fallback success: Generated ${charts.length} charts with ${strategy.description}`);
+              toast.success(`Generated ${charts.length} evidence-based charts (simplified due to complexity)`, {
+                description: `Fallback strategy: ${strategy.description}`
+              });
+              return charts.map((config: any, index: number) => ({
+                id: `fallback-${index}`,
+                title: config.title || 'Evidence Analysis',
+                type: config.type || 'bar',
+                data: config.data || [{"x": ["Evidence"], "y": [1], "type": "bar"}],
+                layout: config.layout || {"title": "Evidence Analysis"},
+                nodeId: 'fallback-analysis',
+                generated: new Date().toISOString()
+              }));
+            }
+          }
+        } catch (error) {
+          console.warn(`⚠️ Fallback strategy failed (${strategy.description}):`, error);
+          continue;
+        }
+      }
+
+      // Final fallback: Generate minimal charts from evidence content
+      console.log('🔧 All fallback attempts failed, generating minimal evidence summary...');
+      return generateMinimalEvidenceCharts(evidenceNodes, 2);
+    }
+
+    // **MINIMAL EVIDENCE CHARTS as Last Resort**
+    function generateMinimalEvidenceCharts(evidenceNodes: GraphNode[], count: number): AnalyticsFigure[] {
+      console.log('🛠️ Creating minimal evidence charts as final fallback...');
+      
+      const charts: AnalyticsFigure[] = [];
+      
+      // Chart 1: Evidence confidence levels
+      if (evidenceNodes.length > 0 && count > 0) {
+        charts.push({
+          id: 'minimal-confidence',
+          title: 'Evidence Confidence Levels',
+          type: 'bar',
+          data: [{
+            x: evidenceNodes.slice(0, 5).map((node, i) => `Evidence ${i + 1}`),
+            y: evidenceNodes.slice(0, 5).map(node => node.confidence?.[0] || 0.7),
+            type: 'bar',
+            marker: { color: '#2563eb' }
+          }],
+          layout: {
+            title: 'Evidence Confidence Analysis',
+            xaxis: { title: 'Evidence Sources' },
+            yaxis: { title: 'Confidence Level', range: [0, 1] }
+          },
+          nodeId: 'minimal-evidence',
+          generated: new Date().toISOString()
+        });
+      }
+
+      // Chart 2: Evidence source count
+      if (count > 1) {
+        const typeCount = evidenceNodes.reduce((acc: Record<string, number>, node) => {
+          const type = node.type || 'evidence';
+          acc[type] = (acc[type] || 0) + 1;
+          return acc;
+        }, {});
+
+        charts.push({
+          id: 'minimal-types',
+          title: 'Evidence Type Distribution',
+          type: 'pie',
+          data: [{
+            labels: Object.keys(typeCount),
+            values: Object.values(typeCount),
+            type: 'pie'
+          }],
+          layout: {
+            title: 'Evidence Sources by Type'
+          },
+          nodeId: 'minimal-types',
+          generated: new Date().toISOString()
+        });
+      }
+
+      if (charts.length > 0) {
+        toast.info(`Generated ${charts.length} minimal evidence charts`, {
+          description: 'Showing basic evidence analysis due to parsing complexity'
+        });
+      }
+
+      return charts;
     }
   }, [graphData, geminiApiKey, researchContext]);
 
