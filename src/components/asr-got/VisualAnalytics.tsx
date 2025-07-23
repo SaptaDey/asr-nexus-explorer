@@ -14,6 +14,7 @@ import { GraphData, GraphNode, ResearchContext } from '@/types/asrGotTypes';
 import { BarChart3, LineChart, PieChart, Download, Play, AlertTriangle, Code } from 'lucide-react';
 import { toast } from 'sonner';
 import { safeJSONParse, validatePlotlyConfig, apiRateLimiter } from '@/utils/securityUtils';
+import { EvidenceDataExtractor, EvidenceBasedChart } from '@/services/EvidenceDataExtractor';
 
 // Import Plotly.js dynamically to avoid bundle size issues
 declare global {
@@ -79,91 +80,141 @@ export const VisualAnalytics: React.FC<VisualAnalyticsProps> = ({
     };
   }, []);
 
-  // Generate comprehensive analytical visualizations
+  // Generate evidence-based analytical visualizations
   const generateComprehensiveVisualizations = useCallback(async (): Promise<AnalyticsFigure[]> => {
     if (!apiRateLimiter.isAllowed('visualization')) {
       throw new Error('Rate limit exceeded. Please wait before generating more visualizations.');
     }
 
-    const analysisPrompt = `
-Based on the research topic "${researchContext.topic}" in the field of ${researchContext.field}, generate 15 comprehensive scientific charts relevant to this research:
+    // **MAJOR IMPROVEMENT: Use real evidence data instead of random data**
+    console.log('📊 Generating evidence-based charts from Stage 4 data...');
+    
+    // Extract evidence nodes from graph data
+    const evidenceNodes = graphData.nodes.filter(node => node.type === 'evidence');
+    
+    if (evidenceNodes.length === 0) {
+      throw new Error('No evidence data available. Please complete Stage 4 (Evidence Integration) first to generate meaningful visualizations.');
+    }
 
-Research Context: ${researchContext.topic}
-Field: ${researchContext.field}
+    // Extract quantitative data from evidence nodes
+    const extractedDatasets = EvidenceDataExtractor.extractQuantitativeData(evidenceNodes, researchContext);
+    
+    if (extractedDatasets.length === 0) {
+      // Fallback to enhanced AI-generated charts with evidence context
+      return await generateAIEnhancedCharts(evidenceNodes);
+    }
 
-Generate charts that would be appropriate for this scientific topic with realistic data:
+    // Generate evidence-based charts
+    const evidenceCharts = EvidenceDataExtractor.generateEvidenceBasedCharts(extractedDatasets, researchContext);
+    
+    // Convert to AnalyticsFigure format
+    const analyticsFigures: AnalyticsFigure[] = evidenceCharts.map((chart, index) => ({
+      id: `evidence-chart-${index}`,
+      title: chart.title,
+      type: chart.type,
+      data: chart.data,
+      layout: chart.layout,
+      isLoading: false,
+      error: null,
+      metadata: {
+        source: 'evidence-based',
+        confidence: chart.confidence,
+        evidenceNodes: chart.evidenceNodes,
+        generatedAt: new Date().toISOString()
+      }
+    }));
 
-1. Primary data visualization (bar chart)
-2. Correlation analysis (scatter plot)
-3. Distribution analysis (histogram)
-4. Comparative analysis (grouped bar chart)
-5. Time series analysis (line chart)
-6. Statistical power analysis (box plot)
-7. Confidence intervals (error bars)
-8. Heatmap correlation matrix
-9. Pie chart categorical breakdown
-10. Multi-dimensional scatter plot
-11. Statistical significance testing (bar chart)
-12. Trend analysis (line chart)
-13. Classification accuracy (bar chart)
-14. Regression analysis (scatter with trend)
-15. Meta-analysis forest plot (horizontal bar with error bars)
+    // Add supplementary AI-enhanced charts if we have fewer than 8 evidence-based charts
+    if (analyticsFigures.length < 8) {
+      const supplementaryCharts = await generateAIEnhancedCharts(evidenceNodes, 8 - analyticsFigures.length);
+      analyticsFigures.push(...supplementaryCharts);
+    }
 
-Each chart should have realistic data relevant to the research field. For example:
-- Medical research: patient outcomes, biomarker levels, treatment efficacy
-- Genetics: gene expression, mutation frequencies, pathway analysis
-- Physics: measurements, experimental results, theoretical predictions
-- Psychology: survey responses, behavioral data, cognitive assessments
+    toast.success(`Generated ${analyticsFigures.length} evidence-based visualizations from ${evidenceNodes.length} evidence sources`, {
+      description: `${extractedDatasets.length} datasets extracted from real research findings`
+    });
 
-JSON format: [{"title": "Descriptive Title", "type": "bar|scatter|heatmap|histogram|pie|box", "data": [{"x": [realistic_labels], "y": [realistic_values], "type": "bar"}], "layout": {"title": "Chart Title", "xaxis": {"title": "X Label"}, "yaxis": {"title": "Y Label"}}}]
+    return analyticsFigures;
+
+    // Helper function for AI-enhanced charts with evidence context
+    async function generateAIEnhancedCharts(evidenceNodes: GraphNode[], maxCharts: number = 15): Promise<AnalyticsFigure[]> {
+      // Extract evidence content for context
+      const evidenceContext = evidenceNodes.map(node => ({
+        source: node.label || 'Research Evidence',
+        content: node.metadata?.value?.substring(0, 500) || 'Evidence data',
+        confidence: node.confidence?.[0] || 0.7
+      }));
+
+      const enhancedPrompt = `
+Based on the research topic "${researchContext.topic}" in the field of ${researchContext.field}, analyze the following REAL EVIDENCE and generate ${maxCharts} scientific charts:
+
+REAL EVIDENCE FROM STAGE 4:
+${evidenceContext.map((ev, i) => `
+Evidence ${i + 1} (${ev.source}):
+${ev.content}
+Confidence: ${ev.confidence}
+`).join('\n')}
+
+Create charts that analyze and visualize patterns from this ACTUAL EVIDENCE, not synthetic data. Focus on:
+1. Statistical findings mentioned in the evidence
+2. Comparative analysis between evidence sources  
+3. Confidence levels across different evidence
+4. Quantitative trends identified in the research
+5. Meta-analysis of the evidence quality
+
+For each chart, reference the specific evidence source and extract actual numbers/patterns mentioned.
+
+JSON format: [{"title": "Evidence-Based Analysis Title", "type": "bar|scatter|line|histogram|box", "data": [{"x": [labels_from_evidence], "y": [values_from_evidence], "type": "bar"}], "layout": {"title": "Chart analyzing real evidence", "xaxis": {"title": "Evidence Categories"}, "yaxis": {"title": "Values from Research"}}}]
 `;
 
-    try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: analysisPrompt }] }],
-          generationConfig: { 
-            maxOutputTokens: 30000,
-            temperature: 0.2
-          }
-        })
-      });
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: enhancedPrompt }] }],
+            generationConfig: { 
+              maxOutputTokens: 30000,
+              temperature: 0.2
+            }
+          })
+        });
 
-      if (!response.ok) throw new Error('Gemini API error');
-      
-      const data = await response.json();
-      
-      // Check if response was truncated due to token limit
-      if (data.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
-        throw new Error('Response was truncated due to token limit. Please try again or use a shorter prompt.');
+        if (!response.ok) throw new Error('Gemini API error');
+        
+        const data = await response.json();
+        
+        const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!responseText) {
+          throw new Error('Gemini API returned invalid response structure');
+        }
+        
+        // Extract JSON from code block if wrapped
+        const jsonMatch = responseText.match(/```(?:javascript|json)?\s*(\[[\s\S]*\])\s*```/);
+        const extractedJson = jsonMatch ? jsonMatch[1] : responseText;
+        
+        const chartConfigs = safeJSONParse(extractedJson, []);
+        
+        return chartConfigs.map((config: any, index: number) => ({
+          id: `evidence-enhanced-${index}`,
+          title: config.title,
+          type: config.type,
+          data: config.data,
+          layout: config.layout,
+          isLoading: false,
+          error: null,
+          metadata: {
+            source: 'evidence-enhanced-ai',
+            confidence: 0.8,
+            evidenceNodes: evidenceNodes.map(n => n.id),
+            generatedAt: new Date().toISOString()
+          }
+        }));
+        
+      } catch (error) {
+        console.error('AI-enhanced chart generation failed:', error);
+        throw new Error(`Evidence-enhanced analysis failed: ${error}`);
       }
-      
-      const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!responseText) {
-        throw new Error('Gemini API returned invalid response structure');
-      }
-      
-      // Extract JSON from code block if wrapped
-      const jsonMatch = responseText.match(/```(?:javascript|json)?\s*(\[[\s\S]*\])\s*```/);
-      const extractedJson = jsonMatch ? jsonMatch[1] : responseText;
-      
-      const chartConfigs = JSON.parse(extractedJson);
-      
-      return chartConfigs.map((config: any, index: number) => ({
-        id: `comprehensive_${index}_${Date.now()}`,
-        title: config.title,
-        code: JSON.stringify(config),
-        data: config.data,
-        layout: config.layout,
-        type: config.type as AnalyticsFigure['type'],
-        nodeId: 'comprehensive_analysis',
-        generated: new Date().toISOString()
-      }));
-      
-    } catch (error) {
-      throw new Error(`Comprehensive analysis failed: ${error}`);
     }
   }, [graphData, geminiApiKey, researchContext]);
 

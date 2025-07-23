@@ -608,37 +608,37 @@ Create charts that explore:
 9. Meta-analysis results if multiple studies
 10. Predictive model outputs
 
-Return exactly 12-15 charts in JSON format with realistic scientific data that reflects the evidence collected:
+CRITICAL REQUIREMENT: Extract and visualize ONLY actual numerical data found in the evidence content below. DO NOT generate synthetic, realistic, or example data.
 
+ACTUAL EVIDENCE CONTENT TO ANALYZE:
+${evidenceNodes.slice(0, 10).map((node, i) => `
+Evidence ${i + 1}: ${node.label || 'Research Source'}
+Content: ${node.metadata?.value?.substring(0, 600) || 'No content available'}
+Confidence: ${node.confidence?.[0] || 'N/A'}
+---`).join('\n')}
+
+INSTRUCTIONS:
+1. Parse the evidence content above to find ONLY explicit numerical data (percentages, p-values, sample sizes, measurements, etc.)
+2. Create charts based ONLY on this actual evidence data
+3. If insufficient quantitative data exists in the evidence, return empty array []
+4. DO NOT create synthetic, realistic, or example data
+5. Reference specific evidence sources in chart titles
+
+Return JSON array with charts based ONLY on actual evidence data:
 [
   {
-    "title": "Specific scientific chart name relevant to ${researchContext.topic}",
-    "type": "bar|scatter|histogram|box|heatmap|line",
-    "data": [{"x": [realistic_labels], "y": [realistic_values], "type": "bar", "name": "Dataset name"}],
+    "title": "Evidence-Based: [specific finding from actual evidence]",
+    "type": "bar|scatter|line",
+    "data": [{"x": [actual_categories_from_evidence], "y": [actual_values_from_evidence], "type": "bar", "name": "From Evidence"}],
     "layout": {
-      "title": "Publication-ready title",
-      "xaxis": {"title": "X-axis label with units"},
-      "yaxis": {"title": "Y-axis label with units"},
-      "font": {"size": 12}
+      "title": "Chart Based on Actual Evidence Data",
+      "xaxis": {"title": "Categories from Evidence"},
+      "yaxis": {"title": "Values from Evidence"}
     }
   }
 ]
 
-Focus on generating charts that show:
-1. Primary outcome measures
-2. Correlation analyses
-3. Distribution patterns
-4. Comparative analyses
-5. Temporal trends (if applicable)
-6. Dose-response relationships (if applicable)
-7. Statistical significance tests
-8. Effect sizes and confidence intervals
-9. Multi-variable analyses
-10. Subgroup analyses
-11. Meta-analysis results (if applicable)
-12. Predictive models (if applicable)
-
-Make the data realistic and scientifically meaningful for the research domain.
+If no quantitative data exists in the evidence content, return empty array [].
 `;
         try {
           const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKeys.gemini}`, {

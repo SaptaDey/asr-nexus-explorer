@@ -29,28 +29,53 @@ export const useEnhancedVisualAnalytics = (
   const [figures, setFigures] = useState<AnalyticsFigure[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Generate comprehensive analytical visualizations
+  // Generate evidence-based analytical visualizations from actual research data
   const generateComprehensiveVisualizations = useCallback(async (): Promise<AnalyticsFigure[]> => {
     if (!apiRateLimiter.isAllowed('visualization')) {
       throw new Error('Rate limit exceeded. Please wait before generating more visualizations.');
     }
 
-    const analysisPrompt = `
-Based on the research topic "${researchContext.topic}" in the field of ${researchContext.field}, generate 4 scientific charts relevant to this research:
+    // **CRITICAL: NO SYNTHETIC DATA - Use only evidence from Stage 4**
+    console.log('🔍 Enhanced Analytics: Using ONLY evidence-based data (NO synthetic data)');
+    
+    // Extract evidence nodes from graph data
+    const evidenceNodes = graphData.nodes.filter(node => node.type === 'evidence');
+    
+    if (evidenceNodes.length === 0) {
+      console.warn('⚠️ No evidence nodes available - cannot generate charts without real data');
+      return [];
+    }
 
-Research Context: ${researchContext.topic}
+    // Extract actual quantitative data from evidence
+    const evidenceContent = evidenceNodes.map(node => ({
+      id: node.id,
+      label: node.label || 'Research Evidence',
+      content: node.metadata?.value || '',
+      confidence: node.confidence?.[0] || 0.7
+    }));
+
+    const evidenceAnalysisPrompt = `
+CRITICAL INSTRUCTION: Analyze the following ACTUAL RESEARCH EVIDENCE and create charts based ONLY on data mentioned in this evidence. DO NOT generate synthetic or "realistic" data.
+
+Research Topic: ${researchContext.topic}
 Field: ${researchContext.field}
-Stage: ${currentStage}
 
-Generate charts that would be appropriate for this scientific topic (e.g., for medical research: patient outcomes, biomarker correlations, treatment efficacy; for genetics: mutation frequencies, expression levels, pathway analysis; etc.):
+ACTUAL EVIDENCE FROM STAGE 4:
+${evidenceContent.map((ev, i) => `
+Evidence ${i + 1}: ${ev.label}
+Content: ${ev.content.substring(0, 800)}
+Confidence: ${ev.confidence}
+---`).join('\n')}
 
-1. Primary data visualization (bar/scatter based on topic)
-2. Correlation analysis (scatter plot)
-3. Distribution analysis (histogram/box plot)
-4. Comparative analysis (bar chart)
+REQUIREMENTS:
+1. Extract ONLY numerical data explicitly mentioned in the evidence above
+2. Create charts that visualize patterns in this ACTUAL evidence
+3. Reference specific evidence sources in chart titles
+4. If insufficient quantitative data exists, return empty array []
+5. DO NOT create synthetic, realistic, or example data
 
-Return JSON array with realistic scientific data relevant to the research topic:
-[{"title": "Chart Name", "type": "bar|scatter|heatmap|histogram", "data": [{"x": [realistic_labels], "y": [realistic_values], "type": "bar"}], "layout": {"title": "Title", "xaxis": {"title": "X"}, "yaxis": {"title": "Y"}}}]
+Return JSON array with charts based ONLY on actual evidence data:
+[{"title": "Evidence-Based: [specific finding from evidence]", "type": "bar|scatter|line", "data": [{"x": [actual_categories_from_evidence], "y": [actual_values_from_evidence], "type": "bar"}], "layout": {"title": "Chart of Actual Evidence Data", "xaxis": {"title": "Categories from Evidence"}, "yaxis": {"title": "Values from Evidence"}}}]
 `;
 
     try {
@@ -58,7 +83,7 @@ Return JSON array with realistic scientific data relevant to the research topic:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: analysisPrompt }] }],
+          contents: [{ parts: [{ text: evidenceAnalysisPrompt }] }],
           generationConfig: { 
             maxOutputTokens: 8000,
             temperature: 0.1
