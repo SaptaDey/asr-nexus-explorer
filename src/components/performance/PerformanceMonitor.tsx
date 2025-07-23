@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Activity, Database, Zap, AlertTriangle, CheckCircle, RefreshCw, TrendingUp } from 'lucide-react';
-import { usePerformance } from '@/contexts/DatabaseContext';
+// import { usePerformance } from '@/contexts/DatabaseContext'; // Temporarily disabled
 
 interface PerformanceMonitorProps {
   className?: string;
@@ -20,7 +20,12 @@ interface PerformanceMonitorProps {
 }
 
 export function PerformanceMonitor({ className, showDetailedMetrics = true }: PerformanceMonitorProps) {
-  const { performance, performanceMetrics, cacheHealth, refreshPerformanceMetrics, getHealthStatus } = usePerformance();
+  // Temporary mock to replace disabled usePerformance hook
+  const performance = null;
+  const performanceMetrics = null;
+  const cacheHealth = null;
+  const refreshPerformanceMetrics = async () => {};
+  const getHealthStatus = async () => null;
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [healthStatus, setHealthStatus] = useState<any>(null);
   const [recommendations, setRecommendations] = useState<any[]>([]);
