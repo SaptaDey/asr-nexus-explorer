@@ -245,7 +245,7 @@ export const ExportReporting: React.FC<ExportReportingProps> = ({
 
             <h2>Executive Summary</h2>
             <div class="meta">
-                ${htmlSynthesis || '<em>Analysis synthesis will be available after Stage 7 completion.</em>'}
+                ${htmlSynthesis || '<em>Analysis synthesis will be available after Stage 9 completion.</em>'}
             </div>
 
             <h2>Key Hypotheses</h2>
@@ -371,7 +371,7 @@ export const ExportReporting: React.FC<ExportReportingProps> = ({
 
 ## Executive Summary
 
-${htmlSynthesis || '*Analysis synthesis will be available after Stage 7 completion.*'}
+${htmlSynthesis || '*Analysis synthesis will be available after Stage 9 completion.*'}
 
 ## Graph Statistics
 

@@ -88,13 +88,17 @@ export class StageEngineAdapter {
               stageResult = await this.stageEngine.executeStage6_IterativeAnalysis(researchContext, currentGraphData);
               break;
             case 7:
-              stageResult = await this.stageEngine.executeStage7_SynthesisIntegration(researchContext, currentGraphData);
+              // Stage 7: Composition - Content organization only (no HTML generation)
+              stageResult = await this.stageEngine.executeStage7();
               break;
             case 8:
-              stageResult = await this.stageEngine.executeStage8_ValidationTesting(researchContext, currentGraphData);
+              // Stage 8: Reflection - Visualization audit (needs Stage 7 content organization)
+              const stage7Content = this.stageResults[6] || '{}'; // Get Stage 7 results
+              stageResult = await this.stageEngine.executeStage8(stage7Content);
               break;
             case 9:
-              stageResult = await this.stageEngine.executeStage9_ConclusionRecommendation(researchContext, currentGraphData);
+              // Stage 9: Final Analysis - Comprehensive HTML report generation (150+ pages)
+              stageResult = await this.stageEngine.executeStage9();
               break;
             default:
               throw new Error(`Invalid stage number: ${stage}`);
@@ -259,13 +263,17 @@ export class StageEngineAdapter {
           stageResult = await this.stageEngine.executeStage6_IterativeAnalysis(researchContext, currentGraphData);
           break;
         case 7:
-          stageResult = await this.stageEngine.executeStage7_SynthesisIntegration(researchContext, currentGraphData);
+          // Stage 7: Composition - Content organization only (no HTML generation)
+          stageResult = await this.stageEngine.executeStage7();
           break;
         case 8:
-          stageResult = await this.stageEngine.executeStage8_ValidationTesting(researchContext, currentGraphData);
+          // Stage 8: Reflection - Visualization audit (needs Stage 7 content organization)
+          const stage7ContentResult = this.stageResults[6] || '{}'; // Get Stage 7 results
+          stageResult = await this.stageEngine.executeStage8(stage7ContentResult);
           break;
         case 9:
-          stageResult = await this.stageEngine.executeStage9_ConclusionRecommendation(researchContext, currentGraphData);
+          // Stage 9: Final Analysis - Comprehensive HTML report generation (150+ pages)
+          stageResult = await this.stageEngine.executeStage9();
           break;
         default:
           throw new Error(`Invalid stage number: ${stageNumber}`);
