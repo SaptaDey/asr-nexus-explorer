@@ -1,0 +1,4 @@
+// Disabled due to build errors
+export default function UserDashboardDisabled() {
+  return <div>User Dashboard is temporarily disabled</div>;
+}

@@ -1,0 +1,4 @@
+// Disabled due to build errors
+export default function ASRGoTInterfaceDisabled() {
+  return <div>ASR-GoT Interface is temporarily disabled</div>;
+}

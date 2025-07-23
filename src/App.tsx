@@ -15,7 +15,7 @@ import StageDetail from "./pages/StageDetail";
 import AIPowered from "./pages/AIPowered";
 import ResearchFramework from "./pages/ResearchFramework";
 import GraphNeuralNetworks from "./pages/GraphNeuralNetworks";
-import UserDashboard from "./pages/UserDashboard";
+// import UserDashboard from "./pages/UserDashboard";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";

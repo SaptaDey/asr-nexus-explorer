@@ -49,11 +49,7 @@ export const useEnhancedSonarResearch = () => {
     }
 
     // Initialize the cost-aware orchestration service
-    costAwareOrchestration.initializeScientificResearch(
-      { perplexity: apiKey },
-      supabaseUrl,
-      supabaseKey
-    );
+    costAwareOrchestration.initializeScientificResearch();
   }, []);
 
   /**
@@ -184,16 +180,7 @@ Generate MAXIMUM comprehensive content with exhaustive evidence collection and a
 
     try {
       // Use the cost-aware orchestration service for ASR-GoT research
-      const result = await costAwareOrchestration.executeEnhancedSonarResearch(
-        query,
-        researchDomain,
-        stageId,
-        {
-          maxTokens: options.maxTokens || 128000,
-          dateFilter: options.dateFilter,
-          customDomains: options.customDomains
-        }
-      );
+      const result = await costAwareOrchestration.executeEnhancedSonarResearch();
 
       setState(prev => ({
         ...prev,
