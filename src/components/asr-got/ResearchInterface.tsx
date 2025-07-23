@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Play, Brain, Search, FileText, Network, Loader2, CheckCircle, Sparkles, Rocket, Zap, BarChart3 } from 'lucide-react';
+import { ResearchHeroIllustration, AnalysisProgressIllustration, StageNavigationIllustration, CompletionCelebrationIllustration } from '@/components/ui/EngagingIllustrations';
 import { GraphData } from '@/hooks/useASRGoT';
 import { VisualAnalytics } from './VisualAnalytics';
 import { useEnhancedVisualAnalytics } from './EnhancedVisualAnalytics';
@@ -96,30 +97,82 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
   };
   const stageNames = ['Initialization', 'Decomposition', 'Hypothesis/Planning', 'Evidence Integration', 'Pruning/Merging', 'Subgraph Extraction', 'Composition', 'Reflection', 'Final Analysis'];
   const renderStageInput = () => {
-    if (currentStage === 0 && !stageResults[0]) {
-      return <div className="space-y-4">
-          <div>
-            <Label htmlFor="task-description" className="text-lg font-semibold">Research Question or Topic</Label>
-            <Textarea id="task-description" placeholder="Enter your scientific research question or topic of interest. The AI will automatically analyze the field, generate hypotheses, and conduct comprehensive research..." value={taskDescription} onChange={e => setTaskDescription(e.target.value)} rows={4} className="mt-2" />
+    // Check if all stages are completed
+    const isCompleted = currentStage >= 8 && stageResults.length >= 9 && 
+                       stageResults.filter(result => result && result.trim()).length >= 9;
+    
+    if (isCompleted) {
+      return <div className="space-y-6">
+          {/* Completion Celebration */}
+          <div className="text-center space-y-4">
+            <CompletionCelebrationIllustration className="mx-auto" width={280} height={180} />
+            <div>
+              <h3 className="text-2xl font-bold text-green-700 mb-2">
+                🎉 Research Analysis Complete!
+              </h3>
+              <p className="text-gray-600 text-sm leading-relaxed max-w-md mx-auto mb-4">
+                All 9 stages of scientific analysis have been completed successfully. Your comprehensive research report is ready!
+              </p>
+              <div className="flex items-center justify-center space-x-2 text-sm text-green-600">
+                <CheckCircle className="h-4 w-4" />
+                <span>Analysis completed • Report generated • Results available for export</span>
+              </div>
+            </div>
           </div>
-          <Button onClick={handleStartResearch} disabled={isProcessing} className="w-full gradient-bg bg-cyan-800 hover:bg-cyan-700">
-            {isProcessing ? <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                AI is analyzing and researching...
-              </> : <>
-                <Rocket className="h-4 w-4 mr-2" />
-                Start AI-Powered Research
-              </>}
-          </Button>
         </div>;
     }
-    return <div className="space-y-4">
-        <div className="text-center">
+    
+    if (currentStage === 0 && !stageResults[0]) {
+      return <div className="space-y-6">
+          {/* Hero Illustration Section */}
+          <div className="text-center space-y-4">
+            <ResearchHeroIllustration className="mx-auto" width={350} height={240} />
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                🧠 AI-Powered Scientific Research
+              </h3>
+              <p className="text-gray-600 text-sm leading-relaxed max-w-md mx-auto">
+                Transform your research questions into comprehensive scientific analysis using our advanced 9-stage AI framework
+              </p>
+            </div>
+          </div>
+          
+          {/* Research Input */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="task-description" className="text-lg font-semibold">Research Question or Topic</Label>
+              <Textarea id="task-description" placeholder="Enter your scientific research question or topic of interest. The AI will automatically analyze the field, generate hypotheses, and conduct comprehensive research..." value={taskDescription} onChange={e => setTaskDescription(e.target.value)} rows={4} className="mt-2" />
+            </div>
+            <Button onClick={handleStartResearch} disabled={isProcessing} className="w-full gradient-bg bg-cyan-800 hover:bg-cyan-700">
+              {isProcessing ? <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  AI is analyzing and researching...
+                </> : <>
+                  <Rocket className="h-4 w-4 mr-2" />
+                  Start AI-Powered Research
+                </>}
+            </Button>
+          </div>
+        </div>;
+    }
+    return <div className="space-y-6">
+        <div className="text-center space-y-4">
+          {/* Stage Navigation Illustration */}
+          <StageNavigationIllustration className="mx-auto" width={320} height={80} />
+          
           <div className="mb-4">
             <Badge className="bg-purple-100 text-purple-800 text-lg px-4 py-2">
               Stage {currentStage + 1}: {stageNames[currentStage]}
             </Badge>
           </div>
+          
+          {/* Analysis Progress Illustration when processing */}
+          {isProcessing && (
+            <div className="flex justify-center">
+              <AnalysisProgressIllustration className="" width={200} height={140} />
+            </div>
+          )}
+          
           <p className="text-muted-foreground mb-4">
             {processingMode === 'automatic' ? 'All stages will execute automatically in sequence' : 'Click to manually proceed with the next stage of analysis'}
           </p>

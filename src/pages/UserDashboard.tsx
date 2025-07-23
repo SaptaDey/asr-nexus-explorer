@@ -222,7 +222,10 @@ export default function UserDashboard() {
                       Your research sessions will appear here once you start using ASR-GoT
                     </p>
                     <Link to="/">
-                      <Button>Start Your First Research Session</Button>
+                      <Button>
+                        <Play className="h-4 w-4 mr-2" />
+                        Start Your First Research Session
+                      </Button>
                     </Link>
                   </div>
                 </CardContent>
@@ -238,7 +241,10 @@ export default function UserDashboard() {
                     <p className="text-gray-600 mb-4">
                       Organize your research sessions into collections for better management
                     </p>
-                    <Button variant="outline">Create Your First Collection</Button>
+                    <Button variant="outline">
+                      <Database className="h-4 w-4 mr-2" />
+                      Create Your First Collection
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
