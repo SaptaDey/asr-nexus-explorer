@@ -55,6 +55,20 @@ export const VisualAnalytics: React.FC<VisualAnalyticsProps> = ({
   const [hasGenerated, setHasGenerated] = useState(false);
   const plotContainerRefs = useRef<Record<string, HTMLDivElement>>({});
 
+  // **PERFORMANCE OPTIMIZATION STATE**
+  const [currentPage, setCurrentPage] = useState(0);
+  const [renderedFigures, setRenderedFigures] = useState<Set<string>>(new Set());
+  const [renderingInProgress, setRenderingInProgress] = useState<Set<string>>(new Set());
+  const [performanceMetrics, setPerformanceMetrics] = useState<{
+    renderTimes: Record<string, number>;
+    totalRenderTime: number;
+    averageRenderTime: number;
+  }>({ renderTimes: {}, totalRenderTime: 0, averageRenderTime: 0 });
+  
+  // **PAGINATION CONFIGURATION**
+  const CHARTS_PER_PAGE = 4; // Render only 4 charts at a time
+  const LAZY_LOAD_THRESHOLD = 2; // Start loading next batch when within 2 charts of end
+
   // Load Plotly.js dynamically
   useEffect(() => {
     if (window.Plotly) {
@@ -518,34 +532,130 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
     }
   }, []);
 
-  // Create a cache key based on research context to prevent regeneration
+  // **ENHANCED CACHE KEY with better context tracking**
   const getCacheKey = useCallback(() => {
-    return `${researchContext.topic}-${researchContext.field}-${currentStage}-${graphData.nodes.length}`;
-  }, [researchContext.topic, researchContext.field, currentStage, graphData.nodes.length]);
+    // Include more specific context for better cache invalidation
+    const evidenceNodeIds = graphData.nodes
+      .filter(node => node.type === 'evidence')
+      .map(node => node.id)
+      .sort()
+      .join(',');
+    
+    const hypothesesCount = researchContext.hypotheses?.length || 0;
+    const objectivesCount = researchContext.objectives?.length || 0;
+    
+    // Create hash-like key to prevent extremely long cache keys
+    const contextString = `${researchContext.topic}-${researchContext.field}-${currentStage}-${graphData.nodes.length}-${evidenceNodeIds}-${hypothesesCount}-${objectivesCount}`;
+    const contextHash = btoa(contextString).replace(/[+/=]/g, ''); // Simple base64 hash
+    
+    return `visual-analytics-${contextHash.substring(0, 32)}`; // Truncate for reasonable length
+  }, [researchContext.topic, researchContext.field, researchContext.hypotheses, researchContext.objectives, currentStage, graphData.nodes]);
 
-  // Load cached figures from sessionStorage
+  // **ENHANCED CACHE LOADING with performance tracking**
   useEffect(() => {
     const cacheKey = getCacheKey();
-    const cached = sessionStorage.getItem(`visual-analytics-${cacheKey}`);
-    if (cached) {
-      try {
-        const cachedFigures = JSON.parse(cached);
-        setFigures(cachedFigures);
-        setHasGenerated(true);
-        console.log('Loaded cached figures:', cachedFigures.length);
-      } catch (error) {
-        console.warn('Failed to load cached figures:', error);
+    const cacheStartTime = performance.now();
+    
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const cachedData = JSON.parse(cached);
+        
+        // Validate cached data structure
+        if (cachedData.figures && Array.isArray(cachedData.figures)) {
+          setFigures(cachedData.figures);
+          setHasGenerated(true);
+          
+          // Restore performance metrics if available
+          if (cachedData.performanceMetrics) {
+            setPerformanceMetrics(cachedData.performanceMetrics);
+          }
+          
+          // Mark cached figures as rendered to avoid re-rendering
+          const cachedFigureIds = new Set(cachedData.figures.map((f: AnalyticsFigure) => f.id));
+          setRenderedFigures(cachedFigureIds);
+          
+          const cacheLoadTime = performance.now() - cacheStartTime;
+          console.log(`📦 Loaded ${cachedData.figures.length} cached figures in ${cacheLoadTime.toFixed(2)}ms`);
+          
+          toast.success(`Loaded ${cachedData.figures.length} cached visualizations`, {
+            description: `Cache hit - loaded in ${cacheLoadTime.toFixed(0)}ms`
+          });
+        } else {
+          console.warn('⚠️ Invalid cached data structure, clearing cache');
+          sessionStorage.removeItem(cacheKey);
+        }
       }
+    } catch (error) {
+      console.warn('❌ Failed to load cached figures:', error);
+      const cacheKey = getCacheKey();
+      sessionStorage.removeItem(cacheKey); // Clear corrupted cache
     }
   }, [getCacheKey]);
 
-  // Cache figures when they change
+  // **ENHANCED CACHE SAVING with performance metrics**
   useEffect(() => {
     if (figures.length > 0) {
       const cacheKey = getCacheKey();
-      sessionStorage.setItem(`visual-analytics-${cacheKey}`, JSON.stringify(figures));
+      const cacheData = {
+        figures,
+        performanceMetrics,
+        cachedAt: new Date().toISOString(),
+        version: '2.0', // Cache version for future migrations
+        context: {
+          topic: researchContext.topic,
+          field: researchContext.field,
+          stage: currentStage,
+          nodeCount: graphData.nodes.length
+        }
+      };
+      
+      try {
+        const serialized = JSON.stringify(cacheData);
+        
+        // Check cache size and warn if too large
+        const cacheSize = new Blob([serialized]).size;
+        if (cacheSize > 5 * 1024 * 1024) { // 5MB warning threshold
+          console.warn(`⚠️ Cache size is large: ${(cacheSize / 1024 / 1024).toFixed(2)}MB`);
+          toast.warning('Large cache detected', {
+            description: `${(cacheSize / 1024 / 1024).toFixed(1)}MB - may impact performance`
+          });
+        }
+        
+        sessionStorage.setItem(cacheKey, serialized);
+        console.log(`💾 Cached ${figures.length} figures (${(cacheSize / 1024).toFixed(1)}KB)`);
+      } catch (error) {
+        console.error('❌ Failed to cache figures:', error);
+        // If caching fails (e.g., quota exceeded), try to clean up old caches
+        cleanupOldCaches();
+      }
     }
-  }, [figures, getCacheKey]);
+  }, [figures, performanceMetrics, getCacheKey, researchContext.topic, researchContext.field, currentStage, graphData.nodes.length]);
+
+  // **CACHE CLEANUP UTILITY**
+  const cleanupOldCaches = useCallback(() => {
+    try {
+      const keysToRemove = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key?.startsWith('visual-analytics-')) {
+          keysToRemove.push(key);
+        }
+      }
+      
+      // Remove old cache entries (keep only current)
+      const currentKey = getCacheKey();
+      keysToRemove.forEach(key => {
+        if (key !== currentKey) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      
+      console.log(`🧹 Cleaned up ${keysToRemove.length - 1} old cache entries`);
+    } catch (error) {
+      console.warn('Failed to cleanup old caches:', error);
+    }
+  }, [getCacheKey]);
 
   // Trigger comprehensive visualization generation for advanced stages
   useEffect(() => {
@@ -596,31 +706,157 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
     }
   }, [currentStage, plotlyLoaded, geminiApiKey, hasGenerated, graphData.nodes.length]);
 
-  // Render Plotly figure
-  const renderPlotlyFigure = useCallback((figure: AnalyticsFigure) => {
+  // **PERFORMANCE-OPTIMIZED LAZY RENDERING**
+  const renderPlotlyFigure = useCallback((figure: AnalyticsFigure, isLazyLoad: boolean = false) => {
     if (!plotlyLoaded || figure.error) return null;
 
     const containerId = `plot-${figure.id}`;
+    const isAlreadyRendered = renderedFigures.has(figure.id);
+    const isCurrentlyRendering = renderingInProgress.has(figure.id);
     
-    // Render plot after component mounts
-    setTimeout(() => {
-        const container = document.getElementById(containerId);
-        if (container && window.Plotly && container.children.length === 0) {
-        window.Plotly.newPlot(container, figure.data, figure.layout, {
+    // **LAZY LOADING**: Only render when visible or explicitly requested
+    const shouldRender = !isLazyLoad || selectedFigure === figure.id || isAlreadyRendered;
+    
+    if (!shouldRender) {
+      // Return placeholder for unrendered charts
+      return (
+        <div className="w-full h-[400px] border rounded-lg bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
+          <div className="text-center space-y-2">
+            <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-sm text-muted-foreground">Loading chart...</p>
+          </div>
+        </div>
+      );
+    }
+
+    // **PERFORMANCE MONITORING**: Track render times
+    const renderChart = () => {
+      if (isCurrentlyRendering || isAlreadyRendered) return;
+      
+      setRenderingInProgress(prev => new Set([...prev, figure.id]));
+      const startTime = performance.now();
+      
+      const container = document.getElementById(containerId);
+      if (container && window.Plotly && container.children.length === 0) {
+        // **OPTIMIZED PLOTLY CONFIG for better performance**
+        const optimizedConfig = {
           responsive: true,
           displayModeBar: true,
-          modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d']
+          modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d'],
+          // **PERFORMANCE OPTIMIZATIONS**
+          plotlyServerURL: false, // Disable server-side features
+          showTips: false, // Disable hover tooltips for better performance
+          staticPlot: false, // Keep interactive but optimized
+          doubleClick: false, // Disable double-click zoom
+          scrollZoom: false, // Disable scroll zoom for better performance
+        };
+
+        // **DATA OPTIMIZATION**: Reduce points if too many
+        const optimizedData = figure.data.map((trace: any) => {
+          const optimizedTrace = { ...trace };
+          
+          // If trace has too many points, sample them for better performance
+          if (trace.x && trace.x.length > 1000) {
+            console.log(`📊 Optimizing chart ${figure.id}: Reducing ${trace.x.length} points to 500 for better performance`);
+            const step = Math.ceil(trace.x.length / 500);
+            optimizedTrace.x = trace.x.filter((_: any, index: number) => index % step === 0);
+            if (trace.y) optimizedTrace.y = trace.y.filter((_: any, index: number) => index % step === 0);
+            if (trace.z) optimizedTrace.z = trace.z.filter((_: any, index: number) => index % step === 0);
+          }
+          
+          return optimizedTrace;
         });
+
+        window.Plotly.newPlot(container, optimizedData, figure.layout, optimizedConfig)
+          .then(() => {
+            const endTime = performance.now();
+            const renderTime = endTime - startTime;
+            
+            // **UPDATE PERFORMANCE METRICS**
+            setPerformanceMetrics(prev => {
+              const newRenderTimes = { ...prev.renderTimes, [figure.id]: renderTime };
+              const totalTime = Object.values(newRenderTimes).reduce((sum, time) => sum + time, 0);
+              const avgTime = totalTime / Object.keys(newRenderTimes).length;
+              
+              return {
+                renderTimes: newRenderTimes,
+                totalRenderTime: totalTime,
+                averageRenderTime: avgTime
+              };
+            });
+            
+            setRenderedFigures(prev => new Set([...prev, figure.id]));
+            setRenderingInProgress(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(figure.id);
+              return newSet;
+            });
+            
+            console.log(`📊 Chart ${figure.id} rendered in ${renderTime.toFixed(2)}ms`);
+            
+            // **AUTO-LOAD NEXT CHARTS** if this is part of pagination
+            const currentIndex = figures.findIndex(f => f.id === figure.id);
+            const totalPages = Math.ceil(figures.length / CHARTS_PER_PAGE);
+            const currentPageFromIndex = Math.floor(currentIndex / CHARTS_PER_PAGE);
+            
+            if (currentIndex >= 0 && currentPageFromIndex < totalPages - 1) {
+              const nextPageStart = (currentPageFromIndex + 1) * CHARTS_PER_PAGE;
+              const nextPageEnd = Math.min(nextPageStart + CHARTS_PER_PAGE, figures.length);
+              
+              // Trigger rendering of next page if user is close to the end
+              if (currentIndex >= nextPageStart - LAZY_LOAD_THRESHOLD) {
+                for (let i = nextPageStart; i < nextPageEnd; i++) {
+                  if (figures[i] && !renderedFigures.has(figures[i].id)) {
+                    console.log(`🚀 Auto-loading next chart: ${figures[i].id}`);
+                    setTimeout(() => renderPlotlyFigure(figures[i], true), 100 * (i - nextPageStart));
+                  }
+                }
+              }
+            }
+          })
+          .catch((error) => {
+            console.error(`❌ Failed to render chart ${figure.id}:`, error);
+            setRenderingInProgress(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(figure.id);
+              return newSet;
+            });
+          });
       }
-    }, 100);
+    };
+
+    // **LAZY LOADING with intersection observer (moved outside for React rules compliance)**
+    React.useEffect(() => {
+      if (!shouldRender || isAlreadyRendered) return;
+      
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && !isAlreadyRendered && !isCurrentlyRendering) {
+              renderChart();
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.1, rootMargin: '50px' }
+      );
+      
+      observer.observe(container);
+      
+      return () => observer.disconnect();
+    }, [containerId, shouldRender, isAlreadyRendered, isCurrentlyRendering, renderChart]);
 
     return (
       <div
         id={containerId}
         className="w-full h-[400px] border rounded-lg bg-white dark:bg-gray-900"
+        data-figure-id={figure.id}
       />
     );
-  }, [plotlyLoaded]);
+  }, [plotlyLoaded, renderedFigures, renderingInProgress, selectedFigure, figures]);
 
   // Export figure as PNG
   const exportFigure = useCallback((figure: AnalyticsFigure) => {
@@ -722,9 +958,24 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
               <Badge variant="outline">
                 {figures.length} Figure{figures.length !== 1 ? 's' : ''}
               </Badge>
+              {renderedFigures.size > 0 && (
+                <Badge variant="secondary">
+                  {renderedFigures.size}/{figures.length} Rendered
+                </Badge>
+              )}
+              {renderingInProgress.size > 0 && (
+                <Badge variant="secondary" className="animate-pulse">
+                  Rendering {renderingInProgress.size}...
+                </Badge>
+              )}
               {isGenerating && (
                 <Badge variant="secondary" className="animate-pulse">
                   Generating...
+                </Badge>
+              )}
+              {performanceMetrics.averageRenderTime > 0 && (
+                <Badge variant="outline" className="text-xs">
+                  Avg: {performanceMetrics.averageRenderTime.toFixed(0)}ms
                 </Badge>
               )}
             </CardTitle>
@@ -733,11 +984,22 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
                 size="sm" 
                 variant="outline"
                 onClick={() => {
-                  // Clear cache and regenerate
+                  // **ENHANCED CACHE CLEARING with performance reset**
                   const cacheKey = getCacheKey();
-                  sessionStorage.removeItem(`visual-analytics-${cacheKey}`);
+                  sessionStorage.removeItem(cacheKey);
+                  cleanupOldCaches();
+                  
+                  // Reset all state
                   setFigures([]);
-                  toast.info('Clearing cache and regenerating visualizations...');
+                  setHasGenerated(false);
+                  setRenderedFigures(new Set());
+                  setRenderingInProgress(new Set());
+                  setPerformanceMetrics({ renderTimes: {}, totalRenderTime: 0, averageRenderTime: 0 });
+                  setCurrentPage(0);
+                  
+                  toast.info('Clearing cache and regenerating visualizations...', {
+                    description: 'Performance metrics reset'
+                  });
                 }}
                 disabled={isGenerating}
               >
