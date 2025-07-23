@@ -20,7 +20,7 @@ import {
   // User & Auth Icons
   User, Users, Key, Shield, Lock, Unlock, Mail, Phone,
   // System Icons
-  Cpu, Server, Globe, Wifi, WifiOff, Refresh, Power, Settings2
+  Cpu, Server, Globe, Wifi, WifiOff, RefreshCw, Power, Settings2
 } from 'lucide-react';
 
 // Icon size variants
@@ -268,7 +268,7 @@ export const SystemIcons = {
     <WifiOff className={`${iconSizes[size]} ${iconVariants[variant]} ${className}`} />
   ),
   refresh: ({ size = 'md', variant = 'default', className = '' }: IconProps) => (
-    <Refresh className={`${iconSizes[size]} ${iconVariants[variant]} ${className}`} />
+    <RefreshCw className={`${iconSizes[size]} ${iconVariants[variant]} ${className}`} />
   ),
   power: ({ size = 'md', variant = 'default', className = '' }: IconProps) => (
     <Power className={`${iconSizes[size]} ${iconVariants[variant]} ${className}`} />
@@ -296,7 +296,9 @@ export const getIcon = (
   };
 
   const iconSet = iconSets[category];
-  const IconComponent = iconSet?.[name as keyof typeof iconSet];
+  if (!iconSet) return null;
+  
+  const IconComponent = iconSet[name as keyof typeof iconSet] as any;
   
   return IconComponent ? IconComponent(props || {}) : null;
 };

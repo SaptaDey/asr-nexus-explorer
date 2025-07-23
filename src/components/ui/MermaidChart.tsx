@@ -35,8 +35,8 @@ export const MermaidChart: React.FC<MermaidChartProps> = ({ chart, className = '
         padding: 40,
         nodeSpacing: 100,
         rankSpacing: 80,
-        fontSize: '26px',
-        fontWeight: '800'
+        // fontSize: '26px',
+        // fontWeight: '800'
       },
       sequence: {
         diagramMarginX: 80,
@@ -48,14 +48,14 @@ export const MermaidChart: React.FC<MermaidChartProps> = ({ chart, className = '
         boxTextMargin: 10,
         noteMargin: 20,
         messageMargin: 50,
-        fontSize: '26px',
-        fontWeight: '800'
+        // fontSize: '26px',
+        // fontWeight: '800'
       },
       mindmap: {
         padding: 30,
         maxNodeWidth: 500,
-        fontSize: '32px',
-        fontWeight: '900'
+        // fontSize: '32px',
+        // fontWeight: '900'
       },
       journey: {
         diagramMarginX: 80,
@@ -68,13 +68,13 @@ export const MermaidChart: React.FC<MermaidChartProps> = ({ chart, className = '
         noteMargin: 20,
         messageMargin: 50,
         bottomMarginAdj: 2,
-        fontSize: '26px',
-        fontWeight: '800'
+        // fontSize: '26px',
+        // fontWeight: '800'
       },
-      graph: {
-        fontSize: '26px',
-        fontWeight: '800'
-      }
+      // graph: {
+      //   fontSize: '26px',
+      //   fontWeight: '800'
+      // }
     });
 
     if (ref.current) {

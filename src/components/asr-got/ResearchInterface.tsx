@@ -99,7 +99,7 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
     if (enableAutoMode) {
       toast.success('🤖 Automatic mode: All stages will execute sequentially');
     }
-    await onExecuteStage(0, taskDescription, enableAutoMode);
+    await onExecuteStage(0, taskDescription);
     setActiveTab('progress');
   };
   const handleContinueToNext = async () => {
@@ -320,13 +320,11 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
                               View stage result preview
                             </summary>
                             <div className="mt-2 p-3 bg-white rounded border text-sm">
-                              <ReactMarkdown 
-                                remarkPlugins={[remarkGfm]}
-                                className="prose prose-sm max-w-none"
-                              >
-                                {stageResults[index].substring(0, 300)}
-                                {stageResults[index].length > 300 ? '...' : ''}
-                              </ReactMarkdown>
+                              <div className="prose prose-sm max-w-none">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {stageResults[index].substring(0, 300) + (stageResults[index].length > 300 ? '...' : '')}
+                                </ReactMarkdown>
+                              </div>
                             </div>
                           </details>
                         </div>

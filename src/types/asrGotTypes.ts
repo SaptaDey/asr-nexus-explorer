@@ -243,3 +243,38 @@ export interface SonarSearchRequest {
   researchDomain?: string;
   customSystemPrompt?: string;
 }
+
+// ASR-GoT State interface for session management
+export interface AsrGotState {
+  currentStage: number;
+  stageResults: string[];
+  graphData: GraphData;
+  parameters: ASRGoTParameters;
+  researchContext: ResearchContext;
+  apiKeys: APICredentials;
+  isProcessing: boolean;
+  hasResults: boolean;
+  isComplete: boolean;
+  finalReport?: string;
+  currentSessionId?: string;
+}
+
+// Analytics Figure interface with all required properties
+export interface AnalyticsFigure {
+  id: string;
+  title: string;
+  type: 'scatter' | 'bar' | 'histogram' | 'box' | 'heatmap' | 'pie' | 'line';
+  data: any[];
+  layout: any;
+  code: string; // Python/R code that generated this figure
+  nodeId: string; // Associated graph node ID
+  generated: string; // Timestamp when generated
+  isLoading?: boolean;
+  error?: any;
+  metadata?: {
+    source: string;
+    confidence: number;
+    evidenceNodes: string[];
+    generatedAt: string;
+  };
+}
