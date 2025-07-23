@@ -1,71 +1,134 @@
 // Main ASR-GoT Hook - Orchestrates all functionality
 import { useEffect, useState } from 'react';
 import { AsrGotStageEngine } from '@/services/AsrGotStageEngine';
-// Temporarily disabled imports due to architectural issues
-// import { useASRGoTState } from './useASRGoTState';
+import { useASRGoTState } from './useASRGoTState';
 import { useAPICredentials } from './useAPICredentials';
-// import { useCostAwareStageExecution } from './useCostAwareStageExecution';
+import { useCostAwareStageExecution } from './useCostAwareStageExecution';
 import { useExportFunctionality } from './useExportFunctionality';
 
 // Export all hooks for external use
-// Temporarily disabled exports
-// export * from './useASRGoTState';
-// export * from './useCostAwareStageExecution';
+export * from './useASRGoTState';
+export * from './useCostAwareStageExecution';
 export * from './useAPICredentials';
 export * from './useProcessingMode';
 
 // Re-export types for other components
 export type { GraphData, ASRGoTParameters } from '@/types/asrGotTypes';
 
-// Temporarily simplified hook due to disabled dependencies
 export const useASRGoT = () => {
+  const stateHook = useASRGoTState();
   const credentialsHook = useAPICredentials();
-  
-  // Minimal implementation to prevent build errors
+  const [stageEngine, setStageEngine] = useState<AsrGotStageEngine | null>(null);
+  const [autoMode, setAutoMode] = useState(false);
+
+  const stageExecutionHook = useCostAwareStageExecution({
+    apiKeys: credentialsHook.apiKeys,
+    graphData: stateHook.graphData,
+    researchContext: stateHook.researchContext,
+    stageResults: stateHook.stageResults,
+    isProcessing: stateHook.isProcessing,
+    setGraphData: stateHook.setGraphData,
+    setResearchContext: stateHook.setResearchContext,
+    setIsProcessing: stateHook.setIsProcessing,
+    updateStageResults: stateHook.updateStageResults,
+    setFinalReport: stateHook.setFinalReport,
+    advanceStage: stateHook.advanceStage,
+    currentStage: stateHook.currentStage,
+    currentSessionId: stateHook.currentSessionId
+  });
+
+  // Auto-execute next stage in auto mode
+  useEffect(() => {
+    if (autoMode && 
+        !stateHook.isProcessing && 
+        stateHook.currentStage >= 1 && // **FIX**: Include stage 1 (after initialization)
+        stateHook.currentStage < 9 &&
+        credentialsHook.apiKeys.gemini) {
+      
+      // Auto-execute next stage after 2 second delay
+      const timer = setTimeout(() => {
+        stageExecutionHook.executeStage(stateHook.currentStage);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [autoMode, stateHook.isProcessing, stateHook.currentStage, credentialsHook.apiKeys.gemini]);
+
+  // Enhanced executeStage with auto mode support
+  const executeStageWithAutoMode = async (stageIndex: number, input?: any, enableAutoMode = false) => {
+    if (enableAutoMode) {
+      setAutoMode(true);
+    }
+    return stageExecutionHook.executeStage(stageIndex, input);
+  };
+
+  const exportHook = useExportFunctionality({
+    stageResults: stateHook.stageResults,
+    graphData: stateHook.graphData,
+    researchContext: stateHook.researchContext,
+    finalReport: stateHook.finalReport,
+    parameters: stateHook.parameters,
+    currentSessionId: stateHook.currentSessionId
+  });
+
+  // Initialize Stage Engine when API keys are available
+  useEffect(() => {
+    if (credentialsHook.apiKeys.gemini && !stageEngine) {
+      const engine = new AsrGotStageEngine(credentialsHook.apiKeys, stateHook.graphData);
+      setStageEngine(engine);
+    }
+  }, [credentialsHook.apiKeys, stateHook.graphData, stageEngine]);
+
+  // Reset auto mode when framework is reset
+  const resetFrameworkWithAutoMode = () => {
+    setAutoMode(false);
+    stateHook.resetFramework();
+  };
+
   return {
     // State
-    currentStage: 0,
-    graphData: { nodes: [], edges: [], metadata: { version: '1.0', created: '', last_updated: '', stage: 0, total_nodes: 0, total_edges: 0, graph_metrics: {} } },
-    parameters: {},
-    stageProgress: [],
-    isProcessing: false,
+    currentStage: stateHook.currentStage,
+    graphData: stateHook.graphData,
+    parameters: stateHook.parameters,
+    stageProgress: stateHook.stageProgress,
+    isProcessing: stateHook.isProcessing,
     apiKeys: credentialsHook.apiKeys,
-    stageResults: [],
-    researchContext: { topic: '', field: '', objectives: [], hypotheses: [], constraints: [], biases_detected: [], knowledge_gaps: [], auto_generated: false },
-    finalReport: null,
-    autoMode: false,
+    stageResults: stateHook.stageResults,
+    researchContext: stateHook.researchContext,
+    finalReport: stateHook.finalReport,
+    autoMode,
     
     // Session management
-    currentSessionId: null,
-    queryHistorySessionId: null,
+    currentSessionId: stateHook.currentSessionId,
+    queryHistorySessionId: stateHook.queryHistorySessionId,
     
-    // Actions (simplified)
-    executeStage: async () => {},
-    resetFramework: () => {},
-    setParameters: () => {},
+    // Actions
+    executeStage: executeStageWithAutoMode,
+    resetFramework: resetFrameworkWithAutoMode,
+    setParameters: stateHook.setParameters,
     updateApiKeys: credentialsHook.updateApiKeys,
-    exportResults: async () => {},
-    advanceStage: () => {},
-    setAutoMode: () => {},
+    exportResults: exportHook.exportResults,
+    advanceStage: stateHook.advanceStage,
+    setAutoMode,
     
-    // Session actions (simplified)
-    createSession: async () => '',
-    loadSession: async () => {},
-    pauseSession: async () => {},
-    resumeFromHistory: async () => {},
-    completeSession: async () => {},
+    // Session actions
+    createSession: stateHook.createSession,
+    loadSession: stateHook.loadSession,
+    pauseSession: stateHook.pauseSession,
+    resumeFromHistory: stateHook.resumeFromHistory,
+    completeSession: stateHook.completeSession,
     
-    // Auto-storage methods (simplified)
-    forceSave: async () => {},
-    queueFigureForSaving: () => {},
-    queueTableForSaving: () => {},
+    // Auto-storage methods
+    forceSave: stateHook.forceSave,
+    queueFigureForSaving: stateHook.queueFigureForSaving,
+    queueTableForSaving: stateHook.queueTableForSaving,
     
     // Computed
-    isComplete: false,
-    hasResults: false,
-    canExportHtml: false,
-    isAutoSaveEnabled: false,
-    lastSaveTime: null,
-    isConnected: false
+    isComplete: stateHook.isComplete,
+    hasResults: stateHook.hasResults,
+    canExportHtml: stateHook.canExportHtml,
+    isAutoSaveEnabled: stateHook.isAutoSaveEnabled,
+    lastSaveTime: stateHook.lastSaveTime,
+    isConnected: stateHook.isConnected
   };
 };

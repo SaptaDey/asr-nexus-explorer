@@ -193,19 +193,7 @@ export function useGraphData({
    */
   const addNode = useCallback((node: GraphNode) => {
     setGraphData(prev => {
-      if (!prev) return { 
-        nodes: [node], 
-        edges: [],
-        metadata: {
-          version: '1.0.0',
-          created: new Date().toISOString(),
-          last_updated: new Date().toISOString(),
-          stage: 1,
-          total_nodes: 1,
-          total_edges: 0,
-          graph_metrics: {}
-        }
-      };
+      if (!prev) return { nodes: [node], edges: [] };
       
       // Check if node already exists
       if (prev.nodes.some(n => n.id === node.id)) {
@@ -215,12 +203,7 @@ export function useGraphData({
 
       const newData = {
         ...prev,
-        nodes: [...prev.nodes, node],
-        metadata: {
-          ...prev.metadata,
-          last_updated: new Date().toISOString(),
-          total_nodes: prev.nodes.length + 1
-        }
+        nodes: [...prev.nodes, node]
       };
       
       setHasUnsavedChanges(true);
@@ -235,18 +218,9 @@ export function useGraphData({
     setGraphData(prev => {
       if (!prev) return null;
 
-      const filteredNodes = prev.nodes.filter(n => n.id !== nodeId);
-      const filteredEdges = prev.edges.filter(e => e.source !== nodeId && e.target !== nodeId);
-
       const newData = {
-        nodes: filteredNodes,
-        edges: filteredEdges,
-        metadata: {
-          ...prev.metadata,
-          last_updated: new Date().toISOString(),
-          total_nodes: filteredNodes.length,
-          total_edges: filteredEdges.length
-        }
+        nodes: prev.nodes.filter(n => n.id !== nodeId),
+        edges: prev.edges.filter(e => e.source !== nodeId && e.target !== nodeId)
       };
       
       setHasUnsavedChanges(true);
@@ -278,19 +252,7 @@ export function useGraphData({
    */
   const addEdge = useCallback((edge: GraphEdge) => {
     setGraphData(prev => {
-      if (!prev) return { 
-        nodes: [], 
-        edges: [edge],
-        metadata: {
-          version: '1.0.0',
-          created: new Date().toISOString(),
-          last_updated: new Date().toISOString(),
-          stage: 1,
-          total_nodes: 0,
-          total_edges: 1,
-          graph_metrics: {}
-        }
-      };
+      if (!prev) return { nodes: [], edges: [edge] };
       
       // Check if edge already exists
       if (prev.edges.some(e => e.id === edge.id)) {

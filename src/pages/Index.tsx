@@ -1,8 +1,8 @@
 
-import MinimalResearchInterface from "@/pages/MinimalInterface";
+import ASRGoTInterface from "@/pages/ASRGoTInterface";
 
 const Index = () => {
-  return <MinimalResearchInterface />;
+  return <ASRGoTInterface />;
 };
 
 export default Index;

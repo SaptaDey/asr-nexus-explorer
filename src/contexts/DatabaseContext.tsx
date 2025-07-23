@@ -111,7 +111,7 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
    * Set up authentication state listener
    */
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = auth.supabase.auth.onAuthStateChange(
       async (event, session) => {
         try {
           if (event === 'SIGNED_IN' && session?.user) {

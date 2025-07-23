@@ -1,4 +1,0 @@
-// Disabled due to build errors
-export default function EnhancedASRGoTInterfaceDisabled() {
-  return <div>Enhanced ASR-GoT Interface is temporarily disabled</div>;
-}
