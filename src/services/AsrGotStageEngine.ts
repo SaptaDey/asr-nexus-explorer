@@ -1346,6 +1346,7 @@ Generate the complete 150+ page thesis-quality HTML scientific report now.`;
       this.stageContexts.push(stageContext);
       throw error;
     }
+  }
 
   // Helper method to calculate average confidence across all nodes
   private calculateAverageConfidence(): number {
@@ -1854,8 +1855,4 @@ Return analysis in structured format with confidence score (0-1).
     return { components: 1, paths: nodes.length };
   }
 
-  private calculateAverageConfidence(): number {
-    const allConfidences = this.graphData.nodes.flatMap(n => n.confidence);
-    return allConfidences.reduce((sum, conf) => sum + conf, 0) / allConfidences.length;
-  }
 }

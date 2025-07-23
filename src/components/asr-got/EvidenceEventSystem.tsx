@@ -9,7 +9,7 @@ import { useSpring, config } from '@react-spring/web';
 import { animate as anime } from 'animejs';
 import { calculateConfidenceVector, ConfidenceCalculationResult } from '@/utils/confidenceCalculations';
 import { GraphNode, GraphEdge } from '@/types/asrGotTypes';
-import { treeDataService } from '@/services/TreeDataService';
+// TreeDataService temporarily archived - removing dependency
 
 interface EvidenceEvent {
   id: string;
@@ -175,35 +175,35 @@ export const EvidenceEventSystem: React.FC<EvidenceEventSystemProps> = ({
           });
         }
 
-        // Update backend with new confidence data
-        const currentTreeId = treeDataService.getCurrentTreeId();
-        if (currentTreeId) {
-          await treeDataService.updateNodeBotanicalMetadata(currentTreeId, event.targetBranchId, {
-            evidence_count: (branchNode.metadata?.evidence_count || 0) + 1,
-            confidence_delta: deltaC,
-            impact_score: confidenceResult.metadata.evidence_count > 0 ? 
-              confidenceResult.aggregated : branchNode.metadata?.impact_score
-          });
+        // Update backend with new confidence data - TreeDataService temporarily disabled
+        // const currentTreeId = treeDataService.getCurrentTreeId();
+        // if (currentTreeId) {
+        //   await treeDataService.updateNodeBotanicalMetadata(currentTreeId, event.targetBranchId, {
+        //     evidence_count: (branchNode.metadata?.evidence_count || 0) + 1,
+        //     confidence_delta: deltaC,
+        //     impact_score: confidenceResult.metadata.evidence_count > 0 ? 
+        //       confidenceResult.aggregated : branchNode.metadata?.impact_score
+        //   });
 
-          // Log the evidence event
-          await treeDataService.logTreeEvolution(
-            currentTreeId,
-            4,
-            'evidence_added',
-            {
-              evidenceId: event.id,
-              branchId: event.targetBranchId,
-              evidenceType: event.evidenceType,
-              confidence: event.confidence,
-              quality: event.quality
-            },
-            {
-              confidence_delta: deltaC,
-              evidence_count: (branchNode.metadata?.evidence_count || 0) + 1,
-              impact_change: confidenceResult.aggregated
-            }
-          );
-        }
+        //   Log the evidence event
+        //   await treeDataService.logTreeEvolution(
+        //     currentTreeId,
+        //     4,
+        //     'evidence_added',
+        //     {
+        //       evidenceId: event.id,
+        //       branchId: event.targetBranchId,
+        //       evidenceType: event.evidenceType,
+        //       confidence: event.confidence,
+        //       quality: event.quality
+        //     },
+        //     {
+        //       confidence_delta: deltaC,
+        //       evidence_count: (branchNode.metadata?.evidence_count || 0) + 1,
+        //       impact_change: confidenceResult.aggregated
+        //     }
+        //   );
+        // }
 
         // Notify parent component
         onEvidenceProcessed?.(event, confidenceResult);
