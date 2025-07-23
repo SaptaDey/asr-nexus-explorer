@@ -43,8 +43,9 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
     window.addEventListener('resize', checkIsMobile);
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
-  const sidebarWidth = sidebarCollapsed ? 'w-16' : 'w-80';
-  const contentMargin = sidebarCollapsed ? 'ml-16' : 'ml-80';
+  // Narrower, more stylish sidebar dimensions
+  const sidebarWidth = sidebarCollapsed ? 'w-16' : 'w-56';
+  const contentMargin = sidebarCollapsed ? 'ml-16' : 'ml-56';
   const findActiveItem = (items: NavigationItem[], targetId: string): NavigationItem | null => {
     for (const item of items) {
       if (item.id === targetId) return item;
@@ -108,23 +109,23 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
   // Desktop Layout
   return <div className={`min-h-screen bg-gray-50 ${className}`}>
       {/* Desktop Sidebar */}
-      <div className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-30 ${sidebarWidth}`}>
+      <div className={`fixed left-0 top-0 h-full bg-gradient-to-b from-slate-50 to-white border-r border-slate-200/60 transition-all duration-300 z-30 shadow-lg backdrop-blur-sm ${sidebarWidth}`}>
         {sidebarCollapsed ?
       // Collapsed Sidebar
       <div className="p-4">
             <div className="space-y-4">
-              {navigationItems.map(item => <Button key={item.id} variant={activeTab === item.id ? "default" : "ghost"} size="sm" onClick={() => onTabChange(item.id)} title={item.label} className="w-full h-12 p-0 text-cyan-950 font-extrabold rounded-full">
+              {navigationItems.map(item => <Button key={item.id} variant={activeTab === item.id ? "default" : "ghost"} size="sm" onClick={() => onTabChange(item.id)} title={item.label} className={`w-full h-11 p-0 transition-all duration-200 rounded-xl ${activeTab === item.id ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md hover:shadow-lg' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'}`}>
                   {item.icon}
                 </Button>)}
             </div>
-            <Button variant="ghost" size="sm" onClick={() => setSidebarCollapsed(false)} className="mt-6 w-full text-cyan-950 text-center font-extrabold rounded-full">
+            <Button variant="ghost" size="sm" onClick={() => setSidebarCollapsed(false)} className="mt-6 w-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 rounded-xl">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div> :
       // Expanded Sidebar
       <div className="relative h-full">
             <ResponsiveNavigation activeTab={activeTab} onTabChange={onTabChange} navigationItems={navigationItems} className="h-full" />
-            <Button variant="ghost" size="sm" className="absolute top-6 right-2" onClick={() => setSidebarCollapsed(true)}>
+            <Button variant="ghost" size="sm" className="absolute top-6 right-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100/80 transition-all duration-200 rounded-xl" onClick={() => setSidebarCollapsed(true)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
           </div>}

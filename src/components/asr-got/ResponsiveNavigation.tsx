@@ -64,7 +64,7 @@ export const ResponsiveNavigation: React.FC<ResponsiveNavigationProps> = ({
   const activeItem = findActiveItem(navigationItems, activeTab);
   const NavigationContent = () => <div className="space-y-2">
       {navigationItems.map(item => <div key={item.id}>
-          <Button variant={activeTab === item.id ? "default" : "ghost"} className={`w-full justify-start gap-3 h-12 ${activeTab === item.id ? 'bg-blue-600 text-white shadow-md' : 'text-gray-700 hover:bg-gray-100'}`} onClick={() => {
+          <Button variant={activeTab === item.id ? "default" : "ghost"} className={`w-full justify-start gap-3 h-12 rounded-xl transition-all duration-200 ${activeTab === item.id ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl' : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 hover:shadow-sm'}`} onClick={() => {
         if (item.children && item.children.length > 0) {
           toggleExpanded(item.id);
         } else {
@@ -83,8 +83,8 @@ export const ResponsiveNavigation: React.FC<ResponsiveNavigationProps> = ({
           </Button>
 
           {/* Sub-items */}
-          {item.children && expandedItems.has(item.id) && <div className="ml-6 mt-2 space-y-1 border-l-2 border-gray-200 pl-4">
-              {item.children.map(child => <Button key={child.id} variant={activeTab === child.id ? "default" : "ghost"} size="sm" className={`w-full justify-start gap-2 h-10 ${activeTab === child.id ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-50'}`} onClick={() => {
+          {item.children && expandedItems.has(item.id) && <div className="ml-6 mt-2 space-y-1 border-l-2 border-slate-200/60 pl-4">
+              {item.children.map(child => <Button key={child.id} variant={activeTab === child.id ? "default" : "ghost"} size="sm" className={`w-full justify-start gap-2 h-10 rounded-lg transition-all duration-200 ${activeTab === child.id ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50/80'}`} onClick={() => {
           onTabChange(child.id);
           setIsMobileMenuOpen(false);
         }}>
@@ -115,7 +115,7 @@ export const ResponsiveNavigation: React.FC<ResponsiveNavigationProps> = ({
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-80 p-0">
+            <SheetContent side="left" className="w-56 p-0">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold">Navigation</h3>
@@ -134,10 +134,10 @@ export const ResponsiveNavigation: React.FC<ResponsiveNavigationProps> = ({
   }
 
   // Desktop Sidebar
-  return <div className={`bg-white border-r border-gray-200 ${className}`}>
-      <div className="p-12 bg-cyan-50 rounded-bl-none ">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Navigation</h3>
-        <ScrollArea className="h-[calc(100vh-200px)]">
+  return <div className={`bg-gradient-to-b from-slate-50/50 to-white border-r border-slate-200/60 ${className}`}>
+      <div className="p-6 ">
+        <h3 className="text-base font-semibold text-slate-800 mb-4 px-2">Navigation</h3>
+        <ScrollArea className="h-[calc(100vh-140px)]">
           <NavigationContent />
         </ScrollArea>
       </div>
