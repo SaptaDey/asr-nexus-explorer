@@ -19,7 +19,8 @@ import {
   Shield, 
   AlertTriangle,
   CheckCircle,
-  Clock
+  Clock,
+  ExternalLink
 } from 'lucide-react'
 
 interface ApiKeyManagerProps {
@@ -32,7 +33,7 @@ export function ApiKeyManager({ className = '' }: ApiKeyManagerProps) {
   const [error, setError] = useState<string | null>(null)
   const [addKeyDialogOpen, setAddKeyDialogOpen] = useState(false)
   const [newKeyData, setNewKeyData] = useState({
-    provider: '' as 'gemini' | 'perplexity' | 'openai' | '',
+    provider: '' as 'gemini' | 'perplexity' | '',
     apiKey: '',
     keyName: ''
   })
@@ -56,9 +57,29 @@ export function ApiKeyManager({ className = '' }: ApiKeyManagerProps) {
     }
   }
 
+  const validateApiKey = (provider: string, apiKey: string): boolean => {
+    if (!apiKey) return false
+    
+    switch (provider) {
+      case 'gemini':
+        return apiKey.startsWith('AIza') && apiKey.length > 20
+      case 'perplexity':
+        return apiKey.startsWith('pplx-') && apiKey.length > 20
+      default:
+        return false
+    }
+  }
+
   const handleAddApiKey = async () => {
     if (!newKeyData.provider || !newKeyData.apiKey) {
       setError('Provider and API key are required')
+      return
+    }
+
+    // Client-side validation for faster feedback
+    if (!validateApiKey(newKeyData.provider, newKeyData.apiKey)) {
+      const expectedFormat = newKeyData.provider === 'gemini' ? 'AIza...' : 'pplx-...'
+      setError(`Invalid API key format. ${newKeyData.provider} keys should start with "${expectedFormat}"`)
       return
     }
 
@@ -105,8 +126,6 @@ export function ApiKeyManager({ className = '' }: ApiKeyManagerProps) {
         return '🧠'
       case 'perplexity':
         return '🔍'
-      case 'openai':
-        return '🤖'
       default:
         return '🔑'
     }
@@ -118,8 +137,6 @@ export function ApiKeyManager({ className = '' }: ApiKeyManagerProps) {
         return 'bg-blue-100 text-blue-800'
       case 'perplexity':
         return 'bg-green-100 text-green-800'
-      case 'openai':
-        return 'bg-purple-100 text-purple-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
@@ -193,12 +210,6 @@ export function ApiKeyManager({ className = '' }: ApiKeyManagerProps) {
                         <span>Perplexity Sonar</span>
                       </div>
                     </SelectItem>
-                    <SelectItem value="openai">
-                      <div className="flex items-center space-x-2">
-                        <span>🤖</span>
-                        <span>OpenAI</span>
-                      </div>
-                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -267,6 +278,52 @@ export function ApiKeyManager({ className = '' }: ApiKeyManagerProps) {
             </div>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* Security Statement & API Key Help */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Security Assurance */}
+        <Alert className="border-green-200 bg-green-50">
+          <Shield className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            <strong>🔒 Secure Storage:</strong> Your API keys are encrypted and stored securely on our servers. 
+            They are never shared with third parties and are only used to make API requests on your behalf.
+          </AlertDescription>
+        </Alert>
+
+        {/* API Key Help */}
+        <Card className="border-blue-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Key className="h-4 w-4" />
+              Get Your API Keys
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div>
+              <strong>🧠 Gemini API:</strong> 
+              <a 
+                href="https://aistudio.google.com/app/apikey" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline ml-1 flex items-center gap-1"
+              >
+                Get from Google AI Studio <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+            <div>
+              <strong>🔍 Perplexity:</strong> 
+              <a 
+                href="https://www.perplexity.ai/settings/api" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline ml-1 flex items-center gap-1"
+              >
+                Get from Perplexity Settings <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Error Display */}

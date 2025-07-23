@@ -21,7 +21,7 @@ export interface UserProfile {
 
 export interface ApiKeyInfo {
   id: string
-  provider: 'gemini' | 'perplexity' | 'openai'
+  provider: 'gemini' | 'perplexity'
   key_name: string
   is_active: boolean
   created_at: string
@@ -208,7 +208,7 @@ class UserService {
     }
   }
 
-  async addApiKey(provider: 'gemini' | 'perplexity' | 'openai', apiKey: string, keyName?: string): Promise<{ apiKey: ApiKeyInfo; message: string }> {
+  async addApiKey(provider: 'gemini' | 'perplexity', apiKey: string, keyName?: string): Promise<{ apiKey: ApiKeyInfo; message: string }> {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
