@@ -11,9 +11,12 @@ vi.mock('@/utils/securityUtils', () => ({
   validateInput: vi.fn().mockImplementation((input: string) => 
     input && typeof input === 'string' && input.trim().length > 0 && !input.includes('<script>') ? input.trim() : ''
   ),
-  validateAPIKey: vi.fn().mockImplementation((key: string, service?: string) => 
-    key && key.length > 10 && key.startsWith('mock-')
-  ),
+  validateAPIKey: vi.fn().mockImplementation((key: string, service?: string) => {
+    if (!key || typeof key !== 'string') return false;
+    if (service === 'gemini') return key.startsWith('AIza') && key.length > 30;
+    if (service === 'perplexity') return key.startsWith('pplx-') && key.length > 20;
+    return key.length > 10; // fallback for other services
+  }),
   apiRateLimiter: {
     isAllowed: vi.fn().mockReturnValue(true),
     check: vi.fn().mockResolvedValue(true),
@@ -56,14 +59,15 @@ vi.mock('@/utils/secureNetworkRequest', () => ({
   secureRequestWithTimeout: vi.fn().mockResolvedValue({
     ok: true,
     json: vi.fn().mockResolvedValue({
-      id: 'test-request',
-      choices: [{
-        message: {
-          content: 'Mock Perplexity response'
+      candidates: [{
+        content: {
+          parts: [{ text: 'Mock Gemini response' }]
         }
       }],
-      usage: {
-        total_tokens: 200
+      usageMetadata: {
+        promptTokenCount: 100,
+        candidatesTokenCount: 150,
+        totalTokenCount: 250
       }
     })
   })
@@ -90,7 +94,7 @@ describe('apiService', () => {
   describe('callPerplexitySonarAPI', () => {
     it('should successfully call Perplexity Sonar API with valid parameters', async () => {
       const query = testQueries.simple;
-      const apiKey = mockAPICredentials.perplexity;
+      const apiKey = mockAPICredentials.gemini; // Use Gemini key since Sonar falls back to Gemini
       
       const result = await callPerplexitySonarAPI(query, apiKey);
       
@@ -101,7 +105,7 @@ describe('apiService', () => {
 
     it('should handle queries with recency and focus options', async () => {
       const query = testQueries.medical;
-      const apiKey = mockAPICredentials.perplexity;
+      const apiKey = mockAPICredentials.gemini;
       const options = { recency: true, focus: 'peer-reviewed' };
       
       const result = await callPerplexitySonarAPI(query, apiKey, options);
@@ -116,7 +120,7 @@ describe('apiService', () => {
       // Mock cost limit exceeded
       vi.mocked(costGuardrails.canMakeCall).mockReturnValueOnce(false);
       
-      await expect(callPerplexitySonarAPI(testQueries.simple, mockAPICredentials.perplexity))
+      await expect(callPerplexitySonarAPI(testQueries.simple, mockAPICredentials.gemini))
         .rejects.toThrow('Cost guardrails exceeded for Sonar API');
     });
 
@@ -126,15 +130,15 @@ describe('apiService', () => {
       // Mock invalid input
       vi.mocked(validateInput).mockReturnValueOnce(false);
       
-      await expect(callPerplexitySonarAPI(testQueries.malicious, mockAPICredentials.perplexity))
+      await expect(callPerplexitySonarAPI(testQueries.malicious, mockAPICredentials.gemini))
         .rejects.toThrow();
     });
 
     it('should handle empty or invalid queries', async () => {
-      await expect(callPerplexitySonarAPI('', mockAPICredentials.perplexity))
+      await expect(callPerplexitySonarAPI('', mockAPICredentials.gemini))
         .rejects.toThrow();
       
-      await expect(callPerplexitySonarAPI('   \n\t   ', mockAPICredentials.perplexity))
+      await expect(callPerplexitySonarAPI('   \n\t   ', mockAPICredentials.gemini))
         .rejects.toThrow();
     });
 
@@ -144,7 +148,7 @@ describe('apiService', () => {
       // Mock Perplexity failure
       vi.mocked(secureRequestWithTimeout).mockRejectedValueOnce(new Error('Perplexity API Error'));
       
-      const result = await callPerplexitySonarAPI(testQueries.simple, mockAPICredentials.perplexity);
+      const result = await callPerplexitySonarAPI(testQueries.simple, mockAPICredentials.gemini);
       
       expect(result).toBeDefined();
       expect(typeof result).toBe('string');
@@ -153,7 +157,7 @@ describe('apiService', () => {
     it('should record usage metrics', async () => {
       const { costGuardrails } = await import('@/services/CostGuardrails');
       
-      await callPerplexitySonarAPI(testQueries.technical, mockAPICredentials.perplexity);
+      await callPerplexitySonarAPI(testQueries.technical, mockAPICredentials.gemini);
       
       expect(costGuardrails.recordUsage).toHaveBeenCalledWith('sonar', expect.any(Number));
     });
@@ -292,7 +296,7 @@ describe('apiService', () => {
       // Mock timeout
       vi.mocked(secureRequestWithTimeout).mockRejectedValueOnce(new Error('Request timeout'));
       
-      await expect(callPerplexitySonarAPI(testQueries.simple, mockAPICredentials.perplexity))
+      await expect(callPerplexitySonarAPI(testQueries.simple, mockAPICredentials.gemini))
         .rejects.toThrow('Request timeout');
     });
 

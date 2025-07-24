@@ -136,10 +136,10 @@ export const mockStageResults: Record<number, StageResult> = {
   }
 };
 
-// Mock API credentials
+// Mock API credentials with valid formats
 export const mockAPICredentials: APICredentials = {
-  gemini: 'mock-gemini-key',
-  perplexity: 'mock-perplexity-key'
+  gemini: 'AIzaSyTest123456789012345678901234567890', // Valid Gemini format: starts with AIza, >30 chars
+  perplexity: 'pplx-test1234567890123456789012345678901234' // Valid Perplexity format: starts with pplx-, >20 chars
 };
 
 // Mock Supabase client
