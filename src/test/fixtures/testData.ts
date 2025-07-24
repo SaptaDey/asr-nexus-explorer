@@ -200,7 +200,21 @@ export const testHyperedges: ASRGoTHyperEdge[] = [
 export const testGraphData: GraphData = {
   nodes: testNodes,
   edges: testEdges,
-  hyperedges: testHyperedges
+  hyperedges: testHyperedges,
+  metadata: {
+    version: '1.0.0',
+    created: '2024-01-01T00:00:00Z',
+    last_updated: '2024-01-01T00:15:00Z',
+    stage: 4,
+    total_nodes: 4,
+    total_edges: 3,
+    graph_metrics: {
+      complexity: 2.1,
+      density: 0.75,
+      clustering_coefficient: 0.33,
+      average_path_length: 1.5
+    }
+  }
 };
 
 // Test stage results for all 9 stages

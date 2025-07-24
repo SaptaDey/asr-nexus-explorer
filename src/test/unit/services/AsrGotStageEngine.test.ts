@@ -15,13 +15,17 @@ vi.mock('@/utils/background/utils', () => ({
 
 vi.mock('@/utils/background', () => ({
   queueGeminiCall: vi.fn().mockReturnValue('task-id-123'),
-  getTaskResult: vi.fn().mockResolvedValue({
-    success: true,
-    data: 'mock stage result'
-  }),
+  getTaskResult: vi.fn().mockResolvedValue(JSON.stringify({
+    primary_field: 'Environmental Science',
+    secondary_fields: ['Biology', 'Chemistry'],
+    objectives: ['Analyze climate impact', 'Study marine life changes'],
+    interdisciplinary_connections: ['Oceanography', 'Ecology'],
+    constraints: ['Data availability', 'Time constraints'],
+    initial_scope: 'Comprehensive climate change analysis'
+  })),
   backgroundProcessor: {
     addTask: vi.fn().mockReturnValue('task-id-123'),
-    getTaskResult: vi.fn().mockResolvedValue({ success: true, data: 'mock result' }),
+    getTaskResult: vi.fn().mockResolvedValue(JSON.stringify({ success: true, data: 'mock result' })),
     getTaskStatus: vi.fn().mockReturnValue('completed')
   }
 }));
@@ -87,7 +91,23 @@ describe('AsrGotStageEngine', () => {
     it('should initialize with provided credentials and graph data', () => {
       expect(stageEngine).toBeInstanceOf(AsrGotStageEngine);
       expect(stageEngine['credentials']).toEqual(mockCredentials);
-      expect(stageEngine['graphData']).toEqual(mockGraph);
+      // The constructor adds knowledge nodes (K1-K3) to the graph
+      expect(stageEngine['graphData'].nodes.length).toBe(7); // 4 original + 3 knowledge nodes
+      expect(stageEngine['graphData'].edges).toEqual(mockGraph.edges);
+      expect(stageEngine['graphData'].metadata).toEqual(expect.objectContaining({
+        version: mockGraph.metadata.version,
+        stage: mockGraph.metadata.stage
+      }));
+      // Verify knowledge nodes were added
+      const knowledgeNodes = stageEngine['graphData'].nodes.filter(node => 
+        node.type === 'knowledge' && node.id?.startsWith('K')
+      );
+      expect(knowledgeNodes.length).toBe(3);
+      // Verify original nodes are still there
+      const originalNodes = stageEngine['graphData'].nodes.filter(node => 
+        node.type !== 'knowledge'
+      );
+      expect(originalNodes.length).toBe(4);
     });
 
     it('should initialize with default values when no parameters provided', () => {
@@ -98,8 +118,14 @@ describe('AsrGotStageEngine', () => {
         perplexity: '', 
         openai: '' 
       });
-      expect(defaultEngine['graphData'].nodes).toEqual([]);
+      // Knowledge nodes (K1-K3) are automatically added during initialization
+      expect(defaultEngine['graphData'].nodes.length).toBeGreaterThan(0);
       expect(defaultEngine['graphData'].edges).toEqual([]);
+      // Check that knowledge nodes are present
+      const knowledgeNodes = defaultEngine['graphData'].nodes.filter(node => 
+        node.type === 'knowledge' && node.id?.startsWith('K')
+      );
+      expect(knowledgeNodes.length).toBe(3); // K1, K2, K3
     });
 
     it('should initialize knowledge nodes (K1-K3)', () => {
@@ -506,11 +532,14 @@ describe('AsrGotStageEngine', () => {
       const mockEvidence = ['evidence1', 'evidence2', 'evidence3'];
       const confidence = stageEngine.calculateConfidence(mockEvidence);
       
-      expect(confidence).toHaveLength(4);
-      confidence.forEach(conf => {
-        expect(conf).toBeGreaterThanOrEqual(0);
-        expect(conf).toBeLessThanOrEqual(1);
-      });
+      expect(typeof confidence).toBe('number');
+      expect(confidence).toBeGreaterThanOrEqual(0);
+      expect(confidence).toBeLessThanOrEqual(1);
+      
+      // Test with more evidence
+      const moreEvidence = ['e1', 'e2', 'e3', 'e4', 'e5'];
+      const higherConfidence = stageEngine.calculateConfidence(moreEvidence);
+      expect(higherConfidence).toBeGreaterThan(confidence);
     });
   });
 });

@@ -88,7 +88,20 @@ export const mockGraphData: GraphData = {
         evidence_sources: ['study_1', 'study_2']
       }
     }
-  ]
+  ],
+  metadata: {
+    version: '1.0.0',
+    created: '2024-01-01T00:00:00Z',
+    last_updated: '2024-01-01T00:00:00Z',
+    stage: 2,
+    total_nodes: 2,
+    total_edges: 1,
+    graph_metrics: {
+      complexity: 1.5,
+      density: 0.5,
+      clustering_coefficient: 0.0
+    }
+  }
 };
 
 // Mock stage results
