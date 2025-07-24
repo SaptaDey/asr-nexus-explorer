@@ -114,10 +114,24 @@ describe('TaskQueue', () => {
     });
 
     it('should respect maximum concurrent limit', async () => {
+      // Create a slow mock executor that allows us to test concurrency
+      let resolveCount = 0;
+      const resolvers: (() => void)[] = [];
+      const slowMockExecutor = vi.fn().mockImplementation(() => {
+        return new Promise(resolve => {
+          resolvers.push(() => {
+            resolveCount++;
+            resolve({ success: true, data: `result ${resolveCount}` });
+          });
+        });
+      });
+
+      const slowTaskQueue = new TaskQueue(slowMockExecutor, { maxConcurrent: 2, retryAttempts: 3 });
+
       // Add more tasks than concurrent limit
       const taskIds = [];
       for (let i = 0; i < 5; i++) {
-        const taskId = await taskQueue.addTask({
+        const taskId = await slowTaskQueue.addTask({
           type: 'gemini_call',
           priority: 'medium',
           data: { query: `query ${i}` }
@@ -125,13 +139,30 @@ describe('TaskQueue', () => {
         taskIds.push(taskId);
       }
 
-      taskQueue.start();
+      slowTaskQueue.start();
 
-      // Wait briefly
+      // Wait for initial tasks to start
       await new Promise(resolve => setTimeout(resolve, 50));
 
-      // Should not exceed concurrent limit (2)
-      expect(mockExecutor).toHaveBeenCalledTimes(2);
+      // Should only start 2 tasks due to concurrent limit
+      expect(slowMockExecutor).toHaveBeenCalledTimes(2);
+
+      // Complete first task
+      resolvers[0]();
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      // Should start one more task
+      expect(slowMockExecutor).toHaveBeenCalledTimes(3);
+
+      // Complete second task
+      resolvers[1]();
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      // Should start another task
+      expect(slowMockExecutor).toHaveBeenCalledTimes(4);
+
+      // Clean up
+      slowTaskQueue.stop();
     });
 
     it('should handle task execution errors', async () => {

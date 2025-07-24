@@ -31,50 +31,34 @@ vi.mock('@/services/CostGuardrails', () => ({
 }));
 
 // Mock ALL secure network requests with successful responses
-vi.mock('@/utils/secureNetworkRequest', () => ({
-  secureNetworkRequest: vi.fn().mockImplementation(async (url, options) => {
-    return {
-      ok: true,
-      status: 200,
-      json: async () => ({
-        candidates: [{
-          content: {
-            parts: [{ text: 'Mock API response content for testing' }]
-          }
-        }],
-        usageMetadata: {
-          promptTokenCount: 100,
-          candidatesTokenCount: 150,
-          totalTokenCount: 250
+vi.mock('@/utils/secureNetworkRequest', () => {
+  const mockResponse = {
+    ok: true,
+    status: 200,
+    json: vi.fn().mockResolvedValue({
+      candidates: [{
+        content: {
+          parts: [{ text: 'Mock API response content for testing' }]
         }
-      })
-    };
-  }),
-  createGeminiHeaders: vi.fn(() => ({
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer test-key'
-  })),
-  validateApiKeyFormat: vi.fn(() => true),
-  secureRequestWithTimeout: vi.fn().mockImplementation(async (url, options) => {
-    // Return proper response structure
-    return {
-      ok: true,
-      status: 200,
-      json: async () => ({
-        candidates: [{
-          content: {
-            parts: [{ text: 'Mock API response content for testing' }]
-          }
-        }],
-        usageMetadata: {
-          promptTokenCount: 100,
-          candidatesTokenCount: 150,
-          totalTokenCount: 250
-        }
-      })
-    };
-  })
-}));
+      }],
+      usageMetadata: {
+        promptTokenCount: 100,
+        candidatesTokenCount: 150,
+        totalTokenCount: 250
+      }
+    })
+  };
+
+  return {
+    secureNetworkRequest: vi.fn().mockResolvedValue(mockResponse),
+    createGeminiHeaders: vi.fn(() => ({
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer test-key'
+    })),
+    validateApiKeyFormat: vi.fn(() => true),
+    secureRequestWithTimeout: vi.fn().mockResolvedValue(mockResponse)
+  };
+});
 
 // Mock ALL error handling utilities
 vi.mock('@/utils/errorSanitizer', () => ({
