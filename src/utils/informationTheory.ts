@@ -117,11 +117,38 @@ export function calculateInformationGain(
 export function calculateGraphComplexity(
   nodeCount: number,
   edgeCount: number,
+  hyperedgeCount?: number
+): number;
+
+export function calculateGraphComplexity(
+  graph: { nodes?: any[]; edges?: any[]; hyperedges?: any[] }
+): number;
+
+export function calculateGraphComplexity(
+  nodeCountOrGraph: number | { nodes?: any[]; edges?: any[]; hyperedges?: any[] },
+  edgeCount?: number,
   hyperedgeCount: number = 0
 ): number {
+  let nodeCount: number;
+  let edges: number;
+  let hyperedges: number;
+
+  if (typeof nodeCountOrGraph === 'object') {
+    // Handle graph object input
+    const graph = nodeCountOrGraph;
+    nodeCount = graph.nodes?.length || 0;
+    edges = graph.edges?.length || 0;
+    hyperedges = graph.hyperedges?.length || 0;
+  } else {
+    // Handle separate parameters
+    nodeCount = nodeCountOrGraph;
+    edges = edgeCount || 0;
+    hyperedges = hyperedgeCount;
+  }
+
   // Complexity based on structural properties
-  const basicComplexity = Math.log2(nodeCount + 1) + Math.log2(edgeCount + 1);
-  const hyperedgeComplexity = hyperedgeCount > 0 ? Math.log2(hyperedgeCount + 1) : 0;
+  const basicComplexity = Math.log2(nodeCount + 1) + Math.log2(edges + 1);
+  const hyperedgeComplexity = hyperedges > 0 ? Math.log2(hyperedges + 1) : 0;
   
   return basicComplexity + hyperedgeComplexity;
 }
@@ -133,19 +160,46 @@ export function calculateNodeInformationMetrics(
   confidenceVector: number[],
   nodeConnections: number,
   graphSize: number
+): InformationMetrics;
+
+export function calculateNodeInformationMetrics(
+  node: { confidence: number[]; metadata?: any }
+): InformationMetrics;
+
+export function calculateNodeInformationMetrics(
+  nodeOrConfidence: number[] | { confidence: number[]; metadata?: any },
+  nodeConnections?: number,
+  graphSize?: number
 ): InformationMetrics {
+  let confidenceVector: number[];
+  let connections: number;
+  let size: number;
+
+  if (Array.isArray(nodeOrConfidence)) {
+    // Original function signature: (confidenceVector, nodeConnections, graphSize)
+    confidenceVector = nodeOrConfidence;
+    connections = nodeConnections!;
+    size = graphSize!;
+  } else {
+    // New signature: (node)
+    const node = nodeOrConfidence;
+    confidenceVector = node.confidence;
+    connections = node.metadata?.evidence_count || 1;
+    size = 10; // Default graph size for single node analysis
+  }
+
   // Calculate entropy of confidence vector
   const entropy = calculateEntropy(confidenceVector);
   
   // Calculate information gain based on node position in graph
-  const informationGain = Math.log2(graphSize / (nodeConnections + 1));
+  const information_gain = Math.log2(size / (connections + 1));
   
   // Calculate complexity based on node properties
-  const complexity = Math.log2(confidenceVector.length) + Math.log2(nodeConnections + 1);
+  const complexity = Math.log2(confidenceVector.length) + Math.log2(connections + 1);
   
   return {
     entropy,
-    informationGain,
+    information_gain,
     complexity
   };
 }
@@ -157,7 +211,33 @@ export function calculateEvidenceInformationMetrics(
   evidenceQuality: 'high' | 'medium' | 'low',
   statisticalPower: number,
   peerReviewStatus: string
+): InformationMetrics;
+
+export function calculateEvidenceInformationMetrics(
+  evidenceData: string[]
+): InformationMetrics;
+
+export function calculateEvidenceInformationMetrics(
+  evidenceQualityOrData: 'high' | 'medium' | 'low' | string[],
+  statisticalPower?: number,
+  peerReviewStatus?: string
 ): InformationMetrics {
+  if (Array.isArray(evidenceQualityOrData)) {
+    // Handle string array input
+    const evidenceData = evidenceQualityOrData;
+    const entropy = calculateEntropy(evidenceData.map((_, i) => 1 / evidenceData.length)); // Uniform distribution
+    const information_gain = Math.log2(evidenceData.length + 1); // Information gain from multiple evidence pieces
+    const complexity = Math.log2(evidenceData.length + 1); // Complexity increases with more evidence
+    
+    return {
+      entropy,
+      information_gain,
+      complexity
+    };
+  }
+  
+  // Original function logic for quality-based input
+  const evidenceQuality = evidenceQualityOrData;
   // Convert qualitative measures to probabilities
   const qualityProbs = evidenceQuality === 'high' ? [0.8, 0.15, 0.05] :
                       evidenceQuality === 'medium' ? [0.3, 0.6, 0.1] :
@@ -174,7 +254,7 @@ export function calculateEvidenceInformationMetrics(
   
   return {
     entropy,
-    informationGain,
+    information_gain: informationGain,
     complexity
   };
 }
@@ -185,21 +265,44 @@ export function calculateEvidenceInformationMetrics(
 export function calculateHypothesisInformationMetrics(
   hypothesisList: string[],
   evidenceSupport: number[]
+): InformationMetrics;
+
+export function calculateHypothesisInformationMetrics(
+  hypothesesData: { text: string; confidence: number }[]
+): InformationMetrics;
+
+export function calculateHypothesisInformationMetrics(
+  hypothesesListOrData: string[] | { text: string; confidence: number }[],
+  evidenceSupport?: number[]
 ): InformationMetrics {
+  let hypothesisList: string[];
+  let supportValues: number[];
+
+  if (Array.isArray(hypothesesListOrData) && hypothesesListOrData.length > 0 && typeof hypothesesListOrData[0] === 'object') {
+    // Handle object array input
+    const hypothesesData = hypothesesListOrData as { text: string; confidence: number }[];
+    hypothesisList = hypothesesData.map(h => h.text);
+    supportValues = hypothesesData.map(h => h.confidence);
+  } else {
+    // Handle original string array input
+    hypothesisList = hypothesesListOrData as string[];
+    supportValues = evidenceSupport || [];
+  }
+
   // Calculate entropy of evidence support distribution
-  const entropy = calculateEntropy(evidenceSupport);
+  const entropy = calculateEntropy(supportValues);
   
   // Calculate complexity based on hypothesis count
   const complexity = Math.log2(hypothesisList.length);
   
   // Calculate information gain based on evidence variance
-  const meanSupport = evidenceSupport.reduce((sum, val) => sum + val, 0) / evidenceSupport.length;
-  const variance = evidenceSupport.reduce((sum, val) => sum + Math.pow(val - meanSupport, 2), 0) / evidenceSupport.length;
-  const informationGain = 1 - variance; // Higher variance = lower information gain
+  const meanSupport = supportValues.reduce((sum, val) => sum + val, 0) / supportValues.length;
+  const variance = supportValues.reduce((sum, val) => sum + Math.pow(val - meanSupport, 2), 0) / supportValues.length;
+  const information_gain = 1 - variance; // Higher variance = lower information gain
   
   return {
     entropy,
-    informationGain,
+    information_gain,
     complexity
   };
 }
