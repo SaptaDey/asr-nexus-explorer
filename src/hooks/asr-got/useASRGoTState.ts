@@ -22,6 +22,7 @@ export const useASRGoTState = () => {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [queryHistorySessionId, setQueryHistorySessionId] = useState<string | null>(null);
+  const [isRestored, setIsRestored] = useState(false);
 
   // WebSocket and persistence services
   const webSocket = useWebSocket();
@@ -42,9 +43,59 @@ export const useASRGoTState = () => {
     }
   );
 
-  // Initialize WebSocket connection
+  // Initialize WebSocket connection and restore session
   useEffect(() => {
     setIsConnected(webSocket.isConnected());
+    
+    // Restore session state on initial load
+    const restoreSession = async () => {
+      if (isRestored) return;
+      
+      try {
+        // Check for last active session in localStorage
+        const lastSessionId = localStorage.getItem('asr-got-last-session');
+        if (lastSessionId) {
+          console.log('Restoring session:', lastSessionId);
+          
+          const restored = await loadSession(lastSessionId);
+          if (restored) {
+            toast.success('✅ Session restored from previous browser session');
+          }
+        }
+        
+        // Check for browser session storage
+        const sessionData = sessionStorage.getItem('asr-got-current-session');
+        if (sessionData && !lastSessionId) {
+          try {
+            const data = JSON.parse(sessionData);
+            if (data.sessionId && data.timestamp) {
+              // Only restore if session is less than 24 hours old
+              const now = Date.now();
+              const sessionTime = new Date(data.timestamp).getTime();
+              const hoursSinceSession = (now - sessionTime) / (1000 * 60 * 60);
+              
+              if (hoursSinceSession < 24) {
+                const restored = await loadSession(data.sessionId);
+                if (restored) {
+                  toast.success('✅ Session restored from browser session');
+                }
+              } else {
+                sessionStorage.removeItem('asr-got-current-session');
+              }
+            }
+          } catch (error) {
+            console.warn('Failed to parse session storage data:', error);
+            sessionStorage.removeItem('asr-got-current-session');
+          }
+        }
+      } catch (error) {
+        console.warn('Session restoration failed:', error);
+      } finally {
+        setIsRestored(true);
+      }
+    };
+    
+    restoreSession();
     
     // Subscribe to WebSocket events
     const unsubscribeGraphUpdate = webSocket.on('graph-updated', (data) => {
@@ -64,7 +115,7 @@ export const useASRGoTState = () => {
       unsubscribeGraphUpdate();
       unsubscribeStageTransition();
     };
-  }, [webSocket]);
+  }, [webSocket, isRestored]);
 
   // Broadcast graph updates when graph data changes
   useEffect(() => {
@@ -107,6 +158,66 @@ export const useASRGoTState = () => {
     }
   }, [graphData, currentStage, previousGraphData, currentSessionId, webSocket, persistence]);
 
+  // Persist session state to browser storage whenever it changes
+  useEffect(() => {
+    if (currentSessionId && isRestored) {
+      const sessionState = {
+        sessionId: currentSessionId,
+        currentStage,
+        stageResults,
+        researchContext,
+        graphData: {
+          nodes: graphData.nodes.length,
+          edges: graphData.edges.length
+        },
+        timestamp: new Date().toISOString(),
+        lastSaved: Date.now()
+      };
+
+      // Update session storage with current state
+      sessionStorage.setItem('asr-got-current-session', JSON.stringify(sessionState));
+      
+      // Debounced localStorage update to avoid too many writes
+      const timeoutId = setTimeout(() => {
+        localStorage.setItem('asr-got-session-state', JSON.stringify(sessionState));
+      }, 1000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [currentSessionId, currentStage, stageResults, researchContext, graphData, isRestored]);
+
+  // Handle browser close/refresh to save state
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (currentSessionId && (currentStage > 0 || stageResults.length > 0)) {
+        // Save final state before page unload
+        const finalState = {
+          sessionId: currentSessionId,
+          currentStage,
+          stageResults,
+          researchContext,
+          graphData,
+          timestamp: new Date().toISOString(),
+          lastSaved: Date.now(),
+          unloadSave: true
+        };
+
+        sessionStorage.setItem('asr-got-current-session', JSON.stringify(finalState));
+        localStorage.setItem('asr-got-session-state', JSON.stringify(finalState));
+        
+        // Show confirmation if research is in progress
+        if (isProcessing || (currentStage > 0 && currentStage < 8)) {
+          event.preventDefault();
+          event.returnValue = 'You have research in progress. Are you sure you want to leave?';
+          return event.returnValue;
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [currentSessionId, currentStage, stageResults, researchContext, graphData, isProcessing]);
+
   // Create new session
   const createSession = useCallback(async (topic: string, field: string) => {
     try {
@@ -127,6 +238,15 @@ export const useASRGoTState = () => {
       if (webSocket.isConnected()) {
         webSocket.joinSession(sessionId);
       }
+      
+      // Persist session for recovery across browser refreshes
+      localStorage.setItem('asr-got-last-session', sessionId);
+      sessionStorage.setItem('asr-got-current-session', JSON.stringify({
+        sessionId,
+        timestamp: new Date().toISOString(),
+        topic,
+        field
+      }));
       
       setResearchContext({ topic, field });
       toast.success('🚀 Research session created with auto-storage enabled');
@@ -153,6 +273,15 @@ export const useASRGoTState = () => {
       if (webSocket.isConnected()) {
         webSocket.joinSession(sessionId);
       }
+      
+      // Update session persistence markers
+      localStorage.setItem('asr-got-last-session', sessionId);
+      sessionStorage.setItem('asr-got-current-session', JSON.stringify({
+        sessionId,
+        timestamp: new Date().toISOString(),
+        topic: session.researchContext?.topic || '',
+        field: session.researchContext?.field || ''
+      }));
       
       toast.success('Session loaded successfully');
       return session;
@@ -198,6 +327,10 @@ export const useASRGoTState = () => {
     if (queryHistorySessionId) {
       setQueryHistorySessionId(null);
     }
+    
+    // Clear persistence markers
+    localStorage.removeItem('asr-got-last-session');
+    sessionStorage.removeItem('asr-got-current-session');
     
     toast.info('ASR-GoT Framework reset. Ready for new research.');
   }, [currentSessionId, queryHistorySessionId, webSocket, persistence]);
@@ -274,6 +407,7 @@ export const useASRGoTState = () => {
     researchContext,
     finalReport,
     stageProgress,
+    isRestored,
     
     // Setters
     setCurrentStage,
@@ -313,6 +447,10 @@ export const useASRGoTState = () => {
     hasResults: stageResults.length > 0,
     canExportHtml: finalReport.length > 0,
     isAutoSaveEnabled: autoStorage.isAutoSaveEnabled,
-    lastSaveTime: autoStorage.lastSaveTime
+    lastSaveTime: autoStorage.lastSaveTime,
+    
+    // Session persistence
+    hasActiveSession: currentSessionId !== null,
+    isSessionRestored: isRestored && currentSessionId !== null
   };
 };

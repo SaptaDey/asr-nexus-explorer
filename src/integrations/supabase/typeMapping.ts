@@ -258,18 +258,42 @@ export const convertGraphDataToSupabase = (
   nodes: graphData.nodes as Json,
   edges: graphData.edges as Json,
   metadata: {
+    version: graphData.metadata?.version || '1.0',
+    stage: graphData.metadata?.stage || 1,
     node_count: graphData.nodes.length,
     edge_count: graphData.edges.length,
-    created_timestamp: new Date().toISOString()
+    hyperedge_count: graphData.hyperedges?.length || 0,
+    graph_metrics: graphData.metadata?.graph_metrics || {},
+    created_timestamp: graphData.metadata?.created || new Date().toISOString(),
+    last_updated: new Date().toISOString()
   } as Json
 });
 
 export const convertGraphDataFromSupabase = (
   supabaseGraphData: SupabaseGraphData
-): GraphDataTypeMapping['custom'] => ({
-  nodes: (supabaseGraphData.nodes as any) || [],
-  edges: (supabaseGraphData.edges as any) || []
-});
+): GraphDataTypeMapping['custom'] => {
+  const nodes = Array.isArray(supabaseGraphData.nodes) ? supabaseGraphData.nodes as any[] : [];
+  const edges = Array.isArray(supabaseGraphData.edges) ? supabaseGraphData.edges as any[] : [];
+  const metadata = supabaseGraphData.metadata as any || {};
+  
+  return {
+    nodes,
+    edges,
+    hyperedges: [], // Initialize empty hyperedges array
+    metadata: {
+      version: metadata.version || '1.0',
+      created: metadata.created_timestamp || supabaseGraphData.created_at,
+      last_updated: supabaseGraphData.updated_at,
+      stage: metadata.stage || 1,
+      total_nodes: nodes.length,
+      total_edges: edges.length,
+      graph_metrics: metadata.graph_metrics || {
+        density: nodes.length > 0 ? edges.length / Math.max(nodes.length * (nodes.length - 1), 1) : 0,
+        avg_confidence: edges.reduce((sum, edge) => sum + (edge.confidence || 0), 0) / Math.max(edges.length, 1)
+      }
+    }
+  };
+};
 
 /**
  * Database adapter class for consistent type handling

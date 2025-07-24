@@ -84,10 +84,45 @@ class SessionPersistenceService {
     try {
       // Load from localStorage for now
       const sessions = JSON.parse(localStorage.getItem('asr-got-sessions') || '{}');
-      const session = sessions[sessionId];
+      let session = sessions[sessionId];
       
       if (!session) {
-        throw new Error('Session not found');
+        // Try to recover from session state backup
+        const sessionState = localStorage.getItem('asr-got-session-state');
+        if (sessionState) {
+          try {
+            const state = JSON.parse(sessionState);
+            if (state.sessionId === sessionId) {
+              // Reconstruct session from state
+              session = {
+                id: sessionId,
+                topic: state.researchContext?.topic || 'Recovered Session',
+                field: state.researchContext?.field || 'General',
+                userId: 'anonymous',
+                currentStage: state.currentStage || 0,
+                isComplete: state.currentStage >= 8,
+                graphData: state.graphData || { nodes: [], edges: [] },
+                parameters: {},
+                stageResults: state.stageResults || [],
+                researchContext: state.researchContext || {},
+                apiUsage: {},
+                createdAt: new Date().toISOString(),
+                updatedAt: state.timestamp || new Date().toISOString()
+              };
+              
+              // Save recovered session
+              sessions[sessionId] = session;
+              localStorage.setItem('asr-got-sessions', JSON.stringify(sessions));
+              console.log('✅ Session recovered from state backup');
+            }
+          } catch (stateError) {
+            console.warn('Failed to recover from session state:', stateError);
+          }
+        }
+        
+        if (!session) {
+          throw new Error('Session not found and could not be recovered');
+        }
       }
 
       return { session };
@@ -127,19 +162,31 @@ class SessionPersistenceService {
   // Create a graph node
   async createNode(sessionId: string, nodeData: any): Promise<{ node: any }> {
     try {
-      const response = await fetch(`${this.baseUrl}/sessions/${sessionId}/nodes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(nodeData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to create node: ${response.statusText}`);
+      // For now, store in session data
+      const sessions = JSON.parse(localStorage.getItem('asr-got-sessions') || '{}');
+      const session = sessions[sessionId];
+      
+      if (!session) {
+        throw new Error('Session not found');
       }
 
-      return await response.json();
+      if (!session.graphData) {
+        session.graphData = { nodes: [], edges: [] };
+      }
+
+      const node = {
+        id: nodeData.id || crypto.randomUUID(),
+        ...nodeData,
+        createdAt: new Date().toISOString()
+      };
+
+      session.graphData.nodes.push(node);
+      session.updatedAt = new Date().toISOString();
+      
+      sessions[sessionId] = session;
+      localStorage.setItem('asr-got-sessions', JSON.stringify(sessions));
+
+      return { node };
     } catch (error) {
       console.error('Node creation failed:', error);
       throw error;
@@ -149,19 +196,31 @@ class SessionPersistenceService {
   // Create a graph edge
   async createEdge(sessionId: string, edgeData: any): Promise<{ edge: any }> {
     try {
-      const response = await fetch(`${this.baseUrl}/sessions/${sessionId}/edges`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(edgeData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to create edge: ${response.statusText}`);
+      // For now, store in session data
+      const sessions = JSON.parse(localStorage.getItem('asr-got-sessions') || '{}');
+      const session = sessions[sessionId];
+      
+      if (!session) {
+        throw new Error('Session not found');
       }
 
-      return await response.json();
+      if (!session.graphData) {
+        session.graphData = { nodes: [], edges: [] };
+      }
+
+      const edge = {
+        id: edgeData.id || crypto.randomUUID(),
+        ...edgeData,
+        createdAt: new Date().toISOString()
+      };
+
+      session.graphData.edges.push(edge);
+      session.updatedAt = new Date().toISOString();
+      
+      sessions[sessionId] = session;
+      localStorage.setItem('asr-got-sessions', JSON.stringify(sessions));
+
+      return { edge };
     } catch (error) {
       console.error('Edge creation failed:', error);
       throw error;
@@ -178,19 +237,24 @@ class SessionPersistenceService {
     endpoint?: string;
   }): Promise<{ usage: any }> {
     try {
-      const response = await fetch(`${this.baseUrl}/usage`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      });
+      // For now, store in localStorage
+      const usage = {
+        id: crypto.randomUUID(),
+        ...data,
+        timestamp: new Date().toISOString()
+      };
 
-      if (!response.ok) {
-        throw new Error(`Failed to track usage: ${response.statusText}`);
+      const apiUsage = JSON.parse(localStorage.getItem('asr-got-api-usage') || '[]');
+      apiUsage.push(usage);
+      
+      // Keep only last 1000 entries
+      if (apiUsage.length > 1000) {
+        apiUsage.splice(0, apiUsage.length - 1000);
       }
+      
+      localStorage.setItem('asr-got-api-usage', JSON.stringify(apiUsage));
 
-      return await response.json();
+      return { usage };
     } catch (error) {
       console.error('Usage tracking failed:', error);
       throw error;

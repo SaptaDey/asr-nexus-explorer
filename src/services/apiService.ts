@@ -5,11 +5,8 @@
 
 import { validateInput, validateAPIKey, apiRateLimiter } from '@/utils/securityUtils';
 import { costGuardrails } from '@/services/CostGuardrails';
+import { APICredentials } from '@/types/asrGotTypes';
 
-export interface APICredentials {
-  gemini: string;
-  perplexity?: string; // Optional Perplexity Sonar API key
-}
 
 // Perplexity Sonar API integration (placeholder for future implementation)
 export const callPerplexitySonarAPI = async (

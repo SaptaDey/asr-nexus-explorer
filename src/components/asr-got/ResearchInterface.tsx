@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Play, Brain, Search, FileText, Network, Loader2, CheckCircle, Sparkles, Rocket, Zap, BarChart3 } from 'lucide-react';
 import { ResearchHeroIllustration, AnalysisProgressIllustration, StageNavigationIllustration, CompletionCelebrationIllustration } from '@/components/ui/EngagingIllustrations';
-import { GraphData } from '@/hooks/useASRGoT';
+import { GraphData, APICredentials } from '@/types/asrGotTypes';
 import { VisualAnalytics } from './VisualAnalytics';
 import { useEnhancedVisualAnalytics } from './EnhancedVisualAnalytics';
 import { toast } from 'sonner';
@@ -28,9 +28,7 @@ interface ResearchInterfaceProps {
     objectives: string[];
     hypotheses: string[];
   };
-  apiKeys?: {
-    gemini: string;
-  };
+  apiKeys?: APICredentials;
   processingMode?: 'automatic' | 'manual';
   onShowApiModal?: () => void;
   onSwitchToExport?: () => void;

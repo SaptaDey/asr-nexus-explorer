@@ -13,7 +13,7 @@ export interface StageExecutorContext {
   stageResults: string[];
   setGraphData: (updater: (prev: GraphData) => GraphData) => void;
   setResearchContext: (updater: (prev: ResearchContext) => ResearchContext) => void;
-  routeApiCall?: (prompt: string, additionalParams?: any) => Promise<any>;
+  routeApiCall?: (prompt: string, additionalParams?: { temperature?: number; maxTokens?: number; }) => Promise<string>;
   currentSessionId?: string | null;
 }
 

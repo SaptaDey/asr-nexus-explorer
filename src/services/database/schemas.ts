@@ -86,8 +86,30 @@ export const GraphDataSchema = z.object({
     confidence: ConfidenceSchema,
     bidirectional: z.boolean().optional(),
     metadata: z.record(z.unknown()).optional()
-  })).max(50000) // Reasonable limit for large graphs
-}).optional();
+  })).max(50000), // Reasonable limit for large graphs
+  hyperedges: z.array(z.object({
+    id: z.string().min(1),
+    nodes: z.array(z.string().min(1)).min(2), // At least 2 nodes
+    type: z.string().min(1).max(100),
+    confidence: ConfidenceSchema,
+    metadata: z.record(z.unknown()).optional()
+  })).optional().default([]),
+  metadata: z.object({
+    version: z.string().default('1.0'),
+    created: z.string().datetime(),
+    last_updated: z.string().datetime(),
+    stage: z.number().int().min(1).max(9),
+    total_nodes: z.number().int().min(0),
+    total_edges: z.number().int().min(0),
+    graph_metrics: z.record(z.number()).default({})
+  })
+}).refine((data) => {
+  // Validate that node counts match
+  return data.metadata.total_nodes === data.nodes.length &&
+         data.metadata.total_edges === data.edges.length;
+}, {
+  message: "Node/edge counts in metadata must match actual array lengths"
+});
 
 export const ResearchSessionSchema = z.object({
   id: UUIDSchema.optional(),
