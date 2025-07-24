@@ -69,7 +69,7 @@ vi.mock('@xyflow/react', async (importOriginal) => {
   };
 });
 
-describe.skip('EnhancedGraphVisualization', () => {
+describe('EnhancedGraphVisualization', () => {
   let user: ReturnType<typeof userEvent.setup>;
   let sampleGraphData: GraphData;
 

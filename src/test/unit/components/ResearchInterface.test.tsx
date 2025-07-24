@@ -95,7 +95,7 @@ describe.skip('ResearchInterface', () => {
     vi.restoreAllMocks();
   });
 
-  it('should render all main interface elements', () => {
+  it('should render all main interface elements', async () => {
     render(
       <TestWrapper>
         <ResearchInterface 
@@ -105,9 +105,23 @@ describe.skip('ResearchInterface', () => {
       </TestWrapper>
     );
 
-    expect(screen.getByTestId('api-integration')).toBeInTheDocument();
-    expect(screen.getByTestId('developer-mode')).toBeInTheDocument();
-    expect(screen.getByTestId('export-functionality')).toBeInTheDocument();
+    // Check Input & Setup tab (default active)
+    expect(screen.getByText('Input & Setup')).toBeInTheDocument();
+    
+    // Navigate to AI Analysis tab to check API integration
+    const aiAnalysisTab = screen.getByText('AI Analysis');
+    await user.click(aiAnalysisTab);
+    await waitFor(() => {
+      expect(screen.getByTestId('api-integration')).toBeInTheDocument();
+      expect(screen.getByTestId('developer-mode')).toBeInTheDocument();
+    });
+    
+    // Navigate to Results tab to check export functionality
+    const resultsTab = screen.getByText('Results & Export');
+    await user.click(resultsTab);
+    await waitFor(() => {
+      expect(screen.getByTestId('export-functionality')).toBeInTheDocument();
+    });
   });
 
   it('should handle query input and submission', async () => {
