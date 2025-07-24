@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import cytoscape, { Core, EdgeSingular, NodeSingular } from '../../utils/cytoscapeSetup';
 import { GraphData, GraphNode, GraphEdge } from '@/types/asrGotTypes';
+import { GraphAdapterFactory } from '@/adapters/GraphVisualizationAdapters';
+import { GraphVisualizationError, GraphDataValidationError } from '@/types/graphVisualizationTypes';
 import { Settings, ZoomIn, ZoomOut, RotateCcw, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -160,31 +162,40 @@ export const EnhancedCytoscapeGraph: React.FC<EnhancedCytoscapeGraphProps> = ({
 
     const cy = cyRef.current;
     
-    // Convert graph data to Cytoscape format
-    const elements = [
-      ...graphData.nodes.map(node => ({
-        data: {
-          id: node.id,
-          label: node.label,
-          type: node.type,
-          ...node.metadata
-        },
-        style: getNodeStyle(node)
-      })),
-      ...graphData.edges.map(edge => ({
-        data: {
-          id: edge.id,
-          source: edge.source,
-          target: edge.target,
-          type: edge.type,
-          ...edge.metadata
-        },
-        style: getEdgeStyle(edge)
-      }))
-    ];
+    try {
+      // Convert graph data using the adapter
+      const convertedData = GraphAdapterFactory.convertForVisualization(graphData, 'cytoscape');
+      
+      // Apply custom styling to nodes and edges
+      const styledElements = [
+        ...convertedData.nodes.map(nodeElement => ({
+          ...nodeElement,
+          style: {
+            ...nodeElement.style,
+            ...getNodeStyle(graphData.nodes.find(n => n.id === nodeElement.data.id)!)
+          }
+        })),
+        ...convertedData.edges.map(edgeElement => ({
+          ...edgeElement,
+          style: {
+            ...edgeElement.style,
+            ...getEdgeStyle(graphData.edges.find(e => e.id === edgeElement.data.id)!)
+          }
+        })),
+        ...(convertedData.hyperedges || [])
+      ];
 
-    cy.elements().remove();
-    cy.add(elements);
+      cy.elements().remove();
+      cy.add(styledElements);
+    } catch (error) {
+      console.error('Failed to convert graph data for Cytoscape:', error);
+      toast.error('Failed to render graph visualization');
+      
+      if (error instanceof GraphVisualizationError) {
+        console.error('Graph visualization error:', error.code, error.message);
+      }
+      return;
+    }
 
     // Trigger layout update for Stage 4 topology changes (P1.22)
     if (currentStage === 4) {

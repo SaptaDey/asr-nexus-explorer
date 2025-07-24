@@ -9,6 +9,7 @@ import { GraphData, ResearchContext, ASRGoTParameters } from '@/types/asrGotType
 import { AuthService, AuthUser, AuthState } from '@/services/auth/AuthService';
 import { DatabaseService } from '@/services/database/DatabaseService';
 import { CollaborationService } from '@/services/collaboration/CollaborationService';
+import { InitializationService, InitializationState } from '@/services/initialization/InitializationService';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -100,6 +101,7 @@ interface AppContextType {
   app: {
     isInitialized: boolean;
     initializationError: string | null;
+    initializationState: InitializationState | null;
     theme: 'light' | 'dark';
     language: string;
     
@@ -148,25 +150,58 @@ export function AppContextManager({ children }: AppContextManagerProps) {
   // App state
   const [isAppInitialized, setIsAppInitialized] = useState(false);
   const [initializationError, setInitializationError] = useState<string | null>(null);
+  const [initializationState, setInitializationState] = useState<InitializationState | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [language, setLanguage] = useState('en');
   
-  // Initialize authentication
+  // Initialize application using the initialization service
   useEffect(() => {
-    const initializeAuth = async () => {
+    const initializeApp = async () => {
       try {
         setAuthLoading(true);
+        const initService = InitializationService.getInstance();
         
-        // Get current session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
+        // Subscribe to initialization state changes
+        const unsubscribe = initService.subscribe((state) => {
+          setInitializationState(state);
+          
+          // Update auth state based on initialization phase
+          if (state.phases.get('auth')?.status === 'completed') {
+            setAuthInitialized(true);
+          }
+          
+          // Update database state based on initialization phase
+          if (state.phases.get('database')?.status === 'completed') {
+            setIsDatabaseInitialized(true);
+            setConnectionStatus('connected');
+          } else if (state.phases.get('database')?.status === 'failed') {
+            setConnectionStatus('error');
+            setDatabaseError(state.phases.get('database')?.error || 'Database initialization failed');
+          }
+          
+          // Update app state when initialization is complete
+          if (state.isComplete) {
+            setIsAppInitialized(true);
+            setAuthLoading(false);
+            
+            if (state.hasErrors) {
+              setInitializationError('Some services failed to initialize properly');
+              toast.warning('⚠️ ASR-GoT Framework initialized with warnings');
+            } else {
+              toast.success('🚀 ASR-GoT Framework initialized successfully');
+            }
+          }
+        });
         
-        if (session) {
-          setAuthSession(session);
-          setAuthUser(session.user as AuthUser);
+        // Start initialization process
+        const success = await initService.initialize();
+        
+        if (!success) {
+          setInitializationError('Critical initialization failure');
+          setAuthLoading(false);
         }
         
-        // Listen for auth changes
+        // Set up auth state change listener after initialization
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
             console.log('Auth state change:', event, session);
@@ -178,62 +213,39 @@ export function AppContextManager({ children }: AppContextManagerProps) {
               setAuthSession(null);
               setAuthUser(null);
             }
-            
-            setAuthLoading(false);
           }
         );
         
-        setAuthInitialized(true);
-        return () => subscription.unsubscribe();
+        return () => {
+          unsubscribe();
+          subscription.unsubscribe();
+        };
+        
       } catch (error) {
-        console.error('Auth initialization error:', error);
-        setAuthError(error instanceof Error ? error.message : 'Authentication initialization failed');
-      } finally {
+        console.error('App initialization error:', error);
+        setInitializationError(error instanceof Error ? error.message : 'Application initialization failed');
         setAuthLoading(false);
       }
     };
     
-    initializeAuth();
+    initializeApp();
   }, []);
   
-  // Initialize database
+  // Load performance metrics after database is initialized
   useEffect(() => {
-    const initializeDatabase = async () => {
-      try {
-        setConnectionStatus('connecting');
-        
-        // Initialize database service
-        await databaseService.initialize();
-        
-        // Initialize collaboration service
-        await collaborationService.initialize();
-        
-        setIsDatabaseInitialized(true);
-        setConnectionStatus('connected');
-        
-        // Load performance metrics
-        const metrics = await databaseService.getPerformanceMetrics();
-        setPerformanceMetrics(metrics);
-        
-      } catch (error) {
-        console.error('Database initialization error:', error);
-        setDatabaseError(error instanceof Error ? error.message : 'Database initialization failed');
-        setConnectionStatus('error');
+    const loadMetrics = async () => {
+      if (isDatabaseInitialized && connectionStatus === 'connected') {
+        try {
+          const metrics = await databaseService.getPerformanceMetrics();
+          setPerformanceMetrics(metrics);
+        } catch (error) {
+          console.warn('Failed to load performance metrics:', error);
+        }
       }
     };
     
-    if (authInitialized) {
-      initializeDatabase();
-    }
-  }, [authInitialized, databaseService, collaborationService]);
-  
-  // Mark app as initialized when all core services are ready
-  useEffect(() => {
-    if (authInitialized && isDatabaseInitialized && connectionStatus === 'connected') {
-      setIsAppInitialized(true);
-      toast.success('🚀 ASR-GoT Framework initialized successfully');
-    }
-  }, [authInitialized, isDatabaseInitialized, connectionStatus]);
+    loadMetrics();
+  }, [isDatabaseInitialized, connectionStatus, databaseService]);
   
   // Authentication actions
   const signUp = async (email: string, password: string, metadata?: any) => {
@@ -440,6 +452,7 @@ export function AppContextManager({ children }: AppContextManagerProps) {
     app: {
       isInitialized: isAppInitialized,
       initializationError,
+      initializationState,
       theme,
       language,
       setTheme,
@@ -450,7 +463,7 @@ export function AppContextManager({ children }: AppContextManagerProps) {
     databaseService, collaborationService, isDatabaseInitialized, connectionStatus, databaseError,
     currentSession, sessionId, isSessionLoading, sessionError, graphData, isGraphLoading, graphError,
     stageExecutions, currentStage, isStageExecuting, stageError,
-    isAppInitialized, initializationError, theme, language,
+    isAppInitialized, initializationError, initializationState, theme, language,
     performanceMetrics, cacheHealth
   ]);
   

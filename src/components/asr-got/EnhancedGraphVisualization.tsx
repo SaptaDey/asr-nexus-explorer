@@ -20,9 +20,12 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { GraphData, GraphNode, GraphEdge } from '@/types/asrGotTypes';
+import { GraphAdapterFactory } from '@/adapters/GraphVisualizationAdapters';
+import { GraphVisualizationError } from '@/types/graphVisualizationTypes';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { toast } from 'sonner';
 
 interface EnhancedGraphVisualizationProps {
   graphData: GraphData;
@@ -134,51 +137,29 @@ export const EnhancedGraphVisualization: React.FC<EnhancedGraphVisualizationProp
   currentStage = 0,
   isProcessing = false
 }) => {
-  // Convert ASR-GoT graph data to ReactFlow format
-  const initialNodes: Node[] = useMemo(() => 
-    graphData.nodes.map((node: GraphNode) => ({
-      id: node.id,
-      type: 'scientific',
-      position: node.position || { x: Math.random() * 500, y: Math.random() * 300 },
-      data: {
-        label: node.label,
-        type: node.type,
-        confidence: node.confidence,
-        metadata: node.metadata,
-      },
-      draggable: true,
-      selectable: true,
-    })), [graphData.nodes]
-  );
-
-  const initialEdges: Edge[] = useMemo(() => 
-    graphData.edges.map((edge: GraphEdge, index: number) => ({
-      id: edge.id || `edge-${index}`,
-      source: edge.source,
-      target: edge.target,
-      type: 'smoothstep',
-      sourceHandle: null,
-      targetHandle: null,
-      data: {
-        type: edge.type,
-        confidence: edge.confidence,
-        metadata: edge.metadata,
-      },
-      animated: edge.metadata?.type === 'hypothesis_derivation',
-      style: { 
-        strokeWidth: Math.max(1, (edge.confidence || 0.5) * 4),
-        opacity: 0.8,
-        stroke: edge.type === 'supportive' ? 'hsl(var(--chart-2))' : 
-               edge.type === 'contradictory' ? 'hsl(var(--destructive))' : 
-               'hsl(var(--muted-foreground))'
-      },
-      markerEnd: {
-        type: 'arrowclosed' as any,
-        width: 20,
-        height: 20,
-      },
-    })), [graphData.edges]
-  );
+  // Convert ASR-GoT graph data to ReactFlow format using adapter
+  const { initialNodes, initialEdges } = useMemo(() => {
+    try {
+      const convertedData = GraphAdapterFactory.convertForVisualization(graphData, 'reactflow');
+      return {
+        initialNodes: convertedData.nodes as Node[],
+        initialEdges: convertedData.edges as Edge[]
+      };
+    } catch (error) {
+      console.error('Failed to convert graph data for ReactFlow:', error);
+      toast.error('Failed to render graph visualization');
+      
+      if (error instanceof GraphVisualizationError) {
+        console.error('Graph visualization error:', error.code, error.message);
+      }
+      
+      // Return empty arrays as fallback
+      return {
+        initialNodes: [] as Node[],
+        initialEdges: [] as Edge[]
+      };
+    }
+  }, [graphData]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
