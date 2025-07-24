@@ -8,6 +8,7 @@ import { useWebSocket } from '@/services/WebSocketService';
 import { useSessionPersistence } from '@/services/SessionPersistence';
 import { useAutoStorage } from './useAutoStorage';
 import { queryHistoryIntegration } from '@/services/QueryHistoryIntegrationService';
+import { memoryManager, useMemoryManager } from '@/services/memory/MemoryManager';
 import { toast } from "sonner";
 
 export const useASRGoTState = () => {
@@ -27,6 +28,9 @@ export const useASRGoTState = () => {
   // WebSocket and persistence services
   const webSocket = useWebSocket();
   const persistence = useSessionPersistence();
+  
+  // Memory management
+  const memoryUtils = useMemoryManager();
 
   // Auto-storage for Query History system
   const autoStorage = useAutoStorage(
@@ -158,7 +162,7 @@ export const useASRGoTState = () => {
     }
   }, [graphData, currentStage, previousGraphData, currentSessionId, webSocket, persistence]);
 
-  // Persist session state to browser storage whenever it changes
+  // Memory-aware session state persistence
   useEffect(() => {
     if (currentSessionId && isRestored) {
       const sessionState = {
@@ -166,25 +170,96 @@ export const useASRGoTState = () => {
         currentStage,
         stageResults,
         researchContext,
-        graphData: {
-          nodes: graphData.nodes.length,
-          edges: graphData.edges.length
+        graphData,
+        metadata: {
+          created: new Date().toISOString(),
+          lastUpdated: new Date().toISOString(),
+          size: 0,
+          compressed: false
         },
         timestamp: new Date().toISOString(),
         lastSaved: Date.now()
       };
 
-      // Update session storage with current state
-      sessionStorage.setItem('asr-got-current-session', JSON.stringify(sessionState));
+      // Check memory pressure before saving
+      const memoryStatus = memoryUtils.getStatus();
       
-      // Debounced localStorage update to avoid too many writes
-      const timeoutId = setTimeout(() => {
-        localStorage.setItem('asr-got-session-state', JSON.stringify(sessionState));
-      }, 1000);
+      if (memoryStatus.pressure === 'critical') {
+        // Emergency: save only essential data
+        const essentialState = {
+          sessionId: currentSessionId,
+          currentStage,
+          stageResults: stageResults.slice(-3), // Keep only last 3 results
+          researchContext: {
+            topic: researchContext.topic,
+            field: researchContext.field
+          },
+          graphData: {
+            nodes: graphData.nodes.slice(0, 100), // Limit nodes
+            edges: graphData.edges.slice(0, 200) // Limit edges
+          },
+          timestamp: new Date().toISOString()
+        };
+        
+        try {
+          sessionStorage.setItem('asr-got-current-session', JSON.stringify(essentialState));
+          toast.warning('⚠️ Critical memory usage - saved essential data only');
+        } catch (error) {
+          toast.error('Failed to save session - storage full');
+        }
+        return;
+      }
 
-      return () => clearTimeout(timeoutId);
+      // Optimize data before saving if memory pressure is high
+      let dataToSave = sessionState;
+      if (memoryStatus.pressure === 'high' || memoryStatus.pressure === 'medium') {
+        // Optimize large data structures
+        if (graphData.nodes.length > 500) {
+          dataToSave.graphData = {
+            ...graphData,
+            nodes: graphData.nodes.slice(0, 500),
+            edges: graphData.edges.slice(0, 1000)
+          };
+          toast.info('📊 Large graph data optimized for memory efficiency');
+        }
+        
+        // Compress long stage results
+        if (stageResults.some(result => result && result.length > 10000)) {
+          dataToSave.stageResults = stageResults.map(result => 
+            result && result.length > 10000 ? result.substring(0, 10000) + '...[truncated]' : result
+          );
+          toast.info('📝 Long stage results compressed to save memory');
+        }
+      }
+
+      // Update session storage with current state
+      try {
+        sessionStorage.setItem('asr-got-current-session', JSON.stringify(dataToSave));
+        
+        // Debounced localStorage update to avoid too many writes
+        const timeoutId = setTimeout(() => {
+          try {
+            localStorage.setItem('asr-got-session-state', JSON.stringify(dataToSave));
+          } catch (error) {
+            console.warn('Failed to save to localStorage:', error);
+            // Try to optimize and save again
+            memoryUtils.optimize().then(() => {
+              try {
+                localStorage.setItem('asr-got-session-state', JSON.stringify(dataToSave));
+              } catch (retryError) {
+                toast.error('Storage full - please clear browser data');
+              }
+            });
+          }
+        }, 1000);
+
+        return () => clearTimeout(timeoutId);
+      } catch (error) {
+        console.error('Failed to save session state:', error);
+        toast.error('Failed to save session state - storage may be full');
+      }
     }
-  }, [currentSessionId, currentStage, stageResults, researchContext, graphData, isRestored]);
+  }, [currentSessionId, currentStage, stageResults, researchContext, graphData, isRestored, memoryUtils]);
 
   // Handle browser close/refresh to save state
   useEffect(() => {
@@ -336,23 +411,45 @@ export const useASRGoTState = () => {
   }, [currentSessionId, queryHistorySessionId, webSocket, persistence]);
 
   const updateStageResults = useCallback(async (stageIndex: number, result: string, metadata?: { executionTime?: number; tokenUsage?: number; apiCalls?: { gemini?: number; perplexity?: number } }) => {
+    // Check memory before adding large results
+    const memoryStatus = memoryUtils.getStatus();
+    let processedResult = result;
+    
+    // Optimize result if memory pressure is high
+    if (memoryStatus.pressure === 'high' || memoryStatus.pressure === 'critical') {
+      if (result && result.length > 5000) {
+        processedResult = result.substring(0, 5000) + '\n\n[Result truncated due to memory constraints]';
+        toast.warning(`Stage ${stageIndex + 1} result truncated to manage memory usage`);
+      }
+    }
+    
     setStageResults(prev => {
       const newResults = [...prev];
-      newResults[stageIndex] = result;
+      newResults[stageIndex] = processedResult;
+      
+      // If we have too many results, optimize older ones
+      if (newResults.length > 9 && memoryStatus.pressure !== 'low') {
+        for (let i = 0; i < newResults.length - 3; i++) {
+          if (newResults[i] && newResults[i].length > 2000) {
+            newResults[i] = newResults[i].substring(0, 2000) + '\n[Compressed to save memory]';
+          }
+        }
+      }
+      
       return newResults;
     });
 
     // Track stage completion in Query History
-    if (queryHistorySessionId && result && result.trim()) {
+    if (queryHistorySessionId && processedResult && processedResult.trim()) {
       await queryHistoryIntegration.trackStageCompletion(
         stageIndex,
-        result,
+        processedResult,
         graphData,
         metadata
       );
       console.log(`✅ Stage ${stageIndex + 1} tracked in Query History`);
     }
-  }, [queryHistorySessionId, graphData]);
+  }, [queryHistorySessionId, graphData, memoryUtils]);
 
   // Calculate progress based on completed stages (stages with results)
   const completedStages = stageResults.filter(result => result && result.trim().length > 0).length;
@@ -451,6 +548,12 @@ export const useASRGoTState = () => {
     
     // Session persistence
     hasActiveSession: currentSessionId !== null,
-    isSessionRestored: isRestored && currentSessionId !== null
+    isSessionRestored: isRestored && currentSessionId !== null,
+    
+    // Memory management
+    memoryMetrics: memoryUtils.getMetrics(),
+    memoryStatus: memoryUtils.getStatus(),
+    optimizeMemory: memoryUtils.optimize,
+    updateMemoryMetrics: memoryUtils.updateMetrics
   };
 };
