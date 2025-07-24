@@ -4,13 +4,26 @@ import { mockAPICredentials, mockGraphData, mockStageResults } from '@/test/mock
 import { testQueries, testGraphData, testStageResults } from '@/test/fixtures/testData';
 import type { APICredentials, GraphData, StageExecutionContext, ResearchContext } from '@/types/asrGotTypes';
 
-// Mock the background utils
-vi.mock('@/utils/background', () => ({
-  queueGeminiCall: vi.fn().mockResolvedValue('task-id-123'),
+// Mock the background utils to avoid circular import issues
+vi.mock('@/utils/background/utils', () => ({
+  queueGeminiCall: vi.fn().mockReturnValue('task-id-123'),
   getTaskResult: vi.fn().mockResolvedValue({
     success: true,
-    data: mockStageResults[1]
+    data: 'mock stage result'
   })
+}));
+
+vi.mock('@/utils/background', () => ({
+  queueGeminiCall: vi.fn().mockReturnValue('task-id-123'),
+  getTaskResult: vi.fn().mockResolvedValue({
+    success: true,
+    data: 'mock stage result'
+  }),
+  backgroundProcessor: {
+    addTask: vi.fn().mockReturnValue('task-id-123'),
+    getTaskResult: vi.fn().mockResolvedValue({ success: true, data: 'mock result' }),
+    getTaskStatus: vi.fn().mockReturnValue('completed')
+  }
 }));
 
 // Mock the API service

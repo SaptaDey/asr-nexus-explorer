@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { 
   callPerplexitySonarAPI, 
-  callGeminiAPI, 
-  validateAPICredentials,
-  rateLimitCheck
+  callGeminiAPI
 } from '@/services/apiService';
 import { testQueries, testErrors } from '@/test/fixtures/testData';
 import { mockAPICredentials } from '@/test/mocks/mockServices';
@@ -11,12 +9,13 @@ import { mockAPICredentials } from '@/test/mocks/mockServices';
 // Mock security utils
 vi.mock('@/utils/securityUtils', () => ({
   validateInput: vi.fn().mockImplementation((input: string) => 
-    input && input.trim().length > 0 && !input.includes('<script>')
+    input && typeof input === 'string' && input.trim().length > 0 && !input.includes('<script>') ? input.trim() : ''
   ),
-  validateAPIKey: vi.fn().mockImplementation((key: string) => 
+  validateAPIKey: vi.fn().mockImplementation((key: string, service?: string) => 
     key && key.length > 10 && key.startsWith('mock-')
   ),
   apiRateLimiter: {
+    isAllowed: vi.fn().mockReturnValue(true),
     check: vi.fn().mockResolvedValue(true),
     record: vi.fn().mockResolvedValue(true)
   }
@@ -209,7 +208,7 @@ describe('apiService', () => {
       const { apiRateLimiter } = await import('@/utils/securityUtils');
       
       // Mock rate limit exceeded
-      vi.mocked(apiRateLimiter.check).mockResolvedValueOnce(false);
+      vi.mocked(apiRateLimiter.isAllowed).mockReturnValueOnce(false);
       
       await expect(callGeminiAPI(testQueries.simple, mockAPICredentials.gemini, 'thinking-only'))
         .rejects.toThrow('Rate limit exceeded');
@@ -256,121 +255,11 @@ describe('apiService', () => {
     });
   });
 
-  describe('validateAPICredentials', () => {
-    it('should validate correct API credentials', async () => {
-      const credentials = {
-        gemini: mockAPICredentials.gemini,
-        perplexity: mockAPICredentials.perplexity
-      };
-      
-      const result = await validateAPICredentials(credentials);
-      
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
-    });
+  // Note: validateAPICredentials is not currently exported from apiService.ts
+  // This functionality would need to be implemented and exported if needed
 
-    it('should detect missing credentials', async () => {
-      const credentials = {
-        gemini: '',
-        perplexity: mockAPICredentials.perplexity
-      };
-      
-      const result = await validateAPICredentials(credentials);
-      
-      expect(result.valid).toBe(false);
-      expect(result.errors).toContain('Gemini API key is required');
-    });
-
-    it('should detect invalid credential formats', async () => {
-      const { validateApiKeyFormat } = await import('@/utils/secureNetworkRequest');
-      
-      // Mock invalid format
-      vi.mocked(validateApiKeyFormat).mockReturnValueOnce(false);
-      
-      const credentials = {
-        gemini: 'invalid-format',
-        perplexity: mockAPICredentials.perplexity
-      };
-      
-      const result = await validateAPICredentials(credentials);
-      
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
-    });
-
-    it('should test actual API connectivity', async () => {
-      const credentials = {
-        gemini: mockAPICredentials.gemini,
-        perplexity: mockAPICredentials.perplexity
-      };
-      
-      const result = await validateAPICredentials(credentials, true);
-      
-      expect(result.valid).toBe(true);
-      expect(result.connectivity?.gemini).toBe(true);
-      expect(result.connectivity?.perplexity).toBe(true);
-    });
-
-    it('should handle API connectivity failures', async () => {
-      const { secureNetworkRequest } = await import('@/utils/secureNetworkRequest');
-      
-      // Mock connectivity failure
-      vi.mocked(secureNetworkRequest).mockRejectedValueOnce(new Error('Connection failed'));
-      
-      const credentials = {
-        gemini: mockAPICredentials.gemini,
-        perplexity: mockAPICredentials.perplexity
-      };
-      
-      const result = await validateAPICredentials(credentials, true);
-      
-      expect(result.valid).toBe(false);
-      expect(result.connectivity?.gemini).toBe(false);
-    });
-  });
-
-  describe('rateLimitCheck', () => {
-    it('should allow requests within rate limits', async () => {
-      const { apiRateLimiter } = await import('@/utils/securityUtils');
-      
-      vi.mocked(apiRateLimiter.check).mockResolvedValueOnce(true);
-      
-      const result = await rateLimitCheck('gemini');
-      
-      expect(result.allowed).toBe(true);
-      expect(result.resetTime).toBeDefined();
-    });
-
-    it('should block requests exceeding rate limits', async () => {
-      const { apiRateLimiter } = await import('@/utils/securityUtils');
-      
-      vi.mocked(apiRateLimiter.check).mockResolvedValueOnce(false);
-      
-      const result = await rateLimitCheck('perplexity');
-      
-      expect(result.allowed).toBe(false);
-      expect(result.remaining).toBe(0);
-    });
-
-    it('should provide rate limit status information', async () => {
-      const result = await rateLimitCheck('gemini');
-      
-      expect(result).toHaveProperty('allowed');
-      expect(result).toHaveProperty('remaining');
-      expect(result).toHaveProperty('resetTime');
-      expect(result).toHaveProperty('limit');
-    });
-
-    it('should handle different service types', async () => {
-      const services = ['gemini', 'perplexity', 'openai'] as const;
-      
-      for (const service of services) {
-        const result = await rateLimitCheck(service);
-        expect(result).toBeDefined();
-        expect(typeof result.allowed).toBe('boolean');
-      }
-    });
-  });
+  // Note: rateLimitCheck is not currently exported from apiService.ts
+  // This functionality would need to be implemented and exported if needed
 
   describe('Error Handling and Security', () => {
     it('should sanitize error messages', async () => {
