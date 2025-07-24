@@ -1,0 +1,569 @@
+/* Accessibility Enhancement Styles for ASR-GoT */
+
+/* Screen Reader Only Content */
+.sr-only {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.sr-only:focus,
+.sr-only:active {
+  position: static;
+  left: auto;
+  width: auto;
+  height: auto;
+  overflow: visible;
+}
+
+/* Focus Management and Keyboard Navigation */
+:root {
+  --focus-ring-color: #2563eb;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+}
+
+/* Enhanced Focus Indicators */
+.focus-visible *:focus-visible,
+*:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: 4px;
+}
+
+/* High Contrast Mode */
+.high-contrast {
+  --background: #000000;
+  --foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #404040;
+  --secondary-foreground: #ffffff;
+  --accent: #ffffff;
+  --accent-foreground: #000000;
+  --muted: #262626;
+  --muted-foreground: #ffffff;
+  --border: #ffffff;
+  --input: #ffffff;
+  --ring: #ffffff;
+  --destructive: #ff6b6b;
+  --destructive-foreground: #000000;
+  
+  /* Enhanced contrast for specific elements */
+  --success: #00ff00;
+  --success-foreground: #000000;
+  --warning: #ffff00;
+  --warning-foreground: #000000;
+  --info: #00ffff;
+  --info-foreground: #000000;
+}
+
+/* Improved Color Contrast for Normal Mode */
+:root {
+  /* WCAG AA compliant colors */
+  --text-high-contrast: #1a1a1a;
+  --text-medium-contrast: #4a4a4a;
+  --blue-accessible: #0056b3;
+  --green-accessible: #006600;
+  --red-accessible: #cc0000;
+  --purple-accessible: #7b2cbf;
+  --yellow-accessible: #b8860b;
+}
+
+/* Apply high contrast colors to improve accessibility */
+.text-gray-600 {
+  color: var(--text-medium-contrast) !important;
+}
+
+.text-gray-900 {
+  color: var(--text-high-contrast) !important;
+}
+
+.text-blue-600 {
+  color: var(--blue-accessible) !important;
+}
+
+.text-green-600 {
+  color: var(--green-accessible) !important;
+}
+
+.text-red-600 {
+  color: var(--red-accessible) !important;
+}
+
+.text-purple-600 {
+  color: var(--purple-accessible) !important;
+}
+
+.text-yellow-600 {
+  color: var(--yellow-accessible) !important;
+}
+
+/* Improved button contrast */
+.bg-blue-600 {
+  background-color: var(--blue-accessible) !important;
+}
+
+.bg-green-600 {
+  background-color: var(--green-accessible) !important;
+}
+
+.bg-red-600 {
+  background-color: var(--red-accessible) !important;
+}
+
+.bg-purple-600 {
+  background-color: var(--purple-accessible) !important;
+}
+
+/* Enhanced border contrast */
+.border-gray-200 {
+  border-color: #666666 !important;
+}
+
+.border-gray-300 {
+  border-color: #555555 !important;
+}
+
+/* Improved background contrast */
+.bg-gray-50 {
+  background-color: #f8f8f8 !important;
+  border: 1px solid #cccccc !important;
+}
+
+.bg-gray-100 {
+  background-color: #f0f0f0 !important;
+  border: 1px solid #bbbbbb !important;
+}
+
+.high-contrast .bg-gradient-to-r,
+.high-contrast .bg-gradient-to-l,
+.high-contrast .bg-gradient-to-t,
+.high-contrast .bg-gradient-to-b,
+.high-contrast .bg-gradient-to-br,
+.high-contrast .bg-gradient-to-bl,
+.high-contrast .bg-gradient-to-tr,
+.high-contrast .bg-gradient-to-tl {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 2px solid var(--border) !important;
+}
+
+.high-contrast button {
+  background: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border: 2px solid var(--foreground) !important;
+}
+
+.high-contrast button:hover {
+  background: var(--secondary) !important;
+  color: var(--secondary-foreground) !important;
+}
+
+.high-contrast .text-blue-600,
+.high-contrast .text-purple-600,
+.high-contrast .text-green-600,
+.high-contrast .text-gray-600 {
+  color: var(--foreground) !important;
+}
+
+.high-contrast .bg-blue-50,
+.high-contrast .bg-purple-50,
+.high-contrast .bg-green-50,
+.high-contrast .bg-gray-50 {
+  background: var(--muted) !important;
+  color: var(--muted-foreground) !important;
+}
+
+/* Reduced Motion */
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Font Size Adjustments */
+.large-text {
+  font-size: 1.125rem !important; /* 18px */
+  line-height: 1.6 !important;
+}
+
+.large-text .text-sm {
+  font-size: 1rem !important; /* 16px */
+}
+
+.large-text .text-xs {
+  font-size: 0.875rem !important; /* 14px */
+}
+
+.xl-text {
+  font-size: 1.25rem !important; /* 20px */
+  line-height: 1.7 !important;
+}
+
+.xl-text .text-sm {
+  font-size: 1.125rem !important; /* 18px */
+}
+
+.xl-text .text-xs {
+  font-size: 1rem !important; /* 16px */
+}
+
+.xl-text h1 {
+  font-size: 2.5rem !important; /* 40px */
+}
+
+.xl-text h2 {
+  font-size: 2rem !important; /* 32px */
+}
+
+.xl-text h3 {
+  font-size: 1.75rem !important; /* 28px */
+}
+
+/* Screen Reader Mode Enhancements */
+.screen-reader-mode .animate-pulse,
+.screen-reader-mode .animate-spin,
+.screen-reader-mode .animate-bounce {
+  animation: none !important;
+}
+
+.screen-reader-mode [role="img"],
+.screen-reader-mode img {
+  border: 2px solid var(--border);
+}
+
+/* Skip Links */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 1000;
+  font-weight: bold;
+}
+
+.skip-link:focus {
+  top: 6px;
+}
+
+/* Enhanced Button Styles for Accessibility */
+button:focus-visible,
+[role="button"]:focus-visible,
+input[type="button"]:focus-visible,
+input[type="submit"]:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+/* Enhanced Link Styles */
+a:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+
+/* Form Control Enhancements */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  border-color: var(--focus-ring-color);
+}
+
+/* High Contrast Mode for Form Controls */
+.high-contrast input,
+.high-contrast select,
+.high-contrast textarea {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 2px solid var(--foreground) !important;
+}
+
+.high-contrast input:focus,
+.high-contrast select:focus,
+.high-contrast textarea:focus {
+  border-color: var(--primary) !important;
+  background: var(--muted) !important;
+}
+
+/* Card and Container Enhancements for High Contrast */
+.high-contrast .bg-white {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 2px solid var(--border) !important;
+}
+
+.high-contrast .shadow-lg,
+.high-contrast .shadow-xl,
+.high-contrast .shadow-md {
+  box-shadow: 0 0 0 2px var(--border) !important;
+}
+
+/* Progress Bar Accessibility */
+[role="progressbar"] {
+  position: relative;
+}
+
+[role="progressbar"]::after {
+  content: attr(aria-valuenow) "% complete";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: var(--foreground);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.high-contrast [role="progressbar"]::after {
+  color: var(--foreground);
+  text-shadow: none;
+  background: var(--background);
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+/* Badge and Status Indicator Enhancements */
+.high-contrast .bg-green-100,
+.high-contrast .bg-blue-100,
+.high-contrast .bg-yellow-100,
+.high-contrast .bg-red-100 {
+  background: var(--muted) !important;
+  color: var(--muted-foreground) !important;
+  border: 2px solid var(--foreground) !important;
+}
+
+/* Graph and Visualization Accessibility */
+.graph-container {
+  position: relative;
+}
+
+.graph-container::before {
+  content: "Interactive graph visualization. Use Tab to focus on graph controls, then use arrow keys to navigate nodes.";
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.graph-container:focus::before {
+  position: static;
+  left: auto;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  background: var(--background);
+  color: var(--foreground);
+  padding: 8px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  z-index: 10;
+}
+
+/* Loading States with Accessibility */
+.loading-spinner {
+  position: relative;
+}
+
+.loading-spinner::after {
+  content: "Loading...";
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.screen-reader-mode .loading-spinner::after {
+  position: static;
+  left: auto;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  margin-left: 8px;
+  font-weight: bold;
+}
+
+/* Keyboard Navigation Indicators */
+.keyboard-navigation [tabindex="0"]:focus,
+.keyboard-navigation [tabindex="-1"]:focus {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  background: rgba(37, 99, 235, 0.1);
+}
+
+/* Enhanced Error and Alert Styling */
+[role="alert"],
+[role="alertdialog"] {
+  border-left: 4px solid #dc2626;
+  padding-left: 12px;
+  font-weight: 500;
+}
+
+.high-contrast [role="alert"],
+.high-contrast [role="alertdialog"] {
+  border-left-color: var(--foreground);
+  background: var(--muted) !important;
+  color: var(--muted-foreground) !important;
+}
+
+/* Status and Live Region Enhancements */
+[aria-live="polite"],
+[aria-live="assertive"] {
+  position: relative;
+}
+
+.screen-reader-mode [aria-live="polite"]::before,
+.screen-reader-mode [aria-live="assertive"]::before {
+  content: "Live region: ";
+  font-weight: bold;
+  color: var(--primary);
+}
+
+/* Table Accessibility Enhancements */
+table {
+  border-collapse: collapse;
+}
+
+th {
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-weight: bold;
+  text-align: left;
+  padding: 8px;
+  border: 1px solid var(--border);
+}
+
+td {
+  padding: 8px;
+  border: 1px solid var(--border);
+}
+
+.high-contrast th,
+.high-contrast td {
+  border: 2px solid var(--foreground) !important;
+}
+
+/* Mobile Accessibility Enhancements */
+@media (max-width: 768px) {
+  .focus-visible *:focus-visible,
+  *:focus-visible {
+    outline-width: 3px;
+    outline-offset: 3px;
+  }
+  
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .large-text,
+  .xl-text {
+    font-size: 1.125rem !important;
+  }
+}
+
+/* Print Accessibility */
+@media print {
+  .sr-only {
+    position: static !important;
+    left: auto !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: white;
+    color: black;
+    border: 1px solid black;
+    padding: 4px;
+    margin: 4px 0;
+  }
+  
+  .skip-link {
+    display: none;
+  }
+  
+  [aria-label]::after {
+    content: " (Labeled: " attr(aria-label) ")";
+    font-size: 0.8em;
+    font-style: italic;
+  }
+}
+
+/* Dark Mode Accessibility (when not in high contrast) */
+@media (prefers-color-scheme: dark) {
+  :root:not(.high-contrast) {
+    --focus-ring-color: #60a5fa;
+  }
+}
+
+/* Custom Focus Styles for Complex Components */
+.tabs-trigger:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.card:focus-within {
+  outline: 1px solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* Ensure text remains readable in all states */
+.high-contrast * {
+  text-shadow: none !important;
+}
+
+/* Animation safe defaults */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Ensure adequate spacing for touch targets */
+button,
+[role="button"],
+a {
+  min-height: 32px;
+  min-width: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Visual indicator for required fields */
+[required]::after,
+[aria-required="true"]::after {
+  content: " *";
+  color: #dc2626;
+  font-weight: bold;
+}
+
+.high-contrast [required]::after,
+.high-contrast [aria-required="true"]::after {
+  color: var(--foreground);
+}

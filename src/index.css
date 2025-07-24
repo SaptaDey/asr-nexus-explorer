@@ -1,6 +1,9 @@
 
 /* TreeStyles.css import removed - tree components archived for performance optimization */
 
+/* Import Accessibility Enhancements */
+@import './styles/accessibility.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -48,7 +48,10 @@ import { dataStorageService } from '@/services/dataStorageService';
 import { SessionControls } from '@/components/asr-got/SessionControls';
 import { User, LogIn, UserPlus, Key, CheckCircle, AlertTriangle, ArrowRight } from 'lucide-react';
 import MermaidChart from '@/components/ui/MermaidChart';
-const ASRGoTInterface: React.FC = () => {
+import { AccessibilityProvider } from '@/components/accessibility/AccessibilityProvider';
+import { AccessibilityControls } from '@/components/accessibility/AccessibilityControls';
+import { useKeyboardShortcuts, useAccessibleDescription } from '@/hooks/useAccessibility';
+const ASRGoTInterfaceContent: React.FC = () => {
   const {
     currentStage,
     graphData,
@@ -97,6 +100,40 @@ const ASRGoTInterface: React.FC = () => {
   const [hasBackendApiKeys, setHasBackendApiKeys] = useState(false);
   const [usageStats, setUsageStats] = useState<any>(null);
   const [isPaused, setIsPaused] = useState(false);
+
+  // Accessibility hooks (need to be inside AccessibilityProvider context)
+  const { generateVisualizationDescription, generateStageDescription } = useAccessibleDescription();
+
+  // Keyboard shortcuts for research interface
+  useKeyboardShortcuts({
+    'r': () => {
+      if (activeTab === 'research' && !isProcessing) {
+        const researchButton = document.querySelector('[data-testid="start-research"]') as HTMLButtonElement;
+        researchButton?.click();
+        // Toast notification will serve as announcement for now
+        toast.info('Research started via keyboard shortcut (R)');
+      }
+    },
+    'e': () => {
+      setActiveTab('export');
+      toast.info('Switched to export tab (E)');
+    },
+    'p': () => {
+      toggleMode();
+      toast.info(`Switched to ${isAutomatic ? 'manual' : 'automatic'} processing mode (P)`);
+    },
+    's': () => {
+      if (user && currentSessionId) {
+        handleSaveSession();
+      }
+    },
+    'escape': () => {
+      if (showBiasAudit) {
+        setShowBiasAudit(false);
+        toast.info('Bias audit panel closed (Escape)');
+      }
+    }
+  });
 
   // Initialize backend and monitor health
   useEffect(() => {
@@ -1129,6 +1166,8 @@ If no quantitative data exists in the evidence content, return empty array [].
 
             {/* Authentication and Status */}
             <div className="flex items-center space-x-3">
+              {/* Accessibility Controls */}
+              <AccessibilityControls className="hidden sm:block" />
               {/* API Status */}
               <div className="flex items-center space-x-2">
                 {apiKeys.gemini && apiKeys.perplexity || hasBackendApiKeys ? <Badge variant="outline" className="text-green-600 border-green-600 bg-green-50">
@@ -1552,6 +1591,15 @@ mindmap
         {showStage9Progress && <Stage9ProgressIndicator currentStage={currentStage} isProcessing={isProcessing} onComplete={() => setShowStage9Progress(false)} />}
       </div>
     </div>
+  );
+};
+
+// Main component with accessibility provider
+const ASRGoTInterface: React.FC = () => {
+  return (
+    <AccessibilityProvider>
+      <ASRGoTInterfaceContent />
+    </AccessibilityProvider>
   );
 };
 
