@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { GraphData, ResearchContext, ASRGoTParameters } from '@/types/asrGotTypes';
 import { backendInitializer } from './BackendInitializer';
 import { storageManager } from './StorageManager';
+import { AuthorizationService } from '@/services/AuthorizationService';
 
 export interface SessionHistory {
   id: string;
@@ -242,17 +243,25 @@ export class HistoryManager {
   }
 
   /**
-   * Get session details
+   * Get session details - SECURITY FIX: Only return user's own sessions
    */
   async getSession(sessionId: string): Promise<SessionHistory | null> {
     try {
       console.log(`📖 Retrieving session: ${sessionId}`);
 
-      // Try query_sessions first (more detailed)
+      // CRITICAL SECURITY FIX: Verify user authorization first
+      const user = await AuthorizationService.getCurrentUser();
+      if (!user) {
+        console.warn(`❌ SECURITY: Unauthorized access attempt to session ${sessionId}`);
+        return null;
+      }
+
+      // Try query_sessions first (more detailed) - WITH USER AUTHORIZATION
       const { data: querySession, error: queryError } = await supabase
         .from('query_sessions')
         .select('*')
         .eq('id', sessionId)
+        .eq('user_id', user.id)  // CRITICAL: Only user's own sessions
         .single();
 
       if (!queryError && querySession) {
@@ -275,11 +284,12 @@ export class HistoryManager {
         };
       }
 
-      // Fallback to research_sessions
+      // Fallback to research_sessions - WITH USER AUTHORIZATION
       const { data: researchSession, error: researchError } = await supabase
         .from('research_sessions')
         .select('*')
         .eq('id', sessionId)
+        .eq('user_id', user.id)  // CRITICAL: Only user's own sessions
         .single();
 
       if (researchError || !researchSession) {
@@ -317,6 +327,13 @@ export class HistoryManager {
     try {
       console.log(`📚 Retrieving sessions with options:`, options);
 
+      // CRITICAL SECURITY FIX: Verify user authorization first
+      const user = await AuthorizationService.getCurrentUser();
+      if (!user) {
+        console.warn('❌ SECURITY: Unauthorized getSessions attempt');
+        return { sessions: [], total: 0 };
+      }
+
       const {
         searchTerm,
         status,
@@ -327,10 +344,11 @@ export class HistoryManager {
         offset = 0
       } = options;
 
-      // Query query_sessions for detailed data
+      // Query query_sessions for detailed data - WITH USER AUTHORIZATION
       let query = supabase
         .from('query_sessions')
         .select('*', { count: 'exact' })
+        .eq('user_id', user.id)  // CRITICAL: Only user's own sessions
         .order('created_at', { ascending: false });
 
       // Apply filters
@@ -361,10 +379,11 @@ export class HistoryManager {
       if (queryError) {
         console.warn('⚠️ Query sessions error, falling back to research sessions:', queryError);
         
-        // Fallback to research_sessions
+        // Fallback to research_sessions - WITH USER AUTHORIZATION
         let fallbackQuery = supabase
           .from('research_sessions')
           .select('*', { count: 'exact' })
+          .eq('user_id', user.id)  // CRITICAL: Only user's own sessions
           .order('created_at', { ascending: false });
 
         if (searchTerm) {
@@ -556,7 +575,7 @@ export class HistoryManager {
   }
 
   /**
-   * Export session data
+   * Export session data - SECURITY FIX: Verify authorization for all related data
    */
   async exportSession(sessionId: string): Promise<{
     success: boolean;
@@ -564,34 +583,42 @@ export class HistoryManager {
     error?: string;
   }> {
     try {
+      // CRITICAL SECURITY FIX: getSession now includes authorization check
       const session = await this.getSession(sessionId);
       if (!session) {
         return {
           success: false,
-          error: 'Session not found'
+          error: 'Session not found or access denied'
         };
       }
 
-      // Get all related data
-      const [figures, tables, stageExecutions] = await Promise.all([
-        supabase.from('query_figures').select('*').eq('session_id', sessionId),
-        supabase.from('query_tables').select('*').eq('session_id', sessionId),
-        supabase.from('stage_executions').select('*').eq('session_id', sessionId)
-      ]);
+      // CRITICAL SECURITY FIX: Use AuthorizationService to get related data
+      try {
+        const [figures, tables, stageExecutions] = await Promise.all([
+          AuthorizationService.getAuthorizedSessionData(sessionId, 'query_figures'),
+          AuthorizationService.getAuthorizedSessionData(sessionId, 'query_tables'),
+          AuthorizationService.getAuthorizedSessionData(sessionId, 'stage_executions')
+        ]);
 
-      const exportData = {
-        session,
-        figures: figures.data || [],
-        tables: tables.data || [],
-        stage_executions: stageExecutions.data || [],
-        exported_at: new Date().toISOString()
-      };
+        const exportData = {
+          session,
+          figures: figures || [],
+          tables: tables || [],
+          stage_executions: stageExecutions || [],
+          exported_at: new Date().toISOString()
+        };
 
-      console.log(`✅ Session exported: ${sessionId}`);
-      return {
-        success: true,
-        data: exportData
-      };
+        return {
+          success: true,
+          data: exportData
+        };
+      } catch (authError) {
+        console.error('❌ SECURITY: Unauthorized export attempt:', authError);
+        return {
+          success: false,
+          error: 'Access denied: You can only export your own sessions'
+        };
+      }
 
     } catch (error) {
       console.error(`❌ Failed to export session ${sessionId}:`, error);
