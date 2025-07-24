@@ -114,17 +114,20 @@ beforeAll(() => {
   });
 
   // Mock WebSocket
-  global.WebSocket = vi.fn().mockImplementation(() => ({
-    close: vi.fn(),
-    send: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    readyState: 1,
-    CONNECTING: 0,
-    OPEN: 1,
-    CLOSING: 2,
-    CLOSED: 3,
-  }));
+  Object.defineProperty(global, 'WebSocket', {
+    writable: true,
+    value: vi.fn().mockImplementation(() => ({
+      close: vi.fn(),
+      send: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      readyState: 1,
+      CONNECTING: 0,
+      OPEN: 1,
+      CLOSING: 2,
+      CLOSED: 3,
+    }))
+  });
 
   // Mock TextEncoder/TextDecoder
   global.TextEncoder = vi.fn().mockImplementation(() => ({
@@ -147,6 +150,7 @@ afterEach(() => {
 // Clean up after all tests
 afterAll(() => {
   server.close();
+  vi.restoreAllMocks();
 });
 
 // Custom matchers for ASR-GoT specific testing

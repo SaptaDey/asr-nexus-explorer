@@ -70,17 +70,19 @@ export default defineConfig({
     },
     testTimeout: 15000,
     hookTimeout: 10000,
-    deps: {
-      inline: [
-        'cytoscape',
-        'cytoscape-dagre',
-        'plotly.js-dist-min',
-        '@react-three/fiber',
-        '@react-three/drei',
-        'three',
-        'gsap',
-        'animejs',
-      ],
+    server: {
+      deps: {
+        inline: [
+          'cytoscape',
+          'cytoscape-dagre',
+          'plotly.js-dist-min',
+          '@react-three/fiber',
+          '@react-three/drei',
+          'three',
+          'gsap',
+          'animejs',
+        ],
+      },
     },
     env: {
       NODE_ENV: 'test',
