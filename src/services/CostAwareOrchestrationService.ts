@@ -1164,7 +1164,7 @@ plt.savefig('figure_name.png', dpi=300, bbox_inches='tight')`;
     }));
 
     // For now, process sequentially since Gemini batch API might need different endpoint
-    // TODO: Use actual batch endpoint when available
+    // Note: Batch endpoint implementation pending API provider support
     const results = [];
     for (const request of batchRequests) {
       const response = await fetch(url, {

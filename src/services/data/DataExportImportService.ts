@@ -1,11 +1,15 @@
 /**
- * Data Export/Import Service for ASR-GoT Framework
+ * Data Export/Import Service for ASR-GoT Framework - SECURITY PATCHED
  * Comprehensive data portability with multiple formats and secure handling
+ * CRITICAL: Now includes data sanitization to prevent research data leakage
  */
 
 import { DatabaseService } from '../database/DatabaseService';
 import { GraphDataService } from '../database/GraphDataService';
 import { GraphData } from '@/types/asrGotTypes';
+import { secureExporter } from '../security/SecureExportService';
+import { dataSanitizer } from '../security/DataSanitizationService';
+import { secureErrorHandler } from '../security/SecureErrorHandler';
 
 export interface ExportOptions {
   format: 'json' | 'csv' | 'xlsx' | 'xml' | 'archive';

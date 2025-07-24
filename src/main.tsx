@@ -1,30 +1,41 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import { safeLog, safeError, initializeSecurity } from './services/security'
 
-// Emergency error handling for main.tsx
-try {
-  console.log('📦 main.tsx: Starting React app creation...');
+// Emergency error handling for main.tsx with async security initialization
+(async () => {
+  try {
+    // Initialize security services before anything else
+    await initializeSecurity({
+      enableConsoleLogging: true,
+      enableErrorHandling: true,
+      enableDataSanitization: true,
+      enableSecureExports: true,
+      productionMode: process.env.NODE_ENV === 'production'
+    });
+    
+    safeLog('📦 main.tsx: Starting React app creation...');
   
   const rootElement = document.getElementById("root");
   if (!rootElement) {
     throw new Error('Root element not found');
   }
   
-  console.log('🎯 main.tsx: Creating React root...');
+  safeLog('🎯 main.tsx: Creating React root...');
   const root = createRoot(rootElement);
   
-  console.log('🎨 main.tsx: Rendering App component...');
+  safeLog('🎨 main.tsx: Rendering App component...');
   root.render(<App />);
   
   // Mark as loaded after a short delay
   setTimeout(() => {
     document.body.setAttribute('data-app-loaded', 'true');
-    console.log('✅ main.tsx: App loaded successfully');
+    safeLog('✅ main.tsx: App loaded successfully');
   }, 100);
   
-} catch (error) {
-  console.error('❌ main.tsx: Critical error during app initialization:', error);
+  } catch (error) {
+    safeError('❌ main.tsx: Critical error during app initialization:', error);
   
   // Show error on page safely
   const errorDiv = document.createElement('div');
@@ -38,13 +49,13 @@ try {
   const errorText = document.createElement('p');
   errorText.innerHTML = '<strong>Error:</strong> ';
   const errorMsg = document.createElement('span');
-  errorMsg.textContent = error?.message || 'Unknown error';
+  errorMsg.textContent = 'Application failed to initialize (details logged securely)';
   errorText.appendChild(errorMsg);
   
   const stackText = document.createElement('p');
   stackText.innerHTML = '<strong>Stack:</strong> ';
   const stackPre = document.createElement('pre');
-  stackPre.textContent = error?.stack || 'No stack trace available';
+  stackPre.textContent = '[Stack trace redacted for security]';
   stackText.appendChild(stackPre);
   
   const timeText = document.createElement('p');
@@ -62,7 +73,8 @@ try {
   errorDiv.appendChild(errorText);
   errorDiv.appendChild(stackText);
   errorDiv.appendChild(timeText);
-  errorDiv.appendChild(hr);
-  errorDiv.appendChild(helpText);
-  document.body.appendChild(errorDiv);
-}
+    errorDiv.appendChild(hr);
+    errorDiv.appendChild(helpText);
+    document.body.appendChild(errorDiv);
+  }
+})();

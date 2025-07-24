@@ -24,6 +24,21 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === 'development' && componentTagger(),
   ].filter(Boolean),
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-tabs',
+      'cytoscape',
+      'framer-motion'
+    ],
+    exclude: [
+      'plotly.js-dist-min',
+      '@react-three/fiber',
+      'three'
+    ]
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -34,14 +49,87 @@ export default defineConfig(({ mode }) => ({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          ui: ['@radix-ui/react-accordion', '@radix-ui/react-dialog', '@radix-ui/react-tabs'],
-          visualization: ['cytoscape', 'cytoscape-dagre', 'react-cytoscapejs', '@xyflow/react', 'plotly.js-dist-min'],
-          utils: ['framer-motion', 'date-fns', 'clsx']
+        manualChunks: (id) => {
+          // React ecosystem
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'react';
+          }
+          
+          // Radix UI components
+          if (id.includes('@radix-ui/')) {
+            return 'radix-ui';
+          }
+          
+          // Visualization libraries - split heavy ones
+          if (id.includes('plotly.js')) {
+            return 'plotly';
+          }
+          if (id.includes('cytoscape') || id.includes('react-cytoscapejs')) {
+            return 'cytoscape';
+          }
+          if (id.includes('@xyflow/react') || id.includes('reactflow')) {
+            return 'reactflow';
+          }
+          if (id.includes('three') || id.includes('@react-three/')) {
+            return 'three';
+          }
+          
+          // Animation libraries
+          if (id.includes('framer-motion') || id.includes('animejs') || id.includes('@react-spring/')) {
+            return 'animation';
+          }
+          
+          // Utility libraries
+          if (id.includes('date-fns') || id.includes('clsx') || id.includes('class-variance-authority')) {
+            return 'utils';
+          }
+          
+          // Supabase and auth
+          if (id.includes('@supabase/') || id.includes('@tanstack/react-query')) {
+            return 'supabase';
+          }
+          
+          // Form handling
+          if (id.includes('react-hook-form') || id.includes('@hookform/')) {
+            return 'forms';
+          }
+          
+          // Markdown and text processing
+          if (id.includes('react-markdown') || id.includes('remark-') || id.includes('dompurify')) {
+            return 'markdown';
+          }
+          
+          // Icons and UI assets
+          if (id.includes('lucide-react') || id.includes('embla-carousel')) {
+            return 'icons-ui';
+          }
+          
+          // Charts and data visualization
+          if (id.includes('recharts') || id.includes('d3-')) {
+            return 'charts';
+          }
+          
+          // Large vendor libraries
+          if (id.includes('node_modules/')) {
+            return 'vendor';
+          }
         }
       }
-    }
+    },
+    target: 'esnext',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: mode === 'production',
+        drop_debugger: mode === 'production',
+        pure_funcs: mode === 'production' ? ['console.log', 'console.info', 'console.debug'] : [],
+      },
+      mangle: {
+        safari10: true,
+      },
+    },
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 1000,
   },
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')

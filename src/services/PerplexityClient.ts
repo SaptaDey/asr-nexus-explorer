@@ -13,6 +13,7 @@ import {
   SonarDeepResearchResponse 
 } from '@/types/sonarDeepResearchTypes';
 import { ScientificResearchAPI } from './ScientificResearchAPI';
+import { sanitizeError, secureConsoleError } from '@/utils/errorSanitizer';
 
 export class PerplexityClient {
   private apiKey: string;
@@ -127,14 +128,17 @@ Format your response to clearly separate:
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error?.message || response.statusText}`);
+        const sanitizedMessage = (errorData.error?.message || response.statusText)
+          .replace(/pplx-[A-Za-z0-9_-]{40,}/g, '[REDACTED_PERPLEXITY_KEY]')
+          .replace(/Bearer [A-Za-z0-9_.-]+/g, 'Bearer [REDACTED]');
+        throw new Error(`HTTP error! status: ${response.status}, message: ${sanitizedMessage}`);
       }
 
       const data: PerplexityResponse = await response.json();
       return data;
     } catch (error) {
-      console.error('Error calling Perplexity API:', error);
-      throw error;
+      secureConsoleError('Error calling Perplexity API:', error);
+      throw sanitizeError(error);
     }
   }
 

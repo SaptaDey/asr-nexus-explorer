@@ -9,6 +9,7 @@ import {
   AsyncResearchRequest, 
   AsyncResearchResponse 
 } from '@/types/sonarDeepResearchTypes';
+import { sanitizeError, secureConsoleError } from '@/utils/errorSanitizer';
 
 export class ScientificResearchAPI {
   private apiKey: string;
@@ -92,8 +93,8 @@ Format your response to clearly separate:
 
       return await response.json() as SonarDeepResearchResponse;
     } catch (error) {
-      console.error('Error conducting deep research:', error);
-      throw error;
+      secureConsoleError('Error conducting deep research:', error);
+      throw sanitizeError(error);
     }
   }
 
@@ -138,8 +139,8 @@ Format your response to clearly separate:
       const result = await response.json();
       return result.id; // Return request ID for polling
     } catch (error) {
-      console.error('Error starting async deep research:', error);
-      throw error;
+      secureConsoleError('Error starting async deep research:', error);
+      throw sanitizeError(error);
     }
   }
 
@@ -159,8 +160,8 @@ Format your response to clearly separate:
 
       return await response.json();
     } catch (error) {
-      console.error('Error getting async result:', error);
-      throw error;
+      secureConsoleError('Error getting async result:', error);
+      throw sanitizeError(error);
     }
   }
 
@@ -255,8 +256,8 @@ Format your response to clearly separate:
 
       return await response.json() as SonarDeepResearchResponse;
     } catch (error) {
-      console.error('Error conducting custom research:', error);
-      throw error;
+      secureConsoleError('Error conducting custom research:', error);
+      throw sanitizeError(error);
     }
   }
 
@@ -268,7 +269,7 @@ Format your response to clearly separate:
       const testResponse = await this.conductDeepResearch('Test connection for scientific research');
       return testResponse.choices && testResponse.choices.length > 0;
     } catch (error) {
-      console.error('Connection test failed:', error);
+      secureConsoleError('Connection test failed:', error);
       return false;
     }
   }

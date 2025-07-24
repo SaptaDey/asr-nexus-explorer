@@ -5,6 +5,14 @@
 
 import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 import { DatabaseService } from '../database/DatabaseService';
+import { 
+  CollaborationData, 
+  CollaborationUser, 
+  PresenceState, 
+  DatabaseUpdateEvent,
+  PresenceEvent,
+  ActivityData 
+} from '@/types/improvedTypes';
 
 export interface CollaborationInvite {
   id: string;
@@ -28,7 +36,7 @@ export interface CollaborationPermissions {
 
 export interface RealtimeUpdate {
   type: 'graph_update' | 'stage_update' | 'hypothesis_update' | 'comment_added' | 'user_joined' | 'user_left';
-  data: any;
+  data: Record<string, unknown>;
   user_id: string;
   timestamp: string;
   session_id: string;
@@ -94,7 +102,7 @@ export class CollaborationService {
     }
   ): Promise<{
     permissions: CollaborationPermissions;
-    collaborators: any[];
+    collaborators: CollaborationUser[];
     currentPresences: UserPresence[];
   }> {
     try {
@@ -236,7 +244,7 @@ export class CollaborationService {
       const user = await this.db.getCurrentUser();
       if (!user) throw new Error('User not authenticated');
 
-      const updates: any = {
+      const updates: Record<string, unknown> = {
         status: response
       };
 
@@ -685,7 +693,7 @@ export class CollaborationService {
     const presenceState = channel.presenceState();
     const presences: UserPresence[] = [];
 
-    Object.values(presenceState).forEach((presence: any) => {
+    Object.values(presenceState).forEach((presence: PresenceState) => {
       if (presence[0]) {
         presences.push(presence[0] as UserPresence);
       }
@@ -714,7 +722,7 @@ export class CollaborationService {
     sessionId: string,
     userId: string,
     activityType: string,
-    activityData: any
+    activityData: ActivityData
   ): Promise<any> {
     const { data, error } = await this.supabase
       .from('activity_logs')
@@ -731,7 +739,7 @@ export class CollaborationService {
     return data;
   }
 
-  private handleDatabaseUpdate(sessionId: string, type: string, payload: any): void {
+  private handleDatabaseUpdate(sessionId: string, type: string, payload: DatabaseUpdateEvent['payload']): void {
     if (this.onUpdate) {
       this.onUpdate({
         type: `${type}_update` as any,
@@ -751,12 +759,12 @@ export class CollaborationService {
     }
   }
 
-  private handlePresenceJoin(sessionId: string, payload: any): void {
+  private handlePresenceJoin(sessionId: string, payload: PresenceEvent['payload']): void {
     console.log('User joined:', payload);
     this.handlePresenceSync(sessionId);
   }
 
-  private handlePresenceLeave(sessionId: string, payload: any): void {
+  private handlePresenceLeave(sessionId: string, payload: PresenceEvent['payload']): void {
     console.log('User left:', payload);
     this.handlePresenceSync(sessionId);
   }

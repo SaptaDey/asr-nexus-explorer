@@ -83,7 +83,7 @@ export const useCostAwareStageExecution = ({
   const createStageContext = useCallback((): StageExecutorContext => {
     // Defensive check for apiKeys
     if (!apiKeys) {
-      console.error('createStageContext: apiKeys is undefined!', { apiKeys });
+      console.error('createStageContext: API credentials not available. Please configure your API keys first.');
       throw new Error('API credentials are not available. Please configure your API keys first.');
     }
     

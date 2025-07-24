@@ -3,7 +3,7 @@
  * Force-directed graph with scientific theming
  */
 
-import React, { useCallback, useMemo, useEffect } from 'react';
+import React, { useCallback, useMemo, useEffect, useRef, useState } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -17,6 +17,8 @@ import {
   BackgroundVariant,
   ConnectionMode,
   MiniMap,
+  useReactFlow,
+  ReactFlowProvider,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { GraphData, GraphNode, GraphEdge } from '@/types/asrGotTypes';
@@ -25,17 +27,35 @@ import { GraphVisualizationError } from '@/types/graphVisualizationTypes';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, ZoomIn, ZoomOut, Maximize2, Settings } from 'lucide-react';
 import { toast } from 'sonner';
+import { 
+  calculateGraphMetrics, 
+  performViewportCulling, 
+  applyLevelOfDetail,
+  SpatialIndex,
+  GraphPerformanceMonitor
+} from '@/utils/graphVirtualization';
 
 interface EnhancedGraphVisualizationProps {
   graphData: GraphData;
   className?: string;
   currentStage?: number;
   isProcessing?: boolean;
+  enableVirtualization?: boolean;
+  maxNodes?: number;
+  onError?: (error: Error) => void;
 }
 
 // Custom Node Components
 const ScientificNode = ({ data, selected }: any) => {
+  const [imageError, setImageError] = useState(false);
+  
+  const handleError = useCallback((error: Error) => {
+    console.error('❌ Node rendering error:', error);
+    setImageError(true);
+  }, []);
   const getNodeColor = (type: string) => {
     switch (type) {
       case 'root': return 'hsl(var(--primary))';
@@ -59,48 +79,78 @@ const ScientificNode = ({ data, selected }: any) => {
   const confidence = data.confidence || [0, 0, 0, 0];
   const avgConfidence = confidence.reduce((a: number, b: number) => a + b, 0) / confidence.length;
 
-  return (
-    <Card 
-      className={`min-w-[200px] transition-all duration-200 hover:shadow-lg ${
-        selected ? 'ring-2 ring-primary shadow-lg' : ''
-      }`}
-      style={{ 
-        borderColor: getNodeColor(data.type),
-        borderWidth: 2,
-        backgroundColor: `${getNodeColor(data.type)}10`
-      }}
-    >
-      <CardContent className="p-3">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-lg">{getNodeIcon(data.type)}</span>
-          <Badge variant="secondary" className="text-xs">
-            {data.type}
-          </Badge>
-        </div>
-        
-        <h4 className="font-semibold text-sm mb-2 line-clamp-2">
-          {data.label}
-        </h4>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-muted-foreground">Confidence</span>
-            <span className="font-medium">{Math.round(avgConfidence * 100)}%</span>
+  try {
+    return (
+      <Card 
+        className={`min-w-[180px] max-w-[250px] transition-all duration-200 hover:shadow-lg ${
+          selected ? 'ring-2 ring-primary shadow-lg' : ''
+        } ${imageError ? 'border-destructive' : ''}`}
+        style={{ 
+          borderColor: imageError ? 'hsl(var(--destructive))' : getNodeColor(data.type),
+          borderWidth: 2,
+          backgroundColor: imageError ? 'hsl(var(--destructive) / 0.1)' : `${getNodeColor(data.type)}10`
+        }}
+      >
+        <CardContent className="p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-lg">{imageError ? '⚠️' : getNodeIcon(data.type)}</span>
+            <Badge variant="secondary" className="text-xs">
+              {data.type || 'unknown'}
+            </Badge>
+            {data.metadata?.isCluster && (
+              <Badge variant="outline" className="text-xs">
+                {data.metadata.clusterSize}x
+              </Badge>
+            )}
           </div>
-          <Progress value={avgConfidence * 100} className="h-1" />
           
-          {data.metadata?.timestamp && (
-            <div className="text-xs text-muted-foreground">
-              {new Date(data.metadata.timestamp).toLocaleDateString()}
-            </div>
-          )}
+          <h4 className="font-semibold text-sm mb-2 line-clamp-2" title={data.label}>
+            {data.label || 'Untitled Node'}
+          </h4>
+          
+          <div className="space-y-2">
+            {typeof avgConfidence === 'number' && !isNaN(avgConfidence) && (
+              <>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground">Confidence</span>
+                  <span className="font-medium">{Math.round(avgConfidence * 100)}%</span>
+                </div>
+                <Progress value={Math.min(100, Math.max(0, avgConfidence * 100))} className="h-1" />
+              </>
+            )}
+            
+            {data.metadata?.timestamp && (
+              <div className="text-xs text-muted-foreground">
+                {new Date(data.metadata.timestamp).toLocaleDateString()}
+              </div>
+            )}
+            
+            {imageError && (
+              <div className="text-xs text-destructive">
+                Rendering issue detected
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  } catch (error) {
+    console.error('❌ ScientificNode render error:', error);
+    handleError(error as Error);
+    
+    return (
+      <div className="w-[180px] h-[100px] border border-destructive rounded bg-destructive/10 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-6 w-6 text-destructive mx-auto mb-1" />
+          <span className="text-xs text-destructive">Render Error</span>
         </div>
-      </CardContent>
-    </Card>
-  );
+      </div>
+    );
+  }
 };
 
 const ScientificEdge = ({ data, selected }: any) => {
+  try {
   const getEdgeColor = (type: string) => {
     switch (type) {
       case 'supportive': return 'hsl(var(--chart-2))';
@@ -110,17 +160,33 @@ const ScientificEdge = ({ data, selected }: any) => {
     }
   };
 
-  return (
-    <g>
-      <path
-        style={{
-          stroke: getEdgeColor(data?.type || 'default'),
-          strokeWidth: selected ? 3 : 2,
-          strokeDasharray: data?.metadata?.type === 'hypothesis_derivation' ? '5,5' : 'none',
-        }}
-      />
-    </g>
-  );
+    return (
+      <g>
+        <path
+          style={{
+            stroke: getEdgeColor(data?.type || 'default'),
+            strokeWidth: selected ? 3 : 2,
+            strokeDasharray: data?.metadata?.type === 'hypothesis_derivation' ? '5,5' : 'none',
+            strokeOpacity: data?.confidence ? Math.max(0.3, data.confidence) : 0.7,
+          }}
+        />
+      </g>
+    );
+  } catch (error) {
+    console.error('❌ ScientificEdge render error:', error);
+    return (
+      <g>
+        <path
+          style={{
+            stroke: 'hsl(var(--destructive))',
+            strokeWidth: 1,
+            strokeDasharray: '2,2',
+            strokeOpacity: 0.5,
+          }}
+        />
+      </g>
+    );
+  }
 };
 
 const nodeTypes = {
@@ -131,35 +197,118 @@ const edgeTypes = {
   scientific: ScientificEdge,
 };
 
-export const EnhancedGraphVisualization: React.FC<EnhancedGraphVisualizationProps> = ({
+// Inner component that uses ReactFlow hooks
+const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
   graphData,
   className = "",
   currentStage = 0,
-  isProcessing = false
+  isProcessing = false,
+  enableVirtualization = true,
+  maxNodes = 500,
+  onError
 }) => {
-  // Convert ASR-GoT graph data to ReactFlow format using adapter
-  const { initialNodes, initialEdges } = useMemo(() => {
+  const reactFlowInstance = useReactFlow();
+  const [isVirtualizationEnabled, setIsVirtualizationEnabled] = useState(enableVirtualization);
+  const [performanceMetrics, setPerformanceMetrics] = useState<any>({});
+  const [graphError, setGraphError] = useState<string | null>(null);
+  const performanceMonitor = useRef(new GraphPerformanceMonitor());
+  const spatialIndex = useRef<SpatialIndex | null>(null);
+  const lastViewport = useRef({ x: 0, y: 0, zoom: 1 });
+  
+  // Calculate graph metrics
+  const graphMetrics = useMemo(() => {
     try {
+      return calculateGraphMetrics(graphData.nodes, graphData.edges);
+    } catch (error) {
+      console.error('❌ Failed to calculate graph metrics:', error);
+      return { nodeCount: 0, edgeCount: 0, complexity: 0, recommendedVirtualization: false };
+    }
+  }, [graphData]);
+  // Convert ASR-GoT graph data with virtualization
+  const { initialNodes, initialEdges, virtualizedData } = useMemo(() => {
+    const startTime = performance.now();
+    
+    try {
+      setGraphError(null);
+      
+      // Convert data using adapter
       const convertedData = GraphAdapterFactory.convertForVisualization(graphData, 'reactflow');
+      let nodes = convertedData.nodes as Node[];
+      let edges = convertedData.edges as Edge[];
+      
+      // Apply virtualization if enabled and needed
+      let virtualizedInfo = null;
+      if (isVirtualizationEnabled && graphMetrics.recommendedVirtualization) {
+        try {
+          // Get current viewport
+          const viewport = reactFlowInstance?.getViewport() || { x: 0, y: 0, zoom: 1 };
+          lastViewport.current = viewport;
+          
+          // Perform viewport culling
+          virtualizedInfo = performViewportCulling(
+            graphData.nodes,
+            graphData.edges,
+            { ...viewport, width: 1200, height: 800 }
+          );
+          
+          // Apply level of detail
+          const lodData = applyLevelOfDetail(
+            virtualizedInfo.visibleNodes,
+            virtualizedInfo.visibleEdges,
+            viewport.zoom
+          );
+          
+          // Convert virtualized data
+          const virtualizedConverted = GraphAdapterFactory.convertForVisualization(
+            { nodes: lodData.nodes, edges: lodData.edges, metadata: graphData.metadata },
+            'reactflow'
+          );
+          
+          nodes = virtualizedConverted.nodes as Node[];
+          edges = virtualizedConverted.edges as Edge[];
+          
+          console.log(`🎯 Virtualization: ${virtualizedInfo.visibleNodes.length}/${graphData.nodes.length} nodes, ${virtualizedInfo.visibleEdges.length}/${graphData.edges.length} edges`);
+        } catch (virtError) {
+          console.warn('⚠️ Virtualization failed, using all nodes:', virtError);
+          virtualizedInfo = null;
+        }
+      }
+      
+      // Create spatial index for performance
+      if (graphData.nodes.length > 100) {
+        spatialIndex.current = new SpatialIndex(graphData.nodes);
+      }
+      
+      const processingTime = performance.now() - startTime;
+      performanceMonitor.current.recordFrame(processingTime);
+      
       return {
-        initialNodes: convertedData.nodes as Node[],
-        initialEdges: convertedData.edges as Edge[]
+        initialNodes: nodes,
+        initialEdges: edges,
+        virtualizedData: virtualizedInfo
       };
     } catch (error) {
-      console.error('Failed to convert graph data for ReactFlow:', error);
-      toast.error('Failed to render graph visualization');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('❌ Failed to convert graph data for ReactFlow:', error);
+      setGraphError(`Graph conversion failed: ${errorMessage}`);
       
       if (error instanceof GraphVisualizationError) {
         console.error('Graph visualization error:', error.code, error.message);
+        onError?.(error);
+      } else {
+        onError?.(new Error(errorMessage));
       }
+      
+      toast.error('Failed to render graph visualization');
       
       // Return empty arrays as fallback
       return {
         initialNodes: [] as Node[],
-        initialEdges: [] as Edge[]
+        initialEdges: [] as Edge[],
+        virtualizedData: null
       };
     }
-  }, [graphData]);
+  }, [graphData, isVirtualizationEnabled, graphMetrics, reactFlowInstance, onError]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -175,44 +324,137 @@ export const EnhancedGraphVisualization: React.FC<EnhancedGraphVisualizationProp
     [setEdges]
   );
 
-  // Auto-layout with force-directed positioning
+  // Enhanced auto-layout with error handling
   const applyForceLayout = useCallback(() => {
-    // Simple force-directed layout algorithm
-    const layoutedNodes = nodes.map((node, index) => {
-      const angle = (index / nodes.length) * 2 * Math.PI;
-      const radius = Math.min(200 + nodes.length * 20, 400);
-      
-      return {
-        ...node,
-        position: {
-          x: 400 + radius * Math.cos(angle),
-          y: 300 + radius * Math.sin(angle),
-        },
-      };
-    });
+    if (!nodes || nodes.length === 0) return;
     
-    setNodes(layoutedNodes);
+    try {
+      const centerX = 600;
+      const centerY = 400;
+      
+      // Group nodes by type for better layout
+      const nodesByType = nodes.reduce((acc, node) => {
+        const type = node.data?.type || 'default';
+        if (!acc[type]) acc[type] = [];
+        acc[type].push(node);
+        return acc;
+      }, {} as Record<string, Node[]>);
+      
+      const layoutedNodes = [];
+      let globalIndex = 0;
+      
+      // Layout each type in concentric circles
+      Object.entries(nodesByType).forEach(([type, typeNodes], typeIndex) => {
+        const typeRadius = 150 + typeIndex * 100;
+        const angleStep = (2 * Math.PI) / Math.max(typeNodes.length, 1);
+        
+        typeNodes.forEach((node, nodeIndex) => {
+          const angle = nodeIndex * angleStep;
+          const x = centerX + typeRadius * Math.cos(angle);
+          const y = centerY + typeRadius * Math.sin(angle);
+          
+          // Add some randomization to avoid overlaps
+          const jitterX = (Math.random() - 0.5) * 50;
+          const jitterY = (Math.random() - 0.5) * 50;
+          
+          layoutedNodes.push({
+            ...node,
+            position: {
+              x: x + jitterX,
+              y: y + jitterY,
+            },
+          });
+          globalIndex++;
+        });
+      });
+      
+      setNodes(layoutedNodes);
+      console.log(`🎯 Applied force layout to ${layoutedNodes.length} nodes`);
+    } catch (error) {
+      console.error('❌ Force layout failed:', error);
+      toast.error('Failed to apply graph layout');
+    }
   }, [nodes, setNodes]);
 
-  // Apply auto-layout when nodes are added
+  // Auto-layout with error handling
   useEffect(() => {
-    if (nodes.length > 0 && nodes.every(node => node.position.x === 0 && node.position.y === 0)) {
-      applyForceLayout();
+    if (nodes.length === 0) return;
+    
+    try {
+      // Only apply layout if nodes don't have positions
+      const needsLayout = nodes.every(node => 
+        !node.position || (node.position.x === 0 && node.position.y === 0)
+      );
+      
+      if (needsLayout) {
+        // Use setTimeout to avoid blocking the UI
+        setTimeout(() => {
+          try {
+            applyForceLayout();
+          } catch (layoutError) {
+            console.error('❌ Auto-layout failed:', layoutError);
+            setGraphError('Layout calculation failed');
+          }
+        }, 100);
+      }
+    } catch (error) {
+      console.error('❌ Layout setup failed:', error);
     }
   }, [nodes.length, applyForceLayout]);
+  
+  // Update performance metrics periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const metrics = performanceMonitor.current.getMetrics();
+      setPerformanceMetrics(metrics);
+      
+      // Auto-enable virtualization if performance is poor
+      if (!isVirtualizationEnabled && performanceMonitor.current.shouldOptimize()) {
+        console.log('🚀 Auto-enabling virtualization due to poor performance');
+        setIsVirtualizationEnabled(true);
+        toast.info('Virtualization enabled to improve performance');
+      }
+    }, 2000);
+    
+    return () => clearInterval(interval);
+  }, [isVirtualizationEnabled]);
 
-  const nodeColor = (node: Node) => {
-    switch (node.data.type) {
-      case 'root': return '#8B5CF6'; // purple
-      case 'dimension': return '#3B82F6'; // blue
-      case 'hypothesis': return '#10B981'; // green
-      case 'evidence': return '#F59E0B'; // amber
-      default: return '#6B7280'; // gray
+  const nodeColor = useCallback((node: Node) => {
+    try {
+      switch (node.data?.type) {
+        case 'root': return '#8B5CF6'; // purple
+        case 'dimension': return '#3B82F6'; // blue
+        case 'hypothesis': return '#10B981'; // green
+        case 'evidence': return '#F59E0B'; // amber
+        case 'cluster': return '#EC4899'; // pink
+        default: return '#6B7280'; // gray
+      }
+    } catch (error) {
+      console.error('❌ nodeColor function error:', error);
+      return '#6B7280'; // fallback gray
     }
-  };
+  }, []);
+
+  // Error boundary fallback
+  if (graphError) {
+    return (
+      <div className={`h-[600px] w-full border border-destructive rounded-lg overflow-hidden bg-background ${className}`}>
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center p-6">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Graph Visualization Error</h3>
+            <p className="text-muted-foreground mb-4">{graphError}</p>
+            <Button onClick={() => setGraphError(null)} variant="outline">
+              Retry
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`h-[600px] w-full border border-border rounded-lg overflow-hidden bg-background ${className}`}>
+    <div className={`h-[600px] w-full border border-border rounded-lg overflow-hidden bg-background relative ${className}`}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -223,17 +465,31 @@ export const EnhancedGraphVisualization: React.FC<EnhancedGraphVisualizationProp
         edgeTypes={edgeTypes}
         connectionMode={ConnectionMode.Loose}
         fitView
-        minZoom={0.1}
-        maxZoom={2}
+        minZoom={0.05}
+        maxZoom={3}
         defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
         className="scientific-graph"
+        onError={(error) => {
+          console.error('❌ ReactFlow error:', error);
+          setGraphError(error.message || 'ReactFlow rendering error');
+        }}
       >
         <Controls 
           className="!bg-card !border-border"
           showZoom={true}
           showFitView={true}
           showInteractive={true}
-        />
+        >
+          <Button
+            onClick={() => setIsVirtualizationEnabled(!isVirtualizationEnabled)}
+            variant={isVirtualizationEnabled ? "default" : "outline"}
+            size="sm"
+            className="w-8 h-8 p-0"
+            title={`${isVirtualizationEnabled ? 'Disable' : 'Enable'} Virtualization`}
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+        </Controls>
         
         <Background 
           variant={BackgroundVariant.Dots}
@@ -249,23 +505,84 @@ export const EnhancedGraphVisualization: React.FC<EnhancedGraphVisualizationProp
         />
       </ReactFlow>
       
-      {/* Graph Statistics */}
-      <div className="absolute top-4 right-4 bg-card/90 backdrop-blur-sm border border-border rounded-lg p-3 text-sm">
-        <div className="space-y-1">
-          <div className="flex justify-between gap-4">
+      {/* Enhanced Graph Statistics */}
+      <div className="absolute top-4 right-4 bg-card/95 backdrop-blur-sm border border-border rounded-lg p-3 text-sm min-w-[200px]">
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Nodes:</span>
-            <span className="font-medium">{nodes.length}</span>
+            <div className="flex items-center gap-1">
+              <span className="font-medium">{nodes.length}</span>
+              {virtualizedData && (
+                <Badge variant="secondary" className="text-xs px-1">
+                  /{graphData.nodes.length}
+                </Badge>
+              )}
+            </div>
           </div>
-          <div className="flex justify-between gap-4">
+          <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Edges:</span>
-            <span className="font-medium">{edges.length}</span>
+            <div className="flex items-center gap-1">
+              <span className="font-medium">{edges.length}</span>
+              {virtualizedData && (
+                <Badge variant="secondary" className="text-xs px-1">
+                  /{graphData.edges.length}
+                </Badge>
+              )}
+            </div>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Stage:</span>
             <span className="font-medium">{graphData.metadata.stage || 0}/8</span>
           </div>
+          
+          {isVirtualizationEnabled && (
+            <div className="pt-2 border-t border-border">
+              <div className="flex items-center gap-1 mb-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-xs text-muted-foreground">Virtualized</span>
+              </div>
+              {performanceMetrics.averageFPS && (
+                <div className="text-xs">
+                  <span className="text-muted-foreground">FPS: </span>
+                  <span className={`font-medium ${
+                    performanceMetrics.averageFPS >= 30 ? 'text-green-600' : 'text-orange-600'
+                  }`}>
+                    {performanceMetrics.averageFPS}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {graphMetrics.complexity > 5000 && (
+            <div className="pt-2 border-t border-border">
+              <div className="flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 text-orange-500" />
+                <span className="text-xs text-orange-600">High Complexity</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+      
+      {/* Loading overlay */}
+      {isProcessing && (
+        <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-card border border-border rounded-lg p-4 text-center">
+            <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+            <p className="text-sm text-muted-foreground">Processing graph...</p>
+          </div>
+        </div>
+      )}
     </div>
+  );
+};
+
+// Main component with ReactFlow provider
+export const EnhancedGraphVisualization: React.FC<EnhancedGraphVisualizationProps> = (props) => {
+  return (
+    <ReactFlowProvider>
+      <GraphVisualizationInner {...props} />
+    </ReactFlowProvider>
   );
 };

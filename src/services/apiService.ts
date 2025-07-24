@@ -6,6 +6,13 @@
 import { validateInput, validateAPIKey, apiRateLimiter } from '@/utils/securityUtils';
 import { costGuardrails } from '@/services/CostGuardrails';
 import { APICredentials } from '@/types/asrGotTypes';
+import { 
+  secureNetworkRequest, 
+  createGeminiHeaders, 
+  validateApiKeyFormat,
+  secureRequestWithTimeout 
+} from '@/utils/secureNetworkRequest';
+import { sanitizeError, secureConsoleError } from '@/utils/errorSanitizer';
 
 
 // Perplexity Sonar API integration (placeholder for future implementation)
@@ -55,9 +62,9 @@ export const callGeminiAPI = async (
   const maxRetries = 3;
   const currentRetry = options.retryCount || 0;
 
-  // Validate API key
-  if (!apiKey || !validateAPIKey(apiKey, 'gemini')) {
-    throw new Error('Invalid Gemini API key');
+  // Validate API key with enhanced format checking
+  if (!apiKey || !validateAPIKey(apiKey, 'gemini') || !validateApiKeyFormat(apiKey, 'gemini')) {
+    throw new Error('Invalid Gemini API key format');
   }
 
   // Rate limiting check
@@ -169,38 +176,45 @@ export const callGeminiAPI = async (
       requestBody.tools = tools;
     }
 
-    const headers: any = {
-      'x-goog-api-key': apiKey,
-      'Content-Type': 'application/json',
-    };
+    const secureHeaders = createGeminiHeaders(apiKey);
 
     // RULE 4: Add cache header for large prompts
     if (shouldCache) {
       const cacheKey = await generateCacheKey(sanitizedPrompt, options.stageId || '', options.graphHash || '');
-      headers['x-goog-cache'] = 'true';
-      headers['x-goog-cache-key'] = cacheKey;
+      secureHeaders['x-goog-cache'] = 'true';
+      secureHeaders['x-goog-cache-key'] = cacheKey;
     }
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(requestBody),
-    });
+    const response = await secureRequestWithTimeout(
+      secureNetworkRequest({
+        url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent',
+        method: 'POST',
+        secureHeaders,
+        body: JSON.stringify(requestBody),
+        logRequest: false // Never log API requests to prevent exposure
+      }),
+      60000 // 60 second timeout
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+      // Sanitize error to prevent API key exposure
+      const sanitizedError = errorText.replace(/AIza[A-Za-z0-9_-]{35}/g, '[REDACTED_API_KEY]')
+                                      .replace(/Bearer [A-Za-z0-9_-]+/g, 'Bearer [REDACTED]')
+                                      .replace(/x-goog-api-key[^}]+/g, 'x-goog-api-key: [REDACTED]');
+      throw new Error(`Gemini API error: ${response.status} - ${sanitizedError}`);
     }
 
     const data = await response.json();
     
-    // Enhanced error handling and logging for response structure
-    console.log('🔍 Gemini API response structure:', {
-      hasCandidates: !!data.candidates,
-      candidatesLength: data.candidates?.length,
-      firstCandidate: data.candidates?.[0],
-      dataKeys: Object.keys(data)
-    });
+    // Enhanced error handling for response structure (debug info removed for security)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 Gemini API response received:', {
+        hasCandidates: !!data.candidates,
+        candidatesLength: data.candidates?.length,
+        hasContent: !!(data.candidates?.[0]?.content)
+      });
+    }
     
     if (!data.candidates || !Array.isArray(data.candidates) || data.candidates.length === 0) {
       throw new Error(`No candidates in Gemini API response: ${JSON.stringify(data)}`);
@@ -259,8 +273,22 @@ export const callGeminiAPI = async (
     
     return content;
   } catch (error) {
-    console.error('Gemini API call failed:', error);
-    throw error;
+    // Sanitize error message to prevent API key exposure
+    const sanitizedError = error instanceof Error 
+      ? error.message.replace(/AIza[A-Za-z0-9_-]{35}/g, '[REDACTED_API_KEY]')
+                     .replace(/Bearer [A-Za-z0-9_-]+/g, 'Bearer [REDACTED]')
+                     .replace(/x-goog-api-key[^}]+/g, 'x-goog-api-key: [REDACTED]')
+      : 'Unknown API error';
+    
+    console.error('Gemini API call failed:', sanitizedError);
+    
+    // Create new error with sanitized message
+    if (error instanceof Error) {
+      const cleanError = new Error(sanitizedError);
+      cleanError.name = error.name;
+      throw cleanError;
+    }
+    throw new Error(sanitizedError);
   }
 };
 

@@ -1,6 +1,7 @@
 /**
- * 🐛 Debug Button Component
- * Comprehensive error logging and debugging interface
+ * 🐛 Debug Button Component - SECURITY PATCHED
+ * Comprehensive error logging and debugging interface with data sanitization
+ * CRITICAL: Now prevents research data leakage through secure logging
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -13,7 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Bug, Download, Copy, Trash2, RefreshCw, AlertTriangle, Info, XCircle, CheckCircle, Activity, Monitor } from 'lucide-react';
+import { Bug, Download, Copy, Trash2, RefreshCw, AlertTriangle, Info, XCircle, CheckCircle, Activity, Monitor, Shield } from 'lucide-react';
+import { dataSanitizer } from '@/services/security/DataSanitizationService';
+import { secureLogger } from '@/services/security/SecureConsoleLogger';
 
 interface ErrorLog {
   id: string;
@@ -250,8 +253,8 @@ export const DebugButton: React.FC = () => {
         url: window.location.href,
         timestamp: new Date().toISOString(),
         viewport: `${window.innerWidth}x${window.innerHeight}`,
-        localStorage: Object.keys(localStorage).length,
-        sessionStorage: Object.keys(sessionStorage).length
+        localStorage: '[REDACTED_FOR_SECURITY]',
+        sessionStorage: '[REDACTED_FOR_SECURITY]'
       },
       appState: {
         reactRoot: !!document.getElementById('root'),
@@ -586,8 +589,8 @@ export const DebugButton: React.FC = () => {
                       value={`URL: ${window.location.href}
 User Agent: ${navigator.userAgent}
 Viewport: ${window.innerWidth}x${window.innerHeight}
-LocalStorage Items: ${Object.keys(localStorage).length}
-SessionStorage Items: ${Object.keys(sessionStorage).length}
+LocalStorage Items: [REDACTED_FOR_SECURITY]
+SessionStorage Items: [REDACTED_FOR_SECURITY]
 Bundle Script: ${document.querySelector('script[src*="index-"]')?.getAttribute('src') || 'Not found'}`}
                       readOnly
                       className="text-xs font-mono"
