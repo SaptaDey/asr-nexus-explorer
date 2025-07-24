@@ -274,11 +274,22 @@ export const ExportReporting: React.FC<ExportReportingProps> = ({
                             figures.forEach(async (figure, index) => {
                                 const figureDiv = document.createElement('div');
                                 figureDiv.className = 'figure-container';
-                                figureDiv.innerHTML = \`
-                                    <h3>\${figure.title}</h3>
-                                    <div id="plot-\${figure.id}" class="plotly-figure"></div>
-                                    <p class="figure-caption">Figure \${index + 1}: \${figure.title}</p>
-                                \`;
+                                
+                                // Safely create elements to prevent XSS
+                                const titleElement = document.createElement('h3');
+                                titleElement.textContent = figure.title; // Safe text content
+                                
+                                const plotDiv = document.createElement('div');
+                                plotDiv.id = \`plot-\${figure.id}\`;
+                                plotDiv.className = 'plotly-figure';
+                                
+                                const captionElement = document.createElement('p');
+                                captionElement.className = 'figure-caption';
+                                captionElement.textContent = \`Figure \${index + 1}: \${figure.title}\`; // Safe text content
+                                
+                                figureDiv.appendChild(titleElement);
+                                figureDiv.appendChild(plotDiv);
+                                figureDiv.appendChild(captionElement);
                                 container.appendChild(figureDiv);
                                 
                                 // Render the Plotly figure

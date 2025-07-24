@@ -119,13 +119,9 @@ export class VisualizationCollector {
   }
 }
 
-// Add global type declarations
+// Global type declarations (Plotly types are now in src/types/plotly.d.ts)
 declare global {
   interface Window {
-    Plotly?: {
-      toImage: (element: HTMLElement, options: any) => Promise<string>;
-      [key: string]: any;
-    };
     html2canvas?: (element: HTMLElement, options: any) => Promise<HTMLCanvasElement>;
   }
 }

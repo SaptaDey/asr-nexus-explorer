@@ -1,6 +1,9 @@
 // ASR-GoT Core Type Definitions
 // Based on ASR-GoT System Prompt Version 2025-07-07
 
+// Import Plotly types to ensure they're available globally
+import './plotly';
+
 export interface ASRGoTMetadata {
   // Core P1.12 Schema
   parameter_id?: string;
@@ -242,4 +245,33 @@ export interface SonarSearchRequest {
   stageId?: string;
   researchDomain?: string;
   customSystemPrompt?: string;
+}
+
+// Missing ASR-GoT State Interface
+export interface AsrGotState {
+  userQuery: string;
+  isProcessing: boolean;
+  isCompleted: boolean;
+  currentStage: number;
+  researchContext: ResearchContext;
+  userPreferences: Record<string, any>;
+  parameters: ASRGoTParameters;
+  graphData: GraphData;
+  stageResults: Record<string, any>;
+  exportedFiles: string[];
+  processingMode: 'automatic' | 'manual';
+  apiCredentials: APICredentials | null;
+}
+
+// Missing Analytics Figure Interface
+export interface AnalyticsFigure {
+  id: string;
+  title: string;
+  code: string;
+  data: any;
+  layout: any;
+  type: 'scatter' | 'bar' | 'histogram' | 'box' | 'heatmap' | 'pie';
+  nodeId: string;
+  generated: string;
+  error?: string;
 }

@@ -72,66 +72,211 @@ export class SupabaseStorageService {
   /**
    * Initialize storage buckets if they don't exist
    */
-  async initializeStorage(): Promise<void> {
+  async initializeStorage(): Promise<{
+    success: boolean;
+    mainBucketReady: boolean;
+    vizBucketReady: boolean;
+    errors: string[];
+  }> {
+    const results = {
+      success: false,
+      mainBucketReady: false,
+      vizBucketReady: false,
+      errors: [] as string[]
+    };
+
     try {
       console.log('🔧 Initializing Supabase storage buckets...');
       
-      // Check if main bucket exists, create if not
-      const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-      
-      if (listError) {
-        console.warn('⚠️ Could not list buckets, proceeding with bucket creation attempts:', listError);
+      // Check authentication first
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        results.errors.push('Storage initialization requires authentication');
+        return results;
       }
       
-      const mainBucketExists = buckets?.some(bucket => bucket.name === this.bucketName);
-      const vizBucketExists = buckets?.some(bucket => bucket.name === this.visualizationBucket);
+      // Check if buckets exist
+      let buckets: any[] = [];
+      try {
+        const { data: bucketsData, error: listError } = await supabase.storage.listBuckets();
+        
+        if (listError) {
+          console.warn('⚠️ Could not list buckets:', listError);
+          results.errors.push(`Bucket listing failed: ${listError.message}`);
+          // Continue with creation attempts anyway
+        } else {
+          buckets = bucketsData || [];
+        }
+      } catch (listErr) {
+        console.warn('⚠️ Bucket listing exception:', listErr);
+        results.errors.push('Failed to list existing buckets');
+      }
+      
+      const mainBucketExists = buckets.some(bucket => bucket.name === this.bucketName);
+      const vizBucketExists = buckets.some(bucket => bucket.name === this.visualizationBucket);
 
+      // Create main bucket
       if (!mainBucketExists) {
         try {
           const { error: createError } = await supabase.storage.createBucket(this.bucketName, {
             public: false,
             allowedMimeTypes: ['application/json', 'text/html', 'text/plain'],
-            fileSizeLimit: 50 * 1024 * 1024 // 50MB limit
+            fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
+            options: {
+              // Add RLS policies for bucket access
+              fileSizeLimit: 50 * 1024 * 1024
+            }
           });
           
-          if (createError && !createError.message.includes('already exists')) {
-            throw createError;
+          if (createError) {
+            // Check if it's just a "bucket already exists" error
+            if (createError.message.includes('already exists') || createError.message.includes('Duplicate')) {
+              console.log('✅ Main storage bucket already exists (creation returned duplicate error)');
+              results.mainBucketReady = true;
+            } else {
+              throw createError;
+            }
+          } else {
+            console.log('✅ Main storage bucket created successfully');
+            results.mainBucketReady = true;
           }
+        } catch (bucketError: any) {
+          console.error('❌ Main bucket creation failed:', bucketError);
+          results.errors.push(`Main bucket creation failed: ${bucketError.message || bucketError}`);
           
-          console.log('✅ Main storage bucket ready');
-        } catch (bucketError) {
-          console.warn('⚠️ Main bucket creation issue (may already exist):', bucketError);
+          // Try to verify if bucket exists anyway (sometimes creation fails but bucket exists)
+          try {
+            const { data: testData, error: testError } = await supabase.storage
+              .from(this.bucketName)
+              .list('', { limit: 1 });
+            
+            if (!testError) {
+              console.log('✅ Main bucket is accessible despite creation error');
+              results.mainBucketReady = true;
+            }
+          } catch (testErr) {
+            console.error('❌ Main bucket is not accessible:', testErr);
+          }
         }
       } else {
         console.log('✅ Main storage bucket already exists');
+        results.mainBucketReady = true;
       }
 
+      // Create visualization bucket
       if (!vizBucketExists) {
         try {
           const { error: createError } = await supabase.storage.createBucket(this.visualizationBucket, {
             public: true, // Visualizations can be public for display
             allowedMimeTypes: ['image/png', 'image/svg+xml', 'application/pdf', 'application/json'],
-            fileSizeLimit: 10 * 1024 * 1024 // 10MB per file
+            fileSizeLimit: 10 * 1024 * 1024, // 10MB per file
+            options: {
+              fileSizeLimit: 10 * 1024 * 1024
+            }
           });
           
-          if (createError && !createError.message.includes('already exists')) {
-            throw createError;
+          if (createError) {
+            // Check if it's just a "bucket already exists" error
+            if (createError.message.includes('already exists') || createError.message.includes('Duplicate')) {
+              console.log('✅ Visualization storage bucket already exists (creation returned duplicate error)');
+              results.vizBucketReady = true;
+            } else {
+              throw createError;
+            }
+          } else {
+            console.log('✅ Visualization storage bucket created successfully');
+            results.vizBucketReady = true;
           }
+        } catch (bucketError: any) {
+          console.error('❌ Visualization bucket creation failed:', bucketError);
+          results.errors.push(`Visualization bucket creation failed: ${bucketError.message || bucketError}`);
           
-          console.log('✅ Visualization storage bucket ready');
-        } catch (bucketError) {
-          console.warn('⚠️ Visualization bucket creation issue (may already exist):', bucketError);
+          // Try to verify if bucket exists anyway
+          try {
+            const { data: testData, error: testError } = await supabase.storage
+              .from(this.visualizationBucket)
+              .list('', { limit: 1 });
+            
+            if (!testError) {
+              console.log('✅ Visualization bucket is accessible despite creation error');
+              results.vizBucketReady = true;
+            }
+          } catch (testErr) {
+            console.error('❌ Visualization bucket is not accessible:', testErr);
+          }
         }
       } else {
         console.log('✅ Visualization storage bucket already exists');
+        results.vizBucketReady = true;
       }
       
-      console.log('🎉 Supabase storage initialization completed');
+      results.success = results.mainBucketReady && results.vizBucketReady;
       
-    } catch (error) {
-      console.error('❌ Storage initialization failed:', error);
-      // Don't throw error to prevent app from breaking
+      if (results.success) {
+        console.log('🎉 Supabase storage initialization completed successfully');
+      } else {
+        console.warn('⚠️ Supabase storage initialization completed with issues:', results.errors);
+      }
+      
+      return results;
+      
+    } catch (error: any) {
+      console.error('❌ Storage initialization failed completely:', error);
+      results.errors.push(`Initialization failed: ${error.message || error}`);
+      return results;
     }
+  }
+
+  /**
+   * Test storage bucket accessibility
+   */
+  async testStorageAccess(): Promise<{
+    mainBucketAccessible: boolean;
+    vizBucketAccessible: boolean;
+    errors: string[];
+  }> {
+    const results = {
+      mainBucketAccessible: false,
+      vizBucketAccessible: false,
+      errors: [] as string[]
+    };
+
+    try {
+      // Test main bucket
+      try {
+        const { data, error } = await supabase.storage
+          .from(this.bucketName)
+          .list('', { limit: 1 });
+        
+        if (error) {
+          results.errors.push(`Main bucket test failed: ${error.message}`);
+        } else {
+          results.mainBucketAccessible = true;
+        }
+      } catch (err: any) {
+        results.errors.push(`Main bucket access exception: ${err.message || err}`);
+      }
+
+      // Test visualization bucket
+      try {
+        const { data, error } = await supabase.storage
+          .from(this.visualizationBucket)
+          .list('', { limit: 1 });
+        
+        if (error) {
+          results.errors.push(`Visualization bucket test failed: ${error.message}`);
+        } else {
+          results.vizBucketAccessible = true;
+        }
+      } catch (err: any) {
+        results.errors.push(`Visualization bucket access exception: ${err.message || err}`);
+      }
+
+    } catch (error: any) {
+      results.errors.push(`Storage test failed: ${error.message || error}`);
+    }
+
+    return results;
   }
 
   /**
@@ -227,34 +372,105 @@ export class SupabaseStorageService {
 
     // If no files provided, try to collect existing visualization files from the page
     if (!files || files.length === 0) {
-      const existingFiles = await this.collectVisualizationFiles();
-      files = existingFiles;
+      try {
+        const existingFiles = await this.collectVisualizationFiles();
+        files = existingFiles;
+      } catch (error) {
+        console.warn('⚠️ Could not collect existing visualization files:', error);
+        return uploadedUrls; // Return empty array rather than failing
+      }
     }
+
+    // Test bucket accessibility first
+    try {
+      const { data, error } = await supabase.storage
+        .from(this.visualizationBucket)
+        .list('', { limit: 1 });
+      
+      if (error) {
+        throw new Error(`Visualization bucket not accessible: ${error.message}`);
+      }
+    } catch (testError) {
+      console.error('❌ Visualization bucket accessibility test failed:', testError);
+      return uploadedUrls;
+    }
+
+    const maxRetries = 3;
+    const retryDelay = 1000; // 1 second
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const filename = `${analysisId}/figure_${i + 1}_${file.name}`;
+      
+      // Validate file
+      if (!file || file.size === 0) {
+        console.warn(`⚠️ Skipping invalid file at index ${i}`);
+        continue;
+      }
+      
+      // Check file size limit (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        console.warn(`⚠️ Skipping oversized file: ${file.name} (${file.size} bytes)`);
+        continue;
+      }
+      
+      const filename = `${analysisId}/figure_${i + 1}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      let uploadSuccess = false;
+      let lastError: any = null;
 
-      try {
-        const { data, error } = await supabase.storage
-          .from(this.visualizationBucket)
-          .upload(filename, file, {
-            cacheControl: '3600',
-            upsert: true
-          });
+      // Retry upload with exponential backoff
+      for (let retry = 0; retry < maxRetries; retry++) {
+        try {
+          const { data, error } = await supabase.storage
+            .from(this.visualizationBucket)
+            .upload(filename, file, {
+              cacheControl: '3600',
+              upsert: true,
+              contentType: file.type || 'application/octet-stream'
+            });
 
-        if (error) throw error;
+          if (error) {
+            // Handle specific error types
+            if (error.message.includes('Bucket not found')) {
+              throw new Error('Visualization bucket not accessible - ensure storage is initialized');
+            }
+            if (error.message.includes('Row Level Security')) {
+              throw new Error('Storage access denied - check authentication and RLS policies');
+            }
+            if (error.message.includes('Duplicate')) {
+              console.log(`📊 File already exists, getting URL: ${filename}`);
+              // File already exists, just get the URL
+            } else {
+              throw error;
+            }
+          }
 
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from(this.visualizationBucket)
-          .getPublicUrl(filename);
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from(this.visualizationBucket)
+            .getPublicUrl(filename);
 
-        uploadedUrls.push(urlData.publicUrl);
-        console.log(`📊 Uploaded visualization ${i + 1}/${files.length}`);
-
-      } catch (error) {
-        console.error(`❌ Failed to upload ${file.name}:`, error);
+          if (urlData?.publicUrl) {
+            uploadedUrls.push(urlData.publicUrl);
+            console.log(`📊 Uploaded visualization ${i + 1}/${files.length}: ${filename}`);
+            uploadSuccess = true;
+            break; // Exit retry loop on success
+          } else {
+            throw new Error('Failed to get public URL for uploaded file');
+          }
+        } catch (error: any) {
+          lastError = error;
+          console.warn(`⚠️ Upload attempt ${retry + 1}/${maxRetries} failed for ${file.name}:`, error.message);
+          
+          if (retry < maxRetries - 1) {
+            // Wait before retrying (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, retryDelay * Math.pow(2, retry)));
+          }
+        }
+      }
+      
+      if (!uploadSuccess) {
+        console.error(`❌ Failed to upload ${file.name} after ${maxRetries} attempts:`, lastError);
+        // Continue with other files rather than failing completely
       }
     }
 

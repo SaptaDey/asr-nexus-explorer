@@ -10,6 +10,7 @@ import { CollaborationService } from '@/services/collaboration/CollaborationServ
 import { performanceOptimizationService } from '@/services/optimization/PerformanceOptimizationService';
 import { dataExportImportService } from '@/services/data/DataExportImportService';
 import { User } from '@supabase/supabase-js';
+import { AuthUser } from '@/services/auth/AuthService';
 
 interface DatabaseContextType {
   // Core services
@@ -20,7 +21,7 @@ interface DatabaseContextType {
   dataPortability: typeof dataExportImportService;
   
   // Authentication state
-  user: User | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   authError: string | null;
@@ -59,7 +60,7 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
   const [collaboration] = useState(() => new CollaborationService());
   
   // Authentication state
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -111,17 +112,18 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
    * Set up authentication state listener
    */
   useEffect(() => {
-    const { data: { subscription } } = auth.supabase.auth.onAuthStateChange(
-      async (event, session) => {
+    const unsubscribe = auth.onAuthStateChange(
+      async (authState) => {
         try {
-          if (event === 'SIGNED_IN' && session?.user) {
-            setUser(session.user);
+          if (authState.user && authState.session) {
+            // Cast to AuthUser to maintain type consistency
+            setUser(authState.user as AuthUser);
             setIsAuthenticated(true);
             setAuthError(null);
             
             // Initialize user-specific services
-            await collaboration.initialize(session.user.id);
-          } else if (event === 'SIGNED_OUT') {
+            await collaboration.initialize(authState.user.id);
+          } else {
             setUser(null);
             setIsAuthenticated(false);
             setAuthError(null);
@@ -135,8 +137,8 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
       }
     );
 
-    return () => subscription.unsubscribe();
-  }, [auth.supabase.auth, collaboration]);
+    return unsubscribe;
+  }, [auth, collaboration]);
 
   /**
    * Initialize services on mount
@@ -144,6 +146,34 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
   useEffect(() => {
     initializeServices();
   }, [initializeServices]);
+
+  /**
+   * Monitor connection status periodically
+   */
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const statusInterval = setInterval(() => {
+      try {
+        const currentStatus = db.getConnectionStatus();
+        if (currentStatus !== connectionStatus) {
+          setConnectionStatus(currentStatus);
+          
+          if (currentStatus === 'error') {
+            setLastError('Real-time connection lost');
+          } else if (currentStatus === 'connected') {
+            setLastError(null);
+          }
+        }
+      } catch (error) {
+        console.error('Connection status check failed:', error);
+        setConnectionStatus('error');
+        setLastError('Connection monitoring failed');
+      }
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(statusInterval);
+  }, [db, connectionStatus, isInitialized]);
 
   /**
    * Sign in user
@@ -335,9 +365,10 @@ export function useDatabase(): DatabaseContextType {
 }
 
 /**
- * Hook for authentication only
+ * Hook for database authentication state only
+ * Note: Use useAuthContext() from AuthContext for main authentication
  */
-export function useAuth() {
+export function useDatabaseAuth() {
   const { user, isAuthenticated, isLoading, authError, signIn, signUp, signOut, clearError } = useDatabase();
   return { user, isAuthenticated, isLoading, authError, signIn, signUp, signOut, clearError };
 }

@@ -15,6 +15,9 @@ import type {
 } from '@/services/auth/AuthService';
 
 interface AuthContextType extends AuthState {
+  // Profile shortcut for easier access
+  profile?: any; // Direct access to user.profile
+  
   // Actions
   signUp: (data: SignUpData) => Promise<{ success: boolean; error?: string }>;
   signIn: (data: SignInData) => Promise<{ success: boolean; error?: string }>;
@@ -44,8 +47,14 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const auth = useAuth();
 
+  // Add profile shortcut to the context value
+  const contextValue: AuthContextType = {
+    ...auth,
+    profile: auth.user?.profile
+  };
+
   return (
-    <AuthContext.Provider value={auth}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

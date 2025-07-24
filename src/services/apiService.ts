@@ -63,6 +63,11 @@ export const callGeminiAPI = async (
     throw new Error('Invalid Gemini API key');
   }
 
+  // Rate limiting check
+  if (!apiRateLimiter.isAllowed('gemini-api')) {
+    throw new Error('Rate limit exceeded. Too many API requests. Please wait before making another request.');
+  }
+
   // **CRITICAL FIX**: Defensive validation before validateInput
   if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
     throw new Error('API call failed: Invalid prompt - must be a non-empty string');
@@ -214,6 +219,11 @@ export const callGeminiAPI = async (
         // Retry with significantly reduced token limits
         const retryMaxTokens = Math.max(1000, Math.floor(dynamicMaxTokens * 0.5)); // Reduce by 50%
         console.log(`🔄 Retrying with reduced token limit: ${retryMaxTokens} (was ${dynamicMaxTokens})`);
+        
+        // Add exponential backoff delay to avoid rate limiting
+        const delayMs = Math.min(1000 * Math.pow(2, currentRetry), 5000); // Max 5 seconds
+        console.log(`⏳ Waiting ${delayMs}ms before retry to avoid rate limits...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
         
         return await callGeminiAPI(prompt, apiKey, capability, schema, {
           ...options,

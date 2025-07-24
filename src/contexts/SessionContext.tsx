@@ -469,27 +469,66 @@ export function SessionProvider({ children }: SessionProviderProps) {
    * Subscribe to real-time session updates
    */
   const subscribeToSession = useCallback((sessionId: string) => {
-    if (!collaboration) return () => {};
+    if (!db) return () => {};
     
-    return collaboration.subscribeToSession(sessionId, (update) => {
-      switch (update.type) {
-        case 'user_joined':
-          setActiveUsers(prev => [...prev, update.user]);
-          break;
-        case 'user_left':
-          setActiveUsers(prev => prev.filter(u => u.id !== update.user.id));
-          break;
-        case 'graph_updated':
-          setGraphData(update.graphData);
-          break;
-        case 'hypothesis_added':
-          setHypotheses(prev => [...prev, update.hypothesis]);
-          break;
-        default:
-          break;
-      }
-    });
-  }, [collaboration]);
+    try {
+      // Subscribe to session changes
+      const sessionChannel = db.subscribeToSession(sessionId, (payload) => {
+        console.log('Session update received:', payload);
+        try {
+          const { eventType, new: newRecord, old: oldRecord } = payload;
+          
+          switch (eventType) {
+            case 'UPDATE':
+              if (newRecord) {
+                setCurrentSession(newRecord);
+              }
+              break;
+            case 'DELETE':
+              if (oldRecord?.id === sessionId) {
+                setCurrentSession(null);
+                setSessionId(null);
+              }
+              break;
+            default:
+              break;
+          }
+        } catch (error) {
+          console.error('Error processing session update:', error);
+          setSessionError('Failed to process real-time update');
+        }
+      });
+      
+      // Subscribe to graph changes
+      const graphChannel = db.subscribeToGraphChanges(sessionId, (payload) => {
+        console.log('Graph update received:', payload);
+        try {
+          const { eventType, new: newRecord } = payload;
+          
+          if (eventType === 'UPDATE' && newRecord) {
+            setGraphData(newRecord.graph_data);
+          }
+        } catch (error) {
+          console.error('Error processing graph update:', error);
+          setGraphError('Failed to process graph update');
+        }
+      });
+      
+      // Return cleanup function
+      return () => {
+        try {
+          sessionChannel?.unsubscribe();
+          graphChannel?.unsubscribe();
+        } catch (error) {
+          console.error('Error unsubscribing from real-time updates:', error);
+        }
+      };
+    } catch (error) {
+      console.error('Failed to subscribe to real-time updates:', error);
+      setSessionError('Failed to establish real-time connection');
+      return () => {};
+    }
+  }, [db]);
 
   /**
    * Clear all errors
@@ -514,8 +553,17 @@ export function SessionProvider({ children }: SessionProviderProps) {
       if (hypothesisCompetition) {
         hypothesisCompetition.cleanup();
       }
+      
+      // Cleanup database subscriptions
+      if (db) {
+        try {
+          db.cleanupSubscriptions?.();
+        } catch (error) {
+          console.error('Error cleaning up database subscriptions:', error);
+        }
+      }
     };
-  }, [hypothesisCompetition]);
+  }, [hypothesisCompetition, db]);
 
   // Implement additional action methods (simplified for brevity)
   const addNode = useCallback(async (node: any) => {

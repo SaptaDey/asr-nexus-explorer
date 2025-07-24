@@ -26,16 +26,43 @@ try {
 } catch (error) {
   console.error('❌ main.tsx: Critical error during app initialization:', error);
   
-  // Show error on page
+  // Show error on page safely
   const errorDiv = document.createElement('div');
   errorDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 999999; padding: 20px; font-family: monospace;';
-  errorDiv.innerHTML = `
-    <h1 style="color: red;">🚨 App Initialization Failed</h1>
-    <p><strong>Error:</strong> ${error.message}</p>
-    <p><strong>Stack:</strong> <pre>${error.stack}</pre></p>
-    <p><strong>Time:</strong> ${new Date().toISOString()}</p>
-    <hr>
-    <p>This error prevents the ASR-GoT app from loading. Please check the browser console for more details.</p>
-  `;
+  
+  // Safely create elements to prevent XSS
+  const title = document.createElement('h1');
+  title.style.color = 'red';
+  title.textContent = '🚨 App Initialization Failed';
+  
+  const errorText = document.createElement('p');
+  errorText.innerHTML = '<strong>Error:</strong> ';
+  const errorMsg = document.createElement('span');
+  errorMsg.textContent = error?.message || 'Unknown error';
+  errorText.appendChild(errorMsg);
+  
+  const stackText = document.createElement('p');
+  stackText.innerHTML = '<strong>Stack:</strong> ';
+  const stackPre = document.createElement('pre');
+  stackPre.textContent = error?.stack || 'No stack trace available';
+  stackText.appendChild(stackPre);
+  
+  const timeText = document.createElement('p');
+  timeText.innerHTML = '<strong>Time:</strong> ';
+  const timeSpan = document.createElement('span');
+  timeSpan.textContent = new Date().toISOString();
+  timeText.appendChild(timeSpan);
+  
+  const hr = document.createElement('hr');
+  
+  const helpText = document.createElement('p');
+  helpText.textContent = 'This error prevents the ASR-GoT app from loading. Please check the browser console for more details.';
+  
+  errorDiv.appendChild(title);
+  errorDiv.appendChild(errorText);
+  errorDiv.appendChild(stackText);
+  errorDiv.appendChild(timeText);
+  errorDiv.appendChild(hr);
+  errorDiv.appendChild(helpText);
   document.body.appendChild(errorDiv);
 }

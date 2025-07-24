@@ -17,11 +17,7 @@ import { safeJSONParse, validatePlotlyConfig, apiRateLimiter } from '@/utils/sec
 import { EvidenceDataExtractor, EvidenceBasedChart } from '@/services/EvidenceDataExtractor';
 
 // Import Plotly.js dynamically to avoid bundle size issues
-declare global {
-  interface Window {
-    Plotly: any;
-  }
-}
+// Type definitions are now in src/types/plotly.d.ts
 
 interface AnalyticsFigure {
   id: string;
@@ -54,6 +50,8 @@ export const VisualAnalytics: React.FC<VisualAnalyticsProps> = ({
   const [plotlyLoaded, setPlotlyLoaded] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
   const plotContainerRefs = useRef<Record<string, HTMLDivElement>>({});
+  // Track timeouts for cleanup to prevent memory leaks
+  const timeoutsRef = useRef<Set<NodeJS.Timeout>>(new Set());
 
   // **PERFORMANCE OPTIMIZATION STATE**
   const [currentPage, setCurrentPage] = useState(0);
@@ -91,6 +89,17 @@ export const VisualAnalytics: React.FC<VisualAnalyticsProps> = ({
       if (script.parentNode) {
         script.parentNode.removeChild(script);
       }
+    };
+  }, []);
+
+  // Cleanup timeouts on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Clear all pending timeouts
+      timeoutsRef.current.forEach(timeout => {
+        clearTimeout(timeout);
+      });
+      timeoutsRef.current.clear();
     };
   }, []);
 
@@ -354,6 +363,10 @@ Create ${strategy.charts} chart(s) with simple structure. Use ONLY valid JSON fo
               return charts.map((config: any, index: number) => ({
                 id: `fallback-${index}`,
                 title: config.title || 'Evidence Analysis',
+                code: JSON.stringify({
+                  data: config.data || [{"x": ["Evidence"], "y": [1], "type": "bar"}],
+                  layout: config.layout || {"title": "Evidence Analysis"}
+                }),
                 type: config.type || 'bar',
                 data: config.data || [{"x": ["Evidence"], "y": [1], "type": "bar"}],
                 layout: config.layout || {"title": "Evidence Analysis"},
@@ -384,6 +397,19 @@ Create ${strategy.charts} chart(s) with simple structure. Use ONLY valid JSON fo
         charts.push({
           id: 'minimal-confidence',
           title: 'Evidence Confidence Levels',
+          code: JSON.stringify({
+            data: [{
+              x: evidenceNodes.slice(0, 5).map((node, i) => `Evidence ${i + 1}`),
+              y: evidenceNodes.slice(0, 5).map(node => node.confidence?.[0] || 0.7),
+              type: 'bar',
+              marker: { color: '#2563eb' }
+            }],
+            layout: {
+              title: 'Evidence Confidence Analysis',
+              xaxis: { title: 'Evidence Sources' },
+              yaxis: { title: 'Confidence Level', range: [0, 1] }
+            }
+          }),
           type: 'bar',
           data: [{
             x: evidenceNodes.slice(0, 5).map((node, i) => `Evidence ${i + 1}`),
@@ -412,6 +438,16 @@ Create ${strategy.charts} chart(s) with simple structure. Use ONLY valid JSON fo
         charts.push({
           id: 'minimal-types',
           title: 'Evidence Type Distribution',
+          code: JSON.stringify({
+            data: [{
+              labels: Object.keys(typeCount),
+              values: Object.values(typeCount),
+              type: 'pie'
+            }],
+            layout: {
+              title: 'Evidence Sources by Type'
+            }
+          }),
           type: 'pie',
           data: [{
             labels: Object.keys(typeCount),
@@ -704,7 +740,7 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
 
       generateAnalysis();
     }
-  }, [currentStage, plotlyLoaded, geminiApiKey, hasGenerated, graphData.nodes.length]);
+  }, [currentStage, plotlyLoaded, geminiApiKey, hasGenerated, graphData.nodes.length, figures.length, generateComprehensiveVisualizations]);
 
   // **PERFORMANCE-OPTIMIZED LAZY RENDERING**
   const renderPlotlyFigure = useCallback((figure: AnalyticsFigure, isLazyLoad: boolean = false) => {
@@ -808,7 +844,11 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
                 for (let i = nextPageStart; i < nextPageEnd; i++) {
                   if (figures[i] && !renderedFigures.has(figures[i].id)) {
                     console.log(`🚀 Auto-loading next chart: ${figures[i].id}`);
-                    setTimeout(() => renderPlotlyFigure(figures[i], true), 100 * (i - nextPageStart));
+                    const timeoutId = setTimeout(() => {
+                      timeoutsRef.current.delete(timeoutId);
+                      renderPlotlyFigure(figures[i], true);
+                    }, 100 * (i - nextPageStart));
+                    timeoutsRef.current.add(timeoutId);
                   }
                 }
               }
@@ -828,7 +868,11 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
     // Render immediately if should render (removed useEffect to comply with React hooks rules)
     if (shouldRender && !isAlreadyRendered && !isCurrentlyRendering) {
       // Trigger async render
-      setTimeout(() => renderChart(), 0);
+      const timeoutId = setTimeout(() => {
+        timeoutsRef.current.delete(timeoutId);
+        renderChart();
+      }, 0);
+      timeoutsRef.current.add(timeoutId);
     }
 
     return (

@@ -79,10 +79,17 @@ export const MermaidChart: React.FC<MermaidChartProps> = ({ chart, className = '
 
     if (ref.current) {
       const chartId = id || `mermaid-chart-${Math.random().toString(36).substr(2, 9)}`;
-      ref.current.innerHTML = `<div class="mermaid" id="${chartId}">${chart}</div>`;
+      
+      // Safely create elements to prevent XSS
+      ref.current.innerHTML = ''; // Clear existing content
+      const mermaidDiv = document.createElement('div');
+      mermaidDiv.className = 'mermaid';
+      mermaidDiv.id = chartId;
+      mermaidDiv.textContent = chart; // Safe text content - mermaid will parse it
+      ref.current.appendChild(mermaidDiv);
       
       mermaid.run({
-        nodes: [ref.current.querySelector('.mermaid')!]
+        nodes: [mermaidDiv]
       }).catch(console.error);
     }
   }, [chart, id]);

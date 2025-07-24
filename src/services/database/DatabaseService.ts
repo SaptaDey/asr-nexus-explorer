@@ -1,11 +1,40 @@
 /**
  * Comprehensive Database Service for ASR-GoT Framework
- * Handles all database operations with Supabase integration
+ * Handles all database operations with Supabase integration and schema validation
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { GraphData, GraphNode, GraphEdge, StageExecution } from '@/types/asrGotTypes';
 import { Hypothesis } from '@/services/reasoning/HypothesisCompetitionFramework';
+import { DatabaseValidationWrapper, createValidationWrapper } from './ValidationWrapper';
+import { migrationService, MigrationService } from './MigrationService';
+import { 
+  validateAndSanitize,
+  ResearchSessionCreateSchema,
+  ResearchSessionUpdateSchema,
+  GraphNodeCreateSchema,
+  GraphEdgeCreateSchema,
+  StageExecutionCreateSchema,
+  HypothesisCreateSchema,
+  KnowledgeGapCreateSchema,
+  PerformanceMetricsCreateSchema,
+  ErrorLogCreateSchema,
+  ActivityLogCreateSchema,
+  type ResearchSessionCreateType,
+  type ResearchSessionUpdateType
+} from './schemas';
+import { 
+  SupabaseTypeAdapter,
+  convertResearchSessionToQuerySession,
+  convertQuerySessionToCustom,
+  convertStageExecutionToSupabase,
+  convertStageExecutionFromSupabase,
+  convertGraphDataToSupabase,
+  convertGraphDataFromSupabase,
+  isSupabaseQuerySession,
+  DatabaseMigrationUtils,
+  type Database
+} from '@/integrations/supabase/typeMapping';
 
 // Database types matching our schema
 export interface DbProfile {
@@ -137,7 +166,8 @@ export interface DbErrorLog {
 }
 
 export class DatabaseService {
-  private supabase: SupabaseClient;
+  private supabase: SupabaseClient<Database>;
+  private validator: DatabaseValidationWrapper;
 
   constructor() {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -147,7 +177,8 @@ export class DatabaseService {
       throw new Error('Missing Supabase configuration');
     }
 
-    this.supabase = createClient(supabaseUrl, supabaseKey);
+    this.supabase = createClient<Database>(supabaseUrl, supabaseKey);
+    this.validator = createValidationWrapper(this.supabase);
   }
 
   /**
@@ -215,48 +246,106 @@ export class DatabaseService {
    * Research Session Management
    */
   async createResearchSession(sessionData: Omit<DbResearchSession, 'id' | 'created_at' | 'updated_at'>): Promise<DbResearchSession> {
-    const { data, error } = await this.supabase
-      .from('research_sessions')
-      .insert(sessionData)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      // Validate input data before database operation
+      const validatedData = validateAndSanitize(sessionData, ResearchSessionCreateSchema);
+      
+      // Convert to Supabase-compatible format using query_sessions table
+      const supabaseSessionData = convertResearchSessionToQuerySession({
+        id: crypto.randomUUID(),
+        ...validatedData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+      // Insert into query_sessions table (which exists in Supabase)
+      const { data, error } = await this.supabase
+        .from('query_sessions')
+        .insert(supabaseSessionData)
+        .select()
+        .single();
+      
+      if (error) throw new Error(`Database operation failed: ${error.message}`);
+      if (!data) throw new Error('No data returned from create operation');
+      
+      // Convert back to custom format
+      return convertQuerySessionToCustom(data) as DbResearchSession;
+    } catch (validationError) {
+      throw new Error(`Validation failed: ${validationError instanceof Error ? validationError.message : 'Unknown validation error'}`);
+    }
   }
 
   async getResearchSessions(userId: string): Promise<DbResearchSession[]> {
-    const { data, error } = await this.supabase
-      .from('research_sessions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false });
-    
-    if (error) throw error;
-    return data || [];
+    try {
+      // Query from query_sessions table (which exists in Supabase)
+      const { data, error } = await this.supabase
+        .from('query_sessions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false });
+      
+      if (error) throw error;
+      if (!data) return [];
+      
+      // Convert all query sessions to research session format
+      return data.map(querySession => convertQuerySessionToCustom(querySession) as DbResearchSession);
+    } catch (error) {
+      throw new Error(`Failed to get research sessions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async getResearchSession(sessionId: string): Promise<DbResearchSession | null> {
-    const { data, error } = await this.supabase
-      .from('research_sessions')
-      .select('*')
-      .eq('id', sessionId)
-      .single();
-    
-    if (error && error.code !== 'PGRST116') throw error;
-    return data;
+    try {
+      // Query from query_sessions table (which exists in Supabase)
+      const { data, error } = await this.supabase
+        .from('query_sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      if (!data) return null;
+      
+      // Convert query session to research session format
+      return convertQuerySessionToCustom(data) as DbResearchSession;
+    } catch (error) {
+      throw new Error(`Failed to get research session: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async updateResearchSession(sessionId: string, updates: Partial<DbResearchSession>): Promise<DbResearchSession> {
-    const { data, error } = await this.supabase
-      .from('research_sessions')
-      .update(updates)
-      .eq('id', sessionId)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      // Validate sessionId
+      if (!sessionId || typeof sessionId !== 'string') {
+        throw new Error('Invalid session ID');
+      }
+
+      // Validate input data before database operation
+      const validatedUpdates = validateAndSanitize(updates, ResearchSessionUpdateSchema);
+      
+      // Convert updates to query_sessions format
+      const supabaseUpdates = convertResearchSessionToQuerySession({
+        id: sessionId,
+        updated_at: new Date().toISOString(),
+        ...validatedUpdates
+      } as any);
+
+      // Update in query_sessions table (which exists in Supabase)
+      const { data, error } = await this.supabase
+        .from('query_sessions')
+        .update(supabaseUpdates)
+        .eq('id', sessionId)
+        .select()
+        .single();
+      
+      if (error) throw new Error(`Database operation failed: ${error.message}`);
+      if (!data) throw new Error('No data returned from update operation');
+      
+      // Convert back to custom format
+      return convertQuerySessionToCustom(data) as DbResearchSession;
+    } catch (validationError) {
+      throw new Error(`Validation failed: ${validationError instanceof Error ? validationError.message : 'Unknown validation error'}`);
+    }
   }
 
   async deleteResearchSession(sessionId: string): Promise<void> {
@@ -271,147 +360,125 @@ export class DatabaseService {
   /**
    * Graph Data Management
    */
-  async saveGraphData(sessionId: string, graphData: GraphData): Promise<void> {
-    // Update the main session with graph data
-    await this.updateResearchSession(sessionId, { graph_data: graphData });
-    
-    // Save individual nodes
-    if (graphData.nodes.length > 0) {
-      await this.saveGraphNodes(sessionId, graphData.nodes);
-    }
-    
-    // Save individual edges
-    if (graphData.edges.length > 0) {
-      await this.saveGraphEdges(sessionId, graphData.edges);
-    }
-  }
-
-
   async saveGraphNodes(sessionId: string, nodes: GraphNode[]): Promise<void> {
-    const dbNodes = nodes.map(node => ({
-      session_id: sessionId,
-      node_id: node.id,
-      label: node.label,
-      node_type: node.type,
-      confidence: node.confidence,
-      position: node.position,
-      metadata: {
-        ...node,
-        // Remove redundant fields to avoid duplication
-        id: undefined,
-        label: undefined,
-        type: undefined,
-        confidence: undefined,
-        position: undefined
-      }
-    }));
-
-    // Use upsert to handle existing nodes
-    const { error } = await this.supabase
-      .from('graph_nodes')
-      .upsert(dbNodes, { 
-        onConflict: 'session_id,node_id',
-        ignoreDuplicates: false 
-      });
-    
-    if (error) throw error;
+    // Get existing graph data and update nodes
+    const existingData = await this.getGraphData(sessionId) || { nodes: [], edges: [] };
+    const updatedData = { ...existingData, nodes };
+    await this.saveGraphData(sessionId, updatedData);
   }
 
   async saveGraphEdges(sessionId: string, edges: GraphEdge[]): Promise<void> {
-    const dbEdges = edges.map(edge => ({
-      session_id: sessionId,
-      edge_id: edge.id,
-      source_node_id: edge.source,
-      target_node_id: edge.target,
-      edge_type: edge.type,
-      confidence: edge.confidence,
-      bidirectional: edge.bidirectional || false,
-      metadata: {
-        ...edge,
-        // Remove redundant fields
-        id: undefined,
-        source: undefined,
-        target: undefined,
-        type: undefined,
-        confidence: undefined,
-        bidirectional: undefined
-      }
-    }));
+    // Get existing graph data and update edges  
+    const existingData = await this.getGraphData(sessionId) || { nodes: [], edges: [] };
+    const updatedData = { ...existingData, edges };
+    await this.saveGraphData(sessionId, updatedData);
+  }
 
-    const { error } = await this.supabase
-      .from('graph_edges')
-      .upsert(dbEdges, { 
-        onConflict: 'session_id,edge_id',
-        ignoreDuplicates: false 
-      });
-    
-    if (error) throw error;
+  /**
+   * Save complete graph data using Supabase graph_data table
+   */
+  async saveGraphData(sessionId: string, graphData: GraphData): Promise<void> {
+    try {
+      // Validate sessionId
+      if (!sessionId || typeof sessionId !== 'string') {
+        throw new Error('Invalid session ID');
+      }
+
+      // Convert to Supabase format
+      const supabaseGraphData = convertGraphDataToSupabase(sessionId, graphData);
+
+      // Upsert graph data
+      const { error } = await this.supabase
+        .from('graph_data')
+        .upsert(supabaseGraphData, { 
+          onConflict: 'session_id',
+          ignoreDuplicates: false 
+        });
+      
+      if (error) throw new Error(`Database operation failed: ${error.message}`);
+      
+    } catch (error) {
+      throw new Error(`Graph data save failed: ${error instanceof Error ? error.message : 'Unknown validation error'}`);
+    }
   }
 
   async getGraphData(sessionId: string): Promise<GraphData | null> {
-    // Get session with graph data
-    const session = await this.getResearchSession(sessionId);
-    if (!session?.graph_data) return null;
-    
-    // Optionally get detailed nodes and edges
-    const [nodes, edges] = await Promise.all([
-      this.getGraphNodes(sessionId),
-      this.getGraphEdges(sessionId)
-    ]);
-    
-    return {
-      ...session.graph_data,
-      nodes: nodes.length > 0 ? this.convertDbNodesToGraphNodes(nodes) : session.graph_data.nodes,
-      edges: edges.length > 0 ? this.convertDbEdgesToGraphEdges(edges) : session.graph_data.edges
-    };
+    try {
+      // Get graph data from graph_data table (which exists in Supabase)
+      const { data, error } = await this.supabase
+        .from('graph_data')
+        .select('*')
+        .eq('session_id', sessionId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      if (!data) {
+        // Fallback to session graph_data
+        const session = await this.getResearchSession(sessionId);
+        return session?.graph_data || null;
+      }
+      
+      // Convert from Supabase format
+      return convertGraphDataFromSupabase(data);
+    } catch (error) {
+      // Fallback to session graph_data
+      const session = await this.getResearchSession(sessionId);
+      return session?.graph_data || null;
+    }
   }
 
   async getGraphNodes(sessionId: string): Promise<DbGraphNode[]> {
-    const { data, error } = await this.supabase
-      .from('graph_nodes')
-      .select('*')
-      .eq('session_id', sessionId)
-      .order('created_at');
-    
-    if (error) throw error;
-    return data || [];
+    // Graph nodes are stored in graph_data table for current schema compatibility
+    const graphData = await this.getGraphData(sessionId);
+    return []; // Return empty for now - data is in graph_data.nodes
   }
 
   async getGraphEdges(sessionId: string): Promise<DbGraphEdge[]> {
-    const { data, error } = await this.supabase
-      .from('graph_edges')
-      .select('*')
-      .eq('session_id', sessionId)
-      .order('created_at');
-    
-    if (error) throw error;
-    return data || [];
+    // Graph edges are stored in graph_data table for current schema compatibility
+    const graphData = await this.getGraphData(sessionId);
+    return []; // Return empty for now - data is in graph_data.edges
   }
 
   /**
    * Stage Execution Management
    */
   async saveStageExecution(stageData: Omit<DbStageExecution, 'id' | 'created_at'>): Promise<DbStageExecution> {
-    const { data, error } = await this.supabase
-      .from('stage_executions')
-      .insert(stageData)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      // Validate input data before database operation
+      const validatedData = validateAndSanitize(stageData, StageExecutionCreateSchema);
+      
+      const { data, error } = await this.validator.createStageExecution(validatedData);
+      
+      if (error) throw new Error(`Database operation failed: ${error.message}`);
+      if (!data) throw new Error('No data returned from stage execution create operation');
+      
+      return data as DbStageExecution;
+    } catch (validationError) {
+      throw new Error(`Stage execution validation failed: ${validationError instanceof Error ? validationError.message : 'Unknown validation error'}`);
+    }
   }
 
   async updateStageExecution(executionId: string, updates: Partial<DbStageExecution>): Promise<DbStageExecution> {
-    const { data, error } = await this.supabase
-      .from('stage_executions')
-      .update(updates)
-      .eq('id', executionId)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      // Validate executionId
+      if (!executionId || typeof executionId !== 'string') {
+        throw new Error('Invalid execution ID');
+      }
+
+      // Sanitize and validate updates
+      const sanitizedUpdates = this.validator.sanitizeForDatabase(updates);
+      const updateSchema = StageExecutionCreateSchema.partial();
+      const validatedUpdates = validateAndSanitize(sanitizedUpdates, updateSchema);
+      
+      const { data, error } = await this.validator.updateStageExecution(executionId, validatedUpdates);
+      
+      if (error) throw new Error(`Database operation failed: ${error.message}`);
+      if (!data) throw new Error('No data returned from stage execution update operation');
+      
+      return data as DbStageExecution;
+    } catch (validationError) {
+      throw new Error(`Stage execution update validation failed: ${validationError instanceof Error ? validationError.message : 'Unknown validation error'}`);
+    }
   }
 
   async getStageExecutions(sessionId: string): Promise<DbStageExecution[]> {
@@ -521,77 +588,175 @@ export class DatabaseService {
    * Error Logging
    */
   async logError(errorData: Omit<DbErrorLog, 'id' | 'created_at'>): Promise<DbErrorLog> {
-    const { data, error } = await this.supabase
-      .from('error_logs')
-      .insert(errorData)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      // Validate input data before database operation
+      const validatedData = validateAndSanitize(errorData, ErrorLogCreateSchema);
+      
+      const { data, error } = await this.validator.createErrorLog(validatedData);
+      
+      if (error) throw new Error(`Database operation failed: ${error.message}`);
+      if (!data) throw new Error('No data returned from error log create operation');
+      
+      return data as DbErrorLog;
+    } catch (validationError) {
+      // For error logging, we want to be more permissive to avoid losing error data
+      console.error('Error log validation failed, attempting to sanitize and retry:', validationError);
+      
+      try {
+        // Fallback: sanitize the data and try again with minimal validation
+        const sanitizedData = this.validator.sanitizeForDatabase(errorData);
+        const { data, error } = await this.supabase
+          .from('error_logs')
+          .insert(sanitizedData)
+          .select()
+          .single();
+        
+        if (error) throw new Error(`Database operation failed: ${error.message}`);
+        return data;
+      } catch (fallbackError) {
+        throw new Error(`Error logging failed completely: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
+      }
+    }
   }
 
   async getErrorLogs(sessionId?: string, severity?: string): Promise<DbErrorLog[]> {
-    let query = this.supabase
-      .from('error_logs')
-      .select('*');
+    try {
+      // Validate query parameters
+      const validatedParams = this.validator.validateQueryParams({
+        session_id: sessionId,
+        severity: severity
+      });
 
-    if (sessionId) {
-      query = query.eq('session_id', sessionId);
+      let query = this.supabase
+        .from('error_logs')
+        .select('*');
+
+      if (validatedParams.session_id) {
+        query = query.eq('session_id', validatedParams.session_id);
+      }
+
+      if (validatedParams.severity) {
+        query = query.eq('severity', validatedParams.severity);
+      }
+
+      const { data, error } = await query
+        .eq('resolved', false)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    } catch (validationError) {
+      throw new Error(`Error logs query validation failed: ${validationError instanceof Error ? validationError.message : 'Unknown validation error'}`);
     }
-
-    if (severity) {
-      query = query.eq('severity', severity);
-    }
-
-    const { data, error } = await query
-      .eq('resolved', false)
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    return data || [];
   }
 
   /**
    * Real-time Subscriptions
    */
   subscribeToSession(sessionId: string, callback: (payload: any) => void) {
-    return this.supabase
-      .channel(`session_${sessionId}`)
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'research_sessions',
-          filter: `id=eq.${sessionId}`
-        }, 
-        callback
-      )
-      .subscribe();
+    try {
+      const channel = this.supabase
+        .channel(`session_${sessionId}`)
+        .on('postgres_changes', 
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'query_sessions', // Fixed: Use actual table name
+            filter: `id=eq.${sessionId}`
+          }, 
+          (payload) => {
+            try {
+              callback(payload);
+            } catch (error) {
+              console.error('Session subscription callback error:', error);
+            }
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log(`Session subscription active for ${sessionId}`);
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error(`Session subscription error for ${sessionId}`);
+          } else if (status === 'TIMED_OUT') {
+            console.warn(`Session subscription timeout for ${sessionId}`);
+          }
+        });
+        
+      return channel;
+    } catch (error) {
+      console.error('Failed to create session subscription:', error);
+      throw error;
+    }
   }
 
   subscribeToGraphChanges(sessionId: string, callback: (payload: any) => void) {
-    return this.supabase
-      .channel(`graph_${sessionId}`)
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'graph_nodes',
-          filter: `session_id=eq.${sessionId}`
-        }, 
-        callback
-      )
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'graph_edges',
-          filter: `session_id=eq.${sessionId}`
-        }, 
-        callback
-      )
-      .subscribe();
+    try {
+      const channel = this.supabase
+        .channel(`graph_${sessionId}`)
+        .on('postgres_changes', 
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'graph_data', // Fixed: Use actual table name
+            filter: `session_id=eq.${sessionId}`
+          }, 
+          (payload) => {
+            try {
+              callback(payload);
+            } catch (error) {
+              console.error('Graph subscription callback error:', error);
+            }
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log(`Graph subscription active for ${sessionId}`);
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error(`Graph subscription error for ${sessionId}`);
+          } else if (status === 'TIMED_OUT') {
+            console.warn(`Graph subscription timeout for ${sessionId}`);
+          }
+        });
+        
+      return channel;
+    } catch (error) {
+      console.error('Failed to create graph subscription:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get connection status
+   */
+  getConnectionStatus(): 'connected' | 'connecting' | 'disconnected' | 'error' {
+    try {
+      // Check Supabase client connection status
+      const channels = this.supabase.getChannels();
+      const hasActiveChannels = channels.some(channel => channel.state === 'joined');
+      
+      if (hasActiveChannels) {
+        return 'connected';
+      } else {
+        return 'disconnected';
+      }
+    } catch (error) {
+      console.error('Connection status check failed:', error);
+      return 'error';
+    }
+  }
+
+  /**
+   * Cleanup all subscriptions
+   */
+  async cleanupSubscriptions(): Promise<void> {
+    try {
+      const channels = this.supabase.getChannels();
+      await Promise.all(channels.map(channel => this.supabase.removeChannel(channel)));
+      console.log('All subscriptions cleaned up');
+    } catch (error) {
+      console.error('Failed to cleanup subscriptions:', error);
+      throw error;
+    }
   }
 
   /**
@@ -630,6 +795,9 @@ export class DatabaseService {
       if (health.status === 'unhealthy') {
         throw new Error(`Database initialization failed: ${health.message}`);
       }
+      
+      // Check and validate database schema
+      await this.validateAndRepairSchema();
       
       // Initialize any required database state
       console.log('Database service initialized successfully');
@@ -768,6 +936,77 @@ export class DatabaseService {
       return { 
         status: 'unhealthy', 
         message: `Database connection failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      };
+    }
+  }
+
+  /**
+   * Validate and repair database schema if needed
+   */
+  private async validateAndRepairSchema(): Promise<void> {
+    try {
+      console.log('🔍 Validating database schema...');
+      
+      // Check schema health
+      const schemaHealth = await migrationService.getHealthStatus();
+      console.log(`Schema health: ${schemaHealth.status} - ${schemaHealth.message}`);
+      
+      if (schemaHealth.status === 'critical') {
+        console.log('🔧 Critical schema issues detected, attempting repair...');
+        
+        const repairResult = await migrationService.initializeSchema();
+        
+        if (repairResult.success) {
+          console.log('✅ Schema repair completed successfully');
+          if (repairResult.tablesCreated.length > 0) {
+            console.log('Created/updated:', repairResult.tablesCreated.join(', '));
+          }
+        } else {
+          console.warn('⚠️ Schema repair encountered issues:');
+          repairResult.errors.forEach(error => console.warn(`  - ${error}`));
+          
+          // Don't throw error here - allow app to continue with degraded functionality
+        }
+      } else if (schemaHealth.status === 'degraded') {
+        console.log('⚠️ Schema has minor issues but is functional');
+        
+        // Optionally attempt to fix degraded schema
+        const validation = await migrationService.validateSchema();
+        if (validation.recommendations.length > 0) {
+          console.log('Schema recommendations:');
+          validation.recommendations.forEach(rec => console.log(`  - ${rec}`));
+        }
+      } else {
+        console.log('✅ Database schema is healthy');
+      }
+      
+    } catch (error) {
+      console.warn('Schema validation failed, continuing with basic functionality:', error);
+      // Don't throw - allow app to continue
+    }
+  }
+
+  /**
+   * Get detailed schema status for debugging
+   */
+  async getSchemaStatus(): Promise<{
+    health: any;
+    validation: any;
+    tables: any;
+  }> {
+    try {
+      const [health, validation, tables] = await Promise.all([
+        migrationService.getHealthStatus(),
+        migrationService.validateSchema(),
+        migrationService.checkSchemaStatus()
+      ]);
+      
+      return { health, validation, tables };
+    } catch (error) {
+      return {
+        health: { status: 'error', message: 'Could not check schema status' },
+        validation: { isValid: false, issues: ['Status check failed'] },
+        tables: { tablesExist: {}, missingTables: [] }
       };
     }
   }
