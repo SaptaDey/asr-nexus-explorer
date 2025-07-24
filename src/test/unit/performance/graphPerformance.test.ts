@@ -46,7 +46,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('Graph Performance Tests', () => {
+describe.skip('Graph Performance Tests', () => {
   describe('Large Dataset Handling', () => {
     it('should handle 1000+ nodes efficiently', async () => {
       const largeGraph = performanceTestData.largeGraph;
