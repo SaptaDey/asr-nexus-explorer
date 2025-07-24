@@ -377,9 +377,9 @@ describe('AsrGotStageEngine', () => {
     });
 
     it('should handle API failures with proper error messages', async () => {
-      // Mock API failure
-      vi.mocked(vi.importActual('@/utils/background')).queueGeminiCall
-        .mockRejectedValueOnce(new Error('API Error'));
+      // Mock API failure by importing the mocked module
+      const { queueGeminiCall } = await import('@/utils/background');
+      vi.mocked(queueGeminiCall).mockRejectedValueOnce(new Error('API Error'));
       
       await expect(stageEngine.executeStage(1, testQueries.simple))
         .rejects.toThrow('API Error');
