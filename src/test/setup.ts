@@ -132,14 +132,10 @@ beforeAll(() => {
     }))
   });
 
-  // Mock TextEncoder/TextDecoder
-  global.TextEncoder = vi.fn().mockImplementation(() => ({
-    encode: vi.fn().mockImplementation(str => new Uint8Array(str.length)),
-  }));
-  
-  global.TextDecoder = vi.fn().mockImplementation(() => ({
-    decode: vi.fn().mockImplementation(() => 'decoded-text'),
-  }));
+  // Mock TextEncoder/TextDecoder with proper implementations
+  const { TextEncoder: NodeTextEncoder, TextDecoder: NodeTextDecoder } = require('util');
+  global.TextEncoder = NodeTextEncoder;
+  global.TextDecoder = NodeTextDecoder;
 });
 
 // Clean up after each test

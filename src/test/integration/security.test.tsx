@@ -8,6 +8,8 @@ import { SecureAPIModal } from '@/components/asr-got/SecureAPIModal';
 import { testQueries, testErrors } from '@/test/fixtures/testData';
 import { mockServices } from '@/test/mocks/mockServices';
 import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock security services
 vi.mock('@/services/security/SecureCredentialManager', () => ({
@@ -111,9 +113,22 @@ vi.mock('@/integrations/supabase/client', () => ({
   }
 }));
 
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <BrowserRouter>{children}</BrowserRouter>
-);
+const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false }
+    }
+  });
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <BrowserRouter>{children}</BrowserRouter>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 describe('Security Tests - Preventing Regressions', () => {
   let user: ReturnType<typeof userEvent.setup>;

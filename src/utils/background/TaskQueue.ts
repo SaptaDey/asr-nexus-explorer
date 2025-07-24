@@ -38,6 +38,7 @@ export class TaskQueue {
   private isRunningQueue = false;
   private processInterval: NodeJS.Timeout | null = null;
   private executor?: (task: BackgroundTask) => Promise<any>;
+  private maxCompletedTasks = 10; // Limit for completed tasks
 
   constructor(executor?: (task: BackgroundTask) => Promise<any>, options: TaskQueueOptions = {}) {
     this.executor = executor;
@@ -241,11 +242,16 @@ export class TaskQueue {
       
       if (this.currentlyProcessing < this.maxConcurrent && this.taskQueue.length > 0) {
         const task = this.taskQueue.shift()!;
-        this.processTask(task);
+        // Don't await processTask to allow concurrent execution
+        this.processTask(task).catch(error => {
+          console.error(`Error processing task ${task.id}: ${error}`);
+        });
       }
       
       // Schedule next check (faster for tests)
-      this.processInterval = setTimeout(processLoop, 10);
+      if (this.isRunningQueue) {
+        this.processInterval = setTimeout(processLoop, 10);
+      }
     };
     
     processLoop();
@@ -276,7 +282,7 @@ export class TaskQueue {
         break; // Success, exit retry loop
 
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorMessage = error instanceof Error ? error.message : String(error);
         
         if (attempt >= maxAttempts) {
           // Final failure after all retries
@@ -284,6 +290,7 @@ export class TaskQueue {
           task.error = errorMessage;
           task.completed_at = new Date().toISOString();
           console.log(`❌ Task ${task.id} failed after ${attempt} attempts: ${errorMessage}`);
+          break; // CRITICAL: Exit the retry loop on final failure
         } else {
           // Retry after delay (reduced for testing)
           console.log(`🔄 Retrying task ${task.id} (attempt ${attempt + 1}/${maxAttempts}): ${errorMessage}`);
@@ -294,10 +301,30 @@ export class TaskQueue {
 
     this.currentlyProcessing--;
     
-    // Keep completed tasks for 30 seconds for result retrieval
+    // Immediate cleanup of old completed tasks to prevent memory leaks
+    this.cleanupCompletedTasks();
+    
+    // Keep completed tasks for shorter time during tests
+    const cleanupTime = process.env.NODE_ENV === 'test' ? 100 : 30000;
     setTimeout(() => {
       this.processingTasks.delete(task.id);
-    }, 30000);
+    }, cleanupTime);
+  }
+
+  // Clean up old completed tasks to prevent memory leaks
+  private cleanupCompletedTasks(): void {
+    const allFinishedTasks = Array.from(this.processingTasks.values())
+      .filter(task => task.status === 'completed' || task.status === 'failed')
+      .sort((a, b) => new Date(a.completed_at || '').getTime() - new Date(b.completed_at || '').getTime());
+    
+    // Only cleanup if we have significantly more than the limit to avoid race conditions
+    if (allFinishedTasks.length > this.maxCompletedTasks * 2) {
+      // Remove oldest finished tasks to get back to the limit
+      while (allFinishedTasks.length > this.maxCompletedTasks) {
+        const oldestTask = allFinishedTasks.shift()!;
+        this.processingTasks.delete(oldestTask.id);
+      }
+    }
   }
 
   // Execute task using provided executor or default implementation
