@@ -44,20 +44,30 @@ vi.mock('cytoscape-dagre', () => ({
   default: vi.fn()
 }));
 
-// Mock React Flow (which uses ResizeObserver)
-vi.mock('@xyflow/react', () => ({
-  ReactFlow: vi.fn(({ children }) => <div data-testid="react-flow">{children}</div>),
-  ReactFlowProvider: vi.fn(({ children }) => <div data-testid="react-flow-provider">{children}</div>),
-  Background: vi.fn(() => <div data-testid="react-flow-background" />),
-  Controls: vi.fn(() => <div data-testid="react-flow-controls" />),
-  useNodesState: vi.fn(() => [[], vi.fn()]),
-  useEdgesState: vi.fn(() => [[], vi.fn()]),
-  useReactFlow: vi.fn(() => ({
-    fitView: vi.fn(),
-    setNodes: vi.fn(),
-    setEdges: vi.fn()
-  }))
-}));
+// Mock React Flow using importOriginal to handle all exports
+vi.mock('@xyflow/react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@xyflow/react')>();
+  return {
+    ...actual,
+    ReactFlow: vi.fn(({ children }) => <div data-testid="react-flow">{children}</div>),
+    ReactFlowProvider: vi.fn(({ children }) => <div data-testid="react-flow-provider">{children}</div>),
+    Background: vi.fn(() => <div data-testid="react-flow-background" />),
+    Controls: vi.fn(() => <div data-testid="react-flow-controls" />),
+    MiniMap: vi.fn(() => <div data-testid="react-flow-minimap" />),
+    Panel: vi.fn(({ children }) => <div data-testid="react-flow-panel">{children}</div>),
+    useNodesState: vi.fn(() => [[], vi.fn()]),
+    useEdgesState: vi.fn(() => [[], vi.fn()]),
+    useReactFlow: vi.fn(() => ({
+      fitView: vi.fn(),
+      setNodes: vi.fn(),
+      setEdges: vi.fn(),
+      getNodes: vi.fn(() => []),
+      getEdges: vi.fn(() => []),
+      project: vi.fn(() => ({ x: 0, y: 0 })),
+      getViewport: vi.fn(() => ({ x: 0, y: 0, zoom: 1 }))
+    }))
+  };
+});
 
 describe.skip('EnhancedGraphVisualization', () => {
   let user: ReturnType<typeof userEvent.setup>;

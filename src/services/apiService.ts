@@ -274,21 +274,22 @@ export const callGeminiAPI = async (
     return content;
   } catch (error) {
     // Sanitize error message to prevent API key exposure
-    const sanitizedError = error instanceof Error 
-      ? error.message.replace(/AIza[A-Za-z0-9_-]{35}/g, '[REDACTED_API_KEY]')
-                     .replace(/Bearer [A-Za-z0-9_-]+/g, 'Bearer [REDACTED]')
-                     .replace(/x-goog-api-key[^}]+/g, 'x-goog-api-key: [REDACTED]')
-      : 'Unknown API error';
+    const errorMessage = error instanceof Error && error.message ? error.message : 'Unknown API error';
+    const sanitizedError = String(errorMessage)
+      .replace(/AIza[A-Za-z0-9_-]{35}/g, '[REDACTED_API_KEY]')
+      .replace(/Bearer [A-Za-z0-9_-]+/g, 'Bearer [REDACTED]')
+      .replace(/x-goog-api-key[^}]+/g, 'x-goog-api-key: [REDACTED]');
     
     console.error('Gemini API call failed:', sanitizedError);
     
-    // Create new error with sanitized message
+    // Create new error with sanitized message - ensure it's never undefined
+    const finalError = sanitizedError || 'Unknown API error';
     if (error instanceof Error) {
-      const cleanError = new Error(sanitizedError);
-      cleanError.name = error.name;
+      const cleanError = new Error(finalError);
+      cleanError.name = error.name || 'APIError';
       throw cleanError;
     }
-    throw new Error(sanitizedError);
+    throw new Error(finalError);
   }
 };
 

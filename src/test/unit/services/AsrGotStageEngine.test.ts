@@ -377,9 +377,14 @@ describe('AsrGotStageEngine', () => {
     });
 
     it('should handle API failures with proper error messages', async () => {
-      // Mock API failure by importing the mocked module
-      const { queueGeminiCall } = await import('@/utils/background');
-      vi.mocked(queueGeminiCall).mockRejectedValueOnce(new Error('API Error'));
+      // Mock API failure by importing the mocked module and making it properly reject
+      const { queueGeminiCall, getTaskResult } = await import('@/utils/background');
+      
+      // First, make queueGeminiCall return a task ID
+      vi.mocked(queueGeminiCall).mockReturnValueOnce('failed-task-id');
+      
+      // Then, make getTaskResult reject with the error
+      vi.mocked(getTaskResult).mockRejectedValueOnce(new Error('API Error'));
       
       await expect(stageEngine.executeStage(1, testQueries.simple))
         .rejects.toThrow('API Error');
@@ -515,10 +520,10 @@ describe('AsrGotStageEngine', () => {
       const contexts = stageEngine.getStageContexts();
       
       expect(contexts).toHaveLength(2);
-      expect(contexts[0].stage).toBe(1);
-      expect(contexts[1].stage).toBe(2);
-      expect(contexts[0].timestamp).toBeDefined();
-      expect(contexts[1].timestamp).toBeDefined();
+      expect(contexts[0].stage_id).toBe(1);
+      expect(contexts[1].stage_id).toBe(2);
+      expect(contexts[0].execution_time).toBeDefined();
+      expect(contexts[1].execution_time).toBeDefined();
     });
   });
 

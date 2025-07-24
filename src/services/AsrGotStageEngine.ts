@@ -581,6 +581,28 @@ All hypotheses include explicit falsification criteria as required by P1.16 para
     return objectiveMatches ? objectiveMatches.map(m => m.replace(/objective[s]?[:\-]\s*/i, '').trim()) : ['Comprehensive analysis'];
   }
 
+  // Filter edges to only include those with valid node references
+  private getValidEdges(): GraphEdge[] {
+    const nodeIds = new Set(this.graphData.nodes.map(node => node.id));
+    const validEdges = this.graphData.edges.filter(edge => 
+      nodeIds.has(edge.source) && nodeIds.has(edge.target)
+    );
+    
+    // Ensure all valid edges have weight property set (use confidence if weight is missing)
+    return validEdges.map(edge => ({
+      ...edge,
+      weight: edge.weight ?? edge.confidence ?? 0.5
+    }));
+  }
+
+  // Filter hyperedges to only include those with valid node references
+  private getValidHyperedges(): HyperEdge[] {
+    const nodeIds = new Set(this.graphData.nodes.map(node => node.id));
+    return (this.graphData.hyperedges || []).filter(hyperedge => 
+      hyperedge.nodes.every(nodeId => nodeIds.has(nodeId))
+    );
+  }
+
   private extractDimensionContent(analysis: string | undefined, dimension: string): string {
     if (!analysis || typeof analysis !== 'string') {
       return `${dimension} analysis for ${this.researchContext.field} research context`;
@@ -1371,11 +1393,11 @@ Generate the complete 150+ page thesis-quality HTML scientific report now.`;
       const completionResult = `
 # Stage 9: Final Analysis Complete
 
-## Comprehensive Research Report Generated
+## Comprehensive PhD-level Research Report Generated
 **Status**: All 9 ASR-GoT Stages Successfully Completed
 
 ### Final Report Statistics:
-- **Report Length**: ${comprehensiveHtmlReport.length} characters (~${Math.floor(comprehensiveHtmlReport.length / 3000)} pages)
+- **Report Length**: ${comprehensiveHtmlReport?.length || 0} characters (~${Math.floor((comprehensiveHtmlReport?.length || 0) / 3000)} pages)
 - **Total Nodes Generated**: ${this.graphData.nodes.length}
 - **Total Edges Created**: ${this.graphData.edges.length}
 - **Evidence Sources**: ${evidenceNodes.length}
@@ -1454,8 +1476,8 @@ Generate the complete 150+ page thesis-quality HTML scientific report now.`;
           status: 'completed',
           content: stage1Result.result,
           nodes: stage1Result.graph.nodes,
-          edges: stage1Result.graph.edges,
-          hyperedges: stage1Result.graph.hyperedges,
+          edges: this.getValidEdges(),
+          hyperedges: this.getValidHyperedges(),
           timestamp: new Date().toISOString(),
           metadata: {
             duration: 1000,
@@ -1470,8 +1492,8 @@ Generate the complete 150+ page thesis-quality HTML scientific report now.`;
           status: 'completed',
           content: stage2Result.result,
           nodes: stage2Result.graph.nodes,
-          edges: stage2Result.graph.edges,
-          hyperedges: stage2Result.graph.hyperedges,
+          edges: this.getValidEdges(),
+          hyperedges: this.getValidHyperedges(),
           timestamp: new Date().toISOString(),
           metadata: {
             duration: 1500,
@@ -1487,8 +1509,8 @@ Generate the complete 150+ page thesis-quality HTML scientific report now.`;
           status: 'completed',
           content: stage3Result.result,
           nodes: stage3Result.graph.nodes,
-          edges: stage3Result.graph.edges,
-          hyperedges: stage3Result.graph.hyperedges,
+          edges: this.getValidEdges(),
+          hyperedges: this.getValidHyperedges(),
           timestamp: new Date().toISOString(),
           metadata: {
             duration: 2000,
@@ -1506,8 +1528,8 @@ Generate the complete 150+ page thesis-quality HTML scientific report now.`;
           status: 'completed',
           content: stage4Result.result,
           nodes: stage4Result.graph.nodes,
-          edges: stage4Result.graph.edges,
-          hyperedges: stage4Result.graph.hyperedges,
+          edges: this.getValidEdges(),
+          hyperedges: this.getValidHyperedges(),
           timestamp: new Date().toISOString(),
           metadata: {
             duration: 2500,
@@ -1524,8 +1546,8 @@ Generate the complete 150+ page thesis-quality HTML scientific report now.`;
           status: 'completed',
           content: stage5Result.result,
           nodes: stage5Result.graph.nodes,
-          edges: stage5Result.graph.edges,
-          hyperedges: stage5Result.graph.hyperedges,
+          edges: this.getValidEdges(),
+          hyperedges: this.getValidHyperedges(),
           timestamp: new Date().toISOString(),
           metadata: {
             duration: 1800,
@@ -1543,8 +1565,8 @@ Generate the complete 150+ page thesis-quality HTML scientific report now.`;
           status: 'completed',
           content: stage6Result.result,
           nodes: stage6Result.graph.nodes,
-          edges: stage6Result.graph.edges,
-          hyperedges: stage6Result.graph.hyperedges,
+          edges: this.getValidEdges(),
+          hyperedges: this.getValidHyperedges(),
           timestamp: new Date().toISOString(),
           metadata: {
             duration: 2200,
@@ -1561,8 +1583,8 @@ Generate the complete 150+ page thesis-quality HTML scientific report now.`;
           status: 'completed',
           content: stage7Result.result,
           nodes: stage7Result.graph.nodes,
-          edges: stage7Result.graph.edges,
-          hyperedges: stage7Result.graph.hyperedges,
+          edges: this.getValidEdges(),
+          hyperedges: this.getValidHyperedges(),
           timestamp: new Date().toISOString(),
           metadata: {
             duration: 3000,
@@ -1579,8 +1601,8 @@ Generate the complete 150+ page thesis-quality HTML scientific report now.`;
           status: 'completed',
           content: stage8Result.result,
           nodes: stage8Result.graph.nodes,
-          edges: stage8Result.graph.edges,
-          hyperedges: stage8Result.graph.hyperedges,
+          edges: this.getValidEdges(),
+          hyperedges: this.getValidHyperedges(),
           timestamp: new Date().toISOString(),
           metadata: {
             duration: 2500,
@@ -1597,8 +1619,8 @@ Generate the complete 150+ page thesis-quality HTML scientific report now.`;
           status: 'completed',
           content: stage9Result.result,
           nodes: stage9Result.graph.nodes,
-          edges: stage9Result.graph.edges,
-          hyperedges: stage9Result.graph.hyperedges,
+          edges: this.getValidEdges(),
+          hyperedges: this.getValidHyperedges(),
           timestamp: new Date().toISOString(),
           metadata: {
             duration: 3500,
