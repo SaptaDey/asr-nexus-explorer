@@ -42,7 +42,7 @@ import { Link } from 'react-router-dom';
 import { APICredentials } from '@/types/asrGotTypes';
 import { backendService } from '@/services/backend/BackendService';
 import { historyManager } from '@/services/backend/HistoryManager';
-import { useAuthContext } from '@/contexts/AuthContext';
+import { useAuthContext } from '@/contexts/ContextCompatibilityLayer';
 import { enhancedApiService } from '@/services/enhancedApiService';
 import { dataStorageService } from '@/services/dataStorageService';
 import { SessionControls } from '@/components/asr-got/SessionControls';

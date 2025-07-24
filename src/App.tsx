@@ -3,9 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { DatabaseProvider } from "@/contexts/DatabaseContext";
-import { SessionProvider } from "@/contexts/SessionContext";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AppContextManager } from "@/contexts/AppContextManager";
+import { AuthProvider, DatabaseProvider, SessionProvider } from "@/contexts/ContextCompatibilityLayer";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Contact from "./pages/Contact";
@@ -41,13 +40,14 @@ const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <DatabaseProvider>
-            <SessionProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
+        <AppContextManager>
+          <AuthProvider>
+            <DatabaseProvider>
+              <SessionProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/auth" element={<AuthPage />} />
@@ -61,11 +61,12 @@ const App = () => {
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                </BrowserRouter>
-              </TooltipProvider>
-            </SessionProvider>
-          </DatabaseProvider>
-        </AuthProvider>
+                  </BrowserRouter>
+                </TooltipProvider>
+              </SessionProvider>
+            </DatabaseProvider>
+          </AuthProvider>
+        </AppContextManager>
       </QueryClientProvider>
     </ErrorBoundary>
   );
