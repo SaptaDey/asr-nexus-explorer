@@ -63,15 +63,63 @@ export function calculateMutualInformation(
   xProbs: number[], 
   yProbs: number[], 
   jointProbs: number[][]
+): number;
+
+export function calculateMutualInformation(X: number[], Y: number[]): number;
+
+export function calculateMutualInformation(
+  xProbsOrX: number[], 
+  yProbsOrY: number[], 
+  jointProbs?: number[][]
 ): number {
-  const hX = calculateEntropy(xProbs);
-  const hY = calculateEntropy(yProbs);
-  
-  // Calculate joint entropy
-  const jointFlat = jointProbs.flat();
-  const hXY = calculateEntropy(jointFlat);
-  
-  return hX + hY - hXY;
+  if (jointProbs) {
+    // Original signature: (xProbs, yProbs, jointProbs)
+    const xProbs = xProbsOrX;
+    const yProbs = yProbsOrY;
+    
+    const hX = calculateEntropy(xProbs);
+    const hY = calculateEntropy(yProbs);
+    
+    // Calculate joint entropy
+    const jointFlat = jointProbs.flat();
+    const hXY = calculateEntropy(jointFlat);
+    
+    return hX + hY - hXY;
+  } else {
+    // New signature: (X, Y) - calculate mutual information from data arrays
+    const X = xProbsOrX;
+    const Y = yProbsOrY;
+    
+    if (X.length !== Y.length) {
+      return 0; // No mutual information if different lengths
+    }
+    
+    // Create frequency distributions
+    const xUnique = [...new Set(X)];
+    const yUnique = [...new Set(Y)];
+    
+    // Calculate marginal probabilities
+    const xProbs = xUnique.map(x => X.filter(val => val === x).length / X.length);
+    const yProbs = yUnique.map(y => Y.filter(val => val === y).length / Y.length);
+    
+    // Calculate joint probabilities
+    const jointProbs: number[][] = [];
+    for (let i = 0; i < xUnique.length; i++) {
+      jointProbs[i] = [];
+      for (let j = 0; j < yUnique.length; j++) {
+        const count = X.reduce((sum, x, idx) => 
+          (X[idx] === xUnique[i] && Y[idx] === yUnique[j]) ? sum + 1 : sum, 0);
+        jointProbs[i][j] = count / X.length;
+      }
+    }
+    
+    // Calculate entropies
+    const hX = calculateEntropy(xProbs);
+    const hY = calculateEntropy(yProbs);
+    const hXY = calculateEntropy(jointProbs.flat());
+    
+    return hX + hY - hXY;
+  }
 }
 
 /**
@@ -99,16 +147,86 @@ export function calculateInformationGain(
   parentEntropy: number,
   childSizes: number[],
   childEntropies: number[]
+): number;
+
+export function calculateInformationGain(
+  beforeSplit: number[],
+  afterSplit: number[][]
+): number;
+
+export function calculateInformationGain(
+  parentEntropyOrBeforeSplit: number | number[],
+  childSizesOrAfterSplit: number[] | number[][],
+  childEntropies?: number[]
 ): number {
-  const totalSize = childSizes.reduce((sum, size) => sum + size, 0);
-  
-  let weightedChildEntropy = 0;
-  for (let i = 0; i < childSizes.length; i++) {
-    const weight = childSizes[i] / totalSize;
-    weightedChildEntropy += weight * childEntropies[i];
+  if (typeof parentEntropyOrBeforeSplit === 'number' && childEntropies) {
+    // Original signature: (parentEntropy, childSizes, childEntropies)
+    const parentEntropy = parentEntropyOrBeforeSplit;
+    const childSizes = childSizesOrAfterSplit as number[];
+    
+    const totalSize = childSizes.reduce((sum, size) => sum + size, 0);
+    
+    let weightedChildEntropy = 0;
+    for (let i = 0; i < childSizes.length; i++) {
+      const weight = childSizes[i] / totalSize;
+      weightedChildEntropy += weight * childEntropies[i];
+    }
+    
+    return parentEntropy - weightedChildEntropy;
+  } else {
+    // New signature: (beforeSplit, afterSplit)
+    const beforeSplit = parentEntropyOrBeforeSplit as number[];
+    const afterSplit = childSizesOrAfterSplit as number[][];
+    
+    // Calculate entropy before split
+    const uniqueValues = [...new Set(beforeSplit)];
+    const beforeProbs = uniqueValues.map(val => 
+      beforeSplit.filter(x => x === val).length / beforeSplit.length
+    );
+    const parentEntropy = calculateEntropy(beforeProbs);
+    
+    // Calculate weighted entropy after split
+    const totalSize = beforeSplit.length;
+    let weightedChildEntropy = 0;
+    
+    for (const split of afterSplit) {
+      if (split.length === 0) continue;
+      
+      const weight = split.length / totalSize;
+      const splitUniqueValues = [...new Set(split)];
+      const splitProbs = splitUniqueValues.map(val => 
+        split.filter(x => x === val).length / split.length
+      );
+      const splitEntropy = calculateEntropy(splitProbs);
+      weightedChildEntropy += weight * splitEntropy;
+    }
+    
+    const informationGain = parentEntropy - weightedChildEntropy;
+    return Math.max(0, informationGain); // Ensure non-negative result
   }
+}
+
+/**
+ * Calculate minimum description length (MDL) for model selection
+ */
+export function calculateDescriptionLength(data: string, model: string): number {
+  if (!data && !model) return 0;
+  if (!data) return model.length * Math.log2(256); // Character encoding cost
+  if (!model) return data.length * Math.log2(256); // Raw data cost
   
-  return parentEntropy - weightedChildEntropy;
+  // Simple MDL calculation based on string lengths and compression potential
+  const dataLength = data.length;
+  const modelLength = model.length;
+  
+  // Estimate compression based on repetition patterns
+  const uniqueChars = new Set(data).size;
+  const compressionRatio = uniqueChars / Math.max(dataLength, 1);
+  
+  // MDL = model description length + data description length given model
+  const modelCost = modelLength * Math.log2(256);
+  const dataCost = dataLength * compressionRatio * Math.log2(uniqueChars || 1);
+  
+  return modelCost + dataCost;
 }
 
 /**

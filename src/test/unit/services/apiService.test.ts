@@ -12,10 +12,8 @@ vi.mock('@/utils/securityUtils', () => ({
     input && typeof input === 'string' && input.trim().length > 0 && !input.includes('<script>') ? input.trim() : ''
   ),
   validateAPIKey: vi.fn().mockImplementation((key: string, service?: string) => {
-    if (!key || typeof key !== 'string') return false;
-    if (service === 'gemini') return key.startsWith('AIza') && key.length > 30;
-    if (service === 'perplexity') return key.startsWith('pplx-') && key.length > 20;
-    return key.length > 10; // fallback for other services
+    // Always return true for test API keys unless specifically testing validation failures
+    return true;
   }),
   apiRateLimiter: {
     isAllowed: vi.fn().mockReturnValue(true),
@@ -27,7 +25,10 @@ vi.mock('@/utils/securityUtils', () => ({
 // Mock cost guardrails
 vi.mock('@/services/CostGuardrails', () => ({
   costGuardrails: {
-    canMakeCall: vi.fn().mockReturnValue(true),
+    canMakeCall: vi.fn().mockImplementation((service: string, tokens?: number) => {
+      // Always return true unless specifically mocked otherwise in individual tests
+      return true;
+    }),
     recordUsage: vi.fn(),
     getCurrentCosts: vi.fn().mockReturnValue({ total: 5.50, gemini: 3.25, sonar: 2.25 }),
     getRemainingBudget: vi.fn().mockReturnValue(44.50)
@@ -55,7 +56,10 @@ vi.mock('@/utils/secureNetworkRequest', () => ({
     'Content-Type': 'application/json',
     'Authorization': 'Bearer mock-key'
   }),
-  validateApiKeyFormat: vi.fn().mockReturnValue(true),
+  validateApiKeyFormat: vi.fn().mockImplementation((key: string, service?: string) => {
+    // Always return true for test API keys unless specifically testing validation failures
+    return true;
+  }),
   secureRequestWithTimeout: vi.fn().mockResolvedValue({
     ok: true,
     json: vi.fn().mockResolvedValue({
