@@ -67,10 +67,99 @@ export const validateAPIKey = (key: string, provider: 'perplexity' | 'gemini'): 
 };
 
 /**
- * Simple encryption for client-side credential storage
- * Note: This is obfuscation, not true security - server-side encryption is preferred
+ * Secure encryption using Web Crypto API
+ */
+export const encryptData = async (data: string, key: string): Promise<string> => {
+  try {
+    // Convert key to CryptoKey
+    const keyData = new TextEncoder().encode(key.slice(0, 32).padEnd(32, '0'));
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'AES-GCM' },
+      false,
+      ['encrypt']
+    );
+
+    // Generate random IV
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    
+    // Encrypt data
+    const encodedData = new TextEncoder().encode(data);
+    const encryptedData = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      cryptoKey,
+      encodedData
+    );
+
+    // Combine IV and encrypted data
+    const combined = new Uint8Array(iv.length + encryptedData.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(encryptedData), iv.length);
+
+    // Convert to base64
+    return btoa(String.fromCharCode(...combined));
+  } catch (error) {
+    console.error('Encryption failed:', error);
+    throw new Error('Failed to encrypt data');
+  }
+};
+
+/**
+ * Secure decryption using Web Crypto API
+ */
+export const decryptData = async (encryptedData: string, key: string): Promise<string> => {
+  try {
+    // Convert key to CryptoKey
+    const keyData = new TextEncoder().encode(key.slice(0, 32).padEnd(32, '0'));
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt']
+    );
+
+    // Convert from base64
+    const combined = new Uint8Array(
+      atob(encryptedData).split('').map(char => char.charCodeAt(0))
+    );
+
+    // Extract IV and encrypted data
+    const iv = combined.slice(0, 12);
+    const encrypted = combined.slice(12);
+
+    // Decrypt data
+    const decryptedData = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      cryptoKey,
+      encrypted
+    );
+
+    return new TextDecoder().decode(decryptedData);
+  } catch (error) {
+    console.error('Decryption failed:', error);
+    throw new Error('Failed to decrypt data');
+  }
+};
+
+/**
+ * Generate secure hash for integrity checking
+ */
+export const secureHash = async (data: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(data);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+  const hashArray = new Uint8Array(hashBuffer);
+  return Array.from(hashArray, byte => byte.toString(16).padStart(2, '0')).join('');
+};
+
+/**
+ * Simple encryption for client-side credential storage (DEPRECATED)
+ * Note: This is obfuscation, not true security - use encryptData instead
  */
 export const encryptCredentials = (credentials: string): string => {
+  console.warn('encryptCredentials is deprecated, use encryptData instead');
   const encoder = new TextEncoder();
   const data = encoder.encode(credentials);
   const encrypted = Array.from(data).map(byte => byte ^ 42).map(byte => byte.toString(16).padStart(2, '0')).join('');

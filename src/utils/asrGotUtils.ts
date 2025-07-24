@@ -94,19 +94,36 @@ export const exportGraphAsSVG = (graphData: GraphData) => {
   exportSVG(graphData);
 };
 
+/**
+ * DEPRECATED: Load API keys from storage
+ * Use SecureCredentialManager instead
+ */
 export const loadApiKeysFromStorage = (): APICredentials => {
-  const cached = sessionStorage.getItem('asr-got-credentials');
-  if (cached) {
-    try {
-      return JSON.parse(cached);
-    } catch (error) {
-      console.warn('Failed to load cached credentials');
-      return { gemini: '', perplexity: '' };
+  console.warn('loadApiKeysFromStorage is deprecated, use SecureCredentialManager.getInstance().getCredentials()');
+  
+  // Clean up any insecure storage
+  const insecureKeys = ['asr-got-credentials', 'asr-got-api-credentials'];
+  insecureKeys.forEach(key => {
+    if (sessionStorage.getItem(key)) {
+      console.warn(`Removing insecure credential storage: ${key}`);
+      sessionStorage.removeItem(key);
     }
-  }
+    if (localStorage.getItem(key)) {
+      console.warn(`Removing insecure credential storage: ${key}`);
+      localStorage.removeItem(key);
+    }
+  });
+  
   return { gemini: '', perplexity: '' };
 };
 
+/**
+ * DEPRECATED: Save API keys to storage
+ * Use SecureCredentialManager instead
+ */
 export const saveApiKeysToStorage = (apiKeys: APICredentials) => {
-  sessionStorage.setItem('asr-got-credentials', JSON.stringify(apiKeys));
+  console.warn('saveApiKeysToStorage is deprecated, use SecureCredentialManager.getInstance().storeCredentials()');
+  
+  // Don't save to insecure storage - this is a security fix
+  console.error('Attempted to save credentials to insecure storage - operation blocked for security');
 };
