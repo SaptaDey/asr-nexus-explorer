@@ -229,7 +229,6 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
     const startTime = performance.now();
     
     try {
-      setGraphError(null);
       
       // Convert data using adapter
       const convertedData = GraphAdapterFactory.convertForVisualization(graphData, 'reactflow');
@@ -308,16 +307,21 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
         virtualizedData: null
       };
     }
-  }, [graphData, isVirtualizationEnabled, graphMetrics, reactFlowInstance, onError]);
+  }, [graphData, isVirtualizationEnabled, graphMetrics]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  // Clear graph error when graph data changes
+  useEffect(() => {
+    setGraphError(null);
+  }, [graphData]);
 
   // Update nodes and edges when graph data changes
   useEffect(() => {
     setNodes(initialNodes);
     setEdges(initialEdges);
-  }, [initialNodes, initialEdges, setNodes, setEdges]);
+  }, [initialNodes, initialEdges]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
