@@ -76,6 +76,10 @@ export class HistoryManager {
       const sessionId = crypto.randomUUID();
       const now = new Date().toISOString();
 
+      // Get current user or use anonymous
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id || '00000000-0000-0000-0000-000000000000';
+
       // Create research session
       const { data: researchSession, error: researchError } = await supabase
         .from('research_sessions')
@@ -84,7 +88,7 @@ export class HistoryManager {
           title,
           description,
           status: 'active',
-          user_id: '00000000-0000-0000-0000-000000000000', // Anonymous user
+          user_id: userId,
           config: {
             research_context: researchContext,
             parameters: parameters,

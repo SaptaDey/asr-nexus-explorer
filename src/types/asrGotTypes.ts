@@ -1,8 +1,9 @@
 // ASR-GoT Core Type Definitions
 // Based on ASR-GoT System Prompt Version 2025-07-07
 
-// Import Plotly types to ensure they're available globally
-import './plotly';
+// Import necessary type dependencies
+import type { Database } from '@/integrations/supabase/types';
+import type { PlotlyData, PlotlyLayout, PlotlyConfig } from './plotly.d.ts';
 
 export interface ASRGoTMetadata {
   // Core P1.12 Schema
@@ -268,10 +269,42 @@ export interface AnalyticsFigure {
   id: string;
   title: string;
   code: string;
-  data: any;
-  layout: any;
+  data: PlotlyData[];
+  layout: PlotlyLayout;
   type: 'scatter' | 'bar' | 'histogram' | 'box' | 'heatmap' | 'pie';
   nodeId: string;
   generated: string;
   error?: string;
+}
+
+// Database integration types
+export type QuerySession = Database['public']['Tables']['query_sessions']['Row'];
+export type QuerySessionInsert = Database['public']['Tables']['query_sessions']['Insert'];
+export type QuerySessionUpdate = Database['public']['Tables']['query_sessions']['Update'];
+
+export type ResearchSessionRow = Database['public']['Tables']['research_sessions']['Row'];
+export type ResearchSessionInsert = Database['public']['Tables']['research_sessions']['Insert'];
+export type ResearchSessionUpdate = Database['public']['Tables']['research_sessions']['Update'];
+
+export type UserApiKey = Database['public']['Tables']['user_api_keys']['Row'];
+export type UserApiKeyInsert = Database['public']['Tables']['user_api_keys']['Insert'];
+
+// API response types for better integration
+export interface APIResponse<T = any> {
+  data?: T;
+  error?: string;
+  status: number;
+  headers?: Record<string, string>;
+}
+
+// Enhanced API credentials with validation
+export interface EnhancedAPICredentials extends APICredentials {
+  isValid?: boolean;
+  lastValidated?: string;
+  usageCount?: number;
+  rateLimit?: {
+    limit: number;
+    remaining: number;
+    resetTime: Date;
+  };
 }

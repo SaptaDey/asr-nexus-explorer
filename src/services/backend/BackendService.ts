@@ -132,7 +132,7 @@ export class BackendService {
 
       // Test query history service
       try {
-        const queryTestResult = await queryHistoryService.getQueryHistory(1);
+        const queryTestResult = await queryHistoryService.getQueryHistory(1, 0);
         this.status.services.queryHistory = queryTestResult.sessions.length >= 0;
       } catch (error) {
         console.warn('⚠️ Query history service test failed:', error);
