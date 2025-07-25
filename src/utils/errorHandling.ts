@@ -1,3 +1,4 @@
+
 /**
  * Comprehensive Error Handling and Logging System
  * Provides graceful degradation and user-friendly error messages
@@ -65,29 +66,31 @@ export class ErrorHandler {
 
   private setupGlobalErrorHandlers(): void {
     // Handle unhandled promise rejections
-    window.addEventListener('unhandledrejection', (event) => {
-      this.handleError(
-        new Error(`Unhandled Promise Rejection: ${event.reason}`),
-        ErrorCategory.UNKNOWN,
-        ErrorSeverity.HIGH,
-        { type: 'unhandledrejection', reason: event.reason }
-      );
-    });
+    if (typeof window !== 'undefined') {
+      window.addEventListener('unhandledrejection', (event) => {
+        this.handleError(
+          new Error(`Unhandled Promise Rejection: ${event.reason}`),
+          ErrorCategory.UNKNOWN,
+          ErrorSeverity.HIGH,
+          { type: 'unhandledrejection', reason: event.reason }
+        );
+      });
 
-    // Handle JavaScript errors
-    window.addEventListener('error', (event) => {
-      this.handleError(
-        new Error(event.message),
-        ErrorCategory.UNKNOWN,
-        ErrorSeverity.MEDIUM,
-        { 
-          type: 'javascript_error',
-          filename: event.filename,
-          lineno: event.lineno,
-          colno: event.colno
-        }
-      );
-    });
+      // Handle JavaScript errors
+      window.addEventListener('error', (event) => {
+        this.handleError(
+          new Error(event.message),
+          ErrorCategory.UNKNOWN,
+          ErrorSeverity.MEDIUM,
+          { 
+            type: 'javascript_error',
+            filename: event.filename,
+            lineno: event.lineno,
+            colno: event.colno
+          }
+        );
+      });
+    }
   }
 
   /**
@@ -112,8 +115,8 @@ export class ErrorHandler {
       timestamp: new Date(),
       context,
       stack: errorStack,
-      userAgent: navigator.userAgent,
-      url: window.location.href,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown',
+      url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
       sessionId: this.sessionId,
     };
 
@@ -206,42 +209,31 @@ export class ErrorHandler {
 
   private getUserFriendlyMessage(error: ErrorDetails): string {
     // Map technical errors to user-friendly messages
-    const errorMap: Record<string, string> = {
-      // Network errors
-      'Failed to fetch': 'Unable to connect to the server. Please check your internet connection.',
-      'Network request failed': 'Network error occurred. Please try again.',
-      'ERR_NETWORK': 'Network error. Please check your connection and try again.',
-      
-      // API errors
-      'API rate limit exceeded': 'Too many requests. Please wait a moment and try again.',
-      'Unauthorized': 'Authentication required. Please log in.',
-      'Forbidden': 'You don\'t have permission to perform this action.',
-      'Not found': 'The requested resource was not found.',
-      
-      // Visualization errors
-      'Failed to render graph': 'Graph visualization failed. Trying alternative display.',
-      'Layout calculation failed': 'Graph layout failed. Using simplified view.',
-      'Cytoscape': 'Graph rendering issue. Falling back to alternative view.',
-      'Plotly': 'Chart rendering failed. Data is still available in table format.',
-      
-      // Processing errors
-      'Stage execution failed': 'Research stage processing encountered an issue. Retrying...',
-      'Graph processing error': 'Graph analysis encountered an issue. Continuing with available data.',
-      'Export failed': 'Export operation failed. Please try a different format.',
-      
-      // Storage errors
-      'LocalStorage': 'Browser storage is full or unavailable. Some features may be limited.',
-      'SessionStorage': 'Session data could not be saved. Your work may be lost on refresh.',
-      
-      // Parsing errors
-      'JSON parse error': 'Data format error. Refreshing might help.',
-      'Invalid data format': 'Received data is in an unexpected format.',
-    };
+    const errorPatterns = [
+      { pattern: 'Failed to fetch', message: 'Unable to connect to the server. Please check your internet connection.' },
+      { pattern: 'Network request failed', message: 'Network error occurred. Please try again.' },
+      { pattern: 'ERR_NETWORK', message: 'Network error. Please check your connection and try again.' },
+      { pattern: 'API rate limit exceeded', message: 'Too many requests. Please wait a moment and try again.' },
+      { pattern: 'Unauthorized', message: 'Authentication required. Please log in.' },
+      { pattern: 'Forbidden', message: 'You don\'t have permission to perform this action.' },
+      { pattern: 'Not found', message: 'The requested resource was not found.' },
+      { pattern: 'Failed to render graph', message: 'Graph visualization failed. Trying alternative display.' },
+      { pattern: 'Layout calculation failed', message: 'Graph layout failed. Using simplified view.' },
+      { pattern: 'Cytoscape', message: 'Graph rendering issue. Falling back to alternative view.' },
+      { pattern: 'Plotly', message: 'Chart rendering failed. Data is still available in table format.' },
+      { pattern: 'Stage execution failed', message: 'Research stage processing encountered an issue. Retrying...' },
+      { pattern: 'Graph processing error', message: 'Graph analysis encountered an issue. Continuing with available data.' },
+      { pattern: 'Export failed', message: 'Export operation failed. Please try a different format.' },
+      { pattern: 'LocalStorage', message: 'Browser storage is full or unavailable. Some features may be limited.' },
+      { pattern: 'SessionStorage', message: 'Session data could not be saved. Your work may be lost on refresh.' },
+      { pattern: 'JSON parse error', message: 'Data format error. Refreshing might help.' },
+      { pattern: 'Invalid data format', message: 'Received data is in an unexpected format.' }
+    ];
 
     // Find matching error message
-    for (const [key, userMessage] of Object.entries(errorMap)) {
-      if (error.message.toLowerCase().includes(key.toLowerCase())) {
-        return userMessage;
+    for (const { pattern, message } of errorPatterns) {
+      if (error.message.toLowerCase().includes(pattern.toLowerCase())) {
+        return message;
       }
     }
 
@@ -267,15 +259,7 @@ export class ErrorHandler {
   private async logToServer(error: ErrorDetails): Promise<void> {
     try {
       // In a real implementation, this would send to your error logging service
-      // For now, we'll just simulate the call
       console.log('Would log to server:', error);
-      
-      // Example implementation:
-      // await fetch('/api/errors', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(error)
-      // });
     } catch (logError) {
       console.error('Failed to log error to server:', logError);
     }
@@ -286,8 +270,8 @@ export class ErrorHandler {
    */
   public getErrorStats(): { total: number; byCategory: Record<string, number>; recent: ErrorDetails[] } {
     const recentErrors = this.errors
-      .filter(error => Date.now() - error.timestamp.getTime() < 5 * 60 * 1000) // Last 5 minutes
-      .slice(-10); // Last 10 errors
+      .filter(error => Date.now() - error.timestamp.getTime() < 5 * 60 * 1000)
+      .slice(-10);
 
     return {
       total: this.errors.length,
@@ -358,8 +342,6 @@ export const handleValidationError = (error: Error, context?: Record<string, any
 /**
  * React Error Boundary component
  */
-import React from 'react';
-
 interface ErrorBoundaryState {
   hasError: boolean;
   errorId?: string;

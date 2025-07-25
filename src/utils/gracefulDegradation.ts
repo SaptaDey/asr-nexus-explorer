@@ -1,3 +1,4 @@
+
 /**
  * Graceful Degradation System
  * Provides fallbacks and alternative approaches when features fail
@@ -95,7 +96,7 @@ class GracefulDegradationManager {
   }
 
   private checkClipboard(): boolean {
-    return navigator.clipboard && typeof navigator.clipboard.writeText === 'function';
+    return typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function';
   }
 
   private checkFileDownload(): boolean {
@@ -103,7 +104,7 @@ class GracefulDegradationManager {
   }
 
   private checkNotifications(): boolean {
-    return 'Notification' in window;
+    return typeof window !== 'undefined' && 'Notification' in window;
   }
 
   private setupDegradationConfigs(): void {
@@ -229,7 +230,7 @@ class GracefulDegradationManager {
           // Schedule retry after delay
           setTimeout(() => {
             this.featureFlags[featureName] = true;
-          }, Math.pow(2, retryCount) * 1000); // Exponential backoff
+          }, Math.pow(2, retryCount) * 1000);
           
           return fallbackData || null;
         } else {
@@ -437,7 +438,7 @@ class GracefulDegradationManager {
         };
       }
     };
-  }
+  };
 
   /**
    * Create a higher-order component that provides graceful degradation
@@ -524,15 +525,13 @@ export const useFeatureAvailability = (featureName: keyof FeatureFlags) => {
   );
 
   useEffect(() => {
-    // Set up periodic checks or event listeners if needed
     const checkAvailability = () => {
       setIsAvailable(gracefulDegradation.isFeatureAvailable(featureName));
     };
 
     checkAvailability();
     
-    // Optional: Set up interval to recheck
-    const interval = setInterval(checkAvailability, 30000); // Check every 30s
+    const interval = setInterval(checkAvailability, 30000);
     
     return () => clearInterval(interval);
   }, [featureName]);

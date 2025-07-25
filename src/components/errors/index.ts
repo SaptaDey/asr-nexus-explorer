@@ -1,3 +1,4 @@
+
 /**
  * Error Boundary Components Index
  * Comprehensive error handling for different parts of the ASR-GoT application
@@ -21,6 +22,7 @@ export function withErrorBoundary<P extends object>(
   }
 ) {
   return function WrappedComponent(props: P) {
+    const ErrorBoundary = require('../ErrorBoundary').default;
     return (
       <ErrorBoundary {...errorBoundaryProps}>
         <Component {...props} />
@@ -36,6 +38,8 @@ export type ErrorBoundaryType = 'general' | 'database' | 'api' | 'visualization'
  * Factory function to get the appropriate error boundary for a given context
  */
 export function getErrorBoundary(type: ErrorBoundaryType) {
+  const ErrorBoundary = require('../ErrorBoundary').default;
+  
   switch (type) {
     case 'database':
       return DatabaseErrorBoundary;
@@ -51,7 +55,6 @@ export function getErrorBoundary(type: ErrorBoundaryType) {
 /**
  * Error context for sharing error state across components
  */
-
 interface ErrorContextType {
   errors: Array<{
     id: string;
