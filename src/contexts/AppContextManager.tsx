@@ -28,7 +28,7 @@ interface AppContextType {
     // Auth actions
     signUp: (email: string, password: string, metadata?: any) => Promise<{ success: boolean; error?: string }>;
     signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-    signInWithProvider: (provider: 'google' | 'github' | 'microsoft') => Promise<{ success: boolean; error?: string }>;
+    signInWithProvider: (provider: 'google' | 'github') => Promise<{ success: boolean; error?: string }>;
     signOut: () => Promise<{ success: boolean; error?: string }>;
     updateProfile: (data: any) => Promise<{ success: boolean; error?: string }>;
     updateEmail: (email: string) => Promise<{ success: boolean; error?: string }>;

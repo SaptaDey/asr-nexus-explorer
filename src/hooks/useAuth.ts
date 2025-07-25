@@ -20,7 +20,7 @@ interface UseAuthReturn extends AuthState {
   // Actions
   signUp: (data: SignUpData) => Promise<{ success: boolean; error?: string }>;
   signIn: (data: SignInData) => Promise<{ success: boolean; error?: string }>;
-  signInWithProvider: (provider: 'google' | 'github' | 'microsoft') => Promise<{ success: boolean; error?: string }>;
+  signInWithProvider: (provider: 'google' | 'github') => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<{ success: boolean; error?: string }>;
   updateProfile: (data: ProfileUpdateData) => Promise<{ success: boolean; error?: string }>;
   updateEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
@@ -99,7 +99,7 @@ export function useAuth(): UseAuthReturn {
   /**
    * Sign in with OAuth provider
    */
-  const signInWithProvider = useCallback(async (provider: 'google' | 'github' | 'microsoft') => {
+  const signInWithProvider = useCallback(async (provider: 'google' | 'github') => {
     try {
       const result = await authService.current.signInWithProvider(provider);
       

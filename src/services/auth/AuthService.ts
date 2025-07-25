@@ -274,7 +274,7 @@ export class AuthService {
   /**
    * Sign in with OAuth provider
    */
-  public async signInWithProvider(provider: 'google' | 'github' | 'microsoft'): Promise<{
+  public async signInWithProvider(provider: 'google' | 'github'): Promise<{
     data: any;
     error: AuthError | null;
   }> {

@@ -357,20 +357,6 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
                 <span className="sr-only">Sign up with GitHub</span>
               </Button>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => handleOAuthSignIn('microsoft')}
-                disabled={loading || oauthLoading !== null}
-              >
-                {oauthLoading === 'microsoft' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Chrome className="h-4 w-4" />
-                )}
-                <span className="sr-only">Sign up with Microsoft</span>
-              </Button>
             </div>
           </div>
 

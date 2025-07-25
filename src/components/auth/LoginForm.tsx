@@ -54,7 +54,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, className = '' }: Log
     }))
   }
 
-  const handleOAuthSignIn = async (provider: 'google' | 'github' | 'microsoft') => {
+  const handleOAuthSignIn = async (provider: 'google' | 'github') => {
     setError(null)
     setOauthLoading(provider)
 
@@ -195,20 +195,6 @@ export function LoginForm({ onSuccess, onSwitchToRegister, className = '' }: Log
                 <span className="sr-only">Sign in with GitHub</span>
               </Button>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => handleOAuthSignIn('microsoft')}
-                disabled={loading || oauthLoading !== null}
-              >
-                {oauthLoading === 'microsoft' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Chrome className="h-4 w-4" />
-                )}
-                <span className="sr-only">Sign in with Microsoft</span>
-              </Button>
             </div>
           </div>
 
