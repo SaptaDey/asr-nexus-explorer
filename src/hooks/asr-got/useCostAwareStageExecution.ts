@@ -8,6 +8,7 @@ import { useCallback } from 'react';
 import { toast } from "sonner";
 import { APICredentials, GraphData, ResearchContext } from '@/types/asrGotTypes';
 import { costAwareOrchestration } from '@/services/CostAwareOrchestrationService';
+import { callGeminiAPI } from '@/services/apiService';
 import {
   initializeGraph,
   decomposeTask,
@@ -114,7 +115,6 @@ export const useCostAwareStageExecution = ({
             additionalParams 
           });
           
-          const { callGeminiAPI } = await import('@/services/apiService');
           const result = await callGeminiAPI(
             prompt, 
             apiKeys.gemini, 
@@ -158,7 +158,6 @@ export const useCostAwareStageExecution = ({
           console.log(`🔄 Falling back to direct Gemini API for stage: ${stageName}`);
           
           // Fallback to direct API call if routing fails
-          const { callGeminiAPI } = await import('@/services/apiService');
           return await callGeminiAPI(
             prompt, 
             apiKeys.gemini, 
@@ -255,8 +254,7 @@ export const useCostAwareStageExecution = ({
               additionalParams 
             });
             
-            const { callGeminiAPI } = await import('@/services/apiService');
-            const result = await callGeminiAPI(
+              const result = await callGeminiAPI(
               prompt, 
               apiKeys.gemini, 
               'thinking-only', // Use thinking-only instead of thinking-structured to avoid schema issues
@@ -283,8 +281,7 @@ export const useCostAwareStageExecution = ({
               additionalParams 
             });
             
-            const { callGeminiAPI } = await import('@/services/apiService');
-            const result = await callGeminiAPI(
+              const result = await callGeminiAPI(
               prompt, 
               apiKeys.gemini, 
               'thinking-structured', // Use structured output for substages
@@ -327,8 +324,7 @@ export const useCostAwareStageExecution = ({
             console.log(`🔄 Falling back to direct Gemini API for stage: ${stageName}`);
             
             // Fallback to direct API call if routing fails
-            const { callGeminiAPI } = await import('@/services/apiService');
-            return await callGeminiAPI(
+              return await callGeminiAPI(
               prompt, 
               apiKeys.gemini, 
               'thinking-only', // Use thinking-only to avoid schema issues
