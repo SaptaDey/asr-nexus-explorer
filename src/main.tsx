@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { safeLog, safeError, initializeSecurity } from './services/security'
+import { setupCSRFInterceptor } from './utils/csrfProtection'
 
 // Emergency error handling for main.tsx with async security initialization
 (async () => {
@@ -14,6 +15,10 @@ import { safeLog, safeError, initializeSecurity } from './services/security'
       enableSecureExports: true,
       productionMode: process.env.NODE_ENV === 'production'
     });
+    
+    // SECURITY: Setup CSRF protection for all fetch requests
+    setupCSRFInterceptor();
+    safeLog('🔒 CSRF protection initialized');
     
     safeLog('📦 main.tsx: Starting React app creation...');
   

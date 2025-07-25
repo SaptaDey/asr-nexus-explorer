@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { ResearchContext } from '@/types/asrGotTypes';
 import { sanitizeHTML } from '@/utils/securityUtils';
+import { createSecureInnerHTML } from '@/utils/htmlSanitizer';
 
 interface HTMLResultsDisplayProps {
   stageResults: string[];
@@ -102,7 +103,7 @@ const StageCard: React.FC<{
           <ScrollArea className="h-[200px]">
             <div 
               className="prose prose-sm max-w-none dark:prose-invert"
-              dangerouslySetInnerHTML={{ __html: parseMarkdownToHTML(result) }}
+              dangerouslySetInnerHTML={createSecureInnerHTML(parseMarkdownToHTML(result))}
             />
           </ScrollArea>
         </CardContent>
@@ -208,7 +209,7 @@ export const HTMLResultsDisplay: React.FC<HTMLResultsDisplayProps> = ({
               <ScrollArea className="h-[400px]">
                 <div 
                   className="prose prose-sm max-w-none dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: parseMarkdownToHTML(finalReport) }}
+                  dangerouslySetInnerHTML={createSecureInnerHTML(parseMarkdownToHTML(finalReport))}
                 />
               </ScrollArea>
             </CardContent>

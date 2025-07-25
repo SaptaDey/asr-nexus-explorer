@@ -2,6 +2,7 @@ import * as React from "react"
 import * as RechartsPrimitive from "recharts"
 
 import { cn } from "@/lib/utils"
+import { createSecureInnerHTML } from "@/utils/htmlSanitizer"
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
@@ -65,6 +66,44 @@ const ChartContainer = React.forwardRef<
 })
 ChartContainer.displayName = "Chart"
 
+// SECURITY: Sanitize CSS colors to prevent injection
+const sanitizeCSSColor = (color: string): string => {
+  if (!color || typeof color !== 'string') return ''
+  
+  // Allow only valid CSS color formats
+  const validColorPatterns = [
+    /^#[0-9a-fA-F]{3,8}$/, // hex colors
+    /^rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)$/, // rgb()
+    /^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[\d.]+\s*\)$/, // rgba()
+    /^hsl\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*\)$/, // hsl()
+    /^hsla\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*,\s*[\d.]+\s*\)$/, // hsla()
+  ]
+  
+  // Check if color matches valid patterns
+  const isValidColor = validColorPatterns.some(pattern => pattern.test(color.trim()))
+  
+  if (!isValidColor) {
+    console.warn('SECURITY: Invalid CSS color blocked:', color)
+    return '#000000' // Safe fallback
+  }
+  
+  return color.trim()
+}
+
+// SECURITY: Sanitize CSS selector ID
+const sanitizeCSSId = (id: string): string => {
+  if (!id || typeof id !== 'string') return 'chart-default'
+  
+  // Only allow alphanumeric characters, hyphens, and underscores
+  const sanitized = id.replace(/[^a-zA-Z0-9-_]/g, '')
+  
+  if (sanitized !== id) {
+    console.warn('SECURITY: CSS ID sanitized:', id, '->', sanitized)
+  }
+  
+  return sanitized || 'chart-default'
+}
+
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
     ([_, config]) => config.theme || config.color
@@ -74,26 +113,39 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
+  const sanitizedId = sanitizeCSSId(id)
+  
+  const cssContent = Object.entries(THEMES)
+    .map(
+      ([theme, prefix]) => {
+        const sanitizedPrefix = prefix === '.dark' ? '.dark' : ''
+        const colorRules = colorConfig
+          .map(([key, itemConfig]) => {
+            const rawColor =
+              itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
+              itemConfig.color
+            
+            if (!rawColor) return null
+            
+            const sanitizedColor = sanitizeCSSColor(rawColor)
+            const sanitizedKey = key.replace(/[^a-zA-Z0-9-_]/g, '') // Sanitize CSS variable name
+            
+            return sanitizedColor ? `  --color-${sanitizedKey}: ${sanitizedColor};` : null
+          })
+          .filter(Boolean)
+          .join('\n')
+        
+        if (!colorRules) return ''
+        
+        return `${sanitizedPrefix} [data-chart="${sanitizedId}"] {\n${colorRules}\n}`
+      }
+    )
+    .filter(Boolean)
+    .join('\n')
+
   return (
     <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join("\n")}
-}
-`
-          )
-          .join("\n"),
-      }}
+      dangerouslySetInnerHTML={createSecureInnerHTML(cssContent)}
     />
   )
 }

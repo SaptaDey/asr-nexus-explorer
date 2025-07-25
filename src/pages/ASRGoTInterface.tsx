@@ -28,6 +28,7 @@ import { CostAwareDashboard } from '@/components/asr-got/CostAwareDashboard';
 import { DeveloperMode } from '@/components/asr-got/DeveloperMode';
 import { UnifiedAPICredentialsModal } from '@/components/asr-got/UnifiedAPICredentialsModal';
 import { DebugButton } from '@/components/asr-got/DebugButton';
+import { sanitizeResearchHTML } from '@/utils/htmlSanitizer';
 import { RealTimeErrorLogger } from '@/components/asr-got/RealTimeErrorLogger';
 import { StoredAnalysesManager } from '@/components/asr-got/StoredAnalysesManager';
 import { Stage9ProgressIndicator } from '@/components/asr-got/Stage9ProgressIndicator';
@@ -566,7 +567,9 @@ const ASRGoTInterfaceContent: React.FC = () => {
           // Open HTML in new window for PDF printing
           const newWindow = window.open('', '_blank');
           if (newWindow) {
-            newWindow.document.write(htmlReport);
+            // SECURITY: Sanitize HTML report before writing to prevent XSS
+            const sanitizedReport = sanitizeResearchHTML(htmlReport);
+            newWindow.document.write(sanitizedReport);
             newWindow.document.close();
 
             // Wait for content to load then trigger print dialog

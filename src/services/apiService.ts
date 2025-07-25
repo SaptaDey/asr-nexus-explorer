@@ -13,6 +13,7 @@ import {
   secureRequestWithTimeout 
 } from '@/utils/secureNetworkRequest';
 import { sanitizeError, secureConsoleError } from '@/utils/errorSanitizer';
+import { logApiCall } from '@/services/securityEventLogger';
 
 
 // Perplexity Sonar API integration (placeholder for future implementation)
@@ -185,9 +186,11 @@ export const callGeminiAPI = async (
       secureHeaders['x-goog-cache-key'] = cacheKey;
     }
 
+    const apiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent';
+    
     const response = await secureRequestWithTimeout(
       secureNetworkRequest({
-        url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent',
+        url: apiEndpoint,
         method: 'POST',
         secureHeaders,
         body: JSON.stringify(requestBody),
@@ -202,6 +205,10 @@ export const callGeminiAPI = async (
       const sanitizedError = errorText.replace(/AIza[A-Za-z0-9_-]{35}/g, '[REDACTED_API_KEY]')
                                       .replace(/Bearer [A-Za-z0-9_-]+/g, 'Bearer [REDACTED]')
                                       .replace(/x-goog-api-key[^}]+/g, 'x-goog-api-key: [REDACTED]');
+      
+      // Log API failure
+      logApiCall(apiEndpoint, false, `Status: ${response.status}`);
+      
       throw new Error(`Gemini API error: ${response.status} - ${sanitizedError}`);
     }
 
@@ -270,6 +277,9 @@ export const callGeminiAPI = async (
     
     // Record the usage for cost monitoring
     costGuardrails.recordUsage('gemini', actualTotalTokens);
+    
+    // Log successful API call
+    logApiCall(apiEndpoint, true);
     
     return content;
   } catch (error) {

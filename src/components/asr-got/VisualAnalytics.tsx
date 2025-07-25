@@ -14,6 +14,7 @@ import { GraphData, GraphNode, ResearchContext } from '@/types/asrGotTypes';
 import { BarChart3, LineChart, PieChart, Download, Play, AlertTriangle, Code } from 'lucide-react';
 import { toast } from 'sonner';
 import { safeJSONParse, validatePlotlyConfig, apiRateLimiter } from '@/utils/securityUtils';
+import { sanitizePlotlyConfig } from '@/utils/htmlSanitizer';
 import { EvidenceDataExtractor, EvidenceBasedChart } from '@/services/EvidenceDataExtractor';
 
 // Import Plotly.js dynamically to avoid bundle size issues
@@ -518,9 +519,9 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
         id: `evidence_${evidenceNode.id}_${Date.now()}`,
         title: plotConfig.title || `Evidence Analysis: ${evidenceNode.label}`,
         code: extractedCode,
-        data: plotConfig.data,
-        layout: plotConfig.layout,
-        type: plotConfig.data[0].type as AnalyticsFigure['type'],
+        data: sanitizedConfig.data,
+        layout: sanitizedConfig.layout,
+        type: sanitizedConfig.data[0].type as AnalyticsFigure['type'],
         nodeId: evidenceNode.id,
         generated: new Date().toISOString()
       };
@@ -542,8 +543,11 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
         throw new Error('Invalid or unsafe plot configuration');
       }
 
+      // SECURITY: Sanitize the plot configuration to remove any malicious content
+      const sanitizedConfig = sanitizePlotlyConfig(plotConfig);
+
       // Determine chart type from the data
-      const firstTrace = plotConfig.data[0];
+      const firstTrace = sanitizedConfig.data[0];
       let chartType: AnalyticsFigure['type'] = 'scatter';
       
       if (firstTrace?.type === 'bar') chartType = 'bar';
@@ -554,10 +558,10 @@ JSON: {"title": "Evidence Analysis: ${evidenceNode.label}", "data": [{"x": ["Sup
 
       return {
         id: `fig_${nodeId}_${Date.now()}`,
-        title: typeof plotConfig.layout.title === 'string' ? plotConfig.layout.title : `Analysis for ${nodeId}`,
+        title: typeof sanitizedConfig.layout.title === 'string' ? sanitizedConfig.layout.title : `Analysis for ${nodeId}`,
         code: code,
-        data: plotConfig.data,
-        layout: plotConfig.layout,
+        data: sanitizedConfig.data,
+        layout: sanitizedConfig.layout,
         type: chartType,
         nodeId: nodeId,
         generated: new Date().toISOString()

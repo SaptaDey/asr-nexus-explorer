@@ -3,6 +3,8 @@
 
 import { supabase } from '@/integrations/supabase/client'
 import type { User, Session } from '@supabase/supabase-js'
+import { validateRequestData, checkRateLimit, validateRequestSize } from '@/middleware/apiValidation'
+import { authorizationService, Permission, ResourceType } from './authorizationService'
 
 export interface UserProfile {
   id: string
@@ -134,6 +136,19 @@ class UserService {
         throw new Error('Not authenticated')
       }
 
+      // SECURITY: Check authorization to view profile
+      const authorized = await authorizationService.validateDataAccess(
+        session.user.id,
+        'read',
+        ResourceType.USER_PROFILE,
+        session.user.id,
+        session.user.id
+      );
+      
+      if (!authorized) {
+        throw new Error('Insufficient permissions to view profile');
+      }
+
       const response = await fetch(`${this.baseUrl}/user-management/profile`, {
         method: 'GET',
         headers: {
@@ -160,13 +175,29 @@ class UserService {
         throw new Error('Not authenticated')
       }
 
+      // SECURITY: Rate limiting
+      if (!checkRateLimit(`user-${session.user.id}`)) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+      }
+
+      // SECURITY: Validate request data
+      const validation = validateRequestData(updates, 'updateProfile');
+      if (!validation.isValid) {
+        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      }
+
+      // SECURITY: Check request size
+      if (!validateRequestSize(validation.sanitizedData)) {
+        throw new Error('Request size exceeds maximum allowed size');
+      }
+
       const response = await fetch(`${this.baseUrl}/user-management/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify(updates)
+        body: JSON.stringify(validation.sanitizedData)
       })
 
       if (!response.ok) {
@@ -292,12 +323,23 @@ class UserService {
   // Session Management with Local Storage Fallback
   async saveSessionLocal(sessionData: any): Promise<void> {
     try {
+      // SECURITY: Validate session data
+      const validation = validateRequestData(sessionData, 'saveSession');
+      if (!validation.isValid) {
+        throw new Error(`Session validation failed: ${validation.errors.join(', ')}`);
+      }
+
       // Save to Supabase if authenticated
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
+        // SECURITY: Rate limiting for database operations
+        if (!checkRateLimit(`session-${session.user.id}`, 10, 60000)) {
+          throw new Error('Too many session saves. Please try again later.');
+        }
+
         await supabase.from('query_sessions').insert({
           user_id: session.user.id,
-          ...sessionData
+          ...validation.sanitizedData
         })
       }
       

@@ -4,6 +4,7 @@
  */
 
 import DOMPurify from 'dompurify';
+import { logSecurityViolation } from '@/services/securityEventLogger';
 
 // Input validation schemas
 export const INPUT_VALIDATION = {
@@ -14,14 +15,69 @@ export const INPUT_VALIDATION = {
 };
 
 /**
- * Sanitize HTML content to prevent XSS attacks
+ * SECURITY ENHANCED: Sanitize HTML content to prevent XSS attacks
+ * Uses comprehensive DOMPurify configuration for research content safety
  */
 export const sanitizeHTML = (html: string): string => {
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'code', 'pre', 'blockquote'],
-    ALLOWED_ATTR: ['class'],
-    KEEP_CONTENT: true,
-  });
+  if (!html || typeof html !== 'string') {
+    return '';
+  }
+  
+  try {
+    const sanitized = DOMPurify.sanitize(html, {
+      // Allowed tags for research content
+      ALLOWED_TAGS: [
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'p', 'br', 'div', 'span',
+        'strong', 'b', 'em', 'i', 'u',
+        'ul', 'ol', 'li',
+        'blockquote', 'code', 'pre',
+        'table', 'thead', 'tbody', 'tr', 'td', 'th',
+        'a', 'img',
+        'sub', 'sup'
+      ],
+      
+      // Allowed attributes with security restrictions
+      ALLOWED_ATTR: [
+        'href', 'title', 'alt', 'src',
+        'class', 'id',
+        'target', 'rel'
+      ],
+      
+      // Block dangerous protocols
+      ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i,
+      
+      // Security settings
+      ALLOW_DATA_ATTR: false,
+      FORBID_TAGS: ['script', 'object', 'embed', 'iframe', 'form', 'input', 'style'],
+      FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onchange'],
+      
+      // Sanitization options
+      SANITIZE_DOM: true,
+      SANITIZE_NAMED_PROPS: true,
+      KEEP_CONTENT: true,
+      
+      // Add hooks for additional security
+      ADD_TAGS: [],
+      ADD_ATTR: []
+    });
+    
+    // Additional validation to catch any remaining threats
+    if (sanitized.includes('<script') || sanitized.includes('javascript:') || sanitized.includes('data:text/html')) {
+      console.warn('SECURITY: Potential XSS attempt blocked in HTML content');
+      logSecurityViolation('xss', { 
+        originalLength: html.length, 
+        blockedContent: html.substring(0, 100) + '...',
+        timestamp: new Date().toISOString()
+      });
+      return 'Content blocked for security reasons';
+    }
+    
+    return sanitized;
+  } catch (error) {
+    console.error('SECURITY: HTML sanitization failed:', error);
+    return 'Content could not be safely displayed';
+  }
 };
 
 /**
@@ -33,11 +89,22 @@ export const validateInput = (input: string, type: 'query' | 'prompt'): string =
   }
 
   // Remove potentially dangerous characters
+  const originalInput = input;
   const sanitized = input
     .replace(/[<>]/g, '') // Remove HTML brackets
     .replace(/javascript:/gi, '') // Remove javascript: protocol
     .replace(/data:/gi, '') // Remove data: protocol
     .trim();
+    
+  // Log if content was modified
+  if (originalInput !== sanitized) {
+    logSecurityViolation('input', {
+      type,
+      originalLength: originalInput.length,
+      sanitizedLength: sanitized.length,
+      removedPatterns: originalInput.length - sanitized.length > 0
+    });
+  }
 
   if (sanitized.length > INPUT_VALIDATION.maxQueryLength) {
     throw new Error(`Input too long: maximum ${INPUT_VALIDATION.maxQueryLength} characters`);

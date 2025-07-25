@@ -16,6 +16,7 @@ import { GraphData, APICredentials } from '@/types/asrGotTypes';
 import { VisualAnalytics } from './VisualAnalytics';
 import { useEnhancedVisualAnalytics } from './EnhancedVisualAnalytics';
 import { toast } from 'sonner';
+import { validateInput } from '@/utils/securityUtils';
 interface ResearchInterfaceProps {
   currentStage: number;
   graphData: GraphData;
@@ -81,11 +82,31 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
     }
   }, [currentStage, stageResults, activeTab]);
 
+  // SECURITY: Secure input handler with validation and sanitization
+  const handleTaskDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    try {
+      const sanitizedInput = validateInput(e.target.value, 'query');
+      setTaskDescription(sanitizedInput);
+    } catch (error) {
+      toast.error(`Input validation error: ${error.message}`);
+      // Don't update state with invalid input
+    }
+  };
+
   const handleStartResearch = async () => {
     if (!taskDescription.trim()) {
       toast.error('Please provide a research question or topic');
       return;
     }
+    
+    // SECURITY: Double-check input validation before processing
+    try {
+      validateInput(taskDescription, 'query');
+    } catch (error) {
+      toast.error(`Invalid research query: ${error.message}`);
+      return;
+    }
+    
     if (!apiKeys?.gemini) {
       toast.info('API key required to start research');
       onShowApiModal?.();
@@ -154,7 +175,15 @@ export const ResearchInterface: React.FC<ResearchInterfaceProps> = ({
           <div className="space-y-4">
             <div>
               <Label htmlFor="task-description" className="text-lg font-semibold">Research Question or Topic</Label>
-              <Textarea id="task-description" placeholder="Enter your scientific research question or topic of interest. The AI will automatically analyze the field, generate hypotheses, and conduct comprehensive research..." value={taskDescription} onChange={e => setTaskDescription(e.target.value)} rows={4} className="mt-2" />
+              <Textarea 
+                id="task-description" 
+                placeholder="Enter your scientific research question or topic of interest. The AI will automatically analyze the field, generate hypotheses, and conduct comprehensive research..." 
+                value={taskDescription} 
+                onChange={handleTaskDescriptionChange} 
+                rows={4} 
+                className="mt-2" 
+                maxLength={1048576}
+              />
             </div>
             <Button onClick={handleStartResearch} disabled={isProcessing} className="w-full gradient-bg bg-cyan-800 hover:bg-cyan-700">
               {isProcessing ? <>

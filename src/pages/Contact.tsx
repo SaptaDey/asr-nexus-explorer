@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Mail, MapPin, Github, ExternalLink, GraduationCap, Microscope, Brain, Send, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { validateInput } from '@/utils/securityUtils';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -40,11 +41,35 @@ Sent from Scientific Reasoning Framework
     toast.success('Email client opened with your message');
   };
 
+  // SECURITY: Secure input handler with validation and sanitization
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+    const { name, value } = e.target;
+    
+    try {
+      // Validate input based on field type
+      let validatedValue: string;
+      
+      if (name === 'issueType') {
+        // Select field with predefined options - just validate it's one of the allowed values
+        const allowedTypes = ['general', 'bug', 'feature', 'research', 'technical'];
+        if (!allowedTypes.includes(value)) {
+          toast.error('Invalid issue type selected');
+          return;
+        }
+        validatedValue = value;
+      } else {
+        // For text inputs, use the general input validation
+        validatedValue = validateInput(value, name === 'message' ? 'query' : 'prompt');
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        [name]: validatedValue
+      }));
+    } catch (error) {
+      toast.error(`Input validation error: ${error.message}`);
+      // Don't update state with invalid input
+    }
   };
 
   return (
