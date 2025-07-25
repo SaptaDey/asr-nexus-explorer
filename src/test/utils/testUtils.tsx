@@ -169,7 +169,7 @@ export const createTestCredentials = (): APICredentials => ({
 });
 
 // Performance testing utilities
-export const measurePerformance = async <T>(
+export const measurePerformance = async <T,>(
   operation: () => Promise<T> | T,
   name: string = 'operation'
 ): Promise<{ result: T; duration: number; memory?: number }> => {

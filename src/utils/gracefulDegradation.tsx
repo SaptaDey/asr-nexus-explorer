@@ -471,7 +471,7 @@ class GracefulDegradationManager {
 export const gracefulDegradation = new GracefulDegradationManager();
 
 // Utility functions for common degradation scenarios
-export const safeAsync = async <T>(
+export const safeAsync = async <T,>(
   operation: () => Promise<T>,
   fallback: T,
   featureName?: keyof FeatureFlags
@@ -493,7 +493,7 @@ export const safeAsync = async <T>(
   }
 };
 
-export const safeSync = <T>(
+export const safeSync = <T,>(
   operation: () => T,
   fallback: T,
   featureName?: keyof FeatureFlags

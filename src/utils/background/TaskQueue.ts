@@ -330,13 +330,8 @@ export class TaskQueue {
   // Execute task using provided executor or default implementation
   protected async executeTask(task: BackgroundTask): Promise<any> {
     if (this.executor) {
-      try {
-        const result = await this.executor(task);
-        return result;
-      } catch (error) {
-        // Re-throw to be handled by processTask retry logic
-        throw error;
-      }
+      const result = await this.executor(task);
+      return result;
     }
     
     // Default implementation for backward compatibility
