@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuthContext } from '@/contexts/AuthContext'
-import { Loader2, Eye, EyeOff, Check } from 'lucide-react'
+import { Loader2, Eye, EyeOff, Check, Github, Chrome, Microsoft } from 'lucide-react'
 
 interface RegisterFormProps {
   onSuccess?: () => void
@@ -17,7 +17,7 @@ interface RegisterFormProps {
 }
 
 export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: RegisterFormProps) {
-  const { signUp } = useAuthContext()
+  const { signUp, signInWithProvider } = useAuthContext()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -26,6 +26,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
     subscriptionTier: 'free' as 'free' | 'pro' | 'enterprise'
   })
   const [loading, setLoading] = useState(false)
+  const [oauthLoading, setOauthLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -98,6 +99,27 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
       ...prev,
       subscriptionTier: value as 'free' | 'pro' | 'enterprise'
     }))
+  }
+
+  const handleOAuthSignIn = async (provider: 'google' | 'github' | 'microsoft') => {
+    setError(null)
+    setOauthLoading(provider)
+
+    try {
+      const result = await signInWithProvider(provider)
+      
+      if (!result.success) {
+        setError(result.error || `${provider} sign-in failed`)
+        return
+      }
+      
+      // OAuth redirects to dashboard, so onSuccess may not be called
+      onSuccess?.()
+    } catch (err: any) {
+      setError(err.message || `${provider} sign-in failed`)
+    } finally {
+      setOauthLoading(null)
+    }
   }
 
   return (
@@ -290,6 +312,67 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
               'Create Account'
             )}
           </Button>
+
+          {/* OAuth Providers */}
+          <div className="space-y-4">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => handleOAuthSignIn('google')}
+                disabled={loading || oauthLoading !== null}
+              >
+                {oauthLoading === 'google' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Chrome className="h-4 w-4" />
+                )}
+                <span className="sr-only">Sign up with Google</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => handleOAuthSignIn('github')}
+                disabled={loading || oauthLoading !== null}
+              >
+                {oauthLoading === 'github' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Github className="h-4 w-4" />
+                )}
+                <span className="sr-only">Sign up with GitHub</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => handleOAuthSignIn('microsoft')}
+                disabled={loading || oauthLoading !== null}
+              >
+                {oauthLoading === 'microsoft' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Microsoft className="h-4 w-4" />
+                )}
+                <span className="sr-only">Sign up with Microsoft</span>
+              </Button>
+            </div>
+          </div>
 
           <div className="text-center space-y-2">
             <Button
