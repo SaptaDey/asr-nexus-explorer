@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuthContext } from '@/contexts/AuthContext'
-import { Loader2, Eye, EyeOff, Check, Github, Chrome, Microsoft } from 'lucide-react'
+import { Loader2, Eye, EyeOff, Check, Github, Chrome } from 'lucide-react'
 
 interface RegisterFormProps {
   onSuccess?: () => void
@@ -367,7 +367,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
                 {oauthLoading === 'microsoft' ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Microsoft className="h-4 w-4" />
+                  <Chrome className="h-4 w-4" />
                 )}
                 <span className="sr-only">Sign up with Microsoft</span>
               </Button>

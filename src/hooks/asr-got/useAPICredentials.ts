@@ -1,7 +1,7 @@
 // API Credentials Management - SECURE VERSION
 import { useState, useCallback, useEffect } from 'react';
 import { APICredentials } from '@/types/asrGotTypes';
-import { SecureCredentialManager } from '@/utils/securityUtils';
+import { SecureCredentialManager } from '@/services/security/SecureCredentialManager';
 import { toast } from "sonner";
 
 export const useAPICredentials = () => {

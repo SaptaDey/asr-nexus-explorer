@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAuthContext } from '@/contexts/AuthContext'
-import { Loader2, Eye, EyeOff, Github, Chrome, Microsoft } from 'lucide-react'
+import { Loader2, Eye, EyeOff, Github, Chrome } from 'lucide-react'
 
 interface LoginFormProps {
   onSuccess?: () => void
@@ -205,7 +205,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, className = '' }: Log
                 {oauthLoading === 'microsoft' ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Microsoft className="h-4 w-4" />
+                  <Chrome className="h-4 w-4" />
                 )}
                 <span className="sr-only">Sign in with Microsoft</span>
               </Button>
