@@ -458,7 +458,7 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
   }
 
   return (
-    <div className={`h-[600px] w-full border border-border rounded-lg overflow-hidden bg-background relative ${className}`}>
+    <div className={`h-[600px] w-full border border-border rounded-lg overflow-hidden bg-background relative ${className}`} data-testid="graph-container">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -472,7 +472,8 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
         minZoom={0.05}
         maxZoom={3}
         defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-        className="scientific-graph"
+        className="scientific-graph graph-visualization"
+        data-testid="react-flow-graph"
         onError={(error) => {
           console.error('❌ ReactFlow error:', error);
           setGraphError(error.message || 'ReactFlow rendering error');
