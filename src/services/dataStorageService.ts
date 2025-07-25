@@ -7,7 +7,7 @@
 import { supabase } from '@/integrations/supabase/client'
 import type { AsrGotState } from '@/types/asrGotTypes'
 import { sanitizeHTML, validateInput } from '@/utils/securityUtils'
-import { securityLogger, SecurityEventType, SecurityEventSeverity } from '@/services/security/securityEventLogger'
+import { securityLogger, SecurityEventType, SecurityEventSeverity } from '@/services/securityEventLogger'
 
 // Validation schemas and interfaces
 export interface ValidationResult {

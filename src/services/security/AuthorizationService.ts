@@ -4,7 +4,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { securityLogger, SecurityEventType, SecurityEventSeverity } from './securityEventLogger';
+import { securityLogger, SecurityEventType, SecurityEventSeverity } from '../securityEventLogger';
 import type { User } from '@supabase/supabase-js';
 
 // Role definitions
