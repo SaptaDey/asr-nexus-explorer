@@ -48,7 +48,7 @@ interface ErrorHandlerOptions {
   maxRetries?: number;
 }
 
-class ErrorHandler {
+export class ErrorHandler {
   private errors: ErrorDetails[] = [];
   private errorCounts: Map<string, number> = new Map();
   private sessionId: string;
