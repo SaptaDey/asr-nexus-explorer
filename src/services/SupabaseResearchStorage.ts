@@ -3,14 +3,15 @@
  * Handles storing and retrieving Sonar Deep Research results
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { SonarDeepResearchResponse, ResearchResultStorage } from '@/types/sonarDeepResearchTypes';
 
 export class SupabaseResearchStorage {
   private supabase: SupabaseClient;
 
-  constructor(supabaseUrl: string, supabaseAnonKey: string) {
-    this.supabase = createClient(supabaseUrl, supabaseAnonKey);
+  constructor() {
+    this.supabase = supabase;
   }
 
   /**

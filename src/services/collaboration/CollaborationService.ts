@@ -3,7 +3,8 @@
  * Enables real-time collaborative research with Supabase
  */
 
-import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
+import { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { DatabaseService } from '../database/DatabaseService';
 import { 
   CollaborationData, 
@@ -78,14 +79,7 @@ export class CollaborationService {
   private onPermissionChanged?: (permissions: CollaborationPermissions) => void;
 
   constructor() {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing Supabase configuration');
-    }
-
-    this.supabase = createClient(supabaseUrl, supabaseKey);
+    this.supabase = supabase;
     this.db = new DatabaseService();
   }
 

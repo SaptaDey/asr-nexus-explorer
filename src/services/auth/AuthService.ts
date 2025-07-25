@@ -3,7 +3,8 @@
  * Handles user authentication, session management, and profile management with Supabase
  */
 
-import { createClient, SupabaseClient, User, Session, AuthError } from '@supabase/supabase-js';
+import { SupabaseClient, User, Session, AuthError } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { DbProfile } from '../database/DatabaseService';
 
 export interface AuthUser extends User {
@@ -59,15 +60,7 @@ export class AuthService {
   };
 
   constructor() {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing Supabase configuration');
-    }
-
-    this.supabase = createClient(supabaseUrl, supabaseKey);
-    
+    this.supabase = supabase;
     this.initialize();
   }
 

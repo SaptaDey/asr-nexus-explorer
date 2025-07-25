@@ -5,16 +5,14 @@
  * THIS FIXES TASK #41: Authorization bypass in direct database access
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 export class SecurityMigration {
   private supabase: SupabaseClient;
 
   constructor() {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://aogeenqytwrpjvrfwvjw.supabase.co";
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvZ2VlbnF5dHdycGp2cmZ3dmp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE3ODQwMzEsImV4cCI6MjA2NzM2MDAzMX0.AG8XsM7QCM8nYYvd0nrWjP-LhI4XUMkSnvBrUEZc50U";
-    
-    this.supabase = createClient(supabaseUrl, supabaseKey);
+    this.supabase = supabase;
   }
 
   /**

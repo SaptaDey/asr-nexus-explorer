@@ -3,7 +3,8 @@
  * Handles all database operations with Supabase integration and schema validation
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { GraphData, GraphNode, GraphEdge, StageExecution } from '@/types/asrGotTypes';
 import { Hypothesis } from '@/services/reasoning/HypothesisCompetitionFramework';
 import { DatabaseValidationWrapper, createValidationWrapper } from './ValidationWrapper';
@@ -170,14 +171,7 @@ export class DatabaseService {
   private validator: DatabaseValidationWrapper;
 
   constructor() {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing Supabase configuration');
-    }
-
-    this.supabase = createClient<Database>(supabaseUrl, supabaseKey);
+    this.supabase = supabase as SupabaseClient<Database>;
     this.validator = createValidationWrapper(this.supabase);
   }
 

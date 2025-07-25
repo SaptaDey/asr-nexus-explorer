@@ -3,7 +3,8 @@
  * Handles real-time synchronization of research session state across clients
  */
 
-import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
+import { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { DatabaseService, DbResearchSession } from '../database/DatabaseService';
 import { GraphData } from '@/types/asrGotTypes';
 
@@ -62,14 +63,7 @@ export class SessionSyncService {
   private onConnectionChange?: (sessionId: string, isConnected: boolean) => void;
 
   constructor() {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing Supabase configuration');
-    }
-
-    this.supabase = createClient(supabaseUrl, supabaseKey);
+    this.supabase = supabase;
     this.db = new DatabaseService();
   }
 

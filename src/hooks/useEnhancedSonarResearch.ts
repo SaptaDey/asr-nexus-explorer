@@ -41,18 +41,13 @@ export const useEnhancedSonarResearch = () => {
   /**
    * Initialize the scientific research API
    */
-  const initialize = useCallback((apiKey: string, supabaseUrl?: string, supabaseKey?: string) => {
+  const initialize = useCallback((apiKey: string) => {
     scientificAPIRef.current = new ScientificResearchAPI(apiKey);
-    
-    if (supabaseUrl && supabaseKey) {
-      researchStorageRef.current = new SupabaseResearchStorage(supabaseUrl, supabaseKey);
-    }
+    researchStorageRef.current = new SupabaseResearchStorage();
 
     // Initialize the cost-aware orchestration service
     costAwareOrchestration.initializeScientificResearch(
-      { perplexity: apiKey },
-      supabaseUrl,
-      supabaseKey
+      { perplexity: apiKey }
     );
   }, []);
 

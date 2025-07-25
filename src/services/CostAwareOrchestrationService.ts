@@ -37,14 +37,12 @@ export class CostAwareOrchestrationService {
   /**
    * Initialize enhanced scientific research capabilities
    */
-  initializeScientificResearch(apiKeys: APICredentials, supabaseUrl?: string, supabaseKey?: string): void {
+  initializeScientificResearch(apiKeys: APICredentials): void {
     if (apiKeys.perplexity) {
       this.scientificAPI = new ScientificResearchAPI(apiKeys.perplexity);
     }
 
-    if (supabaseUrl && supabaseKey) {
-      this.researchStorage = new SupabaseResearchStorage(supabaseUrl, supabaseKey);
-    }
+    this.researchStorage = new SupabaseResearchStorage();
   }
 
   /**

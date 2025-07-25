@@ -3,7 +3,8 @@
  * Handles database schema migrations for deployment
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Migration {
   id: string;
@@ -39,8 +40,8 @@ export class MigrationRunner {
   private migrations: Migration[] = [];
   private isInitialized = false;
 
-  constructor(supabaseUrl: string, supabaseKey: string) {
-    this.supabase = createClient(supabaseUrl, supabaseKey);
+  constructor() {
+    this.supabase = supabase;
   }
 
   /**
