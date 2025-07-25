@@ -1,547 +1,508 @@
 
+import React from 'react';
+
 /**
- * Graceful Degradation System
- * Provides fallbacks and alternative approaches when features fail
+ * Graceful Degradation Utilities
+ * Provides fallback mechanisms and progressive enhancement for the ASR-GoT application
  */
 
-import React from 'react';
-import { toast } from 'sonner';
-import { ErrorHandler, ErrorCategory, ErrorSeverity } from './errorHandling';
-
-// Feature availability flags
-interface FeatureFlags {
-  plotlyVisualization: boolean;
-  cytoscapeGraphs: boolean;
-  reactFlowGraphs: boolean;
-  htmlExport: boolean;
-  pdfExport: boolean;
-  webSearch: boolean;
-  aiProcessing: boolean;
+export interface FeatureSupport {
+  webGL: boolean;
+  webWorkers: boolean;
+  indexedDB: boolean;
   localStorage: boolean;
   sessionStorage: boolean;
-  clipboard: boolean;
-  fileDownload: boolean;
+  canvas: boolean;
+  svg: boolean;
+  webSockets: boolean;
+  serviceWorker: boolean;
   notifications: boolean;
+  geolocation: boolean;
+  mediaDevices: boolean;
+  intersectionObserver: boolean;
+  resizeObserver: boolean;
 }
 
-// Degradation strategies for different features
-export enum DegradationStrategy {
-  DISABLE = 'disable',
-  FALLBACK = 'fallback',
-  SIMPLIFIED = 'simplified',
-  ALTERNATIVE = 'alternative',
-  RETRY = 'retry'
-}
+export class GracefulDegradation {
+  private static instance: GracefulDegradation;
+  private featureSupport: FeatureSupport;
+  private fallbackStrategies: Map<string, () => void> = new Map();
 
-interface DegradationConfig {
-  strategy: DegradationStrategy;
-  fallbackFunction?: () => any;
-  alternativeComponent?: React.ComponentType<any>;
-  retryLimit?: number;
-  userMessage?: string;
-}
-
-class GracefulDegradationManager {
-  private featureFlags: FeatureFlags;
-  private errorHandler: ErrorHandler;
-  private degradationConfigs: Map<string, DegradationConfig>;
-  private retryCounters: Map<string, number>;
-
-  constructor() {
-    this.featureFlags = this.initializeFeatureFlags();
-    this.errorHandler = new ErrorHandler();
-    this.degradationConfigs = new Map();
-    this.retryCounters = new Map();
-    this.setupDegradationConfigs();
-    this.performInitialFeatureDetection();
+  private constructor() {
+    this.featureSupport = this.checkFeatureSupport();
+    this.setupFallbackStrategies();
   }
 
-  private initializeFeatureFlags(): FeatureFlags {
-    return {
-      plotlyVisualization: true,
-      cytoscapeGraphs: true,
-      reactFlowGraphs: true,
-      htmlExport: true,
-      pdfExport: true,
-      webSearch: true,
-      aiProcessing: true,
-      localStorage: this.checkLocalStorage(),
-      sessionStorage: this.checkSessionStorage(),
-      clipboard: this.checkClipboard(),
-      fileDownload: this.checkFileDownload(),
-      notifications: this.checkNotifications(),
+  static getInstance(): GracefulDegradation {
+    if (!GracefulDegradation.instance) {
+      GracefulDegradation.instance = new GracefulDegradation();
+    }
+    return GracefulDegradation.instance;
+  }
+
+  /**
+   * Check browser feature support
+   */
+  private checkFeatureSupport(): FeatureSupport {
+    const support: FeatureSupport = {
+      webGL: false,
+      webWorkers: false,
+      indexedDB: false,
+      localStorage: false,
+      sessionStorage: false,
+      canvas: false,
+      svg: false,
+      webSockets: false,
+      serviceWorker: false,
+      notifications: false,
+      geolocation: false,
+      mediaDevices: false,
+      intersectionObserver: false,
+      resizeObserver: false
     };
-  }
 
-  private checkLocalStorage(): boolean {
+    if (typeof window === 'undefined') {
+      return support;
+    }
+
+    // Check WebGL support
     try {
-      const test = '__localStorage_test__';
+      const canvas = document.createElement('canvas');
+      support.webGL = !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+    } catch (e) {
+      support.webGL = false;
+    }
+
+    // Check Web Workers
+    support.webWorkers = typeof Worker !== 'undefined';
+
+    // Check IndexedDB
+    support.indexedDB = 'indexedDB' in window;
+
+    // Check localStorage
+    try {
+      const test = 'test';
       localStorage.setItem(test, test);
       localStorage.removeItem(test);
-      return true;
-    } catch {
-      return false;
+      support.localStorage = true;
+    } catch (e) {
+      support.localStorage = false;
     }
-  }
 
-  private checkSessionStorage(): boolean {
+    // Check sessionStorage
     try {
-      const test = '__sessionStorage_test__';
+      const test = 'test';
       sessionStorage.setItem(test, test);
       sessionStorage.removeItem(test);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  private checkClipboard(): boolean {
-    return typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function';
-  }
-
-  private checkFileDownload(): boolean {
-    return typeof document !== 'undefined' && 'createElement' in document;
-  }
-
-  private checkNotifications(): boolean {
-    return typeof window !== 'undefined' && 'Notification' in window;
-  }
-
-  private setupDegradationConfigs(): void {
-    // Visualization fallbacks
-    this.degradationConfigs.set('plotlyVisualization', {
-      strategy: DegradationStrategy.FALLBACK,
-      fallbackFunction: this.getPlotlyFallback,
-      userMessage: 'Advanced charts unavailable. Using simplified visualization.'
-    });
-
-    this.degradationConfigs.set('cytoscapeGraphs', {
-      strategy: DegradationStrategy.ALTERNATIVE,
-      alternativeComponent: this.getGraphFallbackComponent,
-      userMessage: 'Interactive graph unavailable. Using alternative layout.'
-    });
-
-    // Export fallbacks
-    this.degradationConfigs.set('htmlExport', {
-      strategy: DegradationStrategy.SIMPLIFIED,
-      fallbackFunction: this.getSimplifiedHTMLExport,
-      userMessage: 'Rich HTML export unavailable. Using basic format.'
-    });
-
-    this.degradationConfigs.set('fileDownload', {
-      strategy: DegradationStrategy.ALTERNATIVE,
-      fallbackFunction: this.getCopyToClipboardFallback,
-      userMessage: 'File download unavailable. Content copied to clipboard.'
-    });
-
-    // Storage fallbacks
-    this.degradationConfigs.set('localStorage', {
-      strategy: DegradationStrategy.ALTERNATIVE,
-      fallbackFunction: this.getMemoryStorageFallback,
-      userMessage: 'Local storage unavailable. Data will be lost on page refresh.'
-    });
-
-    // API fallbacks
-    this.degradationConfigs.set('webSearch', {
-      strategy: DegradationStrategy.RETRY,
-      retryLimit: 3,
-      fallbackFunction: this.getWebSearchFallback,
-      userMessage: 'Web search temporarily unavailable. Using cached data.'
-    });
-
-    this.degradationConfigs.set('aiProcessing', {
-      strategy: DegradationStrategy.RETRY,
-      retryLimit: 2,
-      fallbackFunction: this.getAIProcessingFallback,
-      userMessage: 'AI processing temporarily unavailable. Using simplified analysis.'
-    });
-  }
-
-  private async performInitialFeatureDetection(): Promise<void> {
-    // Test Plotly availability
-    try {
-      await import('plotly.js-dist-min');
-    } catch {
-      this.featureFlags.plotlyVisualization = false;
-      console.warn('📊 Plotly.js not available, will use fallback visualization');
+      support.sessionStorage = true;
+    } catch (e) {
+      support.sessionStorage = false;
     }
 
-    // Test Cytoscape availability
-    try {
-      await import('cytoscape');
-    } catch {
-      this.featureFlags.cytoscapeGraphs = false;
-      console.warn('🕸️ Cytoscape not available, will use alternative graph rendering');
-    }
+    // Check Canvas
+    support.canvas = !!(document.createElement('canvas').getContext);
 
-    // Test other features
-    this.featureFlags.localStorage = this.checkLocalStorage();
-    this.featureFlags.sessionStorage = this.checkSessionStorage();
-    this.featureFlags.clipboard = this.checkClipboard();
+    // Check SVG
+    support.svg = !!(document.createElementNS && document.createElementNS('http://www.w3.org/2000/svg', 'svg').createSVGRect);
+
+    // Check WebSockets
+    support.webSockets = 'WebSocket' in window;
+
+    // Check Service Worker
+    support.serviceWorker = 'serviceWorker' in navigator;
+
+    // Check Notifications
+    support.notifications = 'Notification' in window;
+
+    // Check Geolocation
+    support.geolocation = 'geolocation' in navigator;
+
+    // Check Media Devices
+    support.mediaDevices = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+
+    // Check Intersection Observer
+    support.intersectionObserver = 'IntersectionObserver' in window;
+
+    // Check Resize Observer
+    support.resizeObserver = 'ResizeObserver' in window;
+
+    return support;
   }
 
   /**
-   * Main degradation handler - decides what to do when a feature fails
+   * Setup fallback strategies
    */
-  public handleFeatureFailure<T>(
-    featureName: keyof FeatureFlags,
-    error: Error,
-    fallbackData?: T
-  ): T | null {
-    console.warn(`🔄 Feature failure detected: ${featureName}`, error);
+  private setupFallbackStrategies(): void {
+    // WebGL fallback
+    this.fallbackStrategies.set('webGL', () => {
+      console.warn('WebGL not supported, falling back to 2D canvas rendering');
+    });
 
-    // Mark feature as unavailable
-    this.featureFlags[featureName] = false;
+    // Web Workers fallback
+    this.fallbackStrategies.set('webWorkers', () => {
+      console.warn('Web Workers not supported, processing will run on main thread');
+    });
 
-    // Get degradation config
-    const config = this.degradationConfigs.get(featureName);
-    if (!config) {
-      console.warn(`No degradation config found for ${featureName}`);
-      return fallbackData || null;
+    // IndexedDB fallback
+    this.fallbackStrategies.set('indexedDB', () => {
+      console.warn('IndexedDB not supported, falling back to localStorage');
+    });
+
+    // localStorage fallback
+    this.fallbackStrategies.set('localStorage', () => {
+      console.warn('localStorage not supported, data will not persist');
+    });
+
+    // WebSockets fallback
+    this.fallbackStrategies.set('webSockets', () => {
+      console.warn('WebSockets not supported, falling back to polling');
+    });
+  }
+
+  /**
+   * Get feature support information
+   */
+  getFeatureSupport(): FeatureSupport {
+    return { ...this.featureSupport };
+  }
+
+  /**
+   * Check if a specific feature is supported
+   */
+  isSupported(feature: keyof FeatureSupport): boolean {
+    return this.featureSupport[feature];
+  }
+
+  /**
+   * Execute fallback strategy for a feature
+   */
+  executeFallback(feature: string): void {
+    const strategy = this.fallbackStrategies.get(feature);
+    if (strategy) {
+      strategy();
     }
+  }
 
-    // Handle based on strategy
-    switch (config.strategy) {
-      case DegradationStrategy.DISABLE:
-        this.showDegradationMessage(featureName, config.userMessage);
-        return null;
-
-      case DegradationStrategy.FALLBACK:
-        if (config.fallbackFunction) {
-          try {
-            const result = config.fallbackFunction();
-            this.showDegradationMessage(featureName, config.userMessage);
-            return result;
-          } catch (fallbackError) {
-            console.error(`Fallback also failed for ${featureName}:`, fallbackError);
-            return fallbackData || null;
-          }
-        }
-        break;
-
-      case DegradationStrategy.RETRY:
-        const retryCount = this.retryCounters.get(featureName) || 0;
-        const retryLimit = config.retryLimit || 3;
-        
-        if (retryCount < retryLimit) {
-          this.retryCounters.set(featureName, retryCount + 1);
-          console.log(`🔄 Retrying ${featureName} (attempt ${retryCount + 1}/${retryLimit})`);
-          
-          // Schedule retry after delay
-          setTimeout(() => {
-            this.featureFlags[featureName] = true;
-          }, Math.pow(2, retryCount) * 1000);
-          
-          return fallbackData || null;
+  /**
+   * Safe storage operations with fallbacks
+   */
+  safeStorage = {
+    setItem: (key: string, value: string, useSession = false): boolean => {
+      try {
+        if (useSession && this.featureSupport.sessionStorage) {
+          sessionStorage.setItem(key, value);
+          return true;
+        } else if (this.featureSupport.localStorage) {
+          localStorage.setItem(key, value);
+          return true;
         } else {
-          // Max retries reached, use fallback
-          this.showDegradationMessage(featureName, config.userMessage);
-          return config.fallbackFunction ? config.fallbackFunction() : fallbackData || null;
+          // Fallback to memory storage
+          if (!this.memoryStorage) {
+            this.memoryStorage = new Map();
+          }
+          this.memoryStorage.set(key, value);
+          return true;
         }
-
-      case DegradationStrategy.SIMPLIFIED:
-      case DegradationStrategy.ALTERNATIVE:
-        if (config.fallbackFunction) {
-          const result = config.fallbackFunction();
-          this.showDegradationMessage(featureName, config.userMessage);
-          return result;
-        }
-        break;
-    }
-
-    return fallbackData || null;
-  }
-
-  private showDegradationMessage(featureName: string, message?: string): void {
-    if (message) {
-      toast.info(message, {
-        duration: 5000,
-        description: `Feature: ${featureName}`
-      });
-    }
-  }
-
-  /**
-   * Check if a feature is available
-   */
-  public isFeatureAvailable(featureName: keyof FeatureFlags): boolean {
-    return this.featureFlags[featureName];
-  }
-
-  /**
-   * Get all feature statuses
-   */
-  public getFeatureStatuses(): FeatureFlags {
-    return { ...this.featureFlags };
-  }
-
-  /**
-   * Force re-enable a feature (for user-triggered retries)
-   */
-  public retryFeature(featureName: keyof FeatureFlags): void {
-    this.featureFlags[featureName] = true;
-    this.retryCounters.delete(featureName);
-    console.log(`🔄 Feature ${featureName} manually re-enabled`);
-  }
-
-  // Fallback implementations
-  private getPlotlyFallback = () => {
-    return {
-      createChart: (element: HTMLElement, data: any[], layout?: any) => {
-        element.innerHTML = `
-          <div style="
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100%; 
-            min-height: 200px;
-            background: #f8f9fa;
-            border: 2px dashed #dee2e6;
-            border-radius: 8px;
-            color: #6c757d;
-            font-family: Inter, system-ui, sans-serif;
-            text-align: center;
-          ">
-            <div>
-              <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
-              <div style="font-weight: 500;">Chart Data Available</div>
-              <div style="font-size: 0.875rem; margin-top: 0.25rem;">
-                ${data.length} data series • ${layout?.title || 'Untitled Chart'}
-              </div>
-            </div>
-          </div>
-        `;
+      } catch (e) {
+        console.warn('Storage operation failed:', e);
+        return false;
       }
-    };
-  };
+    },
 
-  private getGraphFallbackComponent = () => {
-    return ({ nodes = [], edges = [] }: any) => (
-      <div className="h-[600px] w-full border border-border rounded-lg overflow-hidden bg-background flex items-center justify-center">
-        <div className="text-center p-6">
-          <div className="text-4xl mb-4">🕸️</div>
-          <h3 className="text-lg font-semibold mb-2">Graph Data Available</h3>
-          <p className="text-muted-foreground mb-4">
-            {nodes.length} nodes • {edges.length} connections
-          </p>
-          <div className="text-sm text-muted-foreground">
-            Interactive graph rendering is unavailable
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  private getSimplifiedHTMLExport = () => {
-    return (data: any) => {
-      return `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>ASR-GoT Analysis Report</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 2rem; line-height: 1.6; }
-            .header { border-bottom: 2px solid #ccc; padding-bottom: 1rem; margin-bottom: 2rem; }
-            .section { margin: 2rem 0; padding: 1rem; background: #f9f9f9; border-radius: 5px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>ASR-GoT Analysis Report</h1>
-            <p>Generated on ${new Date().toLocaleDateString()}</p>
-          </div>
-          <div class="section">
-            <h2>Research Overview</h2>
-            <p><strong>Field:</strong> ${data.researchContext?.field || 'Not specified'}</p>
-            <p><strong>Topic:</strong> ${data.researchContext?.topic || 'Not specified'}</p>
-          </div>
-          <div class="section">
-            <h2>Analysis Results</h2>
-            <p>This is a simplified export due to limited system capabilities.</p>
-            <p>For full functionality, please ensure all required libraries are available.</p>
-          </div>
-        </body>
-        </html>
-      `;
-    };
-  };
-
-  private getCopyToClipboardFallback = () => {
-    return (content: string) => {
-      if (this.featureFlags.clipboard) {
-        navigator.clipboard.writeText(content).then(() => {
-          toast.success('Content copied to clipboard');
-        }).catch(() => {
-          toast.error('Failed to copy to clipboard');
-        });
-      } else {
-        // Show content in modal or textarea for manual copying
-        const textarea = document.createElement('textarea');
-        textarea.value = content;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        
-        try {
-          document.execCommand('copy');
-          toast.success('Content copied to clipboard');
-        } catch {
-          toast.error('Manual copy required - content prepared');
+    getItem: (key: string, useSession = false): string | null => {
+      try {
+        if (useSession && this.featureSupport.sessionStorage) {
+          return sessionStorage.getItem(key);
+        } else if (this.featureSupport.localStorage) {
+          return localStorage.getItem(key);
+        } else {
+          // Fallback to memory storage
+          return this.memoryStorage?.get(key) || null;
         }
-        
-        document.body.removeChild(textarea);
+      } catch (e) {
+        console.warn('Storage retrieval failed:', e);
+        return null;
       }
-    };
+    },
+
+    removeItem: (key: string, useSession = false): boolean => {
+      try {
+        if (useSession && this.featureSupport.sessionStorage) {
+          sessionStorage.removeItem(key);
+          return true;
+        } else if (this.featureSupport.localStorage) {
+          localStorage.removeItem(key);
+          return true;
+        } else {
+          // Fallback to memory storage
+          this.memoryStorage?.delete(key);
+          return true;
+        }
+      } catch (e) {
+        console.warn('Storage removal failed:', e);
+        return false;
+      }
+    }
   };
 
-  private getMemoryStorageFallback = () => {
-    const memoryStorage = new Map<string, string>();
+  private memoryStorage: Map<string, string> | null = null;
+
+  /**
+   * Progressive enhancement wrapper
+   */
+  withProgressiveEnhancement<T>(
+    baseImplementation: () => T,
+    enhancedImplementation: () => T,
+    requiredFeatures: (keyof FeatureSupport)[]
+  ): T {
+    const isEnhanced = requiredFeatures.every(feature => this.featureSupport[feature]);
+    
+    if (isEnhanced) {
+      try {
+        return enhancedImplementation();
+      } catch (e) {
+        console.warn('Enhanced implementation failed, falling back to base:', e);
+        return baseImplementation();
+      }
+    } else {
+      return baseImplementation();
+    }
+  }
+
+  /**
+   * Conditional rendering based on feature support
+   */
+  conditionalRender(
+    component: React.ComponentType<any>,
+    fallback: React.ComponentType<any>,
+    requiredFeatures: (keyof FeatureSupport)[]
+  ): React.ComponentType<any> {
+    const isSupported = requiredFeatures.every(feature => this.featureSupport[feature]);
+    return isSupported ? component : fallback;
+  }
+
+  /**
+   * Get browser compatibility information
+   */
+  getBrowserInfo(): {
+    userAgent: string;
+    platform: string;
+    language: string;
+    cookieEnabled: boolean;
+    onLine: boolean;
+    supportScore: number;
+  } {
+    const supportedFeatures = Object.values(this.featureSupport).filter(Boolean).length;
+    const totalFeatures = Object.keys(this.featureSupport).length;
     
     return {
-      setItem: (key: string, value: string) => {
-        memoryStorage.set(key, value);
-      },
-      getItem: (key: string) => {
-        return memoryStorage.get(key) || null;
-      },
-      removeItem: (key: string) => {
-        memoryStorage.delete(key);
-      },
-      clear: () => {
-        memoryStorage.clear();
-      }
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      language: navigator.language,
+      cookieEnabled: navigator.cookieEnabled,
+      onLine: navigator.onLine,
+      supportScore: Math.round((supportedFeatures / totalFeatures) * 100)
     };
-  };
-
-  private getWebSearchFallback = () => {
-    return {
-      search: async (query: string) => {
-        console.warn('🔍 Web search unavailable, using cached/mock data');
-        return {
-          results: [],
-          message: 'Web search temporarily unavailable. Please try again later.',
-          fallback: true
-        };
-      }
-    };
-  };
-
-  private getAIProcessingFallback = () => {
-    return {
-      process: async (data: any) => {
-        console.warn('🧠 AI processing unavailable, using simplified logic');
-        return {
-          result: 'Simplified analysis completed without AI assistance.',
-          confidence: 0.5,
-          fallback: true
-        };
-      }
-    };
-  };
+  }
 
   /**
-   * Create a higher-order component that provides graceful degradation
+   * Performance-aware feature detection
    */
-  public withGracefulDegradation<P extends object>(
-    Component: React.ComponentType<P>,
-    featureName: keyof FeatureFlags,
-    FallbackComponent?: React.ComponentType<P>
-  ) {
-    return (props: P) => {
-      if (this.isFeatureAvailable(featureName)) {
-        return <Component {...props} />;
-      } else if (FallbackComponent) {
-        return <FallbackComponent {...props} />;
-      } else {
-        return (
-          <div className="p-6 text-center border border-dashed border-muted-foreground rounded-lg">
-            <div className="text-2xl mb-2">⚠️</div>
-            <p className="font-medium mb-1">Feature Unavailable</p>
-            <p className="text-sm text-muted-foreground">
-              {featureName} is currently unavailable
-            </p>
-          </div>
-        );
-      }
+  getPerformanceAwareFeatures(): {
+    reducedMotion: boolean;
+    lowBandwidth: boolean;
+    reducedData: boolean;
+    highContrast: boolean;
+  } {
+    const features = {
+      reducedMotion: false,
+      lowBandwidth: false,
+      reducedData: false,
+      highContrast: false
+    };
+
+    if (typeof window === 'undefined') {
+      return features;
+    }
+
+    // Check for reduced motion preference
+    if (window.matchMedia) {
+      features.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      features.highContrast = window.matchMedia('(prefers-contrast: high)').matches;
+    }
+
+    // Check for data saver
+    if ('connection' in navigator) {
+      const connection = (navigator as any).connection;
+      features.reducedData = connection.saveData || false;
+      features.lowBandwidth = connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g';
+    }
+
+    return features;
+  }
+
+  /**
+   * Adaptive loading based on device capabilities
+   */
+  getAdaptiveLoadingStrategy(): {
+    shouldLazyLoad: boolean;
+    shouldPreload: boolean;
+    imageQuality: 'low' | 'medium' | 'high';
+    animationLevel: 'none' | 'reduced' | 'full';
+  } {
+    const perfFeatures = this.getPerformanceAwareFeatures();
+    const browserInfo = this.getBrowserInfo();
+
+    return {
+      shouldLazyLoad: perfFeatures.lowBandwidth || perfFeatures.reducedData,
+      shouldPreload: !perfFeatures.lowBandwidth && browserInfo.supportScore > 80,
+      imageQuality: perfFeatures.reducedData ? 'low' : perfFeatures.lowBandwidth ? 'medium' : 'high',
+      animationLevel: perfFeatures.reducedMotion ? 'none' : perfFeatures.lowBandwidth ? 'reduced' : 'full'
     };
   }
 }
 
 // Global instance
-export const gracefulDegradation = new GracefulDegradationManager();
+export const gracefulDegradation = GracefulDegradation.getInstance();
 
-// Utility functions for common degradation scenarios
-export const safeAsync = async <T>(
-  operation: () => Promise<T>,
-  fallback: T,
-  featureName?: keyof FeatureFlags
-): Promise<T> => {
-  try {
-    return await operation();
-  } catch (error) {
-    console.warn('🔄 Async operation failed, using fallback:', error);
-    
-    if (featureName) {
-      return gracefulDegradation.handleFeatureFailure(
-        featureName,
-        error instanceof Error ? error : new Error(String(error)),
-        fallback
-      ) || fallback;
-    }
-    
-    return fallback;
-  }
-};
-
-export const safeSync = <T>(
-  operation: () => T,
-  fallback: T,
-  featureName?: keyof FeatureFlags
-): T => {
-  try {
-    return operation();
-  } catch (error) {
-    console.warn('🔄 Sync operation failed, using fallback:', error);
-    
-    if (featureName) {
-      return gracefulDegradation.handleFeatureFailure(
-        featureName,
-        error instanceof Error ? error : new Error(String(error)),
-        fallback
-      ) || fallback;
-    }
-    
-    return fallback;
-  }
-};
-
-// React hooks for graceful degradation
-import { useState, useEffect } from 'react';
-
-export const useFeatureAvailability = (featureName: keyof FeatureFlags) => {
-  const [isAvailable, setIsAvailable] = useState(
-    gracefulDegradation.isFeatureAvailable(featureName)
+/**
+ * React hook for graceful degradation
+ */
+export function useGracefulDegradation() {
+  const [featureSupport, setFeatureSupport] = React.useState<FeatureSupport>(() => 
+    gracefulDegradation.getFeatureSupport()
   );
 
-  useEffect(() => {
-    const checkAvailability = () => {
-      setIsAvailable(gracefulDegradation.isFeatureAvailable(featureName));
-    };
+  const [performanceFeatures, setPerformanceFeatures] = React.useState(() =>
+    gracefulDegradation.getPerformanceAwareFeatures()
+  );
 
-    checkAvailability();
-    
-    const interval = setInterval(checkAvailability, 30000);
-    
-    return () => clearInterval(interval);
-  }, [featureName]);
+  const [adaptiveStrategy, setAdaptiveStrategy] = React.useState(() =>
+    gracefulDegradation.getAdaptiveLoadingStrategy()
+  );
 
-  const retry = () => {
-    gracefulDegradation.retryFeature(featureName);
-    setIsAvailable(true);
+  React.useEffect(() => {
+    // Update feature support if it changes
+    setFeatureSupport(gracefulDegradation.getFeatureSupport());
+    setPerformanceFeatures(gracefulDegradation.getPerformanceAwareFeatures());
+    setAdaptiveStrategy(gracefulDegradation.getAdaptiveLoadingStrategy());
+  }, []);
+
+  return {
+    featureSupport,
+    performanceFeatures,
+    adaptiveStrategy,
+    isSupported: gracefulDegradation.isSupported.bind(gracefulDegradation),
+    safeStorage: gracefulDegradation.safeStorage,
+    withProgressiveEnhancement: gracefulDegradation.withProgressiveEnhancement.bind(gracefulDegradation),
+    conditionalRender: gracefulDegradation.conditionalRender.bind(gracefulDegradation),
+    getBrowserInfo: gracefulDegradation.getBrowserInfo.bind(gracefulDegradation)
   };
+}
 
-  return { isAvailable, retry };
-};
+/**
+ * Higher-order component for progressive enhancement
+ */
+export function withGracefulDegradation<P extends object>(
+  EnhancedComponent: React.ComponentType<P>,
+  FallbackComponent: React.ComponentType<P>,
+  requiredFeatures: (keyof FeatureSupport)[]
+) {
+  return function GracefullyEnhancedComponent(props: P) {
+    const { isSupported } = useGracefulDegradation();
+    
+    const canUseEnhanced = requiredFeatures.every(feature => isSupported(feature));
+    
+    if (canUseEnhanced) {
+      return <EnhancedComponent {...props} />;
+    } else {
+      return <FallbackComponent {...props} />;
+    }
+  };
+}
 
-export default gracefulDegradation;
+/**
+ * Conditional rendering component
+ */
+interface ConditionalRenderProps {
+  children: React.ReactNode;
+  fallback: React.ReactNode;
+  requiredFeatures: (keyof FeatureSupport)[];
+}
+
+export function ConditionalRender({ children, fallback, requiredFeatures }: ConditionalRenderProps) {
+  const { isSupported } = useGracefulDegradation();
+  
+  const canRender = requiredFeatures.every(feature => isSupported(feature));
+  
+  return <>{canRender ? children : fallback}</>;
+}
+
+/**
+ * Adaptive image component
+ */
+interface AdaptiveImageProps {
+  src: string;
+  alt: string;
+  className?: string;
+  highQualitySrc?: string;
+  lowQualitySrc?: string;
+}
+
+export function AdaptiveImage({ src, alt, className, highQualitySrc, lowQualitySrc }: AdaptiveImageProps) {
+  const { adaptiveStrategy } = useGracefulDegradation();
+  
+  const imageSrc = React.useMemo(() => {
+    switch (adaptiveStrategy.imageQuality) {
+      case 'low':
+        return lowQualitySrc || src;
+      case 'high':
+        return highQualitySrc || src;
+      default:
+        return src;
+    }
+  }, [adaptiveStrategy.imageQuality, src, highQualitySrc, lowQualitySrc]);
+
+  if (adaptiveStrategy.shouldLazyLoad) {
+    return (
+      <img
+        src={imageSrc}
+        alt={alt}
+        className={className}
+        loading="lazy"
+        decoding="async"
+      />
+    );
+  }
+
+  return (
+    <img
+      src={imageSrc}
+      alt={alt}
+      className={className}
+      decoding="async"
+    />
+  );
+}
+
+/**
+ * Adaptive animation wrapper
+ */
+interface AdaptiveAnimationProps {
+  children: React.ReactNode;
+  animation: 'none' | 'reduced' | 'full';
+  className?: string;
+}
+
+export function AdaptiveAnimation({ children, animation, className }: AdaptiveAnimationProps) {
+  const { adaptiveStrategy } = useGracefulDegradation();
+  
+  const shouldAnimate = adaptiveStrategy.animationLevel !== 'none' && 
+                       (adaptiveStrategy.animationLevel === 'full' || animation !== 'full');
+  
+  return (
+    <div className={`${className} ${shouldAnimate ? '' : 'motion-reduce'}`}>
+      {children}
+    </div>
+  );
+}
