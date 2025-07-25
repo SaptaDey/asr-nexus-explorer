@@ -16,6 +16,7 @@ import GraphNeuralNetworks from "./pages/GraphNeuralNetworks";
 import UserDashboard from "./pages/UserDashboard";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient();
@@ -49,15 +50,33 @@ const App = () => {
                   <Sonner />
                   <BrowserRouter>
                   <Routes>
+                    {/* Public routes */}
                     <Route path="/" element={<Index />} />
                     <Route path="/auth" element={<AuthPage />} />
-                    <Route path="/dashboard" element={<UserDashboard />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/guide" element={<GraphOfThoughtsGuide />} />
-                    <Route path="/stage/:stageId" element={<StageDetail />} />
                     <Route path="/ai-powered" element={<AIPowered />} />
                     <Route path="/research-framework" element={<ResearchFramework />} />
                     <Route path="/graph-neural-networks" element={<GraphNeuralNetworks />} />
+                    
+                    {/* Protected routes - require authentication */}
+                    <Route 
+                      path="/dashboard" 
+                      element={
+                        <ProtectedRoute>
+                          <UserDashboard />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/stage/:stageId" 
+                      element={
+                        <ProtectedRoute>
+                          <StageDetail />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
