@@ -3,6 +3,7 @@
  * Provides fallbacks and alternative approaches when features fail
  */
 
+import React from 'react';
 import { toast } from 'sonner';
 import { ErrorHandler, ErrorCategory, ErrorSeverity } from './errorHandling';
 

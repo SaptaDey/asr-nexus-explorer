@@ -4,7 +4,7 @@
  * Handles real-time evidence processing with branch pulsing and Bayesian ΔC
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { useSpring, config } from '@react-spring/web';
 import { animate as anime } from 'animejs';
 import { calculateConfidenceVector, ConfidenceCalculationResult } from '@/utils/confidenceCalculations';

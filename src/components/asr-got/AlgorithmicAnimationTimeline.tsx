@@ -3,7 +3,7 @@
  * Implements the precise 8-stage animation sequence with specific timing and easing
  */
 
-import { useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSpring, useTrail, config } from '@react-spring/web';
 
 interface AlgorithmicAnimationTimelineProps {

@@ -3,6 +3,7 @@
  * Provides graceful degradation and user-friendly error messages
  */
 
+import React from 'react';
 import { toast } from 'sonner';
 
 // Error severity levels

@@ -1,4 +1,5 @@
 
+import React from "react";
 import ASRGoTInterface from "@/pages/ASRGoTInterface";
 
 const Index = () => {
