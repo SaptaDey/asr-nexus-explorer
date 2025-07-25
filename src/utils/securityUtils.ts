@@ -289,35 +289,316 @@ export const validatePlotlyConfig = (config: any): boolean => {
 };
 
 /**
- * Rate limiting implementation
+ * Enhanced Rate Limiting Implementation with Multiple Strategies
  */
-class RateLimiter {
-  private requests: Map<string, number[]> = new Map();
-  private readonly maxRequests: number;
-  private readonly timeWindow: number;
 
-  constructor(maxRequests = 10, timeWindowMs = 60000) {
-    this.maxRequests = maxRequests;
-    this.timeWindow = timeWindowMs;
+interface RateLimitConfig {
+  maxRequests: number;
+  timeWindow: number;
+  burstAllowance?: number;
+  priority?: 'low' | 'normal' | 'high';
+}
+
+interface RateLimitState {
+  requests: number[];
+  burstTokens: number;
+  lastRefill: number;
+  consecutiveViolations: number;
+  backoffUntil?: number;
+}
+
+class EnhancedRateLimiter {
+  private states: Map<string, RateLimitState> = new Map();
+  private configs: Map<string, RateLimitConfig> = new Map();
+  private globalState = { 
+    requests: [] as number[], 
+    lastCleanup: Date.now() 
+  };
+
+  constructor() {
+    // Initialize default rate limit configurations
+    this.setupDefaultConfigs();
+    
+    // Cleanup old entries periodically
+    setInterval(() => this.cleanup(), 300000); // Every 5 minutes
   }
 
-  isAllowed(identifier: string): boolean {
-    const now = Date.now();
-    const requests = this.requests.get(identifier) || [];
-    
-    // Remove old requests outside the time window
-    const validRequests = requests.filter(time => now - time < this.timeWindow);
-    
-    if (validRequests.length >= this.maxRequests) {
+  private setupDefaultConfigs() {
+    // API-specific rate limits based on provider limits
+    this.configs.set('gemini', {
+      maxRequests: 15, // Conservative limit for Gemini
+      timeWindow: 60000, // 1 minute
+      burstAllowance: 5,
+      priority: 'high'
+    });
+
+    this.configs.set('perplexity', {
+      maxRequests: 20, // Conservative limit for Perplexity
+      timeWindow: 60000,
+      burstAllowance: 3,
+      priority: 'high'
+    });
+
+    this.configs.set('gemini-api', {
+      maxRequests: 10,
+      timeWindow: 60000,
+      burstAllowance: 2,
+      priority: 'normal'
+    });
+
+    // User-based rate limits
+    this.configs.set('user-global', {
+      maxRequests: 100, // 100 requests per hour per user
+      timeWindow: 3600000, // 1 hour
+      burstAllowance: 20,
+      priority: 'normal'
+    });
+
+    // Cost-aware limits
+    this.configs.set('cost-heavy', {
+      maxRequests: 5,
+      timeWindow: 300000, // 5 minutes
+      burstAllowance: 1,
+      priority: 'low'
+    });
+
+    // Real-time operations
+    this.configs.set('realtime', {
+      maxRequests: 60,
+      timeWindow: 60000,
+      burstAllowance: 10,
+      priority: 'high'
+    });
+  }
+
+  /**
+   * Check if a request is allowed with sophisticated rate limiting
+   */
+  isAllowed(identifier: string, userId?: string): boolean {
+    const config = this.configs.get(identifier);
+    if (!config) {
+      console.warn(`No rate limit config found for ${identifier}, using default`);
+      return this.basicRateLimit(identifier, 30, 60000);
+    }
+
+    // Check global rate limits first
+    if (!this.checkGlobalLimit()) {
+      console.warn('Global rate limit exceeded');
       return false;
     }
 
-    // Add current request
-    validRequests.push(now);
-    this.requests.set(identifier, validRequests);
+    const key = userId ? `${identifier}:${userId}` : identifier;
+    const state = this.getOrCreateState(key, config);
+    const now = Date.now();
+
+    // Check if currently in backoff period
+    if (state.backoffUntil && now < state.backoffUntil) {
+      return false;
+    }
+
+    // Refill burst tokens
+    this.refillBurstTokens(state, config, now);
+
+    // Clean old requests
+    state.requests = state.requests.filter(time => now - time < config.timeWindow);
+
+    // Check rate limits with priority consideration
+    const effectiveLimit = this.calculateEffectiveLimit(config, state);
     
+    if (state.requests.length >= effectiveLimit) {
+      // Rate limit exceeded - apply exponential backoff
+      this.applyBackoff(state);
+      return false;
+    }
+
+    // Check burst allowance
+    if (config.burstAllowance && state.burstTokens <= 0) {
+      const timeSinceLastRequest = state.requests.length > 0 
+        ? now - state.requests[state.requests.length - 1]
+        : config.timeWindow;
+      
+      if (timeSinceLastRequest < (config.timeWindow / config.maxRequests)) {
+        return false;
+      }
+    }
+
+    // Allow request
+    state.requests.push(now);
+    if (config.burstAllowance && state.burstTokens > 0) {
+      state.burstTokens--;
+    }
+    
+    // Reset violation counter on successful request
+    state.consecutiveViolations = 0;
+    state.backoffUntil = undefined;
+
+    return true;
+  }
+
+  /**
+   * Get rate limit status for monitoring
+   */
+  getStatus(identifier: string, userId?: string): {
+    remaining: number;
+    resetTime: number;
+    burstTokens: number;
+    inBackoff: boolean;
+  } {
+    const config = this.configs.get(identifier);
+    if (!config) {
+      return { remaining: 0, resetTime: 0, burstTokens: 0, inBackoff: false };
+    }
+
+    const key = userId ? `${identifier}:${userId}` : identifier;
+    const state = this.states.get(key);
+    const now = Date.now();
+
+    if (!state) {
+      return {
+        remaining: config.maxRequests,
+        resetTime: now + config.timeWindow,
+        burstTokens: config.burstAllowance || 0,
+        inBackoff: false
+      };
+    }
+
+    const validRequests = state.requests.filter(time => now - time < config.timeWindow);
+    const effectiveLimit = this.calculateEffectiveLimit(config, state);
+    
+    return {
+      remaining: Math.max(0, effectiveLimit - validRequests.length),
+      resetTime: validRequests.length > 0 
+        ? validRequests[0] + config.timeWindow 
+        : now + config.timeWindow,
+      burstTokens: state.burstTokens,
+      inBackoff: !!(state.backoffUntil && now < state.backoffUntil)
+    };
+  }
+
+  /**
+   * Reset rate limits for a specific identifier (admin function)
+   */
+  reset(identifier: string, userId?: string): void {
+    const key = userId ? `${identifier}:${userId}` : identifier;
+    this.states.delete(key);
+  }
+
+  /**
+   * Add a new rate limit configuration
+   */
+  addConfig(identifier: string, config: RateLimitConfig): void {
+    this.configs.set(identifier, config);
+  }
+
+  private getOrCreateState(key: string, config: RateLimitConfig): RateLimitState {
+    if (!this.states.has(key)) {
+      this.states.set(key, {
+        requests: [],
+        burstTokens: config.burstAllowance || 0,
+        lastRefill: Date.now(),
+        consecutiveViolations: 0
+      });
+    }
+    return this.states.get(key)!;
+  }
+
+  private refillBurstTokens(state: RateLimitState, config: RateLimitConfig, now: number): void {
+    if (!config.burstAllowance) return;
+
+    const timeSinceLastRefill = now - state.lastRefill;
+    const refillInterval = config.timeWindow / config.maxRequests;
+    
+    if (timeSinceLastRefill >= refillInterval) {
+      const tokensToAdd = Math.floor(timeSinceLastRefill / refillInterval);
+      state.burstTokens = Math.min(config.burstAllowance, state.burstTokens + tokensToAdd);
+      state.lastRefill = now;
+    }
+  }
+
+  private calculateEffectiveLimit(config: RateLimitConfig, state: RateLimitState): number {
+    let effectiveLimit = config.maxRequests;
+
+    // Reduce limits for users with many violations
+    if (state.consecutiveViolations > 3) {
+      effectiveLimit = Math.floor(effectiveLimit * 0.5);
+    } else if (state.consecutiveViolations > 1) {
+      effectiveLimit = Math.floor(effectiveLimit * 0.7);
+    }
+
+    // Priority-based adjustments
+    if (config.priority === 'high') {
+      effectiveLimit = Math.floor(effectiveLimit * 1.2);
+    } else if (config.priority === 'low') {
+      effectiveLimit = Math.floor(effectiveLimit * 0.8);
+    }
+
+    return Math.max(1, effectiveLimit);
+  }
+
+  private applyBackoff(state: RateLimitState): void {
+    state.consecutiveViolations++;
+    
+    // Exponential backoff: 2^violations seconds, max 5 minutes
+    const backoffMs = Math.min(
+      Math.pow(2, state.consecutiveViolations) * 1000,
+      300000
+    );
+    
+    state.backoffUntil = Date.now() + backoffMs;
+  }
+
+  private checkGlobalLimit(): boolean {
+    const now = Date.now();
+    const globalLimit = 1000; // Global limit per minute
+    const timeWindow = 60000;
+
+    // Cleanup old global requests
+    this.globalState.requests = this.globalState.requests.filter(
+      time => now - time < timeWindow
+    );
+
+    if (this.globalState.requests.length >= globalLimit) {
+      return false;
+    }
+
+    this.globalState.requests.push(now);
+    return true;
+  }
+
+  private cleanup(): void {
+    const now = Date.now();
+    const maxAge = 3600000; // 1 hour
+
+    for (const [key, state] of this.states.entries()) {
+      const hasRecentActivity = state.requests.some(time => now - time < maxAge);
+      if (!hasRecentActivity && (!state.backoffUntil || now > state.backoffUntil)) {
+        this.states.delete(key);
+      }
+    }
+
+    // Clean global state
+    if (now - this.globalState.lastCleanup > 300000) {
+      this.globalState.requests = this.globalState.requests.filter(
+        time => now - time < 60000
+      );
+      this.globalState.lastCleanup = now;
+    }
+  }
+
+  private basicRateLimit(identifier: string, maxRequests: number, timeWindow: number): boolean {
+    const state = this.getOrCreateState(identifier, { maxRequests, timeWindow });
+    const now = Date.now();
+    
+    state.requests = state.requests.filter(time => now - time < timeWindow);
+    
+    if (state.requests.length >= maxRequests) {
+      return false;
+    }
+
+    state.requests.push(now);
     return true;
   }
 }
 
-export const apiRateLimiter = new RateLimiter(30, 60000); // 30 requests per minute
+// Export enhanced rate limiter instance
+export const apiRateLimiter = new EnhancedRateLimiter();

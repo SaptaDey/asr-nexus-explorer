@@ -20,8 +20,19 @@ import { logApiCall } from '@/services/securityEventLogger';
 export const callPerplexitySonarAPI = async (
   query: string,
   apiKey?: string,
-  options: { recency?: boolean; focus?: string } = {}
+  options: { recency?: boolean; focus?: string; userId?: string } = {}
 ): Promise<string> => {
+  // Enhanced rate limiting for Perplexity
+  const userId = options.userId || 'anonymous';
+  
+  if (!apiRateLimiter.isAllowed('perplexity', userId)) {
+    const status = apiRateLimiter.getStatus('perplexity', userId);
+    throw new Error(
+      `Perplexity API rate limit exceeded. Remaining: ${status.remaining}. ` +
+      `Reset in ${Math.ceil((status.resetTime - Date.now()) / 1000)} seconds.`
+    );
+  }
+
   // Check cost guardrails for Sonar call
   if (!costGuardrails.canMakeCall('sonar', 1000)) {
     throw new Error('Cost guardrails exceeded for Sonar API');
@@ -68,9 +79,17 @@ export const callGeminiAPI = async (
     throw new Error('Invalid Gemini API key format');
   }
 
-  // Rate limiting check
-  if (!apiRateLimiter.isAllowed('gemini-api')) {
-    throw new Error('Rate limit exceeded. Too many API requests. Please wait before making another request.');
+  // Enhanced rate limiting with user context
+  const userId = options.stageId ? `user-${options.stageId}` : 'anonymous';
+  
+  if (!apiRateLimiter.isAllowed('gemini-api', userId)) {
+    const status = apiRateLimiter.getStatus('gemini-api', userId);
+    const waitTime = Math.ceil((status.resetTime - Date.now()) / 1000);
+    throw new Error(
+      `Rate limit exceeded. You have ${status.remaining} requests remaining. ` +
+      `${status.inBackoff ? 'Currently in backoff period. ' : ''}` +
+      `Please wait ${waitTime} seconds before making another request.`
+    );
   }
 
   // **CRITICAL FIX**: Defensive validation before validateInput
@@ -90,9 +109,14 @@ export const callGeminiAPI = async (
     return await handleLargePromptChunking(sanitizedPrompt, apiKey, capability, schema, options);
   }
 
-  // Rate limiting
-  if (!apiRateLimiter.isAllowed('gemini')) {
-    throw new Error('Rate limit exceeded for Gemini API');
+  // Secondary rate limiting for Gemini provider
+  if (!apiRateLimiter.isAllowed('gemini', userId)) {
+    const status = apiRateLimiter.getStatus('gemini', userId);
+    throw new Error(
+      `Gemini API rate limit exceeded. Remaining: ${status.remaining}. ` +
+      `Burst tokens: ${status.burstTokens}. ` +
+      `Reset in ${Math.ceil((status.resetTime - Date.now()) / 1000)} seconds.`
+    );
   }
 
   // **DYNAMIC OUTPUT TOKEN ADJUSTMENT**: Reduce output tokens based on input size
