@@ -1,343 +1,425 @@
-
-import React from 'react';
-
 /**
- * Enhanced Error Handling Utilities
- * Provides comprehensive error management for the ASR-GoT application
+ * Comprehensive Error Handling and Logging System
+ * Provides graceful degradation and user-friendly error messages
  */
 
-export interface ErrorInfo {
-  componentStack?: string;
-  errorBoundary?: string;
-  errorInfo?: React.ErrorInfo;
-  timestamp?: Date;
+import React from 'react';
+import { toast } from 'sonner';
+
+// Error severity levels
+export enum ErrorSeverity {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical'
+}
+
+// Error categories for better organization
+export enum ErrorCategory {
+  NETWORK = 'network',
+  PARSING = 'parsing',
+  RENDERING = 'rendering',
+  COMPUTATION = 'computation',
+  STORAGE = 'storage',
+  AUTH = 'auth',
+  VALIDATION = 'validation',
+  UNKNOWN = 'unknown'
+}
+
+interface ErrorDetails {
+  id: string;
+  message: string;
+  category: ErrorCategory;
+  severity: ErrorSeverity;
+  timestamp: Date;
+  context?: Record<string, any>;
+  stack?: string;
   userAgent?: string;
   url?: string;
   userId?: string;
   sessionId?: string;
 }
 
-export interface ErrorReport {
-  error: Error;
-  errorInfo: ErrorInfo;
-  context: 'component' | 'async' | 'api' | 'database' | 'auth' | 'unknown';
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  recoverable: boolean;
-  retryable: boolean;
+interface ErrorHandlerOptions {
+  showToast?: boolean;
+  logToConsole?: boolean;
+  logToServer?: boolean;
+  fallbackAction?: () => void;
+  retryAction?: () => Promise<void>;
+  maxRetries?: number;
 }
 
 export class ErrorHandler {
-  private static instance: ErrorHandler;
-  private errorReports: ErrorReport[] = [];
-  private maxReports = 100;
-  private listeners: Array<(report: ErrorReport) => void> = [];
+  private errors: ErrorDetails[] = [];
+  private errorCounts: Map<string, number> = new Map();
+  private sessionId: string;
+  
+  constructor() {
+    this.sessionId = this.generateSessionId();
+    this.setupGlobalErrorHandlers();
+  }
 
-  static getInstance(): ErrorHandler {
-    if (!ErrorHandler.instance) {
-      ErrorHandler.instance = new ErrorHandler();
-    }
-    return ErrorHandler.instance;
+  private generateSessionId(): string {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private setupGlobalErrorHandlers(): void {
+    // Handle unhandled promise rejections
+    window.addEventListener('unhandledrejection', (event) => {
+      this.handleError(
+        new Error(`Unhandled Promise Rejection: ${event.reason}`),
+        ErrorCategory.UNKNOWN,
+        ErrorSeverity.HIGH,
+        { type: 'unhandledrejection', reason: event.reason }
+      );
+    });
+
+    // Handle JavaScript errors
+    window.addEventListener('error', (event) => {
+      this.handleError(
+        new Error(event.message),
+        ErrorCategory.UNKNOWN,
+        ErrorSeverity.MEDIUM,
+        { 
+          type: 'javascript_error',
+          filename: event.filename,
+          lineno: event.lineno,
+          colno: event.colno
+        }
+      );
+    });
   }
 
   /**
-   * Handle an error with context information
+   * Main error handling method
    */
-  handleError(error: Error, context: ErrorReport['context'] = 'unknown', additionalInfo?: Partial<ErrorInfo>): void {
-    const errorReport: ErrorReport = {
-      error,
-      errorInfo: {
-        timestamp: new Date(),
-        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Server',
-        url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
-        ...additionalInfo
-      },
+  public handleError(
+    error: Error | string,
+    category: ErrorCategory = ErrorCategory.UNKNOWN,
+    severity: ErrorSeverity = ErrorSeverity.MEDIUM,
+    context?: Record<string, any>,
+    options: ErrorHandlerOptions = {}
+  ): string {
+    const errorId = this.generateErrorId();
+    const errorMessage = typeof error === 'string' ? error : error.message;
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
+    const errorDetails: ErrorDetails = {
+      id: errorId,
+      message: errorMessage,
+      category,
+      severity,
+      timestamp: new Date(),
       context,
-      severity: this.determineSeverity(error, context),
-      recoverable: this.isRecoverable(error, context),
-      retryable: this.isRetryable(error, context)
+      stack: errorStack,
+      userAgent: navigator.userAgent,
+      url: window.location.href,
+      sessionId: this.sessionId,
     };
 
-    this.addErrorReport(errorReport);
-    this.notifyListeners(errorReport);
-    
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error handled:', errorReport);
+    // Store error
+    this.errors.push(errorDetails);
+    this.updateErrorCount(category);
+
+    // Log to console if enabled (default: true)
+    if (options.logToConsole !== false) {
+      this.logToConsole(errorDetails);
     }
-  }
 
-  /**
-   * Handle React component errors
-   */
-  handleComponentError(error: Error, errorInfo: React.ErrorInfo): void {
-    this.handleError(error, 'component', {
-      componentStack: errorInfo.componentStack,
-      errorInfo
-    });
-  }
-
-  /**
-   * Handle async operation errors
-   */
-  handleAsyncError(error: Error, operation: string): void {
-    this.handleError(error, 'async', {
-      errorBoundary: `Async operation: ${operation}`
-    });
-  }
-
-  /**
-   * Handle API errors
-   */
-  handleAPIError(error: Error, endpoint: string): void {
-    this.handleError(error, 'api', {
-      errorBoundary: `API endpoint: ${endpoint}`
-    });
-  }
-
-  /**
-   * Handle database errors
-   */
-  handleDatabaseError(error: Error, operation: string): void {
-    this.handleError(error, 'database', {
-      errorBoundary: `Database operation: ${operation}`
-    });
-  }
-
-  /**
-   * Handle authentication errors
-   */
-  handleAuthError(error: Error, operation: string): void {
-    this.handleError(error, 'auth', {
-      errorBoundary: `Auth operation: ${operation}`
-    });
-  }
-
-  /**
-   * Add error report to the collection
-   */
-  private addErrorReport(report: ErrorReport): void {
-    this.errorReports.unshift(report);
-    if (this.errorReports.length > this.maxReports) {
-      this.errorReports = this.errorReports.slice(0, this.maxReports);
+    // Show user-friendly toast if enabled (default: true)
+    if (options.showToast !== false) {
+      this.showUserFriendlyToast(errorDetails);
     }
-  }
 
-  /**
-   * Notify listeners of new error reports
-   */
-  private notifyListeners(report: ErrorReport): void {
-    this.listeners.forEach(listener => {
+    // Execute fallback action if provided
+    if (options.fallbackAction) {
       try {
-        listener(report);
-      } catch (error) {
-        console.error('Error in error handler listener:', error);
+        options.fallbackAction();
+      } catch (fallbackError) {
+        console.error('❌ Fallback action failed:', fallbackError);
       }
-    });
+    }
+
+    // Log to server if enabled and in production
+    if (options.logToServer && process.env.NODE_ENV === 'production') {
+      this.logToServer(errorDetails).catch(console.error);
+    }
+
+    return errorId;
+  }
+
+  private generateErrorId(): string {
+    return `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private updateErrorCount(category: ErrorCategory): void {
+    const currentCount = this.errorCounts.get(category) || 0;
+    this.errorCounts.set(category, currentCount + 1);
+  }
+
+  private logToConsole(error: ErrorDetails): void {
+    const emoji = this.getSeverityEmoji(error.severity);
+    const categoryBadge = `[${error.category.toUpperCase()}]`;
+    
+    console.group(`${emoji} ${categoryBadge} ${error.message}`);
+    console.log('Error ID:', error.id);
+    console.log('Timestamp:', error.timestamp.toISOString());
+    console.log('Severity:', error.severity);
+    
+    if (error.context) {
+      console.log('Context:', error.context);
+    }
+    
+    if (error.stack) {
+      console.log('Stack:', error.stack);
+    }
+    
+    console.groupEnd();
+  }
+
+  private getSeverityEmoji(severity: ErrorSeverity): string {
+    switch (severity) {
+      case ErrorSeverity.LOW: return '⚠️';
+      case ErrorSeverity.MEDIUM: return '🔶';
+      case ErrorSeverity.HIGH: return '🔴';
+      case ErrorSeverity.CRITICAL: return '💥';
+      default: return '❓';
+    }
+  }
+
+  private showUserFriendlyToast(error: ErrorDetails): void {
+    const message = this.getUserFriendlyMessage(error);
+    
+    switch (error.severity) {
+      case ErrorSeverity.LOW:
+        toast.info(message);
+        break;
+      case ErrorSeverity.MEDIUM:
+        toast.warning(message);
+        break;
+      case ErrorSeverity.HIGH:
+      case ErrorSeverity.CRITICAL:
+        toast.error(message);
+        break;
+    }
+  }
+
+  private getUserFriendlyMessage(error: ErrorDetails): string {
+    // Map technical errors to user-friendly messages
+    const errorMap: Record<string, string> = {
+      // Network errors
+      'Failed to fetch': 'Unable to connect to the server. Please check your internet connection.',
+      'Network request failed': 'Network error occurred. Please try again.',
+      'ERR_NETWORK': 'Network error. Please check your connection and try again.',
+      
+      // API errors
+      'API rate limit exceeded': 'Too many requests. Please wait a moment and try again.',
+      'Unauthorized': 'Authentication required. Please log in.',
+      'Forbidden': 'You don\'t have permission to perform this action.',
+      'Not found': 'The requested resource was not found.',
+      
+      // Visualization errors
+      'Failed to render graph': 'Graph visualization failed. Trying alternative display.',
+      'Layout calculation failed': 'Graph layout failed. Using simplified view.',
+      'Cytoscape': 'Graph rendering issue. Falling back to alternative view.',
+      'Plotly': 'Chart rendering failed. Data is still available in table format.',
+      
+      // Processing errors
+      'Stage execution failed': 'Research stage processing encountered an issue. Retrying...',
+      'Graph processing error': 'Graph analysis encountered an issue. Continuing with available data.',
+      'Export failed': 'Export operation failed. Please try a different format.',
+      
+      // Storage errors
+      'LocalStorage': 'Browser storage is full or unavailable. Some features may be limited.',
+      'SessionStorage': 'Session data could not be saved. Your work may be lost on refresh.',
+      
+      // Parsing errors
+      'JSON parse error': 'Data format error. Refreshing might help.',
+      'Invalid data format': 'Received data is in an unexpected format.',
+    };
+
+    // Find matching error message
+    for (const [key, userMessage] of Object.entries(errorMap)) {
+      if (error.message.toLowerCase().includes(key.toLowerCase())) {
+        return userMessage;
+      }
+    }
+
+    // Category-based fallback messages
+    switch (error.category) {
+      case ErrorCategory.NETWORK:
+        return 'Network connectivity issue. Please check your connection.';
+      case ErrorCategory.RENDERING:
+        return 'Display issue encountered. Content may appear differently.';
+      case ErrorCategory.COMPUTATION:
+        return 'Processing issue occurred. Retrying with alternative approach.';
+      case ErrorCategory.STORAGE:
+        return 'Data storage issue. Some information may not be saved.';
+      case ErrorCategory.AUTH:
+        return 'Authentication issue. You may need to log in again.';
+      case ErrorCategory.VALIDATION:
+        return 'Data validation failed. Please check your input.';
+      default:
+        return 'An unexpected issue occurred. The system is attempting to recover.';
+    }
+  }
+
+  private async logToServer(error: ErrorDetails): Promise<void> {
+    try {
+      // In a real implementation, this would send to your error logging service
+      // For now, we'll just simulate the call
+      console.log('Would log to server:', error);
+      
+      // Example implementation:
+      // await fetch('/api/errors', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(error)
+      // });
+    } catch (logError) {
+      console.error('Failed to log error to server:', logError);
+    }
   }
 
   /**
-   * Determine error severity
+   * Get error statistics for debugging
    */
-  private determineSeverity(error: Error, context: ErrorReport['context']): ErrorReport['severity'] {
-    if (context === 'auth' || context === 'database') {
-      return 'high';
-    }
-    if (context === 'api') {
-      return 'medium';
-    }
-    if (error.name === 'ChunkLoadError' || error.message.includes('Loading chunk')) {
-      return 'medium';
-    }
-    return 'low';
-  }
+  public getErrorStats(): { total: number; byCategory: Record<string, number>; recent: ErrorDetails[] } {
+    const recentErrors = this.errors
+      .filter(error => Date.now() - error.timestamp.getTime() < 5 * 60 * 1000) // Last 5 minutes
+      .slice(-10); // Last 10 errors
 
-  /**
-   * Check if error is recoverable
-   */
-  private isRecoverable(error: Error, context: ErrorReport['context']): boolean {
-    if (context === 'component') {
-      return true;
-    }
-    if (context === 'api' || context === 'database') {
-      return !error.message.includes('unauthorized') && !error.message.includes('forbidden');
-    }
-    return false;
-  }
-
-  /**
-   * Check if error is retryable
-   */
-  private isRetryable(error: Error, context: ErrorReport['context']): boolean {
-    if (context === 'api' || context === 'database') {
-      return error.message.includes('network') || 
-             error.message.includes('timeout') || 
-             error.message.includes('server error');
-    }
-    return false;
-  }
-
-  /**
-   * Subscribe to error reports
-   */
-  subscribe(listener: (report: ErrorReport) => void): () => void {
-    this.listeners.push(listener);
-    return () => {
-      this.listeners = this.listeners.filter(l => l !== listener);
+    return {
+      total: this.errors.length,
+      byCategory: Object.fromEntries(this.errorCounts),
+      recent: recentErrors
     };
   }
 
   /**
-   * Get all error reports
+   * Clear old errors to prevent memory leaks
    */
-  getErrorReports(): ErrorReport[] {
-    return [...this.errorReports];
+  public clearOldErrors(maxAge: number = 24 * 60 * 60 * 1000): void {
+    const cutoff = Date.now() - maxAge;
+    this.errors = this.errors.filter(error => error.timestamp.getTime() > cutoff);
   }
 
   /**
-   * Clear all error reports
+   * Get detailed error by ID
    */
-  clearErrorReports(): void {
-    this.errorReports = [];
+  public getError(id: string): ErrorDetails | undefined {
+    return this.errors.find(error => error.id === id);
   }
 
   /**
-   * Get error statistics
+   * Check if system is experiencing issues
    */
-  getErrorStatistics(): {
-    total: number;
-    byContext: Record<ErrorReport['context'], number>;
-    bySeverity: Record<ErrorReport['severity'], number>;
-    recent: number;
-  } {
-    const stats = {
-      total: this.errorReports.length,
-      byContext: {} as Record<ErrorReport['context'], number>,
-      bySeverity: {} as Record<ErrorReport['severity'], number>,
-      recent: 0
-    };
-
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-
-    this.errorReports.forEach(report => {
-      // Count by context
-      stats.byContext[report.context] = (stats.byContext[report.context] || 0) + 1;
-      
-      // Count by severity
-      stats.bySeverity[report.severity] = (stats.bySeverity[report.severity] || 0) + 1;
-      
-      // Count recent errors
-      if (report.errorInfo.timestamp && report.errorInfo.timestamp > oneHourAgo) {
-        stats.recent++;
-      }
-    });
-
-    return stats;
+  public isSystemHealthy(): boolean {
+    const recentErrors = this.errors.filter(
+      error => Date.now() - error.timestamp.getTime() < 5 * 60 * 1000
+    );
+    
+    const criticalErrors = recentErrors.filter(
+      error => error.severity === ErrorSeverity.CRITICAL
+    ).length;
+    
+    const highErrors = recentErrors.filter(
+      error => error.severity === ErrorSeverity.HIGH
+    ).length;
+    
+    return criticalErrors === 0 && highErrors < 3;
   }
 }
 
 // Global error handler instance
-export const errorHandler = ErrorHandler.getInstance();
-
-// Global error event listeners
-if (typeof window !== 'undefined') {
-  window.addEventListener('error', (event) => {
-    errorHandler.handleError(new Error(event.message), 'unknown', {
-      errorBoundary: `Global error: ${event.filename}:${event.lineno}:${event.colno}`
-    });
-  });
-
-  window.addEventListener('unhandledrejection', (event) => {
-    errorHandler.handleError(
-      event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
-      'async',
-      {
-        errorBoundary: 'Unhandled promise rejection'
-      }
-    );
-  });
-}
+export const errorHandler = new ErrorHandler();
 
 /**
- * Higher-order component for error handling
+ * Convenience functions for common error types
  */
-export function withErrorHandling<P extends object>(
-  Component: React.ComponentType<P>,
-  context: ErrorReport['context'] = 'component'
-) {
-  return function ErrorHandledComponent(props: P) {
-    const handleError = React.useCallback((error: Error, errorInfo?: React.ErrorInfo) => {
-      if (errorInfo) {
-        errorHandler.handleComponentError(error, errorInfo);
-      } else {
-        errorHandler.handleError(error, context);
-      }
-    }, []);
+export const handleNetworkError = (error: Error, context?: Record<string, any>) => {
+  return errorHandler.handleError(error, ErrorCategory.NETWORK, ErrorSeverity.HIGH, context);
+};
 
-    return (
-      <ErrorBoundary onError={handleError}>
-        <Component {...props} />
-      </ErrorBoundary>
-    );
-  };
-}
+export const handleRenderingError = (error: Error, context?: Record<string, any>) => {
+  return errorHandler.handleError(error, ErrorCategory.RENDERING, ErrorSeverity.MEDIUM, context, {
+    fallbackAction: () => console.log('Using fallback rendering mode')
+  });
+};
+
+export const handleComputationError = (error: Error, context?: Record<string, any>) => {
+  return errorHandler.handleError(error, ErrorCategory.COMPUTATION, ErrorSeverity.HIGH, context);
+};
+
+export const handleValidationError = (error: Error, context?: Record<string, any>) => {
+  return errorHandler.handleError(error, ErrorCategory.VALIDATION, ErrorSeverity.LOW, context);
+};
 
 /**
- * Simple error boundary component
+ * React Error Boundary component
  */
-interface ErrorBoundaryProps {
-  children: React.ReactNode;
-  onError?: (error: Error, errorInfo?: React.ErrorInfo) => void;
-  fallback?: React.ComponentType<{ error: Error; resetErrorBoundary: () => void }>;
-}
+import React from 'react';
 
 interface ErrorBoundaryState {
   hasError: boolean;
-  error: Error | null;
+  errorId?: string;
 }
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
+export class ErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback?: React.ComponentType<{ errorId?: string }> },
+  ErrorBoundaryState
+> {
+  constructor(props: any) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
+    const errorId = errorHandler.handleError(
+      error,
+      ErrorCategory.RENDERING,
+      ErrorSeverity.HIGH,
+      { type: 'react_error_boundary' }
+    );
+    
+    return { hasError: true, errorId };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    if (this.props.onError) {
-      this.props.onError(error, errorInfo);
-    }
+    errorHandler.handleError(
+      error,
+      ErrorCategory.RENDERING,
+      ErrorSeverity.HIGH,
+      { ...errorInfo, type: 'react_component_error' }
+    );
   }
 
   render() {
-    if (this.state.hasError && this.state.error) {
-      if (this.props.fallback) {
-        const FallbackComponent = this.props.fallback;
-        return (
-          <FallbackComponent 
-            error={this.state.error} 
-            resetErrorBoundary={() => this.setState({ hasError: false, error: null })}
-          />
-        );
+    if (this.state.hasError) {
+      const FallbackComponent = this.props.fallback;
+      
+      if (FallbackComponent) {
+        return <FallbackComponent errorId={this.state.errorId} />;
       }
-
+      
       return (
-        <div className="min-h-screen bg-red-50 flex items-center justify-center">
-          <div className="text-center p-6 max-w-md">
-            <div className="text-red-600 mb-4">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold text-red-800 mb-2">Something went wrong</h2>
-            <p className="text-red-600 mb-4">An error occurred while rendering this component.</p>
-            <button 
-              onClick={() => this.setState({ hasError: false, error: null })}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+        <div className="flex items-center justify-center h-64 border border-destructive rounded-lg bg-destructive/5">
+          <div className="text-center p-6">
+            <div className="text-4xl mb-4">💥</div>
+            <h3 className="text-lg font-semibold mb-2">Something went wrong</h3>
+            <p className="text-muted-foreground mb-4">
+              A rendering error occurred. Please refresh the page.
+            </p>
+            {this.state.errorId && (
+              <p className="text-xs text-muted-foreground">
+                Error ID: {this.state.errorId}
+              </p>
+            )}
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
             >
-              Try again
+              Refresh Page
             </button>
           </div>
         </div>
@@ -349,65 +431,15 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 }
 
 /**
- * Hook for using error handling in functional components
+ * Higher-order component for error handling
  */
-export function useErrorHandler() {
-  const [errors, setErrors] = React.useState<ErrorReport[]>([]);
-
-  React.useEffect(() => {
-    const unsubscribe = errorHandler.subscribe((report) => {
-      setErrors(prev => [report, ...prev.slice(0, 9)]);
-    });
-
-    return unsubscribe;
-  }, []);
-
-  const handleError = React.useCallback((error: Error, context: ErrorReport['context'] = 'component') => {
-    errorHandler.handleError(error, context);
-  }, []);
-
-  const clearErrors = React.useCallback(() => {
-    setErrors([]);
-  }, []);
-
-  return {
-    errors,
-    handleError,
-    clearErrors,
-    errorStats: errorHandler.getErrorStatistics()
-  };
-}
-
-/**
- * Safe async operation wrapper
- */
-export async function safeAsync<T>(
-  operation: () => Promise<T>,
-  context: ErrorReport['context'] = 'async',
-  fallback?: T
-): Promise<T | undefined> {
-  try {
-    return await operation();
-  } catch (error) {
-    errorHandler.handleError(error instanceof Error ? error : new Error(String(error)), context);
-    return fallback;
-  }
-}
-
-/**
- * Safe function wrapper
- */
-export function safe<T extends any[], R>(
-  fn: (...args: T) => R,
-  context: ErrorReport['context'] = 'unknown',
-  fallback?: R
-): (...args: T) => R | undefined {
-  return (...args: T) => {
-    try {
-      return fn(...args);
-    } catch (error) {
-      errorHandler.handleError(error instanceof Error ? error : new Error(String(error)), context);
-      return fallback;
-    }
-  };
-}
+export const withErrorHandling = <P extends object>(
+  Component: React.ComponentType<P>,
+  category: ErrorCategory = ErrorCategory.RENDERING
+) => {
+  return React.forwardRef<any, P>((props, ref) => (
+    <ErrorBoundary>
+      <Component {...props} ref={ref} />
+    </ErrorBoundary>
+  ));
+};
