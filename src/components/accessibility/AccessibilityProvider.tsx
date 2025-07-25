@@ -130,26 +130,39 @@ Accessibility Features:
     helpDialog.setAttribute('aria-modal', 'true');
     helpDialog.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50';
     
-    helpDialog.innerHTML = `
-      <div class="bg-white p-6 rounded-lg max-w-2xl max-h-96 overflow-y-auto">
-        <h2 id="help-title" class="text-xl font-bold mb-4">Keyboard Navigation Help</h2>
-        <pre class="text-sm whitespace-pre-wrap">${helpText}</pre>
-        <button id="close-help" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-          Close (Escape)
-        </button>
-      </div>
-    `;
+    // SECURITY: Create DOM elements safely instead of using innerHTML
+    const helpContent = document.createElement('div');
+    helpContent.className = 'bg-white p-6 rounded-lg max-w-2xl max-h-96 overflow-y-auto';
+    
+    const helpTitle = document.createElement('h2');
+    helpTitle.id = 'help-title';
+    helpTitle.className = 'text-xl font-bold mb-4';
+    helpTitle.textContent = 'Keyboard Navigation Help';
+    
+    const helpPre = document.createElement('pre');
+    helpPre.className = 'text-sm whitespace-pre-wrap';
+    helpPre.textContent = helpText;
+    
+    const closeButton = document.createElement('button');
+    closeButton.id = 'close-help';
+    closeButton.className = 'mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
+    closeButton.textContent = 'Close (Escape)';
+    
+    helpContent.appendChild(helpTitle);
+    helpContent.appendChild(helpPre);
+    helpContent.appendChild(closeButton);
+    helpDialog.appendChild(helpContent);
     
     document.body.appendChild(helpDialog);
     
-    const closeButton = helpDialog.querySelector('#close-help') as HTMLButtonElement;
-    closeButton?.focus();
+    // Focus the close button for keyboard accessibility
+    closeButton.focus();
     
     const closeHelp = () => {
       document.body.removeChild(helpDialog);
     };
     
-    closeButton?.addEventListener('click', closeHelp);
+    closeButton.addEventListener('click', closeHelp);
     
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {

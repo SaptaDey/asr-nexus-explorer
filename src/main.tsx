@@ -52,21 +52,27 @@ import { setupCSRFInterceptor } from './utils/csrfProtection'
   title.textContent = '🚨 App Initialization Failed';
   
   const errorText = document.createElement('p');
-  errorText.innerHTML = '<strong>Error:</strong> ';
+  const errorLabel = document.createElement('strong');
+  errorLabel.textContent = 'Error: ';
   const errorMsg = document.createElement('span');
   errorMsg.textContent = 'Application failed to initialize (details logged securely)';
+  errorText.appendChild(errorLabel);
   errorText.appendChild(errorMsg);
   
   const stackText = document.createElement('p');
-  stackText.innerHTML = '<strong>Stack:</strong> ';
+  const stackLabel = document.createElement('strong');
+  stackLabel.textContent = 'Stack: ';
   const stackPre = document.createElement('pre');
   stackPre.textContent = '[Stack trace redacted for security]';
+  stackText.appendChild(stackLabel);
   stackText.appendChild(stackPre);
   
   const timeText = document.createElement('p');
-  timeText.innerHTML = '<strong>Time:</strong> ';
+  const timeLabel = document.createElement('strong');
+  timeLabel.textContent = 'Time: ';
   const timeSpan = document.createElement('span');
   timeSpan.textContent = new Date().toISOString();
+  timeText.appendChild(timeLabel);
   timeText.appendChild(timeSpan);
   
   const hr = document.createElement('hr');

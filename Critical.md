@@ -19,8 +19,8 @@ These policies allow ANY authenticated user to access, modify, or delete ANY oth
     - .env file (Lines 4-5) - COMMITTED TO VERSION CONTROL
     - .env.example (Lines 4-5)
 - Live API keys exposed in .env:
-    - PERPLEXITY_API_KEY=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
-    - GEMINI_API_KEY=AIzaSyDmJ9WVWpM--eGqkd4LW-6lAxWeaNkUeFQ
+    - PERPLEXITY_API_KEY=pplx-..........................................
+    - GEMINI_API_KEY=AIza...........................................
 
 ## 3. XSS VULNERABILITIES
 ❌ HIGH XSS RISK

@@ -544,9 +544,12 @@ export class AdapterManager {
   }
 }
 
-// Singleton instance
+// Singleton instance - SECURITY: No fallback credentials, environment variables required
 export const adapterManager = new AdapterManager({
-  apiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
+  // SECURITY: Environment variable required, no fallback
+  apiKey: import.meta.env.VITE_GEMINI_API_KEY || (() => {
+    throw new Error('VITE_GEMINI_API_KEY environment variable is required');
+  })(),
   enableRealTimeUpdates: true,
   performanceThresholds: {
     maxExecutionTime: 30000, // 30 seconds
