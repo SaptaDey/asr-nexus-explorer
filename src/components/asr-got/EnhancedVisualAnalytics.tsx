@@ -8,6 +8,36 @@ import { GraphData, GraphNode, ResearchContext } from '@/types/asrGotTypes';
 import { toast } from 'sonner';
 import { apiRateLimiter } from '@/utils/securityUtils';
 
+// Plotly types and safe import
+declare global {
+  interface Window {
+    Plotly?: any;
+  }
+}
+
+// Safe Plotly access with fallback
+const getPlotly = async (): Promise<any> => {
+  try {
+    // Try to get Plotly from window first
+    if (typeof window !== 'undefined' && window.Plotly) {
+      return window.Plotly;
+    }
+    
+    // Try dynamic import as fallback
+    const plotlyModule = await import('plotly.js-dist-min');
+    
+    // Store in window for future use
+    if (typeof window !== 'undefined') {
+      window.Plotly = plotlyModule.default || plotlyModule;
+    }
+    
+    return plotlyModule.default || plotlyModule;
+  } catch (error) {
+    console.warn('Plotly not available:', error);
+    return null;
+  }
+};
+
 interface AnalyticsFigure {
   id: string;
   title: string;
@@ -311,30 +341,33 @@ Use basic chart types and valid JSON format:
 
   // Export figure as data URL for HTML embedding
   const exportFigureAsDataURL = useCallback(async (figure: AnalyticsFigure): Promise<string> => {
-    if (typeof window !== 'undefined' && window.Plotly) {
-      try {
-        const container = document.createElement('div');
-        container.style.width = '800px';
-        container.style.height = '600px';
-        
-        await window.Plotly.newPlot(container, figure.data, figure.layout, {
-          responsive: true,
-          displayModeBar: false
-        });
-        
-        const dataUrl = await window.Plotly.toImage(container, {
-          format: 'png',
-          width: 800,
-          height: 600
-        });
-        
-        return dataUrl;
-      } catch (error) {
-        console.error('Failed to export figure:', error);
+    try {
+      const Plotly = await getPlotly();
+      if (!Plotly) {
+        console.warn('Plotly not available for figure export');
         return '';
       }
+
+      const container = document.createElement('div');
+      container.style.width = '800px';
+      container.style.height = '600px';
+      
+      await Plotly.newPlot(container, figure.data, figure.layout, {
+        responsive: true,
+        displayModeBar: false
+      });
+      
+      const dataUrl = await Plotly.toImage(container, {
+        format: 'png',
+        width: 800,
+        height: 600
+      });
+      
+      return dataUrl;
+    } catch (error) {
+      console.error('Failed to export figure:', error);
+      return '';
     }
-    return '';
   }, []);
 
   return {
