@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
 import { Database, Key, CheckCircle, XCircle, Settings, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { SecureCredentialManager } from '@/utils/securityUtils';
 
 interface APICredentials {
   perplexity: string;
@@ -124,18 +125,22 @@ export const EnhancedAPIValidation: React.FC<EnhancedAPIValidationProps> = ({
       const allValid = results.every(result => result.isValid);
       
       if (allValid) {
-        // Store credentials securely
+        // Store credentials securely using SecureCredentialManager
         const secureCredentials = {
           perplexity: credentials.perplexity,
           gemini: credentials.gemini
         };
         
-        // Use sessionStorage for secure, temporary storage
-        sessionStorage.setItem('asr-got-credentials', JSON.stringify(secureCredentials));
-        
-        toast.success('✅ API credentials validated and cached securely');
-        onCredentialsValidated(secureCredentials);
-        onClose();
+        try {
+          // SECURITY: Use encrypted storage instead of plain sessionStorage
+          await SecureCredentialManager.storeAPICredentials(secureCredentials);
+          toast.success('✅ API credentials validated and stored securely');
+          onCredentialsValidated(secureCredentials);
+          onClose();
+        } catch (error) {
+          console.error('Failed to store credentials securely:', error);
+          toast.error('Failed to store credentials securely');
+        }
       } else {
         toast.error('Some API keys failed validation. Please check and try again.');
       }
@@ -275,7 +280,7 @@ export const EnhancedAPIValidation: React.FC<EnhancedAPIValidationProps> = ({
           <Alert>
             <Settings className="h-4 w-4" />
             <AlertDescription>
-              API keys are stored securely in session storage and never transmitted to external servers.
+              API keys are stored with military-grade encryption and never transmitted to external servers.
               You can edit these credentials later via the Settings panel.
             </AlertDescription>
           </Alert>

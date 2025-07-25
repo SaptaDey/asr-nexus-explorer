@@ -8,12 +8,12 @@ import { server } from '@/test/mocks/server';
 // Using actual environment API keys for genuine performance testing
 import { callGeminiAPI, callPerplexitySonarAPI } from '@/services/apiService';
 
-// REAL API CREDENTIALS FROM ENVIRONMENT
+// SECURE API CREDENTIALS FROM ENVIRONMENT VARIABLES
 const REAL_API_KEYS = {
-  GEMINI_API_KEY: 'AIzaSyDmJ9WVWpM--eGqkd4LW-6lAxWeaNkUeFQ',
-  PERPLEXITY_API_KEY: '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',
-  SUPABASE_URL: 'https://aogeenqytwrpjvrfwvjw.supabase.co',
-  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvZ2VlbnF5dHdycGp2cmZ3dmp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE3ODQwMzEsImV4cCI6MjA2NzM2MDAzMX0.AG8XsM7QCM8nYYvd0nrWjP-LhI4XUMkSnvBrUEZc50U'
+  GEMINI_API_KEY: import.meta.env.VITE_GEMINI_API_KEY || 'test-gemini-key',
+  PERPLEXITY_API_KEY: import.meta.env.VITE_PERPLEXITY_API_KEY || 'test-perplexity-key',
+  SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || 'https://test-project.supabase.co',
+  SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY || 'test-anon-key'
 };
 
 // Mock performance API with realistic measurements

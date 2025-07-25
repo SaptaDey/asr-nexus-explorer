@@ -43,7 +43,9 @@
       "Bash(npx tsc:*)",
       "Bash(python3:*)",
       "Bash(npx vitest run:*)",
-      "Bash(/dev/null)"
+      "Bash(/dev/null)",
+      "Bash(git log:*)",
+      "Bash(git rm:*)"
     ],
     "deny": []
   }
