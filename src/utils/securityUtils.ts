@@ -155,27 +155,14 @@ export const secureHash = async (data: string): Promise<string> => {
 };
 
 /**
- * Simple encryption for client-side credential storage (DEPRECATED)
- * Note: This is obfuscation, not true security - use encryptData instead
+ * SECURITY: These deprecated functions have been REMOVED for security reasons
+ * They provided only weak obfuscation, not real encryption
+ * Use SecureCredentialManager.getInstance() methods instead
+ * 
+ * If you need credential storage, use:
+ * - SecureCredentialManager.getInstance().storeCredentials()
+ * - SecureCredentialManager.getInstance().getCredentials()
  */
-export const encryptCredentials = (credentials: string): string => {
-  console.warn('encryptCredentials is deprecated, use encryptData instead');
-  const encoder = new TextEncoder();
-  const data = encoder.encode(credentials);
-  const encrypted = Array.from(data).map(byte => byte ^ 42).map(byte => byte.toString(16).padStart(2, '0')).join('');
-  return btoa(encrypted);
-};
-
-export const decryptCredentials = (encrypted: string): string => {
-  try {
-    const decoded = atob(encrypted);
-    const bytes = decoded.match(/.{2}/g)?.map(hex => parseInt(hex, 16) ^ 42) || [];
-    const decoder = new TextDecoder();
-    return decoder.decode(new Uint8Array(bytes));
-  } catch (error) {
-    throw new Error('Failed to decrypt credentials');
-  }
-};
 
 /**
  * Safe JSON parsing for AI-generated content

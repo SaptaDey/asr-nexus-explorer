@@ -95,35 +95,37 @@ export const exportGraphAsSVG = (graphData: GraphData) => {
 };
 
 /**
- * DEPRECATED: Load API keys from storage
- * Use SecureCredentialManager instead
+ * SECURITY: Clean up deprecated insecure credential storage
+ * This function automatically removes any legacy insecure credential storage
  */
-export const loadApiKeysFromStorage = (): APICredentials => {
-  console.warn('loadApiKeysFromStorage is deprecated, use SecureCredentialManager.getInstance().getCredentials()');
+export const cleanupInsecureCredentialStorage = (): void => {
+  const insecureKeys = [
+    'asr-got-credentials',
+    'asr-got-api-credentials', 
+    'api-keys',
+    'research-credentials',
+    'gemini-key',
+    'perplexity-key'
+  ];
   
-  // Clean up any insecure storage
-  const insecureKeys = ['asr-got-credentials', 'asr-got-api-credentials'];
   insecureKeys.forEach(key => {
     if (sessionStorage.getItem(key)) {
-      console.warn(`Removing insecure credential storage: ${key}`);
+      console.warn(`SECURITY: Removing insecure credential storage: ${key} from sessionStorage`);
       sessionStorage.removeItem(key);
     }
     if (localStorage.getItem(key)) {
-      console.warn(`Removing insecure credential storage: ${key}`);
+      console.warn(`SECURITY: Removing insecure credential storage: ${key} from localStorage`);
       localStorage.removeItem(key);
     }
   });
   
-  return { gemini: '', perplexity: '' };
+  // Log successful cleanup
+  if (typeof window !== 'undefined') {
+    console.info('✅ Insecure credential storage cleanup completed');
+  }
 };
 
-/**
- * DEPRECATED: Save API keys to storage
- * Use SecureCredentialManager instead
- */
-export const saveApiKeysToStorage = (apiKeys: APICredentials) => {
-  console.warn('saveApiKeysToStorage is deprecated, use SecureCredentialManager.getInstance().storeCredentials()');
-  
-  // Don't save to insecure storage - this is a security fix
-  console.error('Attempted to save credentials to insecure storage - operation blocked for security');
-};
+// Automatically run cleanup on module load
+if (typeof window !== 'undefined') {
+  cleanupInsecureCredentialStorage();
+}
