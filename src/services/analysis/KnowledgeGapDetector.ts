@@ -142,6 +142,14 @@ export class KnowledgeGapDetector {
   private placeholderNodes: Map<string, PlaceholderNode> = new Map();
   private gapFillStrategies: Map<string, GapFillStrategy> = new Map();
   
+  // Memory management properties
+  private readonly MAX_GAPS = 1000;
+  private readonly MAX_PLACEHOLDERS = 500;
+  private readonly MAX_STRATEGIES = 200;
+  private readonly CLEANUP_INTERVAL = 30 * 60 * 1000; // 30 minutes
+  private cleanupTimer: NodeJS.Timeout | null = null;
+  private lastCleanup: number = Date.now();
+  
   /**
    * Initialize the knowledge gap detector
    */
@@ -152,11 +160,169 @@ export class KnowledgeGapDetector {
       this.placeholderNodes.clear();
       this.gapFillStrategies.clear();
       
-      console.log('Knowledge Gap Detector initialized');
+      // Start periodic cleanup
+      this.startPeriodicCleanup();
+      
+      console.log('Knowledge Gap Detector initialized with memory management');
     } catch (error) {
       console.error('Failed to initialize Knowledge Gap Detector:', error);
       throw error;
     }
+  }
+
+  /**
+   * Cleanup and destroy the detector
+   */
+  public destroy(): void {
+    try {
+      // Stop cleanup timer
+      if (this.cleanupTimer) {
+        clearInterval(this.cleanupTimer);
+        this.cleanupTimer = null;
+      }
+
+      // Clear all maps
+      this.detectedGaps.clear();
+      this.placeholderNodes.clear();
+      this.gapFillStrategies.clear();
+
+      console.log('Knowledge Gap Detector destroyed and memory cleaned up');
+    } catch (error) {
+      console.error('Error during Knowledge Gap Detector cleanup:', error);
+    }
+  }
+
+  /**
+   * Start periodic memory cleanup
+   */
+  private startPeriodicCleanup(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+    }
+
+    this.cleanupTimer = setInterval(() => {
+      this.performMemoryCleanup();
+    }, this.CLEANUP_INTERVAL);
+  }
+
+  /**
+   * Perform memory cleanup to prevent leaks
+   */
+  private performMemoryCleanup(): void {
+    try {
+      const now = Date.now();
+      const oneHourAgo = now - (60 * 60 * 1000);
+      const oneDayAgo = now - (24 * 60 * 60 * 1000);
+
+      // Clean up old gaps (older than 1 day)
+      for (const [gapId, gap] of this.detectedGaps.entries()) {
+        const gapTime = new Date(gap.metadata.discovered_at).getTime();
+        if (gapTime < oneDayAgo) {
+          this.detectedGaps.delete(gapId);
+        }
+      }
+
+      // Clean up old placeholder nodes (older than 1 hour)
+      for (const [nodeId, node] of this.placeholderNodes.entries()) {
+        const nodeTime = new Date(node.metadata.created_at).getTime();
+        if (nodeTime < oneHourAgo) {
+          this.placeholderNodes.delete(nodeId);
+        }
+      }
+
+      // Clean up old strategies (older than 1 hour)
+      const strategiesToDelete: string[] = [];
+      for (const [strategyId, strategy] of this.gapFillStrategies.entries()) {
+        // Remove strategies for gaps that no longer exist
+        if (!this.detectedGaps.has(strategy.gapId)) {
+          strategiesToDelete.push(strategyId);
+        }
+      }
+      strategiesToDelete.forEach(id => this.gapFillStrategies.delete(id));
+
+      // Enforce size limits
+      this.enforceSizeLimits();
+
+      this.lastCleanup = now;
+      console.log(`Memory cleanup completed. Gaps: ${this.detectedGaps.size}, Placeholders: ${this.placeholderNodes.size}, Strategies: ${this.gapFillStrategies.size}`);
+    } catch (error) {
+      console.error('Error during memory cleanup:', error);
+    }
+  }
+
+  /**
+   * Enforce maximum collection sizes to prevent memory leaks
+   */
+  private enforceSizeLimits(): void {
+    // Limit detected gaps
+    if (this.detectedGaps.size > this.MAX_GAPS) {
+      const entries = Array.from(this.detectedGaps.entries());
+      entries.sort((a, b) => {
+        const timeA = new Date(a[1].metadata.discovered_at).getTime();
+        const timeB = new Date(b[1].metadata.discovered_at).getTime();
+        return timeA - timeB; // Oldest first
+      });
+
+      const toDelete = entries.slice(0, this.detectedGaps.size - this.MAX_GAPS);
+      toDelete.forEach(([gapId]) => this.detectedGaps.delete(gapId));
+    }
+
+    // Limit placeholder nodes
+    if (this.placeholderNodes.size > this.MAX_PLACEHOLDERS) {
+      const entries = Array.from(this.placeholderNodes.entries());
+      entries.sort((a, b) => {
+        const timeA = new Date(a[1].metadata.created_at).getTime();
+        const timeB = new Date(b[1].metadata.created_at).getTime();
+        return timeA - timeB;
+      });
+
+      const toDelete = entries.slice(0, this.placeholderNodes.size - this.MAX_PLACEHOLDERS);
+      toDelete.forEach(([nodeId]) => this.placeholderNodes.delete(nodeId));
+    }
+
+    // Limit strategies
+    if (this.gapFillStrategies.size > this.MAX_STRATEGIES) {
+      const entries = Array.from(this.gapFillStrategies.entries());
+      // Remove oldest strategies (assume they're less relevant)
+      const toDelete = entries.slice(0, this.gapFillStrategies.size - this.MAX_STRATEGIES);
+      toDelete.forEach(([strategyId]) => this.gapFillStrategies.delete(strategyId));
+    }
+  }
+
+  /**
+   * Get memory usage statistics
+   */
+  public getMemoryStats(): {
+    detectedGaps: number;
+    placeholderNodes: number;
+    gapFillStrategies: number;
+    lastCleanup: string;
+    memoryPressure: 'low' | 'medium' | 'high';
+  } {
+    const totalItems = this.detectedGaps.size + this.placeholderNodes.size + this.gapFillStrategies.size;
+    const maxItems = this.MAX_GAPS + this.MAX_PLACEHOLDERS + this.MAX_STRATEGIES;
+    
+    let memoryPressure: 'low' | 'medium' | 'high' = 'low';
+    if (totalItems > maxItems * 0.8) {
+      memoryPressure = 'high';
+    } else if (totalItems > maxItems * 0.5) {
+      memoryPressure = 'medium';
+    }
+
+    return {
+      detectedGaps: this.detectedGaps.size,
+      placeholderNodes: this.placeholderNodes.size,
+      gapFillStrategies: this.gapFillStrategies.size,
+      lastCleanup: new Date(this.lastCleanup).toISOString(),
+      memoryPressure
+    };
+  }
+
+  /**
+   * Force immediate cleanup (for manual memory management)
+   */
+  public forceCleanup(): void {
+    this.performMemoryCleanup();
   }
 
   /**
