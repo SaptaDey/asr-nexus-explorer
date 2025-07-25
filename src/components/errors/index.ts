@@ -3,6 +3,8 @@
  * Comprehensive error handling for different parts of the ASR-GoT application
  */
 
+import React from 'react';
+
 export { DatabaseErrorBoundary, useDatabaseErrorHandler, DatabaseLoadingState, DatabaseConnectionStatus } from './DatabaseErrorBoundary';
 export { APIErrorBoundary, useAPIErrorHandler } from './APIErrorBoundary';
 export { VisualizationErrorBoundary, SimpleFallbackVisualization, useVisualizationErrorHandler } from './VisualizationErrorBoundary';
@@ -49,7 +51,6 @@ export function getErrorBoundary(type: ErrorBoundaryType) {
 /**
  * Error context for sharing error state across components
  */
-import React from 'react';
 
 interface ErrorContextType {
   errors: Array<{
