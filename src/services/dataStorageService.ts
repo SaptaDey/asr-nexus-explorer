@@ -1,8 +1,28 @@
-// Data Storage Service
-// Comprehensive data persistence for research sessions, visualizations, and files
+/**
+ * Data Storage Service with Comprehensive Validation
+ * Provides secure data persistence for research sessions, visualizations, and files
+ * Includes extensive validation and sanitization for all data operations
+ */
 
 import { supabase } from '@/integrations/supabase/client'
 import type { AsrGotState } from '@/types/asrGotTypes'
+import { sanitizeHTML, validateInput } from '@/utils/securityUtils'
+import { securityLogger, SecurityEventType, SecurityEventSeverity } from '@/services/security/securityEventLogger'
+
+// Validation schemas and interfaces
+export interface ValidationResult {
+  isValid: boolean
+  errors: string[]
+  warnings: string[]
+  sanitizedData?: any
+}
+
+export interface DataValidationOptions {
+  strictMode?: boolean
+  sanitizeHtml?: boolean
+  validateStructure?: boolean
+  logViolations?: boolean
+}
 
 export interface StoredResearchSession {
   id: string
@@ -61,35 +81,418 @@ export interface ResearchCollection {
 }
 
 class DataStorageService {
+  private readonly MAX_QUERY_LENGTH = 10000
+  private readonly MAX_DESCRIPTION_LENGTH = 5000
+  private readonly MAX_TITLE_LENGTH = 500
+  private readonly MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
+  private readonly ALLOWED_FILE_TYPES = [
+    'image/png', 'image/jpeg', 'image/svg+xml', 'image/webp',
+    'application/json', 'text/html', 'text/plain', 'text/csv',
+    'application/pdf', 'application/vnd.ms-excel'
+  ]
+
+  /**
+   * Comprehensive data validation for research sessions
+   */
+  private validateResearchSession(sessionData: Partial<AsrGotState>, options: DataValidationOptions = {}): ValidationResult {
+    const result: ValidationResult = {
+      isValid: true,
+      errors: [],
+      warnings: [],
+      sanitizedData: { ...sessionData }
+    }
+
+    try {
+      // Validate and sanitize user query
+      if (sessionData.userQuery) {
+        if (sessionData.userQuery.length > this.MAX_QUERY_LENGTH) {
+          result.errors.push(`Query exceeds maximum length of ${this.MAX_QUERY_LENGTH} characters`)
+          result.isValid = false
+        } else {
+          try {
+            result.sanitizedData.userQuery = validateInput(sessionData.userQuery, 'query')
+          } catch (error) {
+            result.errors.push(`Invalid query format: ${error instanceof Error ? error.message : 'Unknown error'}`)
+            result.isValid = false
+          }
+        }
+      }
+
+      // Validate research context
+      if (sessionData.researchContext) {
+        if (typeof sessionData.researchContext !== 'string') {
+          result.errors.push('Research context must be a string')
+          result.isValid = false
+        } else if (sessionData.researchContext.length > this.MAX_DESCRIPTION_LENGTH) {
+          result.errors.push(`Research context exceeds maximum length of ${this.MAX_DESCRIPTION_LENGTH} characters`)
+          result.isValid = false
+        } else if (options.sanitizeHtml) {
+          result.sanitizedData.researchContext = sanitizeHTML(sessionData.researchContext)
+        }
+      }
+
+      // Validate graph data structure
+      if (sessionData.graphData) {
+        const graphValidation = this.validateGraphData(sessionData.graphData)
+        if (!graphValidation.isValid) {
+          result.errors.push(...graphValidation.errors)
+          result.warnings.push(...graphValidation.warnings)
+          result.isValid = false
+        } else {
+          result.sanitizedData.graphData = graphValidation.sanitizedData
+        }
+      }
+
+      // Validate stage results
+      if (sessionData.stageResults) {
+        const stageValidation = this.validateStageResults(sessionData.stageResults)
+        if (!stageValidation.isValid) {
+          result.errors.push(...stageValidation.errors)
+          result.warnings.push(...stageValidation.warnings)
+          result.isValid = false
+        } else {
+          result.sanitizedData.stageResults = stageValidation.sanitizedData
+        }
+      }
+
+      // Validate processing state
+      if (sessionData.currentStage !== undefined) {
+        if (!Number.isInteger(sessionData.currentStage) || sessionData.currentStage < 1 || sessionData.currentStage > 9) {
+          result.errors.push('Current stage must be an integer between 1 and 9')
+          result.isValid = false
+        }
+      }
+
+      // Validate parameters
+      if (sessionData.parameters) {
+        const paramValidation = this.validateParameters(sessionData.parameters)
+        if (!paramValidation.isValid) {
+          result.errors.push(...paramValidation.errors)
+          result.warnings.push(...paramValidation.warnings)
+          result.isValid = false
+        }
+      }
+
+      // Log validation violations if enabled
+      if (options.logViolations && (!result.isValid || result.warnings.length > 0)) {
+        securityLogger.logEvent({
+          event_type: SecurityEventType.DATA_VALIDATION,
+          severity: result.isValid ? SecurityEventSeverity.WARNING : SecurityEventSeverity.ERROR,
+          details: {
+            validation_type: 'research_session',
+            errors: result.errors,
+            warnings: result.warnings,
+            data_size: JSON.stringify(sessionData).length
+          }
+        })
+      }
+
+    } catch (error) {
+      result.errors.push(`Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      result.isValid = false
+    }
+
+    return result
+  }
+
+  /**
+   * Validate graph data structure
+   */
+  private validateGraphData(graphData: any): ValidationResult {
+    const result: ValidationResult = {
+      isValid: true,
+      errors: [],
+      warnings: [],
+      sanitizedData: { ...graphData }
+    }
+
+    if (!graphData || typeof graphData !== 'object') {
+      result.errors.push('Graph data must be an object')
+      result.isValid = false
+      return result
+    }
+
+    // Validate nodes
+    if (graphData.nodes) {
+      if (!Array.isArray(graphData.nodes)) {
+        result.errors.push('Graph nodes must be an array')
+        result.isValid = false
+      } else {
+        result.sanitizedData.nodes = graphData.nodes.map((node: any, index: number) => {
+          if (!node || typeof node !== 'object') {
+            result.warnings.push(`Node at index ${index} is invalid`)
+            return null
+          }
+
+          const sanitizedNode = { ...node }
+
+          // Validate node ID
+          if (!node.id || typeof node.id !== 'string') {
+            result.warnings.push(`Node at index ${index} has invalid ID`)
+            sanitizedNode.id = `node_${index}_${Date.now()}`
+          }
+
+          // Sanitize node label
+          if (node.label && typeof node.label === 'string') {
+            sanitizedNode.label = sanitizeHTML(node.label)
+          }
+
+          // Validate confidence if present
+          if (node.confidence !== undefined) {
+            if (Array.isArray(node.confidence)) {
+              sanitizedNode.confidence = node.confidence.map((val: any) => 
+                typeof val === 'number' && val >= 0 && val <= 1 ? val : 0
+              )
+            } else if (typeof node.confidence === 'number') {
+              sanitizedNode.confidence = Math.max(0, Math.min(1, node.confidence))
+            }
+          }
+
+          return sanitizedNode
+        }).filter(Boolean)
+      }
+    }
+
+    // Validate edges
+    if (graphData.edges) {
+      if (!Array.isArray(graphData.edges)) {
+        result.errors.push('Graph edges must be an array')
+        result.isValid = false
+      } else {
+        result.sanitizedData.edges = graphData.edges.map((edge: any, index: number) => {
+          if (!edge || typeof edge !== 'object') {
+            result.warnings.push(`Edge at index ${index} is invalid`)
+            return null
+          }
+
+          const sanitizedEdge = { ...edge }
+
+          // Validate edge ID
+          if (!edge.id || typeof edge.id !== 'string') {
+            sanitizedEdge.id = `edge_${index}_${Date.now()}`
+          }
+
+          // Validate source and target
+          if (!edge.source || typeof edge.source !== 'string') {
+            result.warnings.push(`Edge at index ${index} has invalid source`)
+            return null
+          }
+          if (!edge.target || typeof edge.target !== 'string') {
+            result.warnings.push(`Edge at index ${index} has invalid target`)
+            return null
+          }
+
+          // Validate confidence
+          if (edge.confidence !== undefined && typeof edge.confidence === 'number') {
+            sanitizedEdge.confidence = Math.max(0, Math.min(1, edge.confidence))
+          }
+
+          return sanitizedEdge
+        }).filter(Boolean)
+      }
+    }
+
+    return result
+  }
+
+  /**
+   * Validate stage results
+   */
+  private validateStageResults(stageResults: any): ValidationResult {
+    const result: ValidationResult = {
+      isValid: true,
+      errors: [],
+      warnings: [],
+      sanitizedData: {}
+    }
+
+    if (!stageResults || typeof stageResults !== 'object') {
+      result.errors.push('Stage results must be an object')
+      result.isValid = false
+      return result
+    }
+
+    for (const [stageKey, stageData] of Object.entries(stageResults)) {
+      if (typeof stageData === 'string') {
+        // Sanitize HTML content in stage results
+        result.sanitizedData[stageKey] = sanitizeHTML(stageData)
+      } else if (typeof stageData === 'object' && stageData !== null) {
+        // Recursively validate nested objects
+        result.sanitizedData[stageKey] = this.sanitizeObjectValues(stageData)
+      } else {
+        result.sanitizedData[stageKey] = stageData
+      }
+    }
+
+    return result
+  }
+
+  /**
+   * Validate ASR-GoT parameters
+   */
+  private validateParameters(parameters: any): ValidationResult {
+    const result: ValidationResult = {
+      isValid: true,
+      errors: [],
+      warnings: [],
+      sanitizedData: { ...parameters }
+    }
+
+    if (!parameters || typeof parameters !== 'object') {
+      result.errors.push('Parameters must be an object')
+      result.isValid = false
+      return result
+    }
+
+    // Validate specific parameter ranges
+    const parameterRules = {
+      'P1.1': { min: 1, max: 100, type: 'number' },
+      'P1.2': { min: 0, max: 1, type: 'number' },
+      'P1.3': { type: 'boolean' },
+      'P1.4': { min: 1, max: 20, type: 'number' },
+      'P1.5': { type: 'string', maxLength: 1000 }
+    }
+
+    for (const [key, value] of Object.entries(parameters)) {
+      const rule = parameterRules[key as keyof typeof parameterRules]
+      if (rule) {
+        if (rule.type === 'number' && typeof value === 'number') {
+          if (rule.min !== undefined && value < rule.min) {
+            result.warnings.push(`Parameter ${key} is below minimum value ${rule.min}`)
+            result.sanitizedData[key] = rule.min
+          }
+          if (rule.max !== undefined && value > rule.max) {
+            result.warnings.push(`Parameter ${key} exceeds maximum value ${rule.max}`)
+            result.sanitizedData[key] = rule.max
+          }
+        } else if (rule.type === 'string' && typeof value === 'string') {
+          if (rule.maxLength && value.length > rule.maxLength) {
+            result.warnings.push(`Parameter ${key} exceeds maximum length`)
+            result.sanitizedData[key] = value.substring(0, rule.maxLength)
+          }
+          result.sanitizedData[key] = sanitizeHTML(value)
+        } else if (rule.type === 'boolean' && typeof value !== 'boolean') {
+          result.warnings.push(`Parameter ${key} should be boolean`)
+          result.sanitizedData[key] = Boolean(value)
+        }
+      }
+    }
+
+    return result
+  }
+
+  /**
+   * Validate file data
+   */
+  private validateFileData(fileName: string, fileType: string, fileSize: number, category: string): ValidationResult {
+    const result: ValidationResult = {
+      isValid: true,
+      errors: [],
+      warnings: []
+    }
+
+    // Validate file name
+    if (!fileName || typeof fileName !== 'string') {
+      result.errors.push('File name is required and must be a string')
+      result.isValid = false
+    } else if (fileName.length > this.MAX_TITLE_LENGTH) {
+      result.errors.push(`File name exceeds maximum length of ${this.MAX_TITLE_LENGTH} characters`)
+      result.isValid = false
+    } else if (!/^[a-zA-Z0-9._-]+$/.test(fileName.replace(/\s/g, '_'))) {
+      result.warnings.push('File name contains special characters that may cause issues')
+    }
+
+    // Validate file type
+    if (!fileType || typeof fileType !== 'string') {
+      result.errors.push('File type is required')
+      result.isValid = false
+    } else if (!this.ALLOWED_FILE_TYPES.includes(fileType)) {
+      result.errors.push(`File type ${fileType} is not allowed`)
+      result.isValid = false
+    }
+
+    // Validate file size
+    if (typeof fileSize !== 'number' || fileSize < 0) {
+      result.errors.push('File size must be a non-negative number')
+      result.isValid = false
+    } else if (fileSize > this.MAX_FILE_SIZE) {
+      result.errors.push(`File size exceeds maximum limit of ${this.MAX_FILE_SIZE} bytes`)
+      result.isValid = false
+    }
+
+    // Validate category
+    const allowedCategories = ['visualization', 'data', 'report', 'upload']
+    if (!allowedCategories.includes(category)) {
+      result.errors.push(`Invalid file category: ${category}`)
+      result.isValid = false
+    }
+
+    return result
+  }
+
+  /**
+   * Sanitize object values recursively
+   */
+  private sanitizeObjectValues(obj: any): any {
+    if (typeof obj === 'string') {
+      return sanitizeHTML(obj)
+    } else if (Array.isArray(obj)) {
+      return obj.map(item => this.sanitizeObjectValues(item))
+    } else if (obj && typeof obj === 'object') {
+      const sanitized: any = {}
+      for (const [key, value] of Object.entries(obj)) {
+        sanitized[key] = this.sanitizeObjectValues(value)
+      }
+      return sanitized
+    }
+    return obj
+  }
+
   // Research Session Management
   async saveResearchSession(sessionData: Partial<AsrGotState>, sessionId?: string): Promise<string> {
     try {
+      // Validate and sanitize session data
+      const validation = this.validateResearchSession(sessionData, {
+        strictMode: true,
+        sanitizeHtml: true,
+        validateStructure: true,
+        logViolations: true
+      })
+
+      if (!validation.isValid) {
+        throw new Error(`Session validation failed: ${validation.errors.join(', ')}`)
+      }
+
+      // Use sanitized data
+      const sanitizedData = validation.sanitizedData as Partial<AsrGotState>
+      
       const { data: { session } } = await supabase.auth.getSession()
       
       const sessionRecord = {
         id: sessionId || crypto.randomUUID(),
-        query: sessionData.userQuery || '',
-        status: sessionData.isProcessing ? 'running' : sessionData.isCompleted ? 'completed' : 'pending',
-        current_stage: sessionData.currentStage || 1,
+        query: sanitizedData.userQuery || '',
+        status: sanitizedData.isProcessing ? 'running' : sanitizedData.isCompleted ? 'completed' : 'pending',
+        current_stage: sanitizedData.currentStage || 1,
         total_stages: 9,
         research_context: {
-          researchContext: sessionData.researchContext,
-          userPreferences: sessionData.userPreferences,
-          parameters: sessionData.parameters
+          researchContext: sanitizedData.researchContext,
+          userPreferences: sanitizedData.userPreferences,
+          parameters: sanitizedData.parameters
         },
-        graph_data: {
-          nodes: sessionData.graphData?.nodes || [],
-          edges: sessionData.graphData?.edges || [],
-          metadata: sessionData.graphData?.metadata || {}
+        graph_data: sanitizedData.graphData || {
+          nodes: [],
+          edges: [],
+          metadata: {}
         },
-        stage_results: sessionData.stageResults || {},
+        stage_results: sanitizedData.stageResults || {},
         metadata: {
-          exportedFiles: sessionData.exportedFiles || [],
-          processingMode: sessionData.processingMode,
-          apiCredentials: sessionData.apiCredentials ? 'configured' : 'not_configured'
+          exportedFiles: sanitizedData.exportedFiles || [],
+          processingMode: sanitizedData.processingMode,
+          apiCredentials: sanitizedData.apiCredentials ? 'configured' : 'not_configured',
+          validationWarnings: validation.warnings
         },
         user_id: session?.user?.id || null,
-        tags: this.extractTagsFromQuery(sessionData.userQuery || '')
+        tags: this.extractTagsFromQuery(sanitizedData.userQuery || '')
       }
 
       if (sessionId) {
@@ -257,6 +660,27 @@ class DataStorageService {
     isPublic: boolean = false
   ): Promise<string> {
     try {
+      // Validate file data
+      const validation = this.validateFileData(fileName, fileType, fileSize, category)
+      if (!validation.isValid) {
+        throw new Error(`File validation failed: ${validation.errors.join(', ')}`)
+      }
+
+      // Log validation warnings
+      if (validation.warnings.length > 0) {
+        securityLogger.logEvent({
+          event_type: SecurityEventType.DATA_VALIDATION,
+          severity: SecurityEventSeverity.WARNING,
+          details: {
+            validation_type: 'file_data',
+            warnings: validation.warnings,
+            file_name: fileName,
+            file_type: fileType,
+            file_size: fileSize
+          }
+        })
+      }
+
       const { data: { session } } = await supabase.auth.getSession()
 
       const fileRecord = {
@@ -456,6 +880,57 @@ class DataStorageService {
     })
 
     return [...new Set(tags)] // Remove duplicates
+  }
+
+  /**
+   * Public validation method for external use
+   */
+  public validateData(data: any, type: 'session' | 'file' | 'visualization', options: DataValidationOptions = {}): ValidationResult {
+    switch (type) {
+      case 'session':
+        return this.validateResearchSession(data, options)
+      case 'file':
+        if (data.fileName && data.fileType && data.fileSize !== undefined && data.category) {
+          return this.validateFileData(data.fileName, data.fileType, data.fileSize, data.category)
+        } else {
+          return {
+            isValid: false,
+            errors: ['Missing required file properties: fileName, fileType, fileSize, category'],
+            warnings: []
+          }
+        }
+      case 'visualization':
+        return this.validateGraphData(data)
+      default:
+        return {
+          isValid: false,
+          errors: [`Unknown validation type: ${type}`],
+          warnings: []
+        }
+    }
+  }
+
+  /**
+   * Get validation statistics
+   */
+  public getValidationStats(): {
+    totalValidations: number
+    failedValidations: number
+    warningCount: number
+  } {
+    // This would be implemented with actual statistics tracking
+    return {
+      totalValidations: 0,
+      failedValidations: 0,
+      warningCount: 0
+    }
+  }
+
+  /**
+   * Sanitize data for export
+   */
+  public sanitizeForExport(data: any): any {
+    return this.sanitizeObjectValues(data)
   }
 }
 

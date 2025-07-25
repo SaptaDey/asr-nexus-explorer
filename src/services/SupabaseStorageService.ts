@@ -121,11 +121,7 @@ export class SupabaseStorageService {
           const { error: createError } = await supabase.storage.createBucket(this.bucketName, {
             public: false,
             allowedMimeTypes: ['application/json', 'text/html', 'text/plain'],
-            fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
-            options: {
-              // Add RLS policies for bucket access
-              fileSizeLimit: 50 * 1024 * 1024
-            }
+            fileSizeLimit: 50 * 1024 * 1024 // 50MB limit
           });
           
           if (createError) {
@@ -169,10 +165,7 @@ export class SupabaseStorageService {
           const { error: createError } = await supabase.storage.createBucket(this.visualizationBucket, {
             public: true, // Visualizations can be public for display
             allowedMimeTypes: ['image/png', 'image/svg+xml', 'application/pdf', 'application/json'],
-            fileSizeLimit: 10 * 1024 * 1024, // 10MB per file
-            options: {
-              fileSizeLimit: 10 * 1024 * 1024
-            }
+            fileSizeLimit: 10 * 1024 * 1024 // 10MB per file
           });
           
           if (createError) {
@@ -520,13 +513,19 @@ export class SupabaseStorageService {
    */
   private async storeAnalysisRecord(analysis: Partial<StoredAnalysis>): Promise<void> {
     try {
-      // For now, we'll store in the existing research_sessions table with enhanced config
+      // Get current authenticated user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('Authentication required for analysis storage');
+      }
+
+      // Store in the existing research_sessions table with enhanced config
       const sessionData = {
         id: analysis.session_id || analysis.id,
         title: analysis.title || 'ASR-GoT Analysis',
         description: analysis.description,
         status: 'completed',
-        user_id: '00000000-0000-0000-0000-000000000000', // Default user for anonymous storage
+        user_id: user.id, // Use authenticated user ID
         config: {
           analysis_id: analysis.id,
           research_context: analysis.research_context,
@@ -633,11 +632,18 @@ export class SupabaseStorageService {
    */
   async retrieveAnalysis(analysisId: string): Promise<StoredAnalysis | null> {
     try {
-      // Get analysis record from database
+      // Ensure user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('Authentication required for analysis retrieval');
+      }
+
+      // Get analysis record from database with RLS protection
       const { data: sessionData, error } = await supabase
         .from('research_sessions')
         .select('*')
         .eq('config->analysis_id', analysisId)
+        .eq('user_id', user.id) // Ensure user can only access their own analyses
         .single();
 
       if (error || !sessionData) {
@@ -755,9 +761,16 @@ export class SupabaseStorageService {
     content_length: number;
   }>> {
     try {
+      // Ensure user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('Authentication required to list analyses');
+      }
+
       const { data, error } = await supabase
         .from('research_sessions')
         .select('id, title, description, created_at, config')
+        .eq('user_id', user.id) // Only show user's own analyses
         .not('config->analysis_id', 'is', null)
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -784,11 +797,18 @@ export class SupabaseStorageService {
    */
   async deleteAnalysis(analysisId: string): Promise<boolean> {
     try {
-      // Delete from database
+      // Ensure user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('Authentication required to delete analyses');
+      }
+
+      // Delete from database with RLS protection
       await supabase
         .from('research_sessions')
         .delete()
-        .eq('config->analysis_id', analysisId);
+        .eq('config->analysis_id', analysisId)
+        .eq('user_id', user.id); // Ensure user can only delete their own analyses
 
       // Delete files from storage
       await supabase.storage
