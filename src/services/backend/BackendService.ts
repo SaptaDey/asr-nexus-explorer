@@ -9,6 +9,7 @@ import { historyManager } from './HistoryManager';
 import { webSocketService } from '../WebSocketService';
 import { supabaseStorage } from '../SupabaseStorageService';
 import { queryHistoryService } from '../QueryHistoryService';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface BackendServiceStatus {
   initialized: boolean;
@@ -100,6 +101,15 @@ export class BackendService {
    */
   private async initializeStorageServices(): Promise<void> {
     try {
+      // Check auth before testing storage
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('🔄 Skipping storage test - no authenticated user');
+        this.status.services.storage = false;
+        this.status.services.supabaseStorage = false;
+        return;
+      }
+
       // Test storage manager
       const testResult = await storageManager.listFiles('asr-got-analyses');
       this.status.services.storage = testResult.success;
@@ -126,6 +136,15 @@ export class BackendService {
    */
   private async initializeHistoryServices(): Promise<void> {
     try {
+      // Check auth before testing history services
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('🔄 Skipping history tests - no authenticated user');
+        this.status.services.history = false;
+        this.status.services.queryHistory = false;
+        return;
+      }
+
       // Test history manager
       const testResult = await historyManager.getSessions({ limit: 1 });
       this.status.services.history = testResult.sessions.length >= 0; // Success if no error
@@ -152,6 +171,14 @@ export class BackendService {
    */
   private async initializeRealtimeServices(): Promise<void> {
     try {
+      // Check auth before testing realtime services
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('🔄 Skipping realtime test - no authenticated user (emergency mode)');
+        this.status.services.realtime = false;
+        return;
+      }
+
       // Test realtime service
       const isConnected = webSocketService.isConnected();
       this.status.services.realtime = isConnected;
