@@ -91,9 +91,26 @@ export class BackendInitializer {
       if (!user || authError) {
         console.log('🔄 Backend: Testing database connectivity in guest mode');
         
-        // For unauthenticated users, test basic connectivity
-        // A 401 error actually confirms the connection works (just auth fails)
+        // For unauthenticated users, test basic connectivity without triggering console errors
+        // Use REST API health endpoint instead of querying protected tables
         try {
+          // Test connectivity using Supabase's REST API health endpoint
+          const response = await fetch('https://aogeenqytwrpjvrfwvjw.supabase.co/rest/v1/', {
+            method: 'HEAD',
+            headers: {
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvZ2VlbnF5dHdycGp2cmZ3dmp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjE3NTUyMDksImV4cCI6MjAzNzMzMTIwOX0.T_-2c37bIY8__ztVdYmPYQgpMhSprLhJMo9m6lxPCWE',
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvZ2VlbnF5dHdycGp2cmZ3dmp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjE3NTUyMDksImV4cCI6MjAzNzMzMTIwOX0.T_-2c37bIY8__ztVdYmPYQgpMhSprLhJMo9m6lxPCWE'
+            }
+          });
+          
+          // Any response (even 404) confirms connectivity works
+          if (response.status === 200 || response.status === 404 || response.status === 405) {
+            console.log('✅ Database connection successful (HEAD request confirmed)');
+            this.healthStatus.database = 'connected';
+            return;
+          }
+          
+          // Fallback to the original method if HEAD doesn't work
           const { error } = await supabase.from('profiles').select('count').limit(1);
           
           // No error means we have access (shouldn't happen for profiles)

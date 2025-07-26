@@ -324,9 +324,17 @@ class SessionPersistenceService {
   // Check Supabase connection health
   async checkHealth(): Promise<boolean> {
     try {
-      // Simple health check - try to query Supabase
-      const { error } = await supabase.from('profiles').select('count').limit(1).single();
-      return !error;
+      // Test connectivity using HEAD request to avoid 401 console errors
+      const response = await fetch('https://aogeenqytwrpjvrfwvjw.supabase.co/rest/v1/', {
+        method: 'HEAD',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvZ2VlbnF5dHdycGp2cmZ3dmp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjE3NTUyMDksImV4cCI6MjAzNzMzMTIwOX0.T_-2c37bIY8__ztVdYmPYQgpMhSprLhJMo9m6lxPCWE',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvZ2VlbnF5dHdycGp2cmZ3dmp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjE3NTUyMDksImV4cCI6MjAzNzMzMTIwOX0.T_-2c37bIY8__ztVdYmPYQgpMhSprLhJMo9m6lxPCWE'
+        }
+      });
+      
+      // Any response (200, 404, 405) confirms connectivity works
+      return response.status === 200 || response.status === 404 || response.status === 405;
     } catch (error) {
       console.warn('Supabase health check failed, using localStorage mode');
       return true; // Return true for localStorage fallback
