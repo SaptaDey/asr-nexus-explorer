@@ -1,3 +1,4 @@
+
 /**
  * Advanced Graph Visualization for ASR-GoT Framework
  * Features: Multi-layer directed graphs, hyper-edges, live confidence bars, impact scores
@@ -80,6 +81,11 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
   const [filterByType, setFilterByType] = useState<string>('all');
   const [cyInstance, setCyInstance] = useState<cytoscape.Core | null>(null);
   const [confidenceRange, setConfidenceRange] = useState([0, 1]);
+
+  // Helper function to check if an element is an edge
+  const isEdgeElement = (element: any): element is { data: { source: string; target: string; [key: string]: any } } => {
+    return element && element.data && element.data.source && element.data.target;
+  };
 
   // Convert graph data to Cytoscape elements
   const cytoscapeElements = useMemo(() => {
@@ -233,7 +239,7 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
       case 'grid':
         return {
           ...baseConfig,
-          rows: Math.ceil(Math.sqrt(cytoscapeElements.filter(el => !el.data.source).length)),
+          rows: Math.ceil(Math.sqrt(cytoscapeElements.filter(el => !isEdgeElement(el)).length)),
           cols: undefined
         };
       case 'circle':
@@ -252,7 +258,7 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
           ...baseConfig,
           directed: true,
           roots: cytoscapeElements
-            .filter(el => !el.data.source && el.data.type === 'root')
+            .filter(el => !isEdgeElement(el) && el.data.type === 'root')
             .map(el => `#${el.data.id}`)
         };
       default:
@@ -354,8 +360,8 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
   const stats = useMemo(() => {
     if (!graphData) return { nodes: 0, edges: 0, avgConfidence: 0 };
     
-    const visibleNodes = cytoscapeElements.filter(el => !el.data.source);
-    const visibleEdges = cytoscapeElements.filter(el => el.data.source);
+    const visibleNodes = cytoscapeElements.filter(el => !isEdgeElement(el));
+    const visibleEdges = cytoscapeElements.filter(el => isEdgeElement(el));
     const avgConfidence = visibleNodes.reduce((sum: number, node: any) => sum + node.data.confidence, 0) / visibleNodes.length || 0;
 
     return {

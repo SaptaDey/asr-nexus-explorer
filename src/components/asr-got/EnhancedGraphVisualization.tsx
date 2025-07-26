@@ -1,3 +1,4 @@
+
 /**
  * Enhanced Cytoscape.js Graph Engine with Hyper-edge Support
  * Implements P1.22, P1.23 specifications for ASR-GoT
@@ -11,10 +12,9 @@ import { motion } from 'framer-motion';
 import cytoscape, { Core, EdgeSingular, NodeSingular } from '../../utils/cytoscapeSetup';
 import { GraphData, GraphNode, GraphEdge } from '@/types/asrGotTypes';
 import { GraphAdapterFactory } from '@/adapters/GraphVisualizationAdapters';
-import { GraphVisualizationError, GraphDataValidationError } from '@/types/graphVisualizationTypes';
+import { GraphVisualizationError, GraphDataValidationError, CytoscapeNodeData, CytoscapeEdgeData } from '@/types/graphVisualizationTypes';
 import { Settings, ZoomIn, ZoomOut, RotateCcw, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import { CytoscapeNodeData, CytoscapeEdgeData } from '@/types/graphVisualizationTypes';
 
 interface EnhancedCytoscapeGraphProps {
   graphData: GraphData;
@@ -166,85 +166,85 @@ export const EnhancedCytoscapeGraph: React.FC<EnhancedCytoscapeGraphProps> = ({
     cyRef.current = cy;
   }, [onNodeSelect]);
 
+  // Type guards for better type safety
+  const isCytoscapeNode = (element: any): element is { data: CytoscapeNodeData; style?: any } => {
+    return element && element.data && !element.data.source && !element.data.target;
+  };
+
+  const isCytoscapeEdge = (element: any): element is { data: CytoscapeEdgeData; style?: any } => {
+    return element && element.data && element.data.source && element.data.target;
+  };
+
   // Fix the convertedData usage - add proper type guards
-const updateGraphData = useCallback(() => {
-  if (!cyRef.current) return;
+  const updateGraphData = useCallback(() => {
+    if (!cyRef.current) return;
 
-  const cy = cyRef.current;
-  
-  try {
-    // Convert graph data using the adapter
-    const convertedData = GraphAdapterFactory.convertForVisualization(graphData, 'cytoscape');
+    const cy = cyRef.current;
     
-    // Type guard functions
-    const isCytoscapeNode = (element: any): element is { data: CytoscapeNodeData } => {
-      return element && element.data && !element.data.source && !element.data.target;
-    };
+    try {
+      // Convert graph data using the adapter
+      const convertedData = GraphAdapterFactory.convertForVisualization(graphData, 'cytoscape');
+      
+      // Apply custom styling with type safety
+      const styledElements = [
+        ...convertedData.nodes.filter(isCytoscapeNode).map(nodeElement => {
+          const nodeData = graphData.nodes.find(n => n.id === nodeElement.data.id);
+          return {
+            ...nodeElement,
+            style: {
+              ...(nodeElement.style || {}),
+              ...(nodeData ? getNodeStyle(nodeData) : {})
+            }
+          };
+        }),
+        ...convertedData.edges.filter(isCytoscapeEdge).map(edgeElement => {
+          const edgeData = graphData.edges.find(e => e.id === edgeElement.data.id);
+          return {
+            ...edgeElement,
+            style: {
+              ...(edgeElement.style || {}),
+              ...(edgeData ? getEdgeStyle(edgeData) : {})
+            }
+          };
+        }),
+        ...(convertedData.hyperedges || [])
+      ];
 
-    const isCytoscapeEdge = (element: any): element is { data: CytoscapeEdgeData } => {
-      return element && element.data && element.data.source && element.data.target;
-    };
-
-    // Apply custom styling with type safety
-    const styledElements = [
-      ...convertedData.nodes.filter(isCytoscapeNode).map(nodeElement => {
-        const nodeData = graphData.nodes.find(n => n.id === nodeElement.data.id);
-        return {
-          ...nodeElement,
-          style: {
-            ...(nodeElement.style || {}),
-            ...(nodeData ? getNodeStyle(nodeData) : {})
-          }
-        };
-      }),
-      ...convertedData.edges.filter(isCytoscapeEdge).map(edgeElement => {
-        const edgeData = graphData.edges.find(e => e.id === edgeElement.data.id);
-        return {
-          ...edgeElement,
-          style: {
-            ...(edgeElement.style || {}),
-            ...(edgeData ? getEdgeStyle(edgeData) : {})
-          }
-        };
-      }),
-      ...(convertedData.hyperedges || [])
-    ];
-
-    cy.elements().remove();
-    cy.add(styledElements);
-  } catch (error) {
-    console.error('Failed to convert graph data for Cytoscape:', error);
-    toast.error('Failed to render graph visualization');
-    
-    if (error instanceof GraphVisualizationError) {
-      console.error('Graph visualization error:', error.code, error.message);
-    }
-    return;
-  }
-
-  // Trigger layout update for Stage 4 topology changes (P1.22)
-  if (currentStage === 4) {
-    setLayoutRunning(true);
-    const layout = cy.layout({
-      name: 'cose',
-      animate: true,
-      animationDuration: 1000,
-      fit: true,
-      stop: () => {
-        setLayoutRunning(false);
-        onGraphUpdate?.('graph-layout-complete', { stage: currentStage });
+      cy.elements().remove();
+      cy.add(styledElements);
+    } catch (error) {
+      console.error('Failed to convert graph data for Cytoscape:', error);
+      toast.error('Failed to render graph visualization');
+      
+      if (error instanceof GraphVisualizationError) {
+        console.error('Graph visualization error:', error.code, error.message);
       }
-    });
-    layout.run();
-  }
+      return;
+    }
 
-  // Broadcast graph-updated event
-  onGraphUpdate?.('graph-updated', { 
-    nodes: graphData.nodes.length, 
-    edges: graphData.edges.length,
-    stage: currentStage 
-  });
-}, [graphData, currentStage, getNodeStyle, getEdgeStyle, onGraphUpdate]);
+    // Trigger layout update for Stage 4 topology changes (P1.22)
+    if (currentStage === 4) {
+      setLayoutRunning(true);
+      const layout = cy.layout({
+        name: 'cose',
+        animate: true,
+        animationDuration: 1000,
+        fit: true,
+        stop: () => {
+          setLayoutRunning(false);
+          onGraphUpdate?.('graph-layout-complete', { stage: currentStage });
+        }
+      });
+      layout.run();
+    }
+
+    // Broadcast graph-updated event
+    onGraphUpdate?.('graph-updated', { 
+      nodes: graphData.nodes.length, 
+      edges: graphData.edges.length,
+      stage: currentStage 
+    });
+  }, [graphData, currentStage, getNodeStyle, getEdgeStyle, onGraphUpdate]);
 
   // Initialize and update graph
   useEffect(() => {
