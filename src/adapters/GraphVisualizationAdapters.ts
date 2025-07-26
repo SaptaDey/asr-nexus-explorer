@@ -126,7 +126,7 @@ export class CytoscapeAdapter implements GraphVisualizationAdapter<CytoscapeElem
       });
 
       // Create edges from center to each connected node
-      hyperedge.connectedNodes.forEach((nodeId, index) => {
+      hyperedge.nodes.forEach((nodeId: string, index: number) => {
         elements.push({
           data: {
             id: `${hyperedge.id}-${index}`,
@@ -255,7 +255,7 @@ export class ReactFlowAdapter implements GraphVisualizationAdapter<ReactFlowNode
   }
 
   private getNodeColor(type: string): string {
-    const colors = {
+    const colors: { [key: string]: string } = {
       'root': '#8B5CF6',
       'dimension': '#3B82F6', 
       'hypothesis': '#10B981',
@@ -274,7 +274,7 @@ export class ReactFlowAdapter implements GraphVisualizationAdapter<ReactFlowNode
   }
 
   private getEdgeColor(type: string): string {
-    const colors = {
+    const colors: { [key: string]: string } = {
       'supportive': '#10B981',
       'contradictory': '#EF4444',
       'correlative': '#F59E0B',
@@ -421,7 +421,7 @@ export class PlotlyAdapter implements GraphVisualizationAdapter<PlotlyNodeData, 
   }
 
   private getNodeColor(type: string): string {
-    const colors = {
+    const colors: { [key: string]: string } = {
       'root': '#8B5CF6',
       'dimension': '#3B82F6',
       'hypothesis': '#10B981',
@@ -436,7 +436,7 @@ export class PlotlyAdapter implements GraphVisualizationAdapter<PlotlyNodeData, 
   }
 
   private getEdgeColor(type: string): string {
-    const colors = {
+    const colors: { [key: string]: string } = {
       'supportive': '#10B981',
       'contradictory': '#EF4444',
       'correlative': '#F59E0B',
@@ -483,8 +483,8 @@ export class GraphAdapterFactory {
       const edges = adapter.convertEdges(normalizedData.edges);
       
       let hyperedges = [];
-      if (normalizedData.hyperedges && adapter.convertHyperEdges) {
-        hyperedges = adapter.convertHyperEdges(normalizedData.hyperedges);
+      if (normalizedData.hyperedges && 'convertHyperEdges' in adapter) {
+        hyperedges = (adapter as any).convertHyperEdges(normalizedData.hyperedges);
       }
 
       return {
