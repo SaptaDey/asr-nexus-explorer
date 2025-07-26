@@ -151,7 +151,7 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
   }, [graphData, filterByType, confidenceThreshold]);
 
   // Cytoscape stylesheet
-  const cytoscapeStylesheet: any[] = useMemo(() => [
+  const cytoscapeStylesheet: cytoscape.Stylesheet[] = useMemo(() => [
     {
       selector: 'node',
       style: {
