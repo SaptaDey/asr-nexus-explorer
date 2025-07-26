@@ -318,7 +318,7 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
         virtualizedData: null
       };
     }
-  }, [graphData, isVirtualizationEnabled, graphMetrics]);
+  }, [graphData, isVirtualizationEnabled, graphMetrics, onError, reactFlowInstance]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);

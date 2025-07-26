@@ -82,7 +82,7 @@ export const AccessibleGraphVisualization: React.FC<AccessibleGraphVisualization
         announceLiveRegion('Node selection cleared');
         break;
     }
-  }, [nodes, currentNodeIndex]);
+  }, [nodes, currentNodeIndex, announceLiveRegion, announceNodeSelection, provideNodeDetails]);
 
   // Set up keyboard navigation
   useEffect(() => {

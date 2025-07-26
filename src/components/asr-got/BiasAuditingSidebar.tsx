@@ -3,7 +3,7 @@
  * Displays critical analysis checklist and bias detection results
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -67,10 +67,10 @@ export const BiasAuditingSidebar: React.FC<BiasAuditingSidebarProps> = ({
     if (currentStage >= 8 && geminiApiKey && graphData.nodes.length > 0) {
       performCriticalAnalysis();
     }
-  }, [currentStage, graphData, geminiApiKey]);
+  }, [currentStage, graphData, geminiApiKey, performCriticalAnalysis]);
 
   // Perform critical analysis using Gemini
-  const performCriticalAnalysis = async () => {
+  const performCriticalAnalysis = useCallback(async () => {
     setIsAuditing(true);
     
     try {
@@ -185,7 +185,7 @@ Return JSON array of audit items:
     } finally {
       setIsAuditing(false);
     }
-  };
+  }, [geminiApiKey, researchContext, graphData]);
 
   // Generate fallback audit items
   const generateFallbackAuditItems = (): BiasAuditItem[] => {

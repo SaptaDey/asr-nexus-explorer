@@ -84,7 +84,7 @@ export const AccessibilityProvider: React.FC<AccessibilityProviderProps> = ({ ch
 
     document.addEventListener('keydown', handleGlobalKeyboard);
     return () => document.removeEventListener('keydown', handleGlobalKeyboard);
-  }, [accessibility]);
+  }, [accessibility, jumpToStage, showKeyboardHelp]);
 
   const showKeyboardHelp = () => {
     const helpText = `
