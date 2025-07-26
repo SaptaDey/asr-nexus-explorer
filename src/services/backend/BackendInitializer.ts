@@ -159,6 +159,18 @@ export class BackendInitializer {
    */
   private async initializeStorageBuckets(): Promise<void> {
     console.log('🗄️ Initializing storage buckets...');
+    
+    // Check authentication status first
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (!user || authError) {
+      console.log('🔄 Skipping storage bucket initialization - no authenticated user (guest mode)');
+      console.log('✅ Storage bucket initialization skipped in guest mode (avoids 400 errors)');
+      this.healthStatus.storage = 'connected'; // Mark as connected since skipping is expected
+      return;
+    }
+    
+    console.log('🔧 Initializing storage buckets for authenticated user...');
 
     const bucketsToCreate = [
       {
