@@ -28,3 +28,38 @@ dist-ssr
 # Windows Zone.Identifier files
 *:Zone.Identifier
 *.Zone.Identifier
+
+# Non-essential files directory
+nonessentials/
+
+# Supabase local development files
+supabase/.temp/
+supabase/.branches/
+
+# Generated documentation and reports
+*.html:Zone.Identifier
+Final_Report.html
+error_log.json
+error_log/
+
+# Build artifacts  
+dist/
+bun.lockb
+
+# Development scripts (moved to organized structure)
+apply_*.mjs
+check_schema.*
+fix_supabase_issues.mjs
+inspect_schema.mjs  
+organize_backend.mjs
+production_validation.mjs
+test_backend_setup.mjs
+verify_database_fixes.mjs
+final_verification.mjs
+emergency-security-fix.js
+test-security-fixes.js
+
+# SQL files (moved to organized structure)
+schema_dump.sql
+init.sql
+apply_security_fixes.sql
