@@ -85,15 +85,37 @@ export class BackendInitializer {
     try {
       console.log('🔍 Testing database connection...');
       
+      // Check authentication status first
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (!user || authError) {
+        console.log('🔄 Backend: Skipping database test - no authenticated user (emergency mode)');
+        // Use a public table or non-RLS protected query for connection test
+        const { error } = await supabase.from('profiles').select('count').limit(1);
+        
+        if (error && !error.message.includes('RLS')) {
+          throw error;
+        }
+        
+        this.healthStatus.database = 'connected';
+        console.log('✅ Database connection successful (guest mode)');
+        return;
+      }
+      
+      // User is authenticated, can safely test research_sessions table
       const { error } = await supabase
         .from('research_sessions')
         .select('id')
+        .eq('user_id', user.id)
         .limit(1);
 
-      if (error) throw error;
+      // Even if user has no sessions, this validates table access and RLS
+      if (error && !error.message.includes('no rows')) {
+        throw error;
+      }
       
       this.healthStatus.database = 'connected';
-      console.log('✅ Database connection successful');
+      console.log('✅ Database connection successful (authenticated mode)');
     } catch (error) {
       console.error('❌ Database connection failed:', error);
       this.healthStatus.database = 'error';
