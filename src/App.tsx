@@ -40,9 +40,18 @@ const queryClient = new QueryClient({
 // Initialize Supabase storage on app start
 const initializeApp = async () => {
   try {
+    // Check auth before initializing storage services
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.log('🔄 App: Skipping storage initialization - no authenticated user (emergency mode)');
+      return;
+    }
+    
     const { supabaseStorage } = await import("@/services/SupabaseStorageService");
     await supabaseStorage.initializeStorage();
-    console.log('🚀 App initialization completed');
+    console.log('🚀 App initialization completed with authenticated user');
   } catch (error) {
     console.warn('⚠️ App initialization had issues:', error);
   }

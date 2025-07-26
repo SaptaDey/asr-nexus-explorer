@@ -79,15 +79,37 @@
     <meta name="twitter:title" content="ASR-GoT Research Framework" />
     <meta name="twitter:description" content="Advanced Scientific Reasoning Graph of Thoughts - AI-powered research analysis framework" />
     <meta name="twitter:image" content="/img/splash.png" />
-  </head>
+    <script type="module" crossorigin src="/assets/index-DvTsezjz.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/react-Bv4c9Wqx.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-B-B5qyvq.css">
+  
+<style>
+	#lovable-badge {
+		position: fixed;
+		bottom: 10px;
+		right: 10px;
+		width: 141px;
+		padding: 5px 13px;	
+		background-color: #000;
+		color: #fff;
+		font-size: 12px;
+		border-radius: 5px;
+		font-family: sans-serif;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		z-index: 1000000;
+		text-transform: none !important;
+		font-feature-settings: normal !important;
+		font-weight: 400 !important;
+	}
+</style>
+<script defer src="https://scientific-research.online/~flock.js" data-proxy-url="https://scientific-research.online/~api/analytics"></script></head><link rel="canonical" href="https://scientific-research.online/" />
 
   <body>
     <div id="root"></div>
     <!-- CRITICAL: Early React initialization to prevent createContext errors -->
     <script>
-      // CACHE BUSTER: Force fresh deployment - v1.0.3
-      console.log('🔄 Cache Buster: Loading ASR-GoT v1.0.3 with auth fixes');
-      
       // Ensure React is available globally before any modules load
       window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || {};
       window.React = window.React || null;
@@ -116,6 +138,5 @@
         createElement: !!window.createElement
       });
     </script>
-    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
