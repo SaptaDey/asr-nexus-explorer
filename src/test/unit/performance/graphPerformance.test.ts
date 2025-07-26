@@ -55,7 +55,7 @@ beforeEach(() => {
   process.env.GEMINI_API_KEY = REAL_API_KEYS.GEMINI_API_KEY;
   
   // PERFORMANCE MOCK SETUP FOR MEASUREMENTS
-  global.performance = mockPerformance as any;
+  global.performance = mockPerformance as Performance;
   global.requestIdleCallback = mockRequestIdleCallback;
   Object.defineProperty(global.performance, 'memory', {
     value: mockMemory,

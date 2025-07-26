@@ -83,7 +83,7 @@ const mockSupabaseSession = {
 export const handlers = [
   // Gemini API mocks
   http.post('https://generativelanguage.googleapis.com/v1beta/models/*', async ({ request }) => {
-    const body = await request.json() as any;
+    const body = await request.json() as { contents?: Array<{ parts?: Array<{ text?: string }> }> };
     
     // Simulate different responses based on request content
     if (body.contents?.[0]?.parts?.[0]?.text?.includes('ERROR_TEST')) {
@@ -102,7 +102,7 @@ export const handlers = [
 
   // Perplexity API mocks
   http.post('https://api.perplexity.ai/chat/completions', async ({ request }) => {
-    const body = await request.json() as any;
+    const body = await request.json() as { contents?: Array<{ parts?: Array<{ text?: string }> }> };
     
     // Simulate different responses based on request content
     if (body.messages?.[0]?.content?.includes('ERROR_TEST')) {
@@ -120,7 +120,7 @@ export const handlers = [
 
   // Supabase Auth mocks
   http.post('https://*.supabase.co/auth/v1/token', async ({ request }) => {
-    const body = await request.json() as any;
+    const body = await request.json() as { contents?: Array<{ parts?: Array<{ text?: string }> }> };
     
     if (body.email === 'invalid@test.com') {
       return HttpResponse.json({ 
@@ -154,7 +154,7 @@ export const handlers = [
   }),
 
   http.post('https://*.supabase.co/rest/v1/research_sessions', async ({ request }) => {
-    const body = await request.json() as any;
+    const body = await request.json() as { contents?: Array<{ parts?: Array<{ text?: string }> }> };
     
     return HttpResponse.json({
       id: "new-session-id",
@@ -164,7 +164,7 @@ export const handlers = [
   }),
 
   http.patch('https://*.supabase.co/rest/v1/research_sessions', async ({ request }) => {
-    const body = await request.json() as any;
+    const body = await request.json() as { contents?: Array<{ parts?: Array<{ text?: string }> }> };
     
     return HttpResponse.json({
       id: "test-session-1",
