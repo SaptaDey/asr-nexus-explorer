@@ -83,6 +83,16 @@
 
   <body>
     <div id="root"></div>
+    <!-- CRITICAL: Early React initialization to prevent createContext errors -->
+    <script>
+      // Ensure React is available globally before any modules load
+      window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || {};
+      window.React = window.React || null;
+      window.ReactDOM = window.ReactDOM || null;
+      
+      // Log initialization status
+      console.log('%c🔧 Initializing React environment...', 'color: orange; font-weight: bold;');
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

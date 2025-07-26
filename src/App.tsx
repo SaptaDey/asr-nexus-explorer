@@ -1,4 +1,10 @@
 import React from "react";
+
+// CRITICAL: Ensure React is available before loading react-query
+if (typeof window !== 'undefined' && !window.React) {
+  window.React = React;
+}
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,7 +26,16 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useEffect } from "react";
 
-const queryClient = new QueryClient();
+// CRITICAL: Create QueryClient only after ensuring React is available
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 // Initialize Supabase storage on app start
 const initializeApp = async () => {

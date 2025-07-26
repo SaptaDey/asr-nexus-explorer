@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => ({
     include: [
       'react',
       'react-dom',
+      '@tanstack/react-query',
       '@radix-ui/react-dialog',
       '@radix-ui/react-tabs',
       'cytoscape',
@@ -50,8 +51,10 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // React ecosystem
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+          // React ecosystem - MUST include react-query to avoid createContext errors
+          if (id.includes('node_modules/react') || 
+              id.includes('node_modules/react-dom') || 
+              id.includes('@tanstack/react-query')) {
             return 'react';
           }
           
@@ -85,7 +88,7 @@ export default defineConfig(({ mode }) => ({
           }
           
           // Supabase and auth
-          if (id.includes('@supabase/') || id.includes('@tanstack/react-query')) {
+          if (id.includes('@supabase/')) {
             return 'supabase';
           }
           
@@ -132,6 +135,7 @@ export default defineConfig(({ mode }) => ({
     chunkSizeWarningLimit: 1000,
   },
   define: {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+    'import.meta.env.MODE': JSON.stringify(mode)
   }
 }));

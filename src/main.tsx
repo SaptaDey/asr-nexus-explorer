@@ -1,5 +1,10 @@
+// CRITICAL: Import React polyfill FIRST to ensure global availability
+import './react-polyfill'
+
 import React from 'react'
+import ReactDOM from 'react-dom'
 import { createRoot } from 'react-dom/client'
+
 import App from './App.tsx'
 import './index.css'
 import { safeLog, safeError, initializeSecurity } from './services/security'
