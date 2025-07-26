@@ -50,72 +50,14 @@ export default defineConfig(({ mode }) => ({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // React ecosystem - MUST include react-query to avoid createContext errors
-          if (id.includes('node_modules/react') || 
-              id.includes('node_modules/react-dom') || 
-              id.includes('@tanstack/react-query')) {
-            return 'react';
-          }
-          
-          // Radix UI components
-          if (id.includes('@radix-ui/')) {
-            return 'radix-ui';
-          }
-          
-          // Visualization libraries - split heavy ones
-          if (id.includes('plotly.js')) {
-            return 'plotly';
-          }
-          if (id.includes('cytoscape') || id.includes('react-cytoscapejs')) {
-            return 'cytoscape';
-          }
-          if (id.includes('@xyflow/react') || id.includes('reactflow')) {
-            return 'reactflow';
-          }
-          if (id.includes('three') || id.includes('@react-three/')) {
-            return 'three';
-          }
-          
-          // Animation libraries
-          if (id.includes('framer-motion') || id.includes('animejs') || id.includes('@react-spring/')) {
-            return 'animation';
-          }
-          
-          // Utility libraries
-          if (id.includes('date-fns') || id.includes('clsx') || id.includes('class-variance-authority')) {
-            return 'utils';
-          }
-          
-          // Supabase and auth
-          if (id.includes('@supabase/')) {
-            return 'supabase';
-          }
-          
-          // Form handling
-          if (id.includes('react-hook-form') || id.includes('@hookform/')) {
-            return 'forms';
-          }
-          
-          // Markdown and text processing
-          if (id.includes('react-markdown') || id.includes('remark-') || id.includes('dompurify')) {
-            return 'markdown';
-          }
-          
-          // Icons and UI assets
-          if (id.includes('lucide-react') || id.includes('embla-carousel')) {
-            return 'icons-ui';
-          }
-          
-          // Charts and data visualization
-          if (id.includes('recharts') || id.includes('d3-')) {
-            return 'charts';
-          }
-          
-          // Large vendor libraries
-          if (id.includes('node_modules/')) {
-            return 'vendor';
-          }
+        manualChunks: {
+          // CRITICAL: Force React ecosystem into same chunk to prevent createContext errors
+          'react': [
+            'react',
+            'react-dom',
+            'react-dom/client',
+            '@tanstack/react-query'
+          ]
         }
       }
     },

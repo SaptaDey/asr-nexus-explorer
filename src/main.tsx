@@ -5,6 +5,16 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import { createRoot } from 'react-dom/client'
 
+// EMERGENCY: Force React to be available globally IMMEDIATELY
+if (typeof window !== 'undefined') {
+  window.React = React;
+  window.createContext = React.createContext;
+  window.createElement = React.createElement;
+  window.useState = React.useState;
+  window.useEffect = React.useEffect;
+  console.log('%c🛡️ CRITICAL: React globals forced before any other imports', 'color: red; font-weight: bold;');
+}
+
 import App from './App.tsx'
 import './index.css'
 import { safeLog, safeError, initializeSecurity } from './services/security'

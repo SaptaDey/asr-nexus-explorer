@@ -90,8 +90,28 @@
       window.React = window.React || null;
       window.ReactDOM = window.ReactDOM || null;
       
+      // EMERGENCY: Create placeholder createContext to prevent errors
+      window.createContext = window.createContext || function(defaultValue) {
+        console.warn('🚨 Emergency createContext placeholder called - real React not loaded yet');
+        return {
+          Provider: function() { return null; },
+          Consumer: function() { return null; },
+          displayName: 'EmergencyContext'
+        };
+      };
+      
+      window.createElement = window.createElement || function() {
+        console.warn('🚨 Emergency createElement placeholder called - real React not loaded yet');
+        return null;
+      };
+      
       // Log initialization status
-      console.log('%c🔧 Initializing React environment...', 'color: orange; font-weight: bold;');
+      console.log('%c🛡️ EMERGENCY React placeholders initialized', 'color: red; font-weight: bold;');
+      console.log('Emergency React stubs available:', {
+        React: !!window.React,
+        createContext: !!window.createContext,
+        createElement: !!window.createElement
+      });
     </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
