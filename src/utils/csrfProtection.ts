@@ -3,6 +3,7 @@
  * SECURITY: Implements Cross-Site Request Forgery protection
  */
 
+import React from 'react';
 import { secureHash } from './securityUtils';
 
 class CSRFProtection {
@@ -176,9 +177,6 @@ async function getSessionId(): Promise<string> {
   
   return sessionId;
 }
-
-// Import React for hook
-import React from 'react';
 
 /**
  * Axios-style interceptor for fetch requests

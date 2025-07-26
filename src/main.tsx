@@ -14,7 +14,7 @@ import { setupCSRFInterceptor } from './utils/csrfProtection'
       enableErrorHandling: true,
       enableDataSanitization: true,
       enableSecureExports: true,
-      productionMode: process.env.NODE_ENV === 'production'
+      productionMode: import.meta.env.MODE === 'production'
     });
     
     // SECURITY: Setup CSRF protection for all fetch requests

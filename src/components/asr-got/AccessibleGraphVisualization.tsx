@@ -108,7 +108,7 @@ export const AccessibleGraphVisualization: React.FC<AccessibleGraphVisualization
     const connections = relatedEdges.map(edge => {
       const otherNodeId = edge.source === node.id ? edge.target : edge.source;
       const otherNode = nodes.find(n => n.id === otherNodeId);
-      return `${edge.relationship} ${otherNode?.label || otherNodeId}`;
+      return `${edge.relationship || edge.type} ${otherNode?.label || otherNodeId}`;
     }).join(', ');
 
     const details = [
@@ -252,7 +252,7 @@ export const AccessibleGraphVisualization: React.FC<AccessibleGraphVisualization
                   return (
                     <div key={index} className="p-2 bg-gray-50 rounded">
                       <span className="font-medium">{sourceNode?.label || edge.source}</span>
-                      <span className="text-gray-600 mx-2">→ {edge.relationship} →</span>
+                      <span className="text-gray-600 mx-2">→ {edge.relationship || edge.type} →</span>
                       <span className="font-medium">{targetNode?.label || edge.target}</span>
                       {edge.weight && (
                         <Badge variant="outline" className="ml-2">
@@ -437,7 +437,7 @@ export const AccessibleGraphVisualization: React.FC<AccessibleGraphVisualization
                           const otherNode = nodes.find(n => n.id === otherNodeId);
                           return (
                             <li key={index}>
-                              {edge.relationship} → {otherNode?.label || otherNodeId}
+                              {edge.relationship || edge.type} → {otherNode?.label || otherNodeId}
                             </li>
                           );
                         })}

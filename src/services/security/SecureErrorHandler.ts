@@ -32,7 +32,7 @@ export class SecureError extends Error {
     this.name = 'SecureError';
 
     // Don't expose original stack trace in production
-    if (process.env.NODE_ENV === 'production') {
+    if (import.meta.env.MODE === 'production') {
       this.stack = undefined;
     }
   }
@@ -45,14 +45,14 @@ export class SecureErrorHandler {
 
   private constructor(config: SecureErrorConfig) {
     this.config = config;
-    this.isProduction = process.env.NODE_ENV === 'production';
+    this.isProduction = import.meta.env.MODE === 'production';
     this.initializeGlobalErrorHandling();
   }
 
   public static getInstance(config?: SecureErrorConfig): SecureErrorHandler {
     if (!SecureErrorHandler.instance) {
       const defaultConfig: SecureErrorConfig = {
-        enableDetailedErrors: process.env.NODE_ENV !== 'production',
+        enableDetailedErrors: import.meta.env.MODE !== 'production',
         logFullErrorsInDevelopment: true,
         redactStackTraces: true,
         redactErrorContext: true,

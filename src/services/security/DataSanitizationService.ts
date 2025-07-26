@@ -76,7 +76,7 @@ export class DataSanitizationService {
   public static getInstance(config?: SanitizationConfig): DataSanitizationService {
     if (!DataSanitizationService.instance) {
       const defaultConfig: SanitizationConfig = {
-        mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+        mode: import.meta.env.MODE === 'production' ? 'production' : 'development',
         redactResearchContent: true,
         redactPersonalInfo: true,
         redactApiKeys: true,

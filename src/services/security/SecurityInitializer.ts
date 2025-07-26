@@ -27,7 +27,7 @@ export class SecurityInitializer {
       enableErrorHandling: true,
       enableDataSanitization: true,
       enableSecureExports: true,
-      productionMode: process.env.NODE_ENV === 'production'
+      productionMode: import.meta.env.MODE === 'production'
     };
   }
 
@@ -220,7 +220,7 @@ export class SecurityInitializer {
         secureExports: this.config.enableSecureExports
       },
       environment: {
-        nodeEnv: process.env.NODE_ENV,
+        nodeEnv: import.meta.env.MODE,
         productionMode: this.config.productionMode,
         userAgent: typeof navigator !== 'undefined' ? '[REDACTED]' : 'Server',
         url: typeof window !== 'undefined' ? '[REDACTED]' : 'Server'

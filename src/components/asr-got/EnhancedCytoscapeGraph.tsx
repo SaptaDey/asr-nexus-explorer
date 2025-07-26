@@ -181,14 +181,14 @@ export const EnhancedCytoscapeGraph: React.FC<EnhancedCytoscapeGraphProps> = ({
           ...nodeElement,
           style: {
             ...('style' in nodeElement ? nodeElement.style : {}),
-            ...getNodeStyle(graphData.nodes.find(n => n.id === nodeElement.data.id)!)
+            ...getNodeStyle(graphData.nodes.find(n => n.id === (nodeElement as any).data?.id)!)
           }
         })),
         ...convertedData.edges.map(edgeElement => ({
           ...edgeElement,
           style: {
             ...('style' in edgeElement ? edgeElement.style : {}),
-            ...getEdgeStyle(graphData.edges.find(e => e.id === edgeElement.data.id)!)
+            ...getEdgeStyle(graphData.edges.find(e => e.id === (edgeElement as any).data?.id)!)
           }
         })),
         ...(convertedData.hyperedges || [])

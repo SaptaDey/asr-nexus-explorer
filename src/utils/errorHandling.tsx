@@ -141,7 +141,7 @@ export class ErrorHandler {
     }
 
     // Log to server if enabled and in production
-    if (options.logToServer && process.env.NODE_ENV === 'production') {
+    if (options.logToServer && import.meta.env.MODE === 'production') {
       this.logToServer(errorDetails).catch(console.error);
     }
 
@@ -358,8 +358,6 @@ export const handleValidationError = (error: Error, context?: Record<string, any
 /**
  * React Error Boundary component
  */
-import React from 'react';
-
 interface ErrorBoundaryState {
   hasError: boolean;
   errorId?: string;

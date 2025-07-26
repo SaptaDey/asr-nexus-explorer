@@ -104,7 +104,7 @@ export function secureDebugExport(debugData: any, options: Omit<SecureExportOpti
 }
 
 // Production safety check
-if (process.env.NODE_ENV === 'production') {
+if (import.meta.env.MODE === 'production') {
   console.log('🔒 Security services loaded in production mode');
 } else {
   console.log('🔍 Security services loaded in development mode');

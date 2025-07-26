@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { GraphData, ResearchContext, ASRGoTParameters } from '@/types/asrGotTypes';
 import { backendInitializer } from './BackendInitializer';
 import { storageManager } from './StorageManager';
-import { AuthorizationService } from '@/services/AuthorizationService';
+import { authorizationService } from '@/services/authorizationService';
 
 export interface SessionHistory {
   id: string;
@@ -254,7 +254,7 @@ export class HistoryManager {
       console.log(`📖 Retrieving session: ${sessionId}`);
 
       // CRITICAL SECURITY FIX: Verify user authorization first
-      const user = await AuthorizationService.getCurrentUser();
+      const user = await authorizationService.getCurrentUser();
       if (!user) {
         console.warn(`❌ SECURITY: Unauthorized access attempt to session ${sessionId}`);
         return null;
@@ -332,7 +332,7 @@ export class HistoryManager {
       console.log(`📚 Retrieving sessions with options:`, options);
 
       // CRITICAL SECURITY FIX: Verify user authorization first
-      const user = await AuthorizationService.getCurrentUser();
+      const user = await authorizationService.getCurrentUser();
       if (!user) {
         console.warn('❌ SECURITY: Unauthorized getSessions attempt');
         return { sessions: [], total: 0 };
@@ -599,9 +599,9 @@ export class HistoryManager {
       // CRITICAL SECURITY FIX: Use AuthorizationService to get related data
       try {
         const [figures, tables, stageExecutions] = await Promise.all([
-          AuthorizationService.getAuthorizedSessionData(sessionId, 'query_figures'),
-          AuthorizationService.getAuthorizedSessionData(sessionId, 'query_tables'),
-          AuthorizationService.getAuthorizedSessionData(sessionId, 'stage_executions')
+          authorizationService.getAuthorizedSessionData(sessionId, 'query_figures'),
+          authorizationService.getAuthorizedSessionData(sessionId, 'query_tables'),
+          authorizationService.getAuthorizedSessionData(sessionId, 'stage_executions')
         ]);
 
         const exportData = {

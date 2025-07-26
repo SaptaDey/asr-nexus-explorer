@@ -24,7 +24,7 @@ export class SecureConsoleLogger {
   private constructor(config: SecureLogConfig) {
     this.config = config;
     this.originalConsole = { ...console };
-    this.isProduction = process.env.NODE_ENV === 'production';
+    this.isProduction = import.meta.env.MODE === 'production';
     this.initializeSecureLogging();
   }
 
@@ -33,7 +33,7 @@ export class SecureConsoleLogger {
       const defaultConfig: SecureLogConfig = {
         enableInProduction: false, // CRITICAL: Disabled in production by default
         enableSanitization: true,
-        logLevel: process.env.NODE_ENV === 'production' ? 'error' : 'debug',
+        logLevel: import.meta.env.MODE === 'production' ? 'error' : 'debug',
         maxLogLength: 500,
         redactSensitiveData: true
       };
