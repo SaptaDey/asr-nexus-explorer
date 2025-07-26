@@ -61,12 +61,15 @@ const NODE_TYPES = {
 };
 
 // Edge type definitions per P1.24, P1.25
-const EDGE_TYPES = {
+const EDGE_TYPES: { [key: string]: { color: string; width: number; style: string; arrow?: string } } = {
   // Basic edges
   supportive: { color: '#10b981', width: 2, style: 'solid' },
   contradictory: { color: '#ef4444', width: 2, style: 'solid' },
   correlative: { color: '#6366f1', width: 1, style: 'dashed' },
   prerequisite: { color: '#8b5cf6', width: 2, style: 'dotted' },
+  causal: { color: '#f97316', width: 2, style: 'solid', arrow: 'triangle' },
+  temporal: { color: '#14b8a6', width: 2, style: 'solid', arrow: 'chevron' },
+  hyperedge: { color: '#9333ea', width: 3, style: 'solid', arrow: 'diamond' },
   
   // Causal edges (P1.24)
   causal_direct: { color: '#f97316', width: 3, style: 'solid', arrow: 'triangle' },
@@ -375,7 +378,7 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
             layout={cytoscapeLayout}
             style={{ width: '100%', height: '100%' }}
             stylesheet={cytoscapeStyle}
-            cy={(cy) => setCytoscapeRef(cy)}
+            cy={(cy: Cytoscape.Core) => setCytoscapeRef(cy)}
             boxSelectionEnabled={true}
             autoungrabify={false}
             autounselectify={false}

@@ -102,7 +102,7 @@ export const APIIntegration: React.FC = () => {
   };
 
   const StatusBadge = ({ status }: { status: string }) => {
-    const variants = {
+    const variants: { [key: string]: { variant: 'default' | 'secondary' | 'destructive', icon: any, color: string } } = {
       connected: { variant: 'default' as const, icon: CheckCircle, color: 'text-green-500' },
       disconnected: { variant: 'secondary' as const, icon: Wifi, color: 'text-muted-foreground' },
       error: { variant: 'destructive' as const, icon: AlertCircle, color: 'text-red-500' }

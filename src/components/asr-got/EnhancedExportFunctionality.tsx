@@ -555,7 +555,7 @@ ${finalReport}
               {finalReport && (
                 <Badge variant="outline">Final report ready</Badge>
               )}
-              {visualAnalytics?.figures?.length > 0 && (
+              {visualAnalytics?.figures && visualAnalytics.figures.length > 0 && (
                 <Badge variant="outline">
                   {visualAnalytics.figures.length} visualizations
                 </Badge>

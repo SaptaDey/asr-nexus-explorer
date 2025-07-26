@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
 import { Database, Key, CheckCircle, XCircle, Settings, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
-import { SecureCredentialManager } from '@/utils/securityUtils';
+import { SecureCredentialManager } from '@/services/security/SecureCredentialManager';
 
 interface APICredentials {
   perplexity: string;

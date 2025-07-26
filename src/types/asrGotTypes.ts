@@ -35,6 +35,9 @@ export interface ASRGoTMetadata {
   power_metrics?: Record<string, number>;
   uncertainty_bounds?: [number, number];
   peer_review_status?: 'peer-reviewed' | 'preprint' | 'grey-literature';
+  
+  // Additional properties for GraphVisualizationAdapters compatibility
+  weight?: number;
 }
 
 export interface GraphNode {
@@ -90,6 +93,7 @@ export interface GraphEdge {
   metadata: ASRGoTMetadata;
   weight?: number;
   bidirectional?: boolean;
+  relationship?: string; // Added for AccessibleGraphVisualization compatibility
 }
 
 export interface HyperEdge {
@@ -98,6 +102,7 @@ export interface HyperEdge {
   type: 'complex_relationship' | 'multi_causal' | 'interdisciplinary';
   confidence: number;
   metadata: ASRGoTMetadata;
+  label?: string; // Added for GraphVisualizationAdapters compatibility
 }
 
 export interface GraphData {

@@ -232,8 +232,19 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
       
       // Convert data using adapter
       const convertedData = GraphAdapterFactory.convertForVisualization(graphData, 'reactflow');
-      let nodes = convertedData.nodes as Node[];
-      let edges = convertedData.edges as Edge[];
+      let nodes: Node[] = convertedData.nodes.map(node => ({
+        id: node.id || String(Math.random()),
+        position: node.position || { x: 0, y: 0 },
+        data: node.data || {},
+        type: node.type || 'default',
+        ...node
+      }));
+      let edges: Edge[] = convertedData.edges.map(edge => ({
+        id: edge.id || String(Math.random()),
+        source: edge.source || '',
+        target: edge.target || '',
+        ...edge
+      }));
       
       // Apply virtualization if enabled and needed
       let virtualizedInfo = null;

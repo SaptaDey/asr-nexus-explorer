@@ -66,14 +66,23 @@ export const EnhancedCytoscapeGraph: React.FC<EnhancedCytoscapeGraphProps> = ({
 
   // Enhanced edge styling based on type and confidence
   const getEdgeStyle = useCallback((edge: GraphEdge) => {
-    const typeStyles = {
+    const typeStyles: { [key: string]: { color: string; width: number } } = {
       'supportive': { color: '#10B981', width: 3 },
       'contradictory': { color: '#EF4444', width: 3 },
       'causal': { color: '#8B5CF6', width: 4 },
       'temporal': { color: '#F59E0B', width: 2 },
       'correlative': { color: '#6B7280', width: 2 },
       'prerequisite': { color: '#3B82F6', width: 3 },
-      'hyperedge': { color: '#EC4899', width: 5 }
+      'hyperedge': { color: '#EC4899', width: 5 },
+      // Additional causal edge types
+      'causal_direct': { color: '#8B5CF6', width: 4 },
+      'causal_counterfactual': { color: '#7C3AED', width: 3 },
+      'causal_confounded': { color: '#6D28D9', width: 3 },
+      // Additional temporal edge types
+      'temporal_precedence': { color: '#F59E0B', width: 2 },
+      'temporal_cyclic': { color: '#D97706', width: 2 },
+      'temporal_delayed': { color: '#B45309', width: 2 },
+      'temporal_sequential': { color: '#92400E', width: 2 }
     };
 
     const style = typeStyles[edge.type] || { color: '#6B7280', width: 2 };
@@ -171,14 +180,14 @@ export const EnhancedCytoscapeGraph: React.FC<EnhancedCytoscapeGraphProps> = ({
         ...convertedData.nodes.map(nodeElement => ({
           ...nodeElement,
           style: {
-            ...nodeElement.style,
+            ...('style' in nodeElement ? nodeElement.style : {}),
             ...getNodeStyle(graphData.nodes.find(n => n.id === nodeElement.data.id)!)
           }
         })),
         ...convertedData.edges.map(edgeElement => ({
           ...edgeElement,
           style: {
-            ...edgeElement.style,
+            ...('style' in edgeElement ? edgeElement.style : {}),
             ...getEdgeStyle(graphData.edges.find(e => e.id === edgeElement.data.id)!)
           }
         })),

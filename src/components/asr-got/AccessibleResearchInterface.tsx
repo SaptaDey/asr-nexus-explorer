@@ -101,7 +101,7 @@ export const AccessibleResearchInterface: React.FC<AccessibleResearchInterfacePr
       announceLiveRegion('Starting manual research mode. Execute each stage individually.', 'assertive');
     }
 
-    await onExecuteStage(0, taskDescription, enableAutoMode);
+    await onExecuteStage(0, taskDescription);
     setActiveTab('progress');
   };
 

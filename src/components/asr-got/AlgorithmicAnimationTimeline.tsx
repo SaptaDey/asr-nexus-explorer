@@ -264,7 +264,9 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
         particle.setAttribute('cx', `${Math.random() * 600}`);
         particle.setAttribute('cy', `${Math.random() * 400}`);
         
-        svgRef.current.appendChild(particle);
+        if (svgRef.current) {
+          svgRef.current.appendChild(particle);
+        }
         
         // CSS-based particle animation
         particle.style.transition = 'transform 2000ms ease-out, opacity 2000ms ease-out, scale 2000ms ease-out';
@@ -280,7 +282,7 @@ export const AlgorithmicAnimationTimeline: React.FC<AlgorithmicAnimationTimeline
         }, index * 100);
       } else {
         // Branch shaking for failures
-        const failedBranch = svgRef.current.querySelector(`#branch-${item.id}`);
+        const failedBranch = svgRef.current ? svgRef.current.querySelector(`#branch-${item.id}`) : null;
         if (failedBranch) {
           const element = failedBranch as SVGElement;
           element.style.transition = 'transform 500ms ease-in-out';
