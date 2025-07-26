@@ -280,7 +280,10 @@ export class SpatialIndex {
       if (!this.grid.has(key)) {
         this.grid.set(key, []);
       }
-      this.grid.get(key)!.push(node);
+      const gridCell = this.grid.get(key);
+      if (gridCell) {
+        gridCell.push(node);
+      }
     });
   }
 

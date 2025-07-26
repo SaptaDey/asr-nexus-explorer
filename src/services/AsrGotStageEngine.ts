@@ -1791,7 +1791,10 @@ Generate the complete 150+ page thesis-quality HTML scientific report now.`;
         if (!disciplinaryMap.has(tag)) {
           disciplinaryMap.set(tag, []);
         }
-        disciplinaryMap.get(tag)!.push(node.id);
+        const tagArray = disciplinaryMap.get(tag);
+        if (tagArray) {
+          tagArray.push(node.id);
+        }
       });
     });
     

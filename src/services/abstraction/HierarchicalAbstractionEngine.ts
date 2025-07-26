@@ -539,7 +539,10 @@ export class HierarchicalAbstractionEngine {
       if (!typeGroups.has(node.type)) {
         typeGroups.set(node.type, []);
       }
-      typeGroups.get(node.type)!.push(node);
+      const typeGroup = typeGroups.get(node.type);
+      if (typeGroup) {
+        typeGroup.push(node);
+      }
     });
 
     // Create clusters from type groups

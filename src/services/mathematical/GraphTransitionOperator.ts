@@ -447,7 +447,10 @@ export class GraphTransitionOperator {
       if (!commMap.has(comm)) {
         commMap.set(comm, []);
       }
-      commMap.get(comm)!.push(nodeIds[index]);
+      const commNodes = commMap.get(comm);
+      if (commNodes) {
+        commNodes.push(nodeIds[index]);
+      }
     });
     
     commMap.forEach((nodes, commId) => {

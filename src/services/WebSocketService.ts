@@ -194,7 +194,10 @@ class SupabaseRealtimeService {
       this.listeners.set(event, new Set());
     }
     
-    this.listeners.get(event)!.add(callback);
+    const eventListeners = this.listeners.get(event);
+    if (eventListeners) {
+      eventListeners.add(callback);
+    }
     
     // Return unsubscribe function
     return () => {

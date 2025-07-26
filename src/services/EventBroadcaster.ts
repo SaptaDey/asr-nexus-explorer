@@ -47,7 +47,10 @@ class EventBroadcaster {
       this.listeners.set(eventType, new Set());
     }
     
-    this.listeners.get(eventType)!.add(callback);
+    const eventListeners = this.listeners.get(eventType);
+    if (eventListeners) {
+      eventListeners.add(callback);
+    }
     
     // Return unsubscribe function
     return () => {

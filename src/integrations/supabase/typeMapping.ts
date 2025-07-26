@@ -308,11 +308,11 @@ export class SupabaseTypeAdapter {
   ): TypeMappings[T]['supabase'] {
     switch (type) {
       case 'profile':
-        return convertProfileToSupabase(data as any) as any;
+        return convertProfileToSupabase(data as TypeMappings['profile']['custom']) as TypeMappings['profile']['supabase'];
       case 'researchSession':
-        return convertResearchSessionToSupabase(data as any) as any;
+        return convertResearchSessionToSupabase(data as TypeMappings['researchSession']['custom']) as TypeMappings['researchSession']['supabase'];
       case 'stageExecution':
-        return convertStageExecutionToSupabase(data as any) as any;
+        return convertStageExecutionToSupabase(data as TypeMappings['stageExecution']['custom']) as TypeMappings['stageExecution']['supabase'];
       default:
         throw new Error(`Unsupported type conversion: ${type}`);
     }
@@ -327,9 +327,9 @@ export class SupabaseTypeAdapter {
   ): TypeMappings[T]['custom'] {
     switch (type) {
       case 'profile':
-        return convertProfileFromSupabase(data as any) as any;
+        return convertProfileFromSupabase(data as TypeMappings['profile']['supabase']) as TypeMappings['profile']['custom'];
       case 'stageExecution':
-        return convertStageExecutionFromSupabase(data as any) as any;
+        return convertStageExecutionFromSupabase(data as TypeMappings['stageExecution']['supabase']) as TypeMappings['stageExecution']['custom'];
       default:
         throw new Error(`Unsupported type conversion: ${type}`);
     }
