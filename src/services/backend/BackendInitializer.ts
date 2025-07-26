@@ -312,6 +312,17 @@ export class BackendInitializer {
   private async validateDatabaseTables(): Promise<void> {
     console.log('📊 Validating database tables...');
     
+    // Check authentication status first
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (!user || authError) {
+      console.log('🔄 Skipping table validation - no authenticated user (guest mode)');
+      console.log('✅ Table validation skipped in guest mode (avoids 401 errors)');
+      return;
+    }
+    
+    console.log('🔍 Validating tables for authenticated user...');
+    
     const requiredTables = [
       'research_sessions',
       'query_sessions', 
@@ -326,9 +337,23 @@ export class BackendInitializer {
 
     for (const table of requiredTables) {
       try {
-        const { error } = await supabase.from(table).select('*').limit(1);
+        // For authenticated users, test table access with user_id filtering where applicable
+        let query = supabase.from(table).select('*').limit(1);
+        
+        // Add user_id filter for user-specific tables to comply with RLS
+        if (['research_sessions', 'query_sessions', 'query_figures', 'query_tables', 
+             'stage_executions', 'graph_data'].includes(table)) {
+          query = query.eq('user_id', user.id);
+        }
+        
+        const { error } = await query;
+        
         if (error && error.message.includes('relation') && error.message.includes('does not exist')) {
           missingTables.push(table);
+        } else if (error && !error.message.includes('no rows')) {
+          // Ignore "no rows" errors - table exists, just empty for this user
+          console.warn(`⚠️ Could not validate table '${table}':`, error);
+          this.healthStatus.errors.push(`Table validation ${table}: ${error.message}`);
         }
       } catch (error) {
         console.warn(`⚠️ Could not validate table '${table}':`, error);
@@ -341,7 +366,7 @@ export class BackendInitializer {
       console.error(`❌ ${errorMsg}`);
       this.healthStatus.errors.push(errorMsg);
     } else {
-      console.log('✅ All required database tables validated');
+      console.log('✅ All required database tables validated for authenticated user');
     }
   }
 
