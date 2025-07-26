@@ -17,7 +17,6 @@ export interface CytoscapeNodeData {
   parent?: string;
   classes?: string;
   scratch?: any;
-  [key: string]: any;
 }
 
 export interface CytoscapeEdgeData {
@@ -32,7 +31,6 @@ export interface CytoscapeEdgeData {
   // Cytoscape specific properties
   classes?: string;
   scratch?: any;
-  [key: string]: any;
 }
 
 export interface CytoscapeElement {
@@ -56,7 +54,6 @@ export interface ReactFlowNodeData {
   toolbarVisible?: boolean;
   toolbarPosition?: string;
   isConnectable?: boolean;
-  [key: string]: any;
 }
 
 export interface ReactFlowEdgeData {

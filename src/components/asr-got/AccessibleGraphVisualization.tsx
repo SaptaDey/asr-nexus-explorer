@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Network, Eye, EyeOff, Volume2, Info, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
-import { GraphData, GraphNode as ASRGraphNode, GraphEdge as ASRGraphEdge } from '@/types/asrGotTypes';
+import { GraphData } from '@/types/asrGotTypes';
 import { useAccessibilityContext } from '@/components/accessibility/AccessibilityProvider';
 import { useAccessibleDescription, useFocusManagement } from '@/hooks/useAccessibility';
 
@@ -16,7 +16,7 @@ interface AccessibleGraphVisualizationProps {
   className?: string;
 }
 
-interface LocalGraphNode {
+interface GraphNode {
   id: string;
   label: string;
   type: string;
@@ -25,11 +25,10 @@ interface LocalGraphNode {
   metadata?: any;
 }
 
-interface LocalGraphEdge {
+interface GraphEdge {
   source: string;
   target: string;
   relationship: string;
-  type: string;
   weight?: number;
 }
 
@@ -51,15 +50,10 @@ export const AccessibleGraphVisualization: React.FC<AccessibleGraphVisualization
   const graphRef = useRef<HTMLDivElement>(null);
   const nodeListRef = useRef<HTMLDivElement>(null);
   
-  const nodes: LocalGraphNode[] = graphData?.nodes || [];
-  const edges: LocalGraphEdge[] = (graphData?.edges || []).map(edge => ({
-    source: edge.source,
-    target: edge.target,
-    relationship: edge.relationship || edge.type,
-    type: edge.type,
-    weight: edge.weight
-  }));
+  const nodes: GraphNode[] = graphData?.nodes || [];
+  const edges: GraphEdge[] = graphData?.edges || [];
 
+  // Keyboard navigation for graph elements
   const handleKeyNavigation = useCallback((event: KeyboardEvent) => {
     if (!nodes.length) return;
 
@@ -90,6 +84,7 @@ export const AccessibleGraphVisualization: React.FC<AccessibleGraphVisualization
     }
   }, [nodes, currentNodeIndex]);
 
+  // Set up keyboard navigation
   useEffect(() => {
     const graphElement = graphRef.current;
     if (graphElement && viewMode !== 'visual') {
@@ -98,7 +93,7 @@ export const AccessibleGraphVisualization: React.FC<AccessibleGraphVisualization
     }
   }, [handleKeyNavigation, viewMode]);
 
-  const announceNodeSelection = (node: LocalGraphNode) => {
+  const announceNodeSelection = (node: GraphNode) => {
     const connections = edges.filter(e => e.source === node.id || e.target === node.id).length;
     const confidenceText = node.confidence ? ` with ${Math.round(node.confidence[0] * 100)}% confidence` : '';
     
@@ -108,12 +103,12 @@ export const AccessibleGraphVisualization: React.FC<AccessibleGraphVisualization
     );
   };
 
-  const provideNodeDetails = (node: LocalGraphNode) => {
+  const provideNodeDetails = (node: GraphNode) => {
     const relatedEdges = edges.filter(e => e.source === node.id || e.target === node.id);
     const connections = relatedEdges.map(edge => {
       const otherNodeId = edge.source === node.id ? edge.target : edge.source;
       const otherNode = nodes.find(n => n.id === otherNodeId);
-      return `${edge.relationship} ${otherNode?.label || otherNodeId}`;
+      return `${edge.relationship || edge.type} ${otherNode?.label || otherNodeId}`;
     }).join(', ');
 
     const details = [
@@ -164,7 +159,7 @@ export const AccessibleGraphVisualization: React.FC<AccessibleGraphVisualization
       if (!acc[node.type]) acc[node.type] = [];
       acc[node.type].push(node);
       return acc;
-    }, {} as Record<string, LocalGraphNode[]>);
+    }, {} as Record<string, GraphNode[]>);
 
     return grouped;
   };
@@ -245,6 +240,7 @@ export const AccessibleGraphVisualization: React.FC<AccessibleGraphVisualization
             </div>
           ))}
 
+          {/* Edge Information */}
           {edges.length > 0 && (
             <div className="space-y-2">
               <h4 className="font-semibold">Relationships ({edges.length})</h4>
@@ -256,7 +252,7 @@ export const AccessibleGraphVisualization: React.FC<AccessibleGraphVisualization
                   return (
                     <div key={index} className="p-2 bg-gray-50 rounded">
                       <span className="font-medium">{sourceNode?.label || edge.source}</span>
-                      <span className="text-gray-600 mx-2">→ {edge.relationship} →</span>
+                      <span className="text-gray-600 mx-2">→ {edge.relationship || edge.type} →</span>
                       <span className="font-medium">{targetNode?.label || edge.target}</span>
                       {edge.weight && (
                         <Badge variant="outline" className="ml-2">
@@ -398,14 +394,17 @@ export const AccessibleGraphVisualization: React.FC<AccessibleGraphVisualization
           </TabsContent>
         </Tabs>
 
+        {/* Live Region for Announcements */}
         <div 
           className="sr-only" 
           aria-live="polite" 
           aria-atomic="true"
           id="graph-announcements"
         >
+          {/* Screen reader announcements will appear here */}
         </div>
 
+        {/* Selected Node Details */}
         {selectedNode && (
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <h4 className="font-medium mb-2">Selected Node Details</h4>
@@ -438,7 +437,7 @@ export const AccessibleGraphVisualization: React.FC<AccessibleGraphVisualization
                           const otherNode = nodes.find(n => n.id === otherNodeId);
                           return (
                             <li key={index}>
-                              {edge.relationship} → {otherNode?.label || otherNodeId}
+                              {edge.relationship || edge.type} → {otherNode?.label || otherNodeId}
                             </li>
                           );
                         })}
@@ -451,6 +450,7 @@ export const AccessibleGraphVisualization: React.FC<AccessibleGraphVisualization
           </div>
         )}
 
+        {/* Graph Statistics */}
         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           <div className="p-3 bg-gray-50 rounded-lg">
             <div className="text-lg font-bold text-gray-900">{nodes.length}</div>
