@@ -21,7 +21,11 @@ export default defineConfig(({ mode }) => ({
     }
   },
   plugins: [
-    react(),
+    react({
+      // Configure SWC to handle JSX properly and detect React imports
+      include: "**/*.{jsx,tsx}",
+      exclude: /node_modules/,
+    }),
     mode === 'development' && componentTagger(),
   ].filter(Boolean),
   optimizeDeps: {
