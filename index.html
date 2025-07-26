@@ -18,13 +18,35 @@
       object-src 'none';
       base-uri 'self';
       form-action 'self';
-      frame-ancestors 'none';
       upgrade-insecure-requests;
     ">
+    <!-- Note: frame-ancestors must be set via HTTP headers, not meta tags -->
     
     <!-- Emergency Error Logging -->
     <script>
+      // Filter out common browser extension errors that aren't our app's fault
+      function isExtensionError(msg, error) {
+        const extensionPatterns = [
+          'message channel closed',
+          'listener indicated an asynchronous response',
+          'Extension context invalidated',
+          'chrome-extension://',
+          'moz-extension://',
+          'safari-extension://',
+          'Script error.',
+          'ResizeObserver loop limit exceeded'
+        ];
+        
+        const errorText = (msg || '').toLowerCase() + (error?.message || '').toLowerCase();
+        return extensionPatterns.some(pattern => errorText.includes(pattern.toLowerCase()));
+      }
+      
       window.onerror = function(msg, url, line, col, error) {
+        // Skip browser extension errors
+        if (isExtensionError(msg, error)) {
+          return true; // Suppress error
+        }
+        
         const errorDiv = document.getElementById('emergency-errors') || createErrorDiv();
         errorDiv.innerHTML += `<div style="color: red; border: 1px solid red; padding: 10px; margin: 5px; background: #ffe6e6;">
           <strong>JavaScript Error:</strong><br/>
@@ -38,6 +60,11 @@
       };
       
       window.addEventListener('unhandledrejection', function(event) {
+        // Skip browser extension promise rejections
+        if (isExtensionError('', event.reason)) {
+          return;
+        }
+        
         const errorDiv = document.getElementById('emergency-errors') || createErrorDiv();
         errorDiv.innerHTML += `<div style="color: red; border: 1px solid red; padding: 10px; margin: 5px; background: #ffe6e6;">
           <strong>Unhandled Promise Rejection:</strong><br/>
