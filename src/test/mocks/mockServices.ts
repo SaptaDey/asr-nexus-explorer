@@ -150,12 +150,12 @@ export const mockSupabaseClient = {
       error: null 
     }),
     signInWithPassword: vi.fn().mockResolvedValue({ 
-      data: { session: { access_token: 'mock-token' } }, 
+      data: { session: { access_token: 'mock-token', user: { id: 'test-user' } } }, 
       error: null 
     }),
     signOut: vi.fn().mockResolvedValue({ error: null }),
     getSession: vi.fn().mockResolvedValue({ 
-      data: { session: { access_token: 'mock-token' } }, 
+      data: { session: { access_token: 'mock-token', user: { id: 'test-user' } } }, 
       error: null 
     }),
     getUser: vi.fn().mockResolvedValue({ 
@@ -164,6 +164,15 @@ export const mockSupabaseClient = {
     }),
     onAuthStateChange: vi.fn().mockReturnValue({
       data: { subscription: { unsubscribe: vi.fn() } }
+    }),
+    // Additional auth methods that may be called
+    refreshSession: vi.fn().mockResolvedValue({ 
+      data: { session: { access_token: 'mock-token', user: { id: 'test-user' } } }, 
+      error: null 
+    }),
+    setSession: vi.fn().mockResolvedValue({ 
+      data: { session: { access_token: 'mock-token', user: { id: 'test-user' } } }, 
+      error: null 
     })
   },
   from: vi.fn().mockReturnValue({

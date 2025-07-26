@@ -67,7 +67,12 @@
       "Bash(touch:*)",
       "Bash(gh secret set:*)",
       "Bash(gh secret:*)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(nslookup:*)",
+      "Bash(ionosctl:*)"
     ],
     "deny": []
   }

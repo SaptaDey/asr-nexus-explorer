@@ -11,6 +11,26 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+// Mock Supabase client first
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: mockServices.supabase
+}));
+
+// Mock AuthService
+vi.mock('@/services/auth/AuthService', () => ({
+  AuthService: vi.fn().mockImplementation(() => ({
+    signUp: vi.fn().mockResolvedValue({ user: { id: 'test-user' }, error: null }),
+    signIn: vi.fn().mockResolvedValue({ session: { access_token: 'test-token' }, error: null }),
+    signOut: vi.fn().mockResolvedValue({ error: null }),
+    getCurrentSession: vi.fn().mockResolvedValue({ access_token: 'test-token' }),
+    getCurrentUser: vi.fn().mockResolvedValue({ id: 'test-user' }),
+    updateProfile: vi.fn().mockResolvedValue({ error: null }),
+    resetPassword: vi.fn().mockResolvedValue({ error: null }),
+    addAuthStateListener: vi.fn(),
+    removeAuthStateListener: vi.fn()
+  }))
+}));
+
 // Mock security services
 vi.mock('@/services/security/SecureCredentialManager', () => ({
   SecureCredentialManager: {

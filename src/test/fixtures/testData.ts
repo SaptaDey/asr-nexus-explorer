@@ -426,6 +426,12 @@ export const testQueryHistory: QueryHistoryEntry[] = [
   }
 ];
 
+// Test API credentials
+export const testAPICredentials = {
+  gemini: 'AIzaSyTest123456789012345678901234567890',
+  perplexity: 'pplx-test1234567890123456789012345678901234'
+};
+
 // Test error scenarios
 export const testErrors = {
   apiKeyMissing: {

@@ -214,6 +214,7 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          NODE_OPTIONS: "--max-old-space-size=4096"
 
       - name: Run E2E tests
         run: npm run test:e2e
@@ -341,11 +342,13 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          NODE_OPTIONS: "--max-old-space-size=4096"
 
       - name: Build development
         run: npm run build:dev
         env:
           NODE_ENV: development
+          NODE_OPTIONS: "--max-old-space-size=4096"
 
       - name: Test production build
         run: |
