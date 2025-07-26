@@ -1,604 +1,363 @@
 /**
- * Enhanced Interactive Graph Visualization for ASR-GoT
- * Force-directed graph with scientific theming
+ * Enhanced Cytoscape.js Graph Engine with Hyper-edge Support
+ * Implements P1.22, P1.23 specifications for ASR-GoT
  */
 
-import React, { useCallback, useMemo, useEffect, useRef, useState } from 'react';
-import {
-  ReactFlow,
-  Controls,
-  Background,
-  useNodesState,
-  useEdgesState,
-  addEdge,
-  Connection,
-  Edge,
-  Node,
-  BackgroundVariant,
-  ConnectionMode,
-  MiniMap,
-  useReactFlow,
-  ReactFlowProvider,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { motion } from 'framer-motion';
+import cytoscape, { Core, EdgeSingular, NodeSingular } from '../../utils/cytoscapeSetup';
 import { GraphData, GraphNode, GraphEdge } from '@/types/asrGotTypes';
 import { GraphAdapterFactory } from '@/adapters/GraphVisualizationAdapters';
-import { GraphVisualizationError } from '@/types/graphVisualizationTypes';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import { AlertCircle, ZoomIn, ZoomOut, Maximize2, Settings } from 'lucide-react';
+import { GraphVisualizationError, GraphDataValidationError } from '@/types/graphVisualizationTypes';
+import { Settings, ZoomIn, ZoomOut, RotateCcw, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import { 
-  calculateGraphMetrics, 
-  performViewportCulling, 
-  applyLevelOfDetail,
-  SpatialIndex,
-  GraphPerformanceMonitor
-} from '@/utils/graphVirtualization';
+import { CytoscapeNodeData, CytoscapeEdgeData } from '@/types/graphVisualizationTypes';
 
-interface EnhancedGraphVisualizationProps {
+interface EnhancedCytoscapeGraphProps {
   graphData: GraphData;
-  className?: string;
-  currentStage?: number;
-  isProcessing?: boolean;
-  enableVirtualization?: boolean;
-  maxNodes?: number;
-  onError?: (error: Error) => void;
+  currentStage: number;
+  onNodeSelect?: (nodeId: string) => void;
+  onGraphUpdate?: (event: string, data: any) => void;
 }
 
-// Custom Node Components
-const ScientificNode = ({ data, selected }: any) => {
-  const [imageError, setImageError] = useState(false);
-  
-  const handleError = useCallback((error: Error) => {
-    console.error('❌ Node rendering error:', error);
-    setImageError(true);
+export const EnhancedCytoscapeGraph: React.FC<EnhancedCytoscapeGraphProps> = ({
+  graphData,
+  currentStage,
+  onNodeSelect,
+  onGraphUpdate
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const cyRef = useRef<Core | null>(null);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [layoutRunning, setLayoutRunning] = useState(false);
+
+  // Enhanced node styling with confidence-based colors
+  const getNodeStyle = useCallback((node: GraphNode) => {
+    const avgConfidence = node.confidence && Array.isArray(node.confidence) && node.confidence.length > 0 
+      ? node.confidence.reduce((a, b) => a + b, 0) / node.confidence.length 
+      : 0.5;
+    const impactScore = node.metadata?.impact_score || 0.5;
+    
+    let color = '#94A3B8'; // default gray
+    if (avgConfidence >= 0.8) color = '#00857C'; // high confidence - teal
+    else if (avgConfidence >= 0.5) color = '#FFB200'; // medium - amber
+    else if (avgConfidence >= 0.3) color = '#B60000'; // low - red
+    
+    return {
+      'background-color': color,
+      'border-color': '#FFFFFF',
+      'border-width': selectedNode === node.id ? 4 : 2,
+      'width': Math.max(30, impactScore * 60),
+      'height': Math.max(30, impactScore * 60),
+      'label': node.label,
+      'font-size': '12px',
+      'text-valign': 'center',
+      'text-halign': 'center',
+      'color': '#FFFFFF',
+      'text-outline-width': 2,
+      'text-outline-color': color,
+      'overlay-opacity': 0.1,
+      'transition-property': 'background-color, border-width, width, height',
+      'transition-duration': '0.3s'
+    };
+  }, [selectedNode]);
+
+  // Enhanced edge styling based on type and confidence
+  const getEdgeStyle = useCallback((edge: GraphEdge) => {
+    const typeStyles: { [key: string]: { color: string; width: number } } = {
+      'supportive': { color: '#10B981', width: 3 },
+      'contradictory': { color: '#EF4444', width: 3 },
+      'causal': { color: '#8B5CF6', width: 4 },
+      'temporal': { color: '#F59E0B', width: 2 },
+      'correlative': { color: '#6B7280', width: 2 },
+      'prerequisite': { color: '#3B82F6', width: 3 },
+      'hyperedge': { color: '#EC4899', width: 5 },
+      // Additional causal edge types
+      'causal_direct': { color: '#8B5CF6', width: 4 },
+      'causal_counterfactual': { color: '#7C3AED', width: 3 },
+      'causal_confounded': { color: '#6D28D9', width: 3 },
+      // Additional temporal edge types
+      'temporal_precedence': { color: '#F59E0B', width: 2 },
+      'temporal_cyclic': { color: '#D97706', width: 2 },
+      'temporal_delayed': { color: '#B45309', width: 2 },
+      'temporal_sequential': { color: '#92400E', width: 2 }
+    };
+
+    const style = typeStyles[edge.type] || { color: '#6B7280', width: 2 };
+    
+    return {
+      'line-color': style.color,
+      'target-arrow-color': style.color,
+      'target-arrow-shape': 'triangle',
+      'width': style.width * (edge.confidence || 0.5),
+      'opacity': 0.7,
+      'curve-style': edge.type === 'hyperedge' ? 'bezier' : 'straight',
+      'transition-property': 'line-color, width',
+      'transition-duration': '0.3s'
+    };
   }, []);
-  const getNodeColor = (type: string) => {
-    switch (type) {
-      case 'root': return 'hsl(var(--primary))';
-      case 'dimension': return 'hsl(var(--secondary))';
-      case 'hypothesis': return 'hsl(var(--accent))';
-      case 'evidence': return 'hsl(var(--chart-1))';
-      default: return 'hsl(var(--muted))';
-    }
-  };
 
-  const getNodeIcon = (type: string) => {
-    switch (type) {
-      case 'root': return '🎯';
-      case 'dimension': return '📊';
-      case 'hypothesis': return '🔬';
-      case 'evidence': return '📚';
-      default: return '💡';
-    }
-  };
+  // Initialize Cytoscape instance
+  const initializeCytoscape = useCallback(() => {
+    if (!containerRef.current || cyRef.current) return;
 
-  const confidence = data.confidence || [0, 0, 0, 0];
-  const avgConfidence = confidence.reduce((a: number, b: number) => a + b, 0) / confidence.length;
+    const cy = cytoscape({
+      container: containerRef.current,
+      elements: [],
+      style: [
+        {
+          selector: 'node',
+          style: {
+            'shape': 'ellipse',
+            'text-wrap': 'wrap',
+            'text-max-width': '80px'
+          }
+        },
+        {
+          selector: 'edge',
+          style: {
+            'curve-style': 'straight'
+          }
+        },
+        {
+          selector: '.highlighted',
+          style: {
+            'border-width': 4,
+            'border-color': '#662D91',
+            'overlay-color': '#662D91',
+            'overlay-padding': 10,
+            'overlay-opacity': 0.25
+          }
+        }
+      ],
+      layout: {
+        name: 'cose',
+        fit: true,
+        padding: 30,
+        randomize: false,
+        animate: true,
+        animationDuration: 1000
+      }
+    });
 
+    // Event handlers
+    cy.on('tap', 'node', (evt) => {
+      const node = evt.target;
+      const nodeId = node.id();
+      setSelectedNode(nodeId);
+      onNodeSelect?.(nodeId);
+      
+      // Highlight connected nodes
+      cy.elements().removeClass('highlighted');
+      node.addClass('highlighted');
+      node.neighborhood().addClass('highlighted');
+    });
+
+    cy.on('tap', (evt) => {
+      if (evt.target === cy) {
+        setSelectedNode(null);
+        cy.elements().removeClass('highlighted');
+      }
+    });
+
+    cyRef.current = cy;
+  }, [onNodeSelect]);
+
+  // Fix the convertedData usage - add proper type guards
+const updateGraphData = useCallback(() => {
+  if (!cyRef.current) return;
+
+  const cy = cyRef.current;
+  
   try {
-    return (
-      <Card 
-        className={`min-w-[180px] max-w-[250px] transition-all duration-200 hover:shadow-lg ${
-          selected ? 'ring-2 ring-primary shadow-lg' : ''
-        } ${imageError ? 'border-destructive' : ''}`}
-        style={{ 
-          borderColor: imageError ? 'hsl(var(--destructive))' : getNodeColor(data.type),
-          borderWidth: 2,
-          backgroundColor: imageError ? 'hsl(var(--destructive) / 0.1)' : `${getNodeColor(data.type)}10`
-        }}
-      >
-        <CardContent className="p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg">{imageError ? '⚠️' : getNodeIcon(data.type)}</span>
-            <Badge variant="secondary" className="text-xs">
-              {data.type || 'unknown'}
-            </Badge>
-            {data.metadata?.isCluster && (
-              <Badge variant="outline" className="text-xs">
-                {data.metadata.clusterSize}x
+    // Convert graph data using the adapter
+    const convertedData = GraphAdapterFactory.convertForVisualization(graphData, 'cytoscape');
+    
+    // Type guard functions
+    const isCytoscapeNode = (element: any): element is { data: CytoscapeNodeData } => {
+      return element && element.data && !element.data.source && !element.data.target;
+    };
+
+    const isCytoscapeEdge = (element: any): element is { data: CytoscapeEdgeData } => {
+      return element && element.data && element.data.source && element.data.target;
+    };
+
+    // Apply custom styling with type safety
+    const styledElements = [
+      ...convertedData.nodes.filter(isCytoscapeNode).map(nodeElement => {
+        const nodeData = graphData.nodes.find(n => n.id === nodeElement.data.id);
+        return {
+          ...nodeElement,
+          style: {
+            ...(nodeElement.style || {}),
+            ...(nodeData ? getNodeStyle(nodeData) : {})
+          }
+        };
+      }),
+      ...convertedData.edges.filter(isCytoscapeEdge).map(edgeElement => {
+        const edgeData = graphData.edges.find(e => e.id === edgeElement.data.id);
+        return {
+          ...edgeElement,
+          style: {
+            ...(edgeElement.style || {}),
+            ...(edgeData ? getEdgeStyle(edgeData) : {})
+          }
+        };
+      }),
+      ...(convertedData.hyperedges || [])
+    ];
+
+    cy.elements().remove();
+    cy.add(styledElements);
+  } catch (error) {
+    console.error('Failed to convert graph data for Cytoscape:', error);
+    toast.error('Failed to render graph visualization');
+    
+    if (error instanceof GraphVisualizationError) {
+      console.error('Graph visualization error:', error.code, error.message);
+    }
+    return;
+  }
+
+  // Trigger layout update for Stage 4 topology changes (P1.22)
+  if (currentStage === 4) {
+    setLayoutRunning(true);
+    const layout = cy.layout({
+      name: 'cose',
+      animate: true,
+      animationDuration: 1000,
+      fit: true,
+      stop: () => {
+        setLayoutRunning(false);
+        onGraphUpdate?.('graph-layout-complete', { stage: currentStage });
+      }
+    });
+    layout.run();
+  }
+
+  // Broadcast graph-updated event
+  onGraphUpdate?.('graph-updated', { 
+    nodes: graphData.nodes.length, 
+    edges: graphData.edges.length,
+    stage: currentStage 
+  });
+}, [graphData, currentStage, getNodeStyle, getEdgeStyle, onGraphUpdate]);
+
+  // Initialize and update graph
+  useEffect(() => {
+    initializeCytoscape();
+    return () => {
+      if (cyRef.current) {
+        cyRef.current.destroy();
+        cyRef.current = null;
+      }
+    };
+  }, [initializeCytoscape]);
+
+  useEffect(() => {
+    updateGraphData();
+  }, [updateGraphData]);
+
+  // Graph controls
+  const zoomIn = () => cyRef.current?.zoom(cyRef.current.zoom() * 1.2);
+  const zoomOut = () => cyRef.current?.zoom(cyRef.current.zoom() * 0.8);
+  const resetView = () => cyRef.current?.fit(undefined, 50);
+  const exportGraph = () => {
+    if (!cyRef.current) return;
+    const png = cyRef.current.png({ output: 'blob', bg: '#FFFFFF' });
+    const url = URL.createObjectURL(png);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'asr-got-graph.png';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Graph exported as PNG');
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+      className="h-full"
+    >
+      <Card className="h-full">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <CardTitle>Enhanced Graph Visualization</CardTitle>
+              <Badge variant="outline" className="bg-gradient-to-r from-purple-500 to-blue-500 text-white">
+                Stage {currentStage}/8
               </Badge>
-            )}
+              {layoutRunning && (
+                <Badge variant="secondary" className="animate-pulse">
+                  Layout Running...
+                </Badge>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={zoomIn}>
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+              <Button size="sm" variant="outline" onClick={zoomOut}>
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <Button size="sm" variant="outline" onClick={resetView}>
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+              <Button size="sm" variant="outline" onClick={exportGraph}>
+                <Download className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
+        </CardHeader>
+        <CardContent className="p-0 h-[calc(100%-80px)]">
+          <div
+            ref={containerRef}
+            className="w-full h-full rounded-b-lg"
+            style={{ minHeight: '400px' }}
+          />
           
-          <h4 className="font-semibold text-sm mb-2 line-clamp-2" title={data.label}>
-            {data.label || 'Untitled Node'}
-          </h4>
-          
-          <div className="space-y-2">
-            {typeof avgConfidence === 'number' && !isNaN(avgConfidence) && (
-              <>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">Confidence</span>
-                  <span className="font-medium">{Math.round(avgConfidence * 100)}%</span>
+          {/* Graph Statistics */}
+          <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-black/90 rounded-lg p-3 shadow-lg">
+            <div className="grid grid-cols-3 gap-3 text-xs">
+              <div className="text-center">
+                <div className="font-bold text-blue-600">{graphData.nodes.length}</div>
+                <div className="text-muted-foreground">Nodes</div>
+              </div>
+              <div className="text-center">
+                <div className="font-bold text-green-600">{graphData.edges.length}</div>
+                <div className="text-muted-foreground">Edges</div>
+              </div>
+              <div className="text-center">
+                <div className="font-bold text-purple-600">
+                  {graphData.nodes.length > 1 ? 
+                    ((graphData.edges.length / (graphData.nodes.length * (graphData.nodes.length - 1) / 2)) * 100).toFixed(1) + '%' : 
+                    '0%'}
                 </div>
-                <Progress value={Math.min(100, Math.max(0, avgConfidence * 100))} className="h-1" />
-              </>
-            )}
-            
-            {data.metadata?.timestamp && (
-              <div className="text-xs text-muted-foreground">
-                {new Date(data.metadata.timestamp).toLocaleDateString()}
+                <div className="text-muted-foreground">Density</div>
               </div>
-            )}
-            
-            {imageError && (
-              <div className="text-xs text-destructive">
-                Rendering issue detected
-              </div>
-            )}
+            </div>
           </div>
+
+          {selectedNode && (
+            <motion.div
+              initial={{ opacity: 0, x: 300 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="absolute top-4 right-4 bg-white dark:bg-black rounded-lg p-4 shadow-xl border max-w-sm"
+            >
+              <h4 className="font-semibold mb-2">Node Details</h4>
+              <div className="space-y-1 text-sm">
+                <div><strong>ID:</strong> {selectedNode}</div>
+                {/* Add more node details here */}
+              </div>
+            </motion.div>
+          )}
         </CardContent>
       </Card>
-    );
-  } catch (error) {
-    console.error('❌ ScientificNode render error:', error);
-    handleError(error as Error);
-    
-    return (
-      <div className="w-[180px] h-[100px] border border-destructive rounded bg-destructive/10 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-6 w-6 text-destructive mx-auto mb-1" />
-          <span className="text-xs text-destructive">Render Error</span>
-        </div>
-      </div>
-    );
-  }
-};
-
-const ScientificEdge = ({ data, selected }: any) => {
-  try {
-  const getEdgeColor = (type: string) => {
-    switch (type) {
-      case 'supportive': return 'hsl(var(--chart-2))';
-      case 'conflicting': return 'hsl(var(--destructive))';
-      case 'neutral': return 'hsl(var(--muted-foreground))';
-      default: return 'hsl(var(--border))';
-    }
-  };
-
-    return (
-      <g>
-        <path
-          style={{
-            stroke: getEdgeColor(data?.type || 'default'),
-            strokeWidth: selected ? 3 : 2,
-            strokeDasharray: data?.metadata?.type === 'hypothesis_derivation' ? '5,5' : 'none',
-            strokeOpacity: data?.confidence ? Math.max(0.3, data.confidence) : 0.7,
-          }}
-        />
-      </g>
-    );
-  } catch (error) {
-    console.error('❌ ScientificEdge render error:', error);
-    return (
-      <g>
-        <path
-          style={{
-            stroke: 'hsl(var(--destructive))',
-            strokeWidth: 1,
-            strokeDasharray: '2,2',
-            strokeOpacity: 0.5,
-          }}
-        />
-      </g>
-    );
-  }
-};
-
-const nodeTypes = {
-  scientific: ScientificNode,
-};
-
-const edgeTypes = {
-  scientific: ScientificEdge,
-};
-
-// Inner component that uses ReactFlow hooks
-const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
-  graphData,
-  className = "",
-  currentStage = 0,
-  isProcessing = false,
-  enableVirtualization = true,
-  maxNodes = 500,
-  onError
-}) => {
-  const reactFlowInstance = useReactFlow();
-  const [isVirtualizationEnabled, setIsVirtualizationEnabled] = useState(enableVirtualization);
-  const [performanceMetrics, setPerformanceMetrics] = useState<any>({});
-  const [graphError, setGraphError] = useState<string | null>(null);
-  const performanceMonitor = useRef(new GraphPerformanceMonitor());
-  const spatialIndex = useRef<SpatialIndex | null>(null);
-  const lastViewport = useRef({ x: 0, y: 0, zoom: 1 });
-  
-  // Calculate graph metrics
-  const graphMetrics = useMemo(() => {
-    try {
-      return calculateGraphMetrics(graphData.nodes, graphData.edges);
-    } catch (error) {
-      console.error('❌ Failed to calculate graph metrics:', error);
-      return { nodeCount: 0, edgeCount: 0, complexity: 0, recommendedVirtualization: false };
-    }
-  }, [graphData]);
-  // Convert ASR-GoT graph data with virtualization
-  const { initialNodes, initialEdges, virtualizedData } = useMemo(() => {
-    const startTime = performance.now();
-    
-    try {
-      
-      // Convert data using adapter
-      const convertedData = GraphAdapterFactory.convertForVisualization(graphData, 'reactflow');
-      let nodes: Node[] = convertedData.nodes.map(node => ({
-        id: node.id || String(Math.random()),
-        position: node.position || { x: 0, y: 0 },
-        data: node.data || {},
-        type: node.type || 'default',
-        ...node
-      }));
-      let edges: Edge[] = convertedData.edges.map(edge => ({
-        id: edge.id || String(Math.random()),
-        source: edge.source || '',
-        target: edge.target || '',
-        ...edge
-      }));
-      
-      // Apply virtualization if enabled and needed
-      let virtualizedInfo = null;
-      if (isVirtualizationEnabled && graphMetrics.recommendedVirtualization) {
-        try {
-          // Get current viewport
-          const viewport = reactFlowInstance?.getViewport() || { x: 0, y: 0, zoom: 1 };
-          lastViewport.current = viewport;
-          
-          // Perform viewport culling
-          virtualizedInfo = performViewportCulling(
-            graphData.nodes,
-            graphData.edges,
-            { ...viewport, width: 1200, height: 800 }
-          );
-          
-          // Apply level of detail
-          const lodData = applyLevelOfDetail(
-            virtualizedInfo.visibleNodes,
-            virtualizedInfo.visibleEdges,
-            viewport.zoom
-          );
-          
-          // Convert virtualized data
-          const virtualizedConverted = GraphAdapterFactory.convertForVisualization(
-            { nodes: lodData.nodes, edges: lodData.edges, metadata: graphData.metadata },
-            'reactflow'
-          );
-          
-          nodes = virtualizedConverted.nodes as Node[];
-          edges = virtualizedConverted.edges as Edge[];
-          
-          console.log(`🎯 Virtualization: ${virtualizedInfo.visibleNodes.length}/${graphData.nodes.length} nodes, ${virtualizedInfo.visibleEdges.length}/${graphData.edges.length} edges`);
-        } catch (virtError) {
-          console.warn('⚠️ Virtualization failed, using all nodes:', virtError);
-          virtualizedInfo = null;
-        }
-      }
-      
-      // Create spatial index for performance
-      if (graphData.nodes.length > 100) {
-        spatialIndex.current = new SpatialIndex(graphData.nodes);
-      }
-      
-      const processingTime = performance.now() - startTime;
-      performanceMonitor.current.recordFrame(processingTime);
-      
-      return {
-        initialNodes: nodes,
-        initialEdges: edges,
-        virtualizedData: virtualizedInfo
-      };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('❌ Failed to convert graph data for ReactFlow:', error);
-      setGraphError(`Graph conversion failed: ${errorMessage}`);
-      
-      if (error instanceof GraphVisualizationError) {
-        console.error('Graph visualization error:', error.code, error.message);
-        onError?.(error);
-      } else {
-        onError?.(new Error(errorMessage));
-      }
-      
-      toast.error('Failed to render graph visualization');
-      
-      // Return empty arrays as fallback
-      return {
-        initialNodes: [] as Node[],
-        initialEdges: [] as Edge[],
-        virtualizedData: null
-      };
-    }
-  }, [graphData, isVirtualizationEnabled, graphMetrics]);
-
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-
-  // Clear graph error when graph data changes
-  useEffect(() => {
-    setGraphError(null);
-  }, [graphData]);
-
-  // Update nodes and edges when graph data changes
-  useEffect(() => {
-    setNodes(initialNodes);
-    setEdges(initialEdges);
-  }, [initialNodes, initialEdges]);
-
-  const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
-  );
-
-  // Enhanced auto-layout with error handling
-  const applyForceLayout = useCallback(() => {
-    if (!nodes || nodes.length === 0) return;
-    
-    try {
-      const centerX = 600;
-      const centerY = 400;
-      
-      // Group nodes by type for better layout
-      const nodesByType = nodes.reduce((acc, node) => {
-        const type = node.data?.type || 'default';
-        if (!acc[type]) acc[type] = [];
-        acc[type].push(node);
-        return acc;
-      }, {} as Record<string, Node[]>);
-      
-      const layoutedNodes = [];
-      let globalIndex = 0;
-      
-      // Layout each type in concentric circles
-      Object.entries(nodesByType).forEach(([type, typeNodes], typeIndex) => {
-        const typeRadius = 150 + typeIndex * 100;
-        const angleStep = (2 * Math.PI) / Math.max(typeNodes.length, 1);
-        
-        typeNodes.forEach((node, nodeIndex) => {
-          const angle = nodeIndex * angleStep;
-          const x = centerX + typeRadius * Math.cos(angle);
-          const y = centerY + typeRadius * Math.sin(angle);
-          
-          // Add some randomization to avoid overlaps
-          const jitterX = (Math.random() - 0.5) * 50;
-          const jitterY = (Math.random() - 0.5) * 50;
-          
-          layoutedNodes.push({
-            ...node,
-            position: {
-              x: x + jitterX,
-              y: y + jitterY,
-            },
-          });
-          globalIndex++;
-        });
-      });
-      
-      setNodes(layoutedNodes);
-      console.log(`🎯 Applied force layout to ${layoutedNodes.length} nodes`);
-    } catch (error) {
-      console.error('❌ Force layout failed:', error);
-      toast.error('Failed to apply graph layout');
-    }
-  }, [nodes, setNodes]);
-
-  // Auto-layout with error handling
-  useEffect(() => {
-    if (nodes.length === 0) return;
-    
-    try {
-      // Only apply layout if nodes don't have positions
-      const needsLayout = nodes.every(node => 
-        !node.position || (node.position.x === 0 && node.position.y === 0)
-      );
-      
-      if (needsLayout) {
-        // Use setTimeout to avoid blocking the UI
-        setTimeout(() => {
-          try {
-            applyForceLayout();
-          } catch (layoutError) {
-            console.error('❌ Auto-layout failed:', layoutError);
-            setGraphError('Layout calculation failed');
-          }
-        }, 100);
-      }
-    } catch (error) {
-      console.error('❌ Layout setup failed:', error);
-    }
-  }, [nodes.length, applyForceLayout]);
-  
-  // Update performance metrics periodically
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const metrics = performanceMonitor.current.getMetrics();
-      setPerformanceMetrics(metrics);
-      
-      // Auto-enable virtualization if performance is poor
-      if (!isVirtualizationEnabled && performanceMonitor.current.shouldOptimize()) {
-        console.log('🚀 Auto-enabling virtualization due to poor performance');
-        setIsVirtualizationEnabled(true);
-        toast.info('Virtualization enabled to improve performance');
-      }
-    }, 2000);
-    
-    return () => clearInterval(interval);
-  }, [isVirtualizationEnabled]);
-
-  const nodeColor = useCallback((node: Node) => {
-    try {
-      switch (node.data?.type) {
-        case 'root': return '#8B5CF6'; // purple
-        case 'dimension': return '#3B82F6'; // blue
-        case 'hypothesis': return '#10B981'; // green
-        case 'evidence': return '#F59E0B'; // amber
-        case 'cluster': return '#EC4899'; // pink
-        default: return '#6B7280'; // gray
-      }
-    } catch (error) {
-      console.error('❌ nodeColor function error:', error);
-      return '#6B7280'; // fallback gray
-    }
-  }, []);
-
-  // Error boundary fallback
-  if (graphError) {
-    return (
-      <div className={`h-[600px] w-full border border-destructive rounded-lg overflow-hidden bg-background ${className}`}>
-        <div className="h-full flex items-center justify-center">
-          <div className="text-center p-6">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Graph Visualization Error</h3>
-            <p className="text-muted-foreground mb-4">{graphError}</p>
-            <Button onClick={() => setGraphError(null)} variant="outline">
-              Retry
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`h-[600px] w-full border border-border rounded-lg overflow-hidden bg-background relative ${className}`} data-testid="graph-container">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        connectionMode={ConnectionMode.Loose}
-        fitView
-        minZoom={0.05}
-        maxZoom={3}
-        defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-        className="scientific-graph graph-visualization"
-        data-testid="react-flow-graph"
-        onError={(error) => {
-          console.error('❌ ReactFlow error:', error);
-          setGraphError(error.message || 'ReactFlow rendering error');
-        }}
-      >
-        <Controls 
-          className="!bg-card !border-border"
-          showZoom={true}
-          showFitView={true}
-          showInteractive={true}
-        >
-          <Button
-            onClick={() => setIsVirtualizationEnabled(!isVirtualizationEnabled)}
-            variant={isVirtualizationEnabled ? "default" : "outline"}
-            size="sm"
-            className="w-8 h-8 p-0"
-            title={`${isVirtualizationEnabled ? 'Disable' : 'Enable'} Virtualization`}
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
-        </Controls>
-        
-        <Background 
-          variant={BackgroundVariant.Dots}
-          gap={20}
-          size={1}
-          className="!fill-muted-foreground/20"
-        />
-        
-        <MiniMap
-          nodeColor={nodeColor}
-          className="!bg-card !border-border"
-          maskColor="hsl(var(--background) / 0.8)"
-        />
-      </ReactFlow>
-      
-      {/* Enhanced Graph Statistics */}
-      <div className="absolute top-4 right-4 bg-card/95 backdrop-blur-sm border border-border rounded-lg p-3 text-sm min-w-[200px]">
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Nodes:</span>
-            <div className="flex items-center gap-1">
-              <span className="font-medium">{nodes.length}</span>
-              {virtualizedData && (
-                <Badge variant="secondary" className="text-xs px-1">
-                  /{graphData.nodes.length}
-                </Badge>
-              )}
-            </div>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Edges:</span>
-            <div className="flex items-center gap-1">
-              <span className="font-medium">{edges.length}</span>
-              {virtualizedData && (
-                <Badge variant="secondary" className="text-xs px-1">
-                  /{graphData.edges.length}
-                </Badge>
-              )}
-            </div>
-          </div>
-          <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Stage:</span>
-            <span className="font-medium">{graphData.metadata.stage || 0}/8</span>
-          </div>
-          
-          {isVirtualizationEnabled && (
-            <div className="pt-2 border-t border-border">
-              <div className="flex items-center gap-1 mb-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-xs text-muted-foreground">Virtualized</span>
-              </div>
-              {performanceMetrics.averageFPS && (
-                <div className="text-xs">
-                  <span className="text-muted-foreground">FPS: </span>
-                  <span className={`font-medium ${
-                    performanceMetrics.averageFPS >= 30 ? 'text-green-600' : 'text-orange-600'
-                  }`}>
-                    {performanceMetrics.averageFPS}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-          
-          {graphMetrics.complexity > 5000 && (
-            <div className="pt-2 border-t border-border">
-              <div className="flex items-center gap-1">
-                <AlertCircle className="h-3 w-3 text-orange-500" />
-                <span className="text-xs text-orange-600">High Complexity</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Loading overlay */}
-      {isProcessing && (
-        <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-card border border-border rounded-lg p-4 text-center">
-            <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
-            <p className="text-sm text-muted-foreground">Processing graph...</p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Main component with ReactFlow provider
-export const EnhancedGraphVisualization: React.FC<EnhancedGraphVisualizationProps> = (props) => {
-  return (
-    <ReactFlowProvider>
-      <GraphVisualizationInner {...props} />
-    </ReactFlowProvider>
+    </motion.div>
   );
 };

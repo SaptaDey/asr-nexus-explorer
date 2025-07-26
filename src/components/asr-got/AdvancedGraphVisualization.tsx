@@ -1,4 +1,3 @@
-
 /**
  * Advanced Graph Visualization for ASR-GoT Framework
  * Features: Multi-layer directed graphs, hyper-edges, live confidence bars, impact scores
@@ -357,7 +356,7 @@ export const AdvancedGraphVisualization: React.FC<AdvancedGraphVisualizationProp
     
     const visibleNodes = cytoscapeElements.filter(el => !el.data.source);
     const visibleEdges = cytoscapeElements.filter(el => el.data.source);
-    const avgConfidence = visibleNodes.reduce((sum, node) => sum + node.data.confidence, 0) / visibleNodes.length || 0;
+    const avgConfidence = visibleNodes.reduce((sum: number, node: any) => sum + node.data.confidence, 0) / visibleNodes.length || 0;
 
     return {
       nodes: visibleNodes.length,
