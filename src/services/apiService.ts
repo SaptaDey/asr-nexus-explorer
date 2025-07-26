@@ -239,7 +239,7 @@ export const callGeminiAPI = async (
     const data = await response.json();
     
     // Enhanced error handling for response structure (debug info removed for security)
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.MODE === 'development') {
       console.log('🔍 Gemini API response received:', {
         hasCandidates: !!data.candidates,
         candidatesLength: data.candidates?.length,

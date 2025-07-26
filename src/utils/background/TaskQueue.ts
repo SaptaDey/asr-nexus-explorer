@@ -305,7 +305,7 @@ export class TaskQueue {
     this.cleanupCompletedTasks();
     
     // Keep completed tasks for shorter time during tests
-    const cleanupTime = process.env.NODE_ENV === 'test' ? 100 : 30000;
+    const cleanupTime = import.meta.env.MODE === 'test' ? 100 : 30000;
     setTimeout(() => {
       this.processingTasks.delete(task.id);
     }, cleanupTime);

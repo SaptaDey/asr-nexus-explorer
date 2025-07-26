@@ -112,7 +112,7 @@ class SecurityEventLogger {
       this.eventQueue.push(enrichedEvent);
       
       // Log to console in development
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.MODE === 'development') {
         console.log(`[SECURITY ${event.severity}] ${event.event_type}`, event);
       }
       

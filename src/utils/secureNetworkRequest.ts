@@ -24,7 +24,7 @@ export const secureNetworkRequest = async (options: SecureRequestOptions): Promi
   };
   
   // Log sanitized request details only in development
-  if (logRequest && process.env.NODE_ENV === 'development') {
+  if (logRequest && import.meta.env.MODE === 'development') {
     console.log('🌐 Making secure network request:', {
       url: url.replace(/\/v[0-9]+\/models\/.*/, '/v*/models/[MODEL]'),
       method: fetchOptions.method || 'GET',
@@ -40,7 +40,7 @@ export const secureNetworkRequest = async (options: SecureRequestOptions): Promi
     });
     
     // Log response status without sensitive details
-    if (logRequest && process.env.NODE_ENV === 'development') {
+    if (logRequest && import.meta.env.MODE === 'development') {
       console.log('✅ Network request completed:', {
         status: response.status,
         statusText: response.statusText,
@@ -108,7 +108,7 @@ export const validateApiKeyFormat = (apiKey: string, provider: 'gemini' | 'perpl
  * Network request interceptor for debugging (removes sensitive headers)
  */
 export const createNetworkDebugger = () => {
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.MODE === 'development') {
     const originalFetch = window.fetch;
     
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -132,7 +132,7 @@ export const createNetworkDebugger = () => {
  * Clean up network debug interceptor
  */
 export const removeNetworkDebugger = () => {
-  if (process.env.NODE_ENV === 'development' && (window as any).originalFetch) {
+  if (import.meta.env.MODE === 'development' && (window as any).originalFetch) {
     window.fetch = (window as any).originalFetch;
     delete (window as any).originalFetch;
   }

@@ -59,7 +59,7 @@ export const secureConsoleError = (...args: any[]): void => {
 
 export const secureConsoleLog = (...args: any[]): void => {
   // Only log in development mode to prevent production exposure
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.MODE === 'development') {
     const sanitizedArgs = args.map(arg => {
       if (typeof arg === 'string') {
         return sanitizeErrorMessage(arg);
