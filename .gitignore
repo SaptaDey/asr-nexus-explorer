@@ -32,6 +32,9 @@ dist-ssr
 # Non-essential files directory
 nonessentials/
 
+# Local PNG directory (for generated images)
+.png/
+
 # Supabase local development files
 supabase/.temp/
 supabase/.branches/
