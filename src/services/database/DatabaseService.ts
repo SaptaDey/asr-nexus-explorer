@@ -167,12 +167,20 @@ export interface DbErrorLog {
 }
 
 export class DatabaseService {
+  private static instance: DatabaseService;
   private supabase: SupabaseClient<Database>;
   private validator: DatabaseValidationWrapper;
 
-  constructor() {
+  private constructor() {
     this.supabase = supabase as SupabaseClient<Database>;
     this.validator = createValidationWrapper(this.supabase);
+  }
+
+  public static getInstance(): DatabaseService {
+    if (!DatabaseService.instance) {
+      DatabaseService.instance = new DatabaseService();
+    }
+    return DatabaseService.instance;
   }
 
   /**

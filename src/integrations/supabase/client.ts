@@ -8,7 +8,7 @@ const SUPABASE_PUBLISHABLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 console.log('🔧 Emergency Supabase client: Initializing with minimal connectivity');
 
-// Create client with DISABLED realtime to prevent WebSocket connection errors
+// Create client with COMPLETELY DISABLED realtime to prevent WebSocket connection errors
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
@@ -16,15 +16,20 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: false, // Disable auto refresh to prevent 401 errors
     detectSessionInUrl: false, // Disable URL session detection
   },
-  realtime: {
-    // CRITICAL: Disable realtime to prevent WebSocket connection flood
-    disabled: true,
-  },
+  // CRITICAL: Remove realtime configuration entirely
   global: {
     headers: {
       'X-Client-Info': 'asr-got-emergency-mode',
     },
   },
 });
+
+// EMERGENCY: Override realtime methods to prevent any connections
+if (supabase.realtime) {
+  supabase.realtime.connect = () => {
+    console.log('🚫 Realtime connection blocked in emergency mode');
+    return { error: 'Realtime disabled in emergency mode' };
+  };
+}
 
 console.log('🔧 Emergency Supabase client created with disabled realtime');
