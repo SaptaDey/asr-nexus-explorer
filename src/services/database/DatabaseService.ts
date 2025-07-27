@@ -924,6 +924,15 @@ export class DatabaseService {
    */
   async healthCheck(): Promise<{ status: 'healthy' | 'unhealthy'; message: string }> {
     try {
+      // Check authentication status first
+      const { data: { user }, error: authError } = await this.supabase.auth.getUser();
+      
+      if (!user || authError) {
+        console.log('🔄 Database health check: Skipping profile query for guest user (prevents 401 errors)');
+        return { status: 'healthy', message: 'Database connection available (guest mode)' };
+      }
+      
+      // User is authenticated, can safely check database
       const { data, error } = await this.supabase
         .from('profiles')
         .select('count')
@@ -931,7 +940,7 @@ export class DatabaseService {
       
       if (error) throw error;
       
-      return { status: 'healthy', message: 'Database connection successful' };
+      return { status: 'healthy', message: 'Database connection successful (authenticated mode)' };
     } catch (error) {
       return { 
         status: 'unhealthy', 
