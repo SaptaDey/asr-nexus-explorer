@@ -354,8 +354,8 @@ export class InitializationService {
       
       // Test database connectivity
       const healthCheck = await dbService.getHealthStatus();
-      if (!healthCheck.healthy) {
-        throw new Error('Database health check failed');
+      if (healthCheck.database.status !== 'healthy') {
+        throw new Error(`Database health check failed: ${healthCheck.database.message}`);
       }
       
     } catch (error) {
