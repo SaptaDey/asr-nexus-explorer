@@ -215,18 +215,24 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
   const spatialIndex = useRef<SpatialIndex | null>(null);
   const lastViewport = useRef({ x: 0, y: 0, zoom: 1 });
 
-  // Defensive: always use safe data to prevent re-render loops
-  const safeNodes = Array.isArray(graphData?.nodes)
-    ? graphData.nodes.filter(n => n && typeof n.id === 'string')
-    : [];
-  const safeEdges = Array.isArray(graphData?.edges)
-    ? graphData.edges.filter(e => e && typeof e.source === 'string' && typeof e.target === 'string')
-    : [];
-  const safeGraphData = {
-    ...graphData,
-    nodes: safeNodes,
-    edges: safeEdges,
-  };
+  // Defensive: always use safe data to prevent re-render loops - MEMOIZED
+  const safeGraphData = useMemo(() => {
+    const safeNodes = Array.isArray(graphData?.nodes)
+      ? graphData.nodes.filter(n => n && typeof n.id === 'string')
+      : [];
+    const safeEdges = Array.isArray(graphData?.edges)
+      ? graphData.edges.filter(e => e && typeof e.source === 'string' && typeof e.target === 'string')
+      : [];
+    
+    return {
+      ...graphData,
+      nodes: safeNodes,
+      edges: safeEdges,
+    };
+  }, [graphData]);
+
+  const safeNodes = safeGraphData.nodes;
+  const safeEdges = safeGraphData.edges;
   
   // Calculate graph metrics using safe data
   const graphMetrics = useMemo(() => {
