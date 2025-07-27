@@ -92,7 +92,8 @@
       "Bash(gh-pages:*)",
       "Bash(git checkout:*)",
       "Bash(git rev-list:*)",
-      "Bash(dig:*)"
+      "Bash(dig:*)",
+      "Bash(git revert:*)"
     ],
     "deny": []
   }

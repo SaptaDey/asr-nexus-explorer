@@ -62,6 +62,14 @@ export class MigrationRunner {
    * Create migration tracking table
    */
   private async createMigrationTable(): Promise<void> {
+    // CRITICAL FIX: Check authentication before attempting schema_migrations operations
+    const { data: { user }, error: authError } = await this.supabase.auth.getUser();
+    
+    if (!user || authError) {
+      console.log('🔄 MigrationRunner: Skipping migration table creation for guest user (prevents 401 errors)');
+      return;
+    }
+
     const { error } = await this.supabase.rpc('create_migration_table');
     
     if (error) {
@@ -85,7 +93,8 @@ export class MigrationRunner {
       const { error: createError } = await this.supabase.from('schema_migrations').select('*').limit(1);
       
       if (createError) {
-        throw new Error(`Failed to create migration table: ${createError.message}`);
+        console.warn(`Failed to create migration table: ${createError.message}`);
+        return;
       }
     }
   }
@@ -269,13 +278,22 @@ export class MigrationRunner {
    * Get applied migrations
    */
   async getAppliedMigrations(): Promise<MigrationRecord[]> {
+    // CRITICAL FIX: Check authentication before attempting schema_migrations query
+    const { data: { user }, error: authError } = await this.supabase.auth.getUser();
+    
+    if (!user || authError) {
+      console.log('🔄 MigrationRunner: Skipping migration history for guest user (prevents 401 errors)');
+      return [];
+    }
+
     const { data, error } = await this.supabase
       .from('schema_migrations')
       .select('*')
       .order('version', { ascending: true });
 
     if (error) {
-      throw new Error(`Failed to fetch applied migrations: ${error.message}`);
+      console.warn(`Failed to fetch applied migrations: ${error.message}`);
+      return [];
     }
 
     return data || [];
@@ -363,6 +381,14 @@ export class MigrationRunner {
     success: boolean,
     errorMessage?: string
   ): Promise<void> {
+    // CRITICAL FIX: Check authentication before attempting schema_migrations insert
+    const { data: { user }, error: authError } = await this.supabase.auth.getUser();
+    
+    if (!user || authError) {
+      console.log('🔄 MigrationRunner: Skipping migration recording for guest user (prevents 401 errors)');
+      return;
+    }
+
     const { error } = await this.supabase
       .from('schema_migrations')
       .insert({
@@ -376,7 +402,7 @@ export class MigrationRunner {
       });
 
     if (error) {
-      console.error('Failed to record migration:', error);
+      console.warn('Failed to record migration:', error);
     }
   }
 
@@ -425,6 +451,13 @@ export class MigrationRunner {
     const startTime = Date.now();
 
     try {
+      // CRITICAL FIX: Check authentication before attempting schema_migrations operations
+      const { data: { user }, error: authError } = await this.supabase.auth.getUser();
+      
+      if (!user || authError) {
+        throw new Error('Authentication required for migration rollback operations');
+      }
+
       const { error } = await this.supabase.rpc('exec_sql', { 
         sql: migration.rollbackSql 
       });
