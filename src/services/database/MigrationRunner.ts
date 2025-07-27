@@ -566,7 +566,4 @@ export class MigrationRunner {
 }
 
 // Export singleton instance
-export const migrationRunner = new MigrationRunner(
-  import.meta.env.VITE_SUPABASE_URL!,
-  import.meta.env.VITE_SUPABASE_ANON_KEY!
-);
+export const migrationRunner = new MigrationRunner();

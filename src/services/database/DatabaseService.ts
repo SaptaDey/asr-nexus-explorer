@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { GraphData, GraphNode, GraphEdge, StageExecution } from '@/types/asrGotTypes';
 import { Hypothesis } from '@/services/reasoning/HypothesisCompetitionFramework';
 import { DatabaseValidationWrapper, createValidationWrapper } from './ValidationWrapper';
-import { migrationService, MigrationService } from './MigrationService';
+import { migrationRunner, MigrationRunner } from './MigrationRunner';
 import { 
   validateAndSanitize,
   ResearchSessionCreateSchema,
