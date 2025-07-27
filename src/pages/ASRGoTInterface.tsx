@@ -43,7 +43,7 @@ import { Link } from 'react-router-dom';
 import { APICredentials } from '@/types/asrGotTypes';
 import { backendService } from '@/services/backend/BackendService';
 import { historyManager } from '@/services/backend/HistoryManager';
-import { useAuthContext } from '@/contexts/ContextCompatibilityLayer';
+import { useAppAuth } from '@/contexts/AppContextManager';
 import { enhancedApiService } from '@/services/enhancedApiService';
 import { dataStorageService } from '@/services/dataStorageService';
 import { SessionControls } from '@/components/asr-got/SessionControls';
@@ -97,7 +97,7 @@ const ASRGoTInterfaceContent: React.FC = () => {
     user,
     profile,
     loading: authLoading
-  } = useAuthContext();
+  } = useAppAuth();
   const [hasBackendApiKeys, setHasBackendApiKeys] = useState(false);
   const [usageStats, setUsageStats] = useState<any>(null);
   const [isPaused, setIsPaused] = useState(false);

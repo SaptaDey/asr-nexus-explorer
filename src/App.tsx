@@ -17,7 +17,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppContextManager } from "@/contexts/AppContextManager";
-import { AuthProvider, DatabaseProvider, SessionProvider } from "@/contexts/ContextCompatibilityLayer";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Contact from "./pages/Contact";
@@ -73,10 +72,7 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AppContextManager>
-          <AuthProvider>
-            <DatabaseProvider>
-              <SessionProvider>
-                <TooltipProvider>
+          <TooltipProvider>
                   <Toaster />
                   <Sonner />
                   <BrowserRouter>
@@ -112,10 +108,7 @@ const App = () => {
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   </BrowserRouter>
-                </TooltipProvider>
-              </SessionProvider>
-            </DatabaseProvider>
-          </AuthProvider>
+          </TooltipProvider>
         </AppContextManager>
       </QueryClientProvider>
     </ErrorBoundary>
