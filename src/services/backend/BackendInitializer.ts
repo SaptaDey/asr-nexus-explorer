@@ -112,11 +112,12 @@ export class BackendInitializer {
 
       // DISABLED: Even if user has no sessions, this validates table access and RLS
       // if (error && !error.message.includes('no rows')) {
-        throw error;
-      }
+      //   throw error;
+      // }
       
-      this.healthStatus.database = 'connected';
-      console.log('✅ Database connection successful (authenticated mode)');
+      // REMOVED: Unreachable code after return statement
+      // this.healthStatus.database = 'connected';
+      // console.log('✅ Database connection successful (authenticated mode)');
     } catch (error) {
       console.error('❌ Database connection failed:', error);
       this.healthStatus.database = 'error';
