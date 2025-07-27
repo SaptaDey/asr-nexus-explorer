@@ -1,3 +1,4 @@
+import { AppContextManager } from '@/contexts/AppContextManager';
 import React from 'react';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
@@ -7,6 +8,25 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ASRGoTInterface from '@/pages/ASRGoTInterface';
 import { mockServices } from '@/test/mocks/mockServices';
 import { testQueries } from '@/test/fixtures/testData';
+
+const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false }
+    }
+  });
+
+  return (
+    <AppContextManager>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          {children}
+        </BrowserRouter>
+      </QueryClientProvider>
+    </AppContextManager>
+  );
+};
 
 // Mock the components
 vi.mock('@/components/asr-got/ResearchInterface', () => ({
