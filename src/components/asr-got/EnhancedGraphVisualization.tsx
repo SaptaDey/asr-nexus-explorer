@@ -37,6 +37,7 @@ import {
   SpatialIndex,
   GraphPerformanceMonitor
 } from '@/utils/graphVirtualization';
+import { GraphVisualizationErrorBoundary } from './GraphVisualizationErrorBoundary';
 
 interface EnhancedGraphVisualizationProps {
   graphData: GraphData;
@@ -651,11 +652,18 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
   );
 };
 
-// Main component with ReactFlow provider
+// Main component with ReactFlow provider and Error Boundary
 export const EnhancedGraphVisualization: React.FC<EnhancedGraphVisualizationProps> = (props) => {
+  const handleError = (error: Error, errorInfo: any) => {
+    console.error('🚨 GraphVisualization Error Boundary:', error, errorInfo);
+    props.onError?.(error);
+  };
+
   return (
-    <ReactFlowProvider>
-      <GraphVisualizationInner {...props} />
-    </ReactFlowProvider>
+    <GraphVisualizationErrorBoundary onError={handleError}>
+      <ReactFlowProvider>
+        <GraphVisualizationInner {...props} />
+      </ReactFlowProvider>
+    </GraphVisualizationErrorBoundary>
   );
 };
