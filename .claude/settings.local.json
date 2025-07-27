@@ -91,7 +91,8 @@
       "mcp__ide__executeCode",
       "Bash(gh-pages:*)",
       "Bash(git checkout:*)",
-      "Bash(git rev-list:*)"
+      "Bash(git rev-list:*)",
+      "Bash(dig:*)"
     ],
     "deny": []
   }

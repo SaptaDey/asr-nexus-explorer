@@ -165,7 +165,7 @@ export function useEnhancedASRGoT(): UseEnhancedASRGoTReturn {
       return sessionId
     } catch (error: any) {
       console.error('Failed to save session:', error)
-      throw error
+      throw error;
     }
   }, [currentSessionId, state])
 
@@ -187,7 +187,7 @@ export function useEnhancedASRGoT(): UseEnhancedASRGoTReturn {
       }
     } catch (error: any) {
       console.error('Failed to load session:', error)
-      throw error
+      throw error;
     }
   }, [])
 
