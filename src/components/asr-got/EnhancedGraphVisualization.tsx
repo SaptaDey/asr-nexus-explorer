@@ -214,24 +214,46 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
   const performanceMonitor = useRef(new GraphPerformanceMonitor());
   const spatialIndex = useRef<SpatialIndex | null>(null);
   const lastViewport = useRef({ x: 0, y: 0, zoom: 1 });
+
+  // Defensive: always use safe data to prevent re-render loops
+  const safeNodes = Array.isArray(graphData?.nodes)
+    ? graphData.nodes.filter(n => n && typeof n.id === 'string')
+    : [];
+  const safeEdges = Array.isArray(graphData?.edges)
+    ? graphData.edges.filter(e => e && typeof e.source === 'string' && typeof e.target === 'string')
+    : [];
+  const safeGraphData = {
+    ...graphData,
+    nodes: safeNodes,
+    edges: safeEdges,
+  };
   
-  // Calculate graph metrics
+  // Calculate graph metrics using safe data
   const graphMetrics = useMemo(() => {
     try {
-      return calculateGraphMetrics(graphData.nodes, graphData.edges);
+      return calculateGraphMetrics(safeNodes, safeEdges);
     } catch (error) {
       console.error('❌ Failed to calculate graph metrics:', error);
       return { nodeCount: 0, edgeCount: 0, complexity: 0, recommendedVirtualization: false };
     }
-  }, [graphData]);
-  // Convert ASR-GoT graph data with virtualization
+  }, [safeNodes, safeEdges]);
+  // Convert ASR-GoT graph data with virtualization using safe data
   const { initialNodes, initialEdges, virtualizedData } = useMemo(() => {
     const startTime = performance.now();
     
     try {
+      // Validate safe graph data structure
+      if (!Array.isArray(safeNodes) || !Array.isArray(safeEdges)) {
+        console.warn('⚠️ Invalid safe graph data provided');
+        return {
+          initialNodes: [] as Node[],
+          initialEdges: [] as Edge[],
+          virtualizedData: null
+        };
+      }
       
-      // Convert data using adapter
-      const convertedData = GraphAdapterFactory.convertForVisualization(graphData, 'reactflow');
+      // Convert data using adapter with safe data
+      const convertedData = GraphAdapterFactory.convertForVisualization(safeGraphData, 'reactflow');
       let nodes: Node[] = convertedData.nodes.map(node => ({
         id: node.id || String(Math.random()),
         position: node.position || { x: 0, y: 0 },
@@ -250,14 +272,13 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
       let virtualizedInfo = null;
       if (isVirtualizationEnabled && graphMetrics.recommendedVirtualization) {
         try {
-          // Get current viewport
-          const viewport = reactFlowInstance?.getViewport() || { x: 0, y: 0, zoom: 1 };
-          lastViewport.current = viewport;
+          // Use last known viewport instead of accessing reactFlowInstance directly
+          const viewport = lastViewport.current || { x: 0, y: 0, zoom: 1 };
           
-          // Perform viewport culling
+          // Perform viewport culling with safe data
           virtualizedInfo = performViewportCulling(
-            graphData.nodes,
-            graphData.edges,
+            safeNodes,
+            safeEdges,
             { ...viewport, width: 1200, height: 800 }
           );
           
@@ -270,23 +291,23 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
           
           // Convert virtualized data
           const virtualizedConverted = GraphAdapterFactory.convertForVisualization(
-            { nodes: lodData.nodes, edges: lodData.edges, metadata: graphData.metadata },
+            { nodes: lodData.nodes, edges: lodData.edges, metadata: safeGraphData.metadata },
             'reactflow'
           );
           
           nodes = virtualizedConverted.nodes as Node[];
           edges = virtualizedConverted.edges as Edge[];
           
-          console.log(`🎯 Virtualization: ${virtualizedInfo.visibleNodes.length}/${graphData.nodes.length} nodes, ${virtualizedInfo.visibleEdges.length}/${graphData.edges.length} edges`);
+          console.log(`🎯 Virtualization: ${virtualizedInfo.visibleNodes.length}/${safeNodes.length} nodes, ${virtualizedInfo.visibleEdges.length}/${safeEdges.length} edges`);
         } catch (virtError) {
           console.warn('⚠️ Virtualization failed, using all nodes:', virtError);
           virtualizedInfo = null;
         }
       }
       
-      // Create spatial index for performance
-      if (graphData.nodes.length > 100) {
-        spatialIndex.current = new SpatialIndex(graphData.nodes);
+      // Create spatial index for performance with safe data
+      if (safeNodes.length > 100) {
+        spatialIndex.current = new SpatialIndex(safeNodes);
       }
       
       const processingTime = performance.now() - startTime;
@@ -318,7 +339,7 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
         virtualizedData: null
       };
     }
-  }, [graphData, isVirtualizationEnabled, graphMetrics, onError, reactFlowInstance]);
+  }, [safeGraphData, isVirtualizationEnabled, graphMetrics, onError]); // Removed reactFlowInstance dependency
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -328,11 +349,12 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
     setGraphError(null);
   }, [graphData]);
 
-  // Update nodes and edges when graph data changes
+  // Update nodes and edges when graph data changes with validation
   useEffect(() => {
+    if (!Array.isArray(initialNodes) || !Array.isArray(initialEdges)) return;
     setNodes(initialNodes);
     setEdges(initialEdges);
-  }, [initialNodes, initialEdges]);
+  }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -393,17 +415,17 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
 
   // Auto-layout with error handling
   useEffect(() => {
-    if (nodes.length === 0) return;
+    if (!Array.isArray(nodes) || nodes.length === 0) return;
     
     try {
       // Only apply layout if nodes don't have positions
-      const needsLayout = nodes.every(node => 
+      const needsLayout = nodes.some(node => 
         !node.position || (node.position.x === 0 && node.position.y === 0)
       );
       
       if (needsLayout) {
         // Use setTimeout to avoid blocking the UI
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
           try {
             applyForceLayout();
           } catch (layoutError) {
@@ -411,11 +433,13 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
             setGraphError('Layout calculation failed');
           }
         }, 100);
+        
+        return () => clearTimeout(timeoutId);
       }
     } catch (error) {
       console.error('❌ Layout setup failed:', error);
     }
-  }, [nodes.length, applyForceLayout]);
+  }, [nodes, applyForceLayout]);
   
   // Update performance metrics periodically
   useEffect(() => {
@@ -489,6 +513,10 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
           console.error('❌ ReactFlow error:', error);
           setGraphError(error.message || 'ReactFlow rendering error');
         }}
+        onViewportChange={(viewport) => {
+          // Update viewport for virtualization without causing re-renders
+          lastViewport.current = viewport;
+        }}
       >
         <Controls 
           className="!bg-card !border-border"
@@ -530,7 +558,7 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
               <span className="font-medium">{nodes.length}</span>
               {virtualizedData && (
                 <Badge variant="secondary" className="text-xs px-1">
-                  /{graphData.nodes.length}
+                  /{safeNodes.length}
                 </Badge>
               )}
             </div>
@@ -541,14 +569,14 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
               <span className="font-medium">{edges.length}</span>
               {virtualizedData && (
                 <Badge variant="secondary" className="text-xs px-1">
-                  /{graphData.edges.length}
+                  /{safeEdges.length}
                 </Badge>
               )}
             </div>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Stage:</span>
-            <span className="font-medium">{graphData.metadata.stage || 0}/8</span>
+            <span className="font-medium">{safeGraphData?.metadata?.stage || 0}/8</span>
           </div>
           
           {isVirtualizationEnabled && (
