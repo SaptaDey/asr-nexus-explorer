@@ -72,7 +72,26 @@
       "Bash(gh run view:*)",
       "Bash(gh workflow run:*)",
       "Bash(nslookup:*)",
-      "Bash(ionosctl:*)"
+      "Bash(ionosctl:*)",
+      "Bash(supabase storage:*)",
+      "Bash(supabase auth:*)",
+      "WebFetch(domain:supabase.com)",
+      "Bash(supabase sso:*)",
+      "Bash(supabase inspect:*)",
+      "Bash(export PGPASSWORD=\"J_F7KZ#Nx*uWXUp\")",
+      "Bash(PGPASSWORD=\"scientific-research-1971\" supabase db push)",
+      "Bash(export DB_URL=\"postgresql://postgres.aogeenqytwrpjvrfwvjw:scientific-research-1971@db.aogeenqytwrpjvrfwvjw.supabase.co:5432/postgres\")",
+      "Bash(supabase migration repair:*)",
+      "Bash(supabase migration:*)",
+      "WebFetch(domain:aogeenqytwrpjvrfwvjw.supabase.co)",
+      "Bash(docker run:*)",
+      "WebFetch(domain:saptadey.github.io)",
+      "mcp__ide__getDiagnostics",
+      "Bash(./node_modules/.bin/vite:*)",
+      "mcp__ide__executeCode",
+      "Bash(gh-pages:*)",
+      "Bash(git checkout:*)",
+      "Bash(git rev-list:*)"
     ],
     "deny": []
   }

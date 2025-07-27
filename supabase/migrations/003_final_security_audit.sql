@@ -108,7 +108,7 @@ BEGIN
   SELECT COUNT(*) INTO action_count
   FROM activity_logs
   WHERE user_id = auth.uid()
-    AND action_type = check_rate_limit.action_type
+    AND activity_logs.action_type = check_rate_limit.action_type
     AND created_at > NOW() - time_window;
   
   -- Return false if limit exceeded
