@@ -367,20 +367,27 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+    (params: Connection) => {
+      if (!params || typeof params !== 'object') return;
+      setEdges((eds) => {
+        if (!Array.isArray(eds)) return [];
+        return addEdge(params, eds);
+      });
+    },
     [setEdges]
   );
 
   // Enhanced auto-layout with error handling
   const applyForceLayout = useCallback(() => {
-    if (!nodes || nodes.length === 0) return;
+    if (!Array.isArray(nodes) || nodes.length === 0) return;
     
     try {
       const centerX = 600;
       const centerY = 400;
       
-      // Group nodes by type for better layout
+      // Group nodes by type for better layout - with validation
       const nodesByType = nodes.reduce((acc, node) => {
+        if (!node || typeof node !== 'object') return acc; // Skip invalid nodes
         const type = node.data?.type || 'default';
         if (!acc[type]) acc[type] = [];
         acc[type].push(node);
@@ -392,10 +399,14 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
       
       // Layout each type in concentric circles
       Object.entries(nodesByType).forEach(([type, typeNodes], typeIndex) => {
+        if (!Array.isArray(typeNodes) || typeNodes.length === 0) return; // Skip invalid type groups
+        
         const typeRadius = 150 + typeIndex * 100;
         const angleStep = (2 * Math.PI) / Math.max(typeNodes.length, 1);
         
         typeNodes.forEach((node, nodeIndex) => {
+          if (!node || typeof node !== 'object') return; // Skip invalid nodes
+          
           const angle = nodeIndex * angleStep;
           const x = centerX + typeRadius * Math.cos(angle);
           const y = centerY + typeRadius * Math.sin(angle);
@@ -415,7 +426,10 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
         });
       });
       
-      setNodes(layoutedNodes);
+      // Only update nodes if we have valid layouted nodes
+      if (Array.isArray(layoutedNodes) && layoutedNodes.length > 0) {
+        setNodes(layoutedNodes);
+      }
       console.log(`🎯 Applied force layout to ${layoutedNodes.length} nodes`);
     } catch (error) {
       console.error('❌ Force layout failed:', error);
@@ -470,6 +484,11 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
 
   const nodeColor = useCallback((node: Node) => {
     try {
+      // Defensive validation for node object
+      if (!node || typeof node !== 'object' || !node.data) {
+        return '#6B7280'; // fallback gray
+      }
+      
       switch (node.data?.type) {
         case 'root': return '#8B5CF6'; // purple
         case 'dimension': return '#3B82F6'; // blue
@@ -565,8 +584,8 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Nodes:</span>
             <div className="flex items-center gap-1">
-              <span className="font-medium">{nodes.length}</span>
-              {virtualizedData && (
+              <span className="font-medium">{Array.isArray(nodes) ? nodes.length : 0}</span>
+              {virtualizedData && Array.isArray(safeNodes) && (
                 <Badge variant="secondary" className="text-xs px-1">
                   /{safeNodes.length}
                 </Badge>
@@ -576,8 +595,8 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Edges:</span>
             <div className="flex items-center gap-1">
-              <span className="font-medium">{edges.length}</span>
-              {virtualizedData && (
+              <span className="font-medium">{Array.isArray(edges) ? edges.length : 0}</span>
+              {virtualizedData && Array.isArray(safeEdges) && (
                 <Badge variant="secondary" className="text-xs px-1">
                   /{safeEdges.length}
                 </Badge>
