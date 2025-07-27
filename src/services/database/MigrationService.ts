@@ -187,6 +187,7 @@ export class MigrationService {
       if (!user || authError) {
         console.log('🔄 MigrationService: Skipping migration for guest user (prevents 401 errors)');
         return {
+          version: migration.version,
           success: false,
           error: 'Authentication required for migrations',
           executionTime: Date.now() - startTime
