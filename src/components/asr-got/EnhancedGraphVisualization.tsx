@@ -248,17 +248,21 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
     const startTime = performance.now();
     
     try {
-      // Validate safe graph data structure
-      if (!Array.isArray(safeNodes) || !Array.isArray(safeEdges)) {
-        console.warn('⚠️ Invalid safe graph data provided');
-        return {
-          initialNodes: [] as Node[],
-          initialEdges: [] as Edge[],
-          virtualizedData: null
-        };
+      // Defensive validation - ensure safe data is actually safe
+      if (!Array.isArray(safeGraphData.nodes) || !Array.isArray(safeGraphData.edges)) {
+        throw new Error('Invalid graph data: nodes or edges are not arrays');
       }
       
-      // Convert data using adapter with safe data
+      // Additional validation for array contents
+      if (!safeGraphData.nodes.every(n => n && typeof n.id === 'string')) {
+        throw new Error('Invalid graph data: some nodes lack valid id');
+      }
+      
+      if (!safeGraphData.edges.every(e => e && typeof e.source === 'string' && typeof e.target === 'string')) {
+        throw new Error('Invalid graph data: some edges lack valid source/target');
+      }
+      
+      // Convert data using adapter with validated safe data
       const convertedData = GraphAdapterFactory.convertForVisualization(safeGraphData, 'reactflow');
       let nodes: Node[] = convertedData.nodes.map(node => ({
         id: node.id || String(Math.random()),
@@ -345,7 +349,7 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
         virtualizedData: null
       };
     }
-  }, [safeGraphData, isVirtualizationEnabled, graphMetrics, onError]); // Removed reactFlowInstance dependency
+  }, [safeGraphData, isVirtualizationEnabled, graphMetrics, onError]); // Using safeGraphData for stable dependency
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
