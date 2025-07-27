@@ -67,3 +67,12 @@ test-security-fixes.js
 schema_dump.sql
 init.sql
 apply_security_fixes.sql
+
+# Documentation files (keep locally but exclude from repo)
+docs/**/*.md
+!docs/README.md
+archive/**/*.md
+src/test/**/*.md
+
+# Keep only essential markdown files
+# README.md and CLAUDE.md are NOT ignored (kept in repo)
