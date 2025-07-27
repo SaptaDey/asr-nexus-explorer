@@ -60,6 +60,14 @@ export default defineConfig(({ mode }) => ({
             'react-dom/client',
             '@tanstack/react-query'
           ]
+        },
+        // Ensure proper module order
+        inlineDynamicImports: false,
+        chunkFileNames: (chunkInfo) => {
+          if (chunkInfo.name === 'react') {
+            return 'react-[hash].js';
+          }
+          return '[name]-[hash].js';
         }
       }
     },

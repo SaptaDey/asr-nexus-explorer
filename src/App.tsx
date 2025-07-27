@@ -1,8 +1,14 @@
-import React from "react";
+import React, { useMemo } from "react";
 
 // CRITICAL: Ensure React is available before loading react-query
 if (typeof window !== 'undefined' && !window.React) {
   window.React = React;
+  window.createContext = React.createContext;
+  window.createElement = React.createElement;
+  window.useState = React.useState;
+  window.useEffect = React.useEffect;
+  window.useContext = React.useContext;
+  window.useMemo = React.useMemo;
 }
 
 import { Toaster } from "@/components/ui/toaster";
@@ -26,17 +32,6 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { useEffect } from "react";
 
-// CRITICAL: Create QueryClient only after ensuring React is available
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    },
-  },
-});
-
 // Initialize Supabase storage on app start
 const initializeApp = async () => {
   try {
@@ -58,6 +53,17 @@ const initializeApp = async () => {
 };
 
 const App = () => {
+  // CRITICAL: Create QueryClient inside component to ensure React is loaded
+  const queryClient = useMemo(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1,
+        refetchOnWindowFocus: false,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+      },
+    },
+  }), []);
+
   useEffect(() => {
     // Initialize app on mount
     initializeApp();
