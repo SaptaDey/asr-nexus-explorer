@@ -70,7 +70,6 @@ apply_security_fixes.sql
 
 # Documentation files (keep locally but exclude from repo)
 docs/**/*.md
-!docs/README.md
 archive/**/*.md
 src/test/**/*.md
 
