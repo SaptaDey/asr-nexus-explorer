@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/img/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ASR-GoT Research Framework</title>
+    
+    <!-- SECURITY: Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com data:;
+      img-src 'self' data: blob: https:;
+      connect-src 'self' https://*.supabase.co https://generativelanguage.googleapis.com https://api.perplexity.ai wss://*.supabase.co;
+      frame-src 'none';
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+      frame-ancestors 'none';
+      upgrade-insecure-requests;
+    ">
+    
+    <!-- Emergency Error Logging -->
+    <script>
+      window.onerror = function(msg, url, line, col, error) {
+        const errorDiv = document.getElementById('emergency-errors') || createErrorDiv();
+        errorDiv.innerHTML += `<div style="color: red; border: 1px solid red; padding: 10px; margin: 5px; background: #ffe6e6;">
+          <strong>JavaScript Error:</strong><br/>
+          Message: ${msg}<br/>
+          File: ${url}<br/>
+          Line: ${line}:${col}<br/>
+          Error: ${error?.stack || error}<br/>
+          Time: ${new Date().toISOString()}
+        </div>`;
+        return false;
+      };
+      
+      window.addEventListener('unhandledrejection', function(event) {
+        const errorDiv = document.getElementById('emergency-errors') || createErrorDiv();
+        errorDiv.innerHTML += `<div style="color: red; border: 1px solid red; padding: 10px; margin: 5px; background: #ffe6e6;">
+          <strong>Unhandled Promise Rejection:</strong><br/>
+          Reason: ${event.reason}<br/>
+          Time: ${new Date().toISOString()}
+        </div>`;
+      });
+      
+      function createErrorDiv() {
+        const div = document.createElement('div');
+        div.id = 'emergency-errors';
+        div.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; z-index: 99999; background: white; max-height: 300px; overflow-y: auto; border-bottom: 3px solid red;';
+        document.body.prepend(div);
+        return div;
+      }
+      
+      // Log app loading status
+      console.log('%c🚀 ASR-GoT App Starting...', 'color: blue; font-size: 16px; font-weight: bold;');
+      setTimeout(() => {
+        if (!document.querySelector('[data-app-loaded]')) {
+          const errorDiv = document.getElementById('emergency-errors') || createErrorDiv();
+          errorDiv.innerHTML += `<div style="color: orange; border: 1px solid orange; padding: 10px; margin: 5px; background: #fff3cd;">
+            <strong>App Loading Issue:</strong><br/>
+            React app did not load within 5 seconds. Check console for errors.<br/>
+            Time: ${new Date().toISOString()}
+          </div>`;
+        }
+      }, 5000);
+    </script>
+    <meta name="description" content="Advanced Scientific Reasoning Graph of Thoughts - AI-powered research analysis framework" />
+    <meta name="author" content="ASR-GoT Team" />
+
+    <meta property="og:title" content="ASR-GoT Research Framework" />
+    <meta property="og:description" content="Advanced Scientific Reasoning Graph of Thoughts - AI-powered research analysis framework" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/img/splash.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ASR-GoT Research Framework" />
+    <meta name="twitter:description" content="Advanced Scientific Reasoning Graph of Thoughts - AI-powered research analysis framework" />
+    <meta name="twitter:image" content="/img/splash.png" />
+    <script type="module" crossorigin src="/assets/index-DvTsezjz.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/react-Bv4c9Wqx.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-B-B5qyvq.css">
+  
+<style>
+	#lovable-badge {
+		position: fixed;
+		bottom: 10px;
+		right: 10px;
+		width: 141px;
+		padding: 5px 13px;	
+		background-color: #000;
+		color: #fff;
+		font-size: 12px;
+		border-radius: 5px;
+		font-family: sans-serif;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		z-index: 1000000;
+		text-transform: none !important;
+		font-feature-settings: normal !important;
+		font-weight: 400 !important;
+	}
+</style>
+<script defer src="https://scientific-research.online/~flock.js" data-proxy-url="https://scientific-research.online/~api/analytics"></script></head><link rel="canonical" href="https://scientific-research.online/" />
+
+  <body>
+    <div id="root"></div>
+    <!-- CRITICAL: Early React initialization to prevent createContext errors -->
+    <script>
+      // Ensure React is available globally before any modules load
+      window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || {};
+      window.React = window.React || null;
+      window.ReactDOM = window.ReactDOM || null;
+      
+      // EMERGENCY: Create placeholder createContext to prevent errors
+      window.createContext = window.createContext || function(defaultValue) {
+        console.warn('🚨 Emergency createContext placeholder called - real React not loaded yet');
+        return {
+          Provider: function() { return null; },
+          Consumer: function() { return null; },
+          displayName: 'EmergencyContext'
+        };
+      };
+      
+      window.createElement = window.createElement || function() {
+        console.warn('🚨 Emergency createElement placeholder called - real React not loaded yet');
+        return null;
+      };
+      
+      // Log initialization status
+      console.log('%c🛡️ EMERGENCY React placeholders initialized', 'color: red; font-weight: bold;');
+      console.log('Emergency React stubs available:', {
+        React: !!window.React,
+        createContext: !!window.createContext,
+        createElement: !!window.createElement
+      });
+    </script>
+  </body>
+</html>

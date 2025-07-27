@@ -489,21 +489,33 @@ export function useAppContext(): AppContextType {
  * Individual context hooks for specific functionality
  */
 export function useAppAuth() {
-  const { auth } = useAppContext();
-  return auth;
+  const context = useContext(AppContext);
+  if (context === undefined) {
+    throw new Error('useAppAuth must be used within an AppContextManager');
+  }
+  return context.auth;
 }
 
 export function useAppDatabase() {
-  const { database } = useAppContext();
-  return database;
+  const context = useContext(AppContext);
+  if (context === undefined) {
+    throw new Error('useAppDatabase must be used within an AppContextManager');
+  }
+  return context.database;
 }
 
 export function useAppSession() {
-  const { session } = useAppContext();
-  return session;
+  const context = useContext(AppContext);
+  if (context === undefined) {
+    throw new Error('useAppSession must be used within an AppContextManager');
+  }
+  return context.session;
 }
 
 export function useAppState() {
-  const { app } = useAppContext();
-  return app;
+  const context = useContext(AppContext);
+  if (context === undefined) {
+    throw new Error('useAppState must be used within an AppContextManager');
+  }
+  return context.app;
 }
