@@ -22,77 +22,9 @@
     ">
     <!-- Note: frame-ancestors must be set via HTTP headers, not meta tags -->
     
-    <!-- Emergency Error Logging -->
+    <!-- App Loading Logger -->
     <script>
-      // Filter out common browser extension errors that aren't our app's fault
-      function isExtensionError(msg, error) {
-        const extensionPatterns = [
-          'message channel closed',
-          'listener indicated an asynchronous response',
-          'Extension context invalidated',
-          'chrome-extension://',
-          'moz-extension://',
-          'safari-extension://',
-          'Script error.',
-          'ResizeObserver loop limit exceeded'
-        ];
-        
-        const errorText = (msg || '').toLowerCase() + (error?.message || '').toLowerCase();
-        return extensionPatterns.some(pattern => errorText.includes(pattern.toLowerCase()));
-      }
-      
-      window.onerror = function(msg, url, line, col, error) {
-        // Skip browser extension errors
-        if (isExtensionError(msg, error)) {
-          return true; // Suppress error
-        }
-        
-        const errorDiv = document.getElementById('emergency-errors') || createErrorDiv();
-        errorDiv.innerHTML += `<div style="color: red; border: 1px solid red; padding: 10px; margin: 5px; background: #ffe6e6;">
-          <strong>JavaScript Error:</strong><br/>
-          Message: ${msg}<br/>
-          File: ${url}<br/>
-          Line: ${line}:${col}<br/>
-          Error: ${error?.stack || error}<br/>
-          Time: ${new Date().toISOString()}
-        </div>`;
-        return false;
-      };
-      
-      window.addEventListener('unhandledrejection', function(event) {
-        // Skip browser extension promise rejections
-        if (isExtensionError('', event.reason)) {
-          return;
-        }
-        
-        const errorDiv = document.getElementById('emergency-errors') || createErrorDiv();
-        errorDiv.innerHTML += `<div style="color: red; border: 1px solid red; padding: 10px; margin: 5px; background: #ffe6e6;">
-          <strong>Unhandled Promise Rejection:</strong><br/>
-          Reason: ${event.reason}<br/>
-          Time: ${new Date().toISOString()}
-        </div>`;
-      });
-      
-      function createErrorDiv() {
-        const div = document.createElement('div');
-        div.id = 'emergency-errors';
-        div.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; z-index: 99999; background: white; max-height: 300px; overflow-y: auto; border-bottom: 3px solid red;';
-        document.body.prepend(div);
-        return div;
-      }
-      
-      // Log app loading status
       console.log('%c🚀 ASR-GoT App Starting...', 'color: blue; font-size: 16px; font-weight: bold;');
-      setTimeout(() => {
-        if (!document.querySelector('[data-app-loaded]')) {
-          const errorDiv = document.getElementById('emergency-errors') || createErrorDiv();
-          errorDiv.innerHTML += `<div style="color: orange; border: 1px solid orange; padding: 10px; margin: 5px; background: #fff3cd;">
-            <strong>App Loading Issue:</strong><br/>
-            React app did not load within 5 seconds. Check console for errors.<br/>
-            Time: ${new Date().toISOString()}
-          </div>`;
-        }
-      }, 5000);
     </script>
     <meta name="description" content="Advanced Scientific Reasoning Graph of Thoughts - AI-powered research analysis framework" />
     <meta name="author" content="ASR-GoT Team" />
@@ -110,39 +42,6 @@
 
   <body>
     <div id="root"></div>
-    <!-- CRITICAL: Early React initialization to prevent createContext errors -->
-    <script>
-      // CACHE BUSTER: Force fresh deployment - v1.0.3
-      console.log('🔄 Cache Buster: Loading ASR-GoT v1.0.3 with auth fixes');
-      
-      // Ensure React is available globally before any modules load
-      window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.__REACT_DEVTOOLS_GLOBAL_HOOK__ || {};
-      window.React = window.React || null;
-      window.ReactDOM = window.ReactDOM || null;
-      
-      // EMERGENCY: Create placeholder createContext to prevent errors
-      window.createContext = window.createContext || function(defaultValue) {
-        console.warn('🚨 Emergency createContext placeholder called - real React not loaded yet');
-        return {
-          Provider: function() { return null; },
-          Consumer: function() { return null; },
-          displayName: 'EmergencyContext'
-        };
-      };
-      
-      window.createElement = window.createElement || function() {
-        console.warn('🚨 Emergency createElement placeholder called - real React not loaded yet');
-        return null;
-      };
-      
-      // Log initialization status
-      console.log('%c🛡️ EMERGENCY React placeholders initialized', 'color: red; font-weight: bold;');
-      console.log('Emergency React stubs available:', {
-        React: !!window.React,
-        createContext: !!window.createContext,
-        createElement: !!window.createElement
-      });
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

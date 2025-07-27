@@ -1,16 +1,4 @@
-import React, { useMemo } from "react";
-
-// CRITICAL: Ensure React is available before loading react-query
-if (typeof window !== 'undefined' && !window.React) {
-  window.React = React;
-  window.createContext = React.createContext;
-  window.createElement = React.createElement;
-  window.useState = React.useState;
-  window.useEffect = React.useEffect;
-  window.useContext = React.useContext;
-  window.useMemo = React.useMemo;
-}
-
+import React, { useMemo, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,7 +17,6 @@ import UserDashboard from "./pages/UserDashboard";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import { useEffect } from "react";
 
 // Initialize Supabase storage on app start
 const initializeApp = async () => {
