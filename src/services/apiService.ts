@@ -14,6 +14,7 @@ import {
 } from '@/utils/secureNetworkRequest';
 import { sanitizeError, secureConsoleError } from '@/utils/errorSanitizer';
 import { logApiCall } from '@/services/securityEventLogger';
+import { errorLogger } from '@/services/ErrorLoggingService';
 
 
 // Perplexity Sonar API integration (placeholder for future implementation)
@@ -315,6 +316,16 @@ export const callGeminiAPI = async (
       .replace(/x-goog-api-key[^}]+/g, 'x-goog-api-key: [REDACTED]');
     
     console.error('Gemini API call failed:', sanitizedError);
+    
+    // Log API error to error logging service
+    errorLogger.logAPIError(
+      apiEndpoint,
+      'POST',
+      error instanceof Error && error.message.includes('Status:') ? 
+        parseInt(error.message.match(/Status: (\d+)/)?.[1] || '0') : 0,
+      sanitizedError,
+      error instanceof Error ? error : new Error(sanitizedError)
+    );
     
     // Create new error with sanitized message - ensure it's never undefined
     const finalError = sanitizedError || 'Unknown API error';

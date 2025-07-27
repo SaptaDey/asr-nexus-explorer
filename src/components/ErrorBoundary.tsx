@@ -1,4 +1,5 @@
 import React from 'react';
+import { errorLogger } from '@/services/ErrorLoggingService';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -35,11 +36,30 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         ? event.reason 
         : new Error(String(event.reason));
       
+      const eventId = this.generateEventId();
+      
       this.setState({
         hasError: true,
         error,
         errorInfo: { componentStack: 'Promise rejection' } as React.ErrorInfo,
-        eventId: this.generateEventId()
+        eventId
+      });
+
+      // Log promise rejection to error logging service
+      errorLogger.logError({
+        error_type: 'javascript',
+        severity: 'error',
+        category: 'unhandled_promise',
+        message: error.message,
+        stack: error.stack,
+        component_name: 'ErrorBoundary',
+        function_name: 'unhandledRejectionHandler',
+        metadata: {
+          reason: event.reason,
+          promiseRejectionEventId: eventId,
+          originalType: typeof event.reason
+        },
+        tags: ['promise', 'unhandled', 'error-boundary']
       });
       
       // Prevent the default browser error handling
@@ -70,14 +90,30 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     
+    const eventId = this.state.eventId || this.generateEventId();
+    
     // Store additional error information
     this.setState({
       errorInfo,
-      eventId: this.state.eventId || this.generateEventId()
+      eventId
     });
 
-    // You could also send error reports to an error tracking service here
-    // Example: Sentry.captureException(error, { contexts: { react: errorInfo } });
+    // Log error to our comprehensive logging service
+    errorLogger.logError({
+      error_type: 'component',
+      severity: 'critical',
+      category: 'error_boundary',
+      message: error.message,
+      stack: error.stack,
+      component_name: 'ErrorBoundary',
+      function_name: 'componentDidCatch',
+      metadata: {
+        componentStack: errorInfo.componentStack,
+        errorBoundaryEventId: eventId,
+        errorInfo
+      },
+      tags: ['error-boundary', 'critical', 'react']
+    });
   }
 
   private handleReset = () => {
