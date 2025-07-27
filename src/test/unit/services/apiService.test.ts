@@ -2,82 +2,99 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { testQueries, testErrors } from '@/test/fixtures/testData';
 import { mockAPICredentials } from '@/test/mocks/mockServices';
 
-// AGGRESSIVE MOCKING STRATEGY: Mock the entire apiService module using factory function
-vi.mock('@/services/apiService', () => {
-  return {
-    callPerplexitySonarAPI: vi.fn().mockResolvedValue('Mock Perplexity response content'),
-    callGeminiAPI: vi.fn().mockResolvedValue('Mock Gemini response content')
-  };
-});
+// REMOVE AGGRESSIVE MOCKING: Test actual implementation for real coverage
+// Remove the mock of the entire apiService module
 
-// Import after mocking
+// Import the actual implementation to test
 import { 
   callPerplexitySonarAPI, 
   callGeminiAPI
 } from '@/services/apiService';
 
-// COMPLETE MOCK REPLACEMENT STRATEGY
-// Instead of trying to mock individual functions, mock entire modules
+// Mock dependencies but test actual apiService implementation
 
-// Mock ALL security utils with simple pass-through functions
+// Mock security utils - allow some calls, block others for testing
 vi.mock('@/utils/securityUtils', () => ({
-  validateInput: vi.fn((input: string) => input.trim()),
-  validateAPIKey: vi.fn(() => true),
+  validateInput: vi.fn((input: string) => {
+    if (!input || input.trim().length === 0) throw new Error('Input validation failed');
+    return input.trim();
+  }),
+  validateAPIKey: vi.fn((key: string) => {
+    if (!key || key === 'invalid-key') return false;
+    return true;
+  }),
   apiRateLimiter: {
-    isAllowed: vi.fn(() => true),
+    isAllowed: vi.fn((service: string, userId: string) => {
+      if (userId === 'rate-limited-user') return false;
+      return true;
+    }),
+    getStatus: vi.fn(() => ({ remaining: 0, resetTime: Date.now() + 60000 })),
     check: vi.fn().mockResolvedValue(true),
     record: vi.fn().mockResolvedValue(true)
   }
 }));
 
-// Mock ALL cost guardrails with unlimited budget
+// Mock cost guardrails - allow most calls, block some for testing
 vi.mock('@/services/CostGuardrails', () => ({
   costGuardrails: {
-    canMakeCall: vi.fn(() => true),
+    canMakeCall: vi.fn((service: string, tokens: number) => {
+      if (service === 'blocked-service') return false;
+      return true;
+    }),
     recordUsage: vi.fn(),
-    getCurrentCosts: vi.fn(() => ({ total: 0, gemini: 0, sonar: 0 })),
-    getRemainingBudget: vi.fn(() => 50.0)
+    getCurrentCosts: vi.fn(() => ({ total: 10.50, gemini: 8.25, sonar: 2.25 })),
+    getRemainingBudget: vi.fn(() => 39.50)
   }
 }));
 
-// SIMPLE AND RELIABLE MOCK STRATEGY - Mock the entire apiService module  
-const mockApiServiceModule = {
-  callPerplexitySonarAPI: vi.fn().mockResolvedValue('Mock Perplexity response content'),
-  callGeminiAPI: vi.fn().mockResolvedValue('Mock Gemini response content')
-};
-
-// Mock ALL secure network requests with successful responses 
+// Mock secure network requests with configurable responses
 vi.mock('@/utils/secureNetworkRequest', () => {
-  const mockResponse = {
-    ok: true,
-    status: 200,
-    json: vi.fn().mockResolvedValue({
+  const createMockResponse = (success = true, data = null) => ({
+    ok: success,
+    status: success ? 200 : 500,
+    json: vi.fn().mockResolvedValue(data || {
       candidates: [{
         content: { parts: [{ text: 'Mock API response content for testing' }] }
       }],
       usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 150, totalTokenCount: 250 }
     }),
-    text: vi.fn().mockResolvedValue('Mock error text')
-  };
+    text: vi.fn().mockResolvedValue(success ? 'Success' : 'Error text')
+  });
 
   return {
-    secureNetworkRequest: vi.fn().mockImplementation(() => Promise.resolve(mockResponse)),
-    createGeminiHeaders: vi.fn(() => ({ 'Content-Type': 'application/json', 'Authorization': 'Bearer test-key' })),
-    validateApiKeyFormat: vi.fn(() => true),
+    secureNetworkRequest: vi.fn().mockImplementation((url, options) => {
+      // Test different error scenarios based on URL or options
+      if (url.includes('error-test')) {
+        return Promise.resolve(createMockResponse(false));
+      }
+      if (options?.headers?.Authorization === 'Bearer invalid-key') {
+        return Promise.resolve(createMockResponse(false, { error: 'Invalid API key' }));
+      }
+      return Promise.resolve(createMockResponse(true));
+    }),
+    createGeminiHeaders: vi.fn((apiKey) => ({ 
+      'Content-Type': 'application/json', 
+      'Authorization': `Bearer ${apiKey}` 
+    })),
+    validateApiKeyFormat: vi.fn((key) => key && key.length > 10),
     secureRequestWithTimeout: vi.fn().mockImplementation((requestPromise, timeout) => {
-      // secureRequestWithTimeout should resolve to the same response as the promise
-      return Promise.resolve(mockResponse);
+      return requestPromise;
     })
   };
 });
 
-// Mock ALL error handling utilities
+// Mock error handling utilities
 vi.mock('@/utils/errorSanitizer', () => ({
   sanitizeError: vi.fn((error: any) => ({
     message: error.message || 'Mock error',
     code: error.code || 'MOCK_ERROR'
   })),
   secureConsoleError: vi.fn()
+}));
+
+// Mock security event logger
+vi.mock('@/services/securityEventLogger', () => ({
+  logApiCall: vi.fn().mockResolvedValue(true)
 }));
 
 // Mock sonner toast
@@ -94,9 +111,8 @@ describe('apiService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Reset mock functions to default behavior
-    vi.mocked(callPerplexitySonarAPI).mockResolvedValue('Mock Perplexity response content');
-    vi.mocked(callGeminiAPI).mockResolvedValue('Mock Gemini response content');
+    // Don't mock the actual functions - test the real implementation
+    // Reset dependency mocks only
     
     // Ensure console methods don't interfere with tests
     vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -131,24 +147,37 @@ describe('apiService', () => {
       expect(typeof result).toBe('string');
     });
 
-    it('should handle empty queries gracefully', async () => {
+    it('should handle rate limiting correctly', async () => {
+      const query = testQueries.simple;
       const apiKey = mockAPICredentials.gemini;
+      const options = { userId: 'rate-limited-user' };
       
-      // Mock the function to reject for empty queries
-      vi.mocked(callPerplexitySonarAPI).mockRejectedValueOnce(new Error('Query cannot be empty'));
-      
-      await expect(callPerplexitySonarAPI('', apiKey))
-        .rejects.toThrow();
+      await expect(callPerplexitySonarAPI(query, apiKey, options))
+        .rejects.toThrow('rate limit exceeded');
     });
 
-    it('should record usage metrics', async () => {
+    it('should handle cost guardrails blocking', async () => {
+      const { costGuardrails } = await import('@/services/CostGuardrails');
+      vi.mocked(costGuardrails.canMakeCall).mockReturnValueOnce(false);
+      
+      await expect(callPerplexitySonarAPI(testQueries.simple, mockAPICredentials.gemini))
+        .rejects.toThrow('Cost guardrails exceeded');
+    });
+
+    it('should record usage metrics correctly', async () => {
       const { costGuardrails } = await import('@/services/CostGuardrails');
       
       await callPerplexitySonarAPI(testQueries.technical, mockAPICredentials.gemini);
       
-      // Since we're mocking the entire module, we don't expect internal cost tracking calls
-      // This test verifies the function can be called successfully
-      expect(callPerplexitySonarAPI).toHaveBeenCalledWith(testQueries.technical, mockAPICredentials.gemini);
+      expect(costGuardrails.recordUsage).toHaveBeenCalledWith('sonar', 1000);
+    });
+
+    it('should fallback to Gemini when Perplexity unavailable', async () => {
+      // This tests the current placeholder implementation
+      const result = await callPerplexitySonarAPI(testQueries.simple, mockAPICredentials.gemini);
+      
+      expect(result).toBeDefined();
+      expect(typeof result).toBe('string');
     });
   });
 
@@ -177,59 +206,111 @@ describe('apiService', () => {
       }
     });
 
-    it('should respect token limits', async () => {
-      const longQuery = 'A'.repeat(50000);
-      const apiKey = mockAPICredentials.gemini;
+    it('should handle invalid API key', async () => {
+      const query = testQueries.simple;
+      const invalidKey = 'invalid-key';
       
-      const result = await callGeminiAPI(longQuery, apiKey, 'thinking-only');
-      
-      expect(result).toBeDefined();
-    });
-
-    it('should handle empty prompts', async () => {
-      const apiKey = mockAPICredentials.gemini;
-      
-      // Mock the function to reject for empty prompts
-      vi.mocked(callGeminiAPI).mockRejectedValueOnce(new Error('API call failed: Invalid prompt - must be a non-empty string'));
-      
-      await expect(callGeminiAPI('', apiKey, 'thinking-only'))
+      await expect(callGeminiAPI(query, invalidKey, 'thinking-only'))
         .rejects.toThrow();
     });
 
-    it('should track token usage', async () => {
+    it('should handle empty prompts correctly', async () => {
+      const { validateInput } = await import('@/utils/securityUtils');
+      
+      await expect(callGeminiAPI('', mockAPICredentials.gemini, 'thinking-only'))
+        .rejects.toThrow('Input validation failed');
+    });
+
+    it('should handle whitespace-only prompts', async () => {
+      await expect(callGeminiAPI('   \n\t   ', mockAPICredentials.gemini, 'thinking-only'))
+        .rejects.toThrow('Input validation failed');
+    });
+
+    it('should track token usage correctly', async () => {
       const { costGuardrails } = await import('@/services/CostGuardrails');
       
       await callGeminiAPI(testQueries.technical, mockAPICredentials.gemini, 'thinking-structured');
       
-      // Since we're mocking the entire module, we don't expect internal cost tracking calls
-      // This test verifies the function can be called successfully
-      expect(callGeminiAPI).toHaveBeenCalledWith(testQueries.technical, mockAPICredentials.gemini, 'thinking-structured');
+      expect(costGuardrails.recordUsage).toHaveBeenCalled();
+    });
+
+    it('should handle API network errors', async () => {
+      const { secureRequestWithTimeout } = await import('@/utils/secureNetworkRequest');
+      vi.mocked(secureRequestWithTimeout).mockRejectedValueOnce(new Error('Network timeout'));
+      
+      await expect(callGeminiAPI(testQueries.simple, mockAPICredentials.gemini, 'thinking-only'))
+        .rejects.toThrow('Network timeout');
+    });
+
+    it('should handle malformed API responses', async () => {
+      const { secureNetworkRequest } = await import('@/utils/secureNetworkRequest');
+      vi.mocked(secureNetworkRequest).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue({}), // No candidates
+        text: vi.fn().mockResolvedValue('Empty response')
+      });
+      
+      await expect(callGeminiAPI(testQueries.simple, mockAPICredentials.gemini, 'thinking-only'))
+        .rejects.toThrow();
+    });
+
+    it('should handle API error responses', async () => {
+      const { secureNetworkRequest } = await import('@/utils/secureNetworkRequest');
+      vi.mocked(secureNetworkRequest).mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        json: vi.fn().mockResolvedValue({ error: 'Quota exceeded' }),
+        text: vi.fn().mockResolvedValue('Quota exceeded')
+      });
+      
+      await expect(callGeminiAPI(testQueries.simple, mockAPICredentials.gemini, 'thinking-only'))
+        .rejects.toThrow();
     });
   });
 
   describe('Error Handling and Security', () => {
-    it('should handle network errors gracefully', async () => {
-      // Mock network error for one test
-      vi.mocked(callGeminiAPI).mockRejectedValueOnce(new Error('Network timeout'));
+    it('should validate API key format', async () => {
+      const { validateApiKeyFormat } = await import('@/utils/secureNetworkRequest');
       
-      await expect(callGeminiAPI(testQueries.simple, mockAPICredentials.gemini, 'thinking-only'))
+      // Test with short invalid key
+      await expect(callGeminiAPI(testQueries.simple, 'short', 'thinking-only'))
         .rejects.toThrow();
     });
 
-    it('should validate response formats', async () => {
-      // Mock malformed response error
-      vi.mocked(callGeminiAPI).mockRejectedValueOnce(new Error('No candidates in Gemini API response'));
+    it('should sanitize errors properly', async () => {
+      const { sanitizeError } = await import('@/utils/errorSanitizer');
       
-      await expect(callGeminiAPI(testQueries.simple, mockAPICredentials.gemini, 'thinking-only'))
-        .rejects.toThrow();
+      // Trigger an error and verify sanitization is called
+      try {
+        await callGeminiAPI('', mockAPICredentials.gemini, 'thinking-only');
+      } catch (error) {
+        expect(sanitizeError).toHaveBeenCalled();
+      }
     });
 
-    it('should handle API quota exceeded errors', async () => {
-      // Mock quota exceeded error
-      vi.mocked(callGeminiAPI).mockRejectedValueOnce(new Error('Gemini API error: 429 - Quota exceeded'));
+    it('should log API calls for security monitoring', async () => {
+      const { logApiCall } = await import('@/services/securityEventLogger');
       
-      await expect(callGeminiAPI(testQueries.simple, mockAPICredentials.gemini, 'thinking-only'))
-        .rejects.toThrow();
+      await callGeminiAPI(testQueries.simple, mockAPICredentials.gemini, 'thinking-only');
+      
+      expect(logApiCall).toHaveBeenCalled();
+    });
+
+    it('should handle concurrent API calls without race conditions', async () => {
+      const promises = [
+        callGeminiAPI(testQueries.simple, mockAPICredentials.gemini, 'thinking-only'),
+        callGeminiAPI(testQueries.medical, mockAPICredentials.gemini, 'thinking-structured'),
+        callPerplexitySonarAPI(testQueries.technical, mockAPICredentials.gemini)
+      ];
+      
+      const results = await Promise.all(promises);
+      
+      expect(results).toHaveLength(3);
+      results.forEach(result => {
+        expect(result).toBeDefined();
+        expect(typeof result).toBe('string');
+      });
     });
   });
 
