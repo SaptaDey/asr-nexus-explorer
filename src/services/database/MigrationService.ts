@@ -34,6 +34,14 @@ export class MigrationService {
    */
   private async ensureMigrationsTable(): Promise<void> {
     try {
+      // CRITICAL FIX: Check authentication before attempting RPC calls
+      const { data: { user }, error: authError } = await this.supabase.auth.getUser();
+      
+      if (!user || authError) {
+        console.log('🔄 MigrationService: Skipping migrations table setup for guest user (prevents 401 errors)');
+        return;
+      }
+
       const { error } = await this.supabase.rpc('exec_sql', {
         sql: `
           CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -56,6 +64,14 @@ export class MigrationService {
    */
   async getAppliedMigrations(): Promise<string[]> {
     try {
+      // CRITICAL FIX: Check authentication before attempting schema_migrations query
+      const { data: { user }, error: authError } = await this.supabase.auth.getUser();
+      
+      if (!user || authError) {
+        console.log('🔄 MigrationService: Skipping migration history for guest user (prevents 401 errors)');
+        return [];
+      }
+
       await this.ensureMigrationsTable();
 
       const { data, error } = await this.supabase
@@ -84,6 +100,19 @@ export class MigrationService {
     appliedMigrations: string[];
     recommendedActions: string[];
   }> {
+    // CRITICAL FIX: Check authentication before attempting table queries
+    const { data: { user }, error: authError } = await this.supabase.auth.getUser();
+    
+    if (!user || authError) {
+      console.log('🔄 MigrationService: Skipping schema check for guest user (prevents 401 errors)');
+      return {
+        tablesExist: {},
+        missingTables: [],
+        appliedMigrations: [],
+        recommendedActions: ['Authentication required for schema operations']
+      };
+    }
+
     const requiredTables = [
       'query_sessions',
       'graph_data', 
@@ -99,7 +128,7 @@ export class MigrationService {
     const missingTables: string[] = [];
     const recommendedActions: string[] = [];
 
-    // Check which tables exist
+    // Check which tables exist (only for authenticated users)
     for (const tableName of requiredTables) {
       try {
         const { error } = await this.supabase
@@ -152,6 +181,18 @@ export class MigrationService {
     const startTime = Date.now();
     
     try {
+      // CRITICAL FIX: Check authentication before attempting migration
+      const { data: { user }, error: authError } = await this.supabase.auth.getUser();
+      
+      if (!user || authError) {
+        console.log('🔄 MigrationService: Skipping migration for guest user (prevents 401 errors)');
+        return {
+          success: false,
+          error: 'Authentication required for migrations',
+          executionTime: Date.now() - startTime
+        };
+      }
+
       console.log(`🔄 Applying migration: ${migration.name}`);
 
       // Try to execute the migration SQL
