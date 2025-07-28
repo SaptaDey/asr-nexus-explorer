@@ -211,11 +211,15 @@ export const DebugButton: React.FC = () => {
       timestamp: new Date().toISOString()
     };
 
-    setDebugState(prev => ({
-      ...prev,
-      errors: [newError, ...prev.errors].slice(0, 100), // Keep last 100 errors
-      lastUpdate: new Date().toISOString()
-    }));
+    // Only update state when newError actually changes, and avoid calling setDebugState within a render or another state update unless truly needed.
+    useEffect(() => {
+      if (newError) {
+        setDebugState(prev => ({
+          ...prev,
+          errors: [newError, ...prev.errors].slice(0, 100),
+        }));
+      }
+    }, [newError]); // Make sure the dependency is correct and not causing the effect to run in a loop
 
     // Show toast for critical errors
     if (errorData.severity === 'critical') {
