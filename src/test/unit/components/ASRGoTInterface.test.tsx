@@ -138,23 +138,6 @@ vi.mock('@/components/accessibility/AccessibilityProvider', () => ({
   AccessibilityProvider: ({ children }: any) => <div>{children}</div>
 }));
 
-const TestWrapper = ({ children }: { children: React.ReactNode }) => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false }
-    }
-  });
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        {children}
-      </BrowserRouter>
-    </QueryClientProvider>
-  );
-};
-
 describe('ASRGoTInterface', () => {
   let user: ReturnType<typeof userEvent.setup>;
 
