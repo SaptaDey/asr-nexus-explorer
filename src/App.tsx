@@ -53,6 +53,13 @@ const App = () => {
   useEffect(() => {
     // Initialize app on mount
     initializeApp();
+    
+    // Initialize debug helper after app is ready
+    import('@/utils/debugHelper.simplified').then(() => {
+      console.log('✅ Debug helper initialized');
+    }).catch(error => {
+      console.warn('Debug helper initialization failed:', error);
+    });
   }, []);
 
   return (

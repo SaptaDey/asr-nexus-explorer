@@ -59,15 +59,29 @@ export interface ErrorPattern {
 }
 
 class ErrorLoggingService {
-  private sessionId: string;
-  private isOnline: boolean = navigator.onLine;
+  private sessionId: string = '';
+  private isOnline: boolean = true;
   private offlineQueue: ErrorLogEntry[] = [];
   private maxQueueSize: number = 100;
+  private initialized: boolean = false;
   
   constructor() {
+    // Defer initialization to avoid accessing browser APIs during module loading
+  }
+
+  private ensureInitialized(): void {
+    if (this.initialized) return;
+    
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      console.warn('ErrorLoggingService: Browser APIs not available');
+      return;
+    }
+    
     this.sessionId = this.generateSessionId();
+    this.isOnline = navigator.onLine;
     this.setupEventListeners();
     this.initializeGlobalErrorHandlers();
+    this.initialized = true;
   }
 
   private generateSessionId(): string {
@@ -123,6 +137,8 @@ class ErrorLoggingService {
    * Main error logging method with multiple transport fallbacks
    */
   async logError(errorEntry: Partial<ErrorLogEntry>): Promise<void> {
+    this.ensureInitialized();
+    
     try {
       // Enrich error entry with default context
       const enrichedEntry = this.enrichErrorEntry(errorEntry);
@@ -292,6 +308,8 @@ class ErrorLoggingService {
    * Get recent errors for Claude Code debugging
    */
   async getRecentErrors(hours: number = 24, limit: number = 100): Promise<any[]> {
+    this.ensureInitialized();
+    
     try {
       const { data, error } = await supabase
         .from('error_logs')
@@ -312,6 +330,8 @@ class ErrorLoggingService {
    * Get error patterns for analysis
    */
   async getErrorPatterns(hours: number = 24, minOccurrences: number = 3): Promise<ErrorPattern[]> {
+    this.ensureInitialized();
+    
     try {
       const { data, error } = await supabase
         .rpc('get_error_patterns', { 
@@ -331,6 +351,8 @@ class ErrorLoggingService {
    * Get critical errors
    */
   async getCriticalErrors(): Promise<any[]> {
+    this.ensureInitialized();
+    
     try {
       const { data, error } = await supabase
         .from('recent_critical_errors')
@@ -348,6 +370,8 @@ class ErrorLoggingService {
    * Get errors by component
    */
   async getErrorsByComponent(componentName: string, hours: number = 24): Promise<any[]> {
+    this.ensureInitialized();
+    
     try {
       const { data, error } = await supabase
         .from('error_logs')
@@ -387,6 +411,8 @@ class ErrorLoggingService {
     local_errors: any[];
     summary: any;
   }> {
+    this.ensureInitialized();
+    
     const [recentErrors, patterns, criticalErrors] = await Promise.all([
       this.getRecentErrors(hours),
       this.getErrorPatterns(hours),
@@ -416,6 +442,8 @@ class ErrorLoggingService {
    */
   
   logComponentError(componentName: string, error: Error, additionalContext?: any): void {
+    this.ensureInitialized();
+    
     this.logError({
       error_type: 'component',
       severity: 'error',
@@ -429,6 +457,8 @@ class ErrorLoggingService {
   }
 
   logAPIError(url: string, method: string, status: number, responseBody: string, error?: Error): void {
+    this.ensureInitialized();
+    
     this.logError({
       error_type: 'api',
       severity: status >= 500 ? 'critical' : 'error',
@@ -444,6 +474,8 @@ class ErrorLoggingService {
   }
 
   logASRGoTStageError(stageId: string, error: Error, parameters?: any): void {
+    this.ensureInitialized();
+    
     this.logError({
       error_type: 'javascript',
       severity: 'error',
@@ -457,6 +489,8 @@ class ErrorLoggingService {
   }
 
   logAuthError(error: Error, context?: string): void {
+    this.ensureInitialized();
+    
     this.logError({
       error_type: 'auth',
       severity: 'error',
@@ -469,6 +503,8 @@ class ErrorLoggingService {
   }
 
   logDatabaseError(error: Error, operation?: string): void {
+    this.ensureInitialized();
+    
     this.logError({
       error_type: 'database',
       severity: 'critical',
@@ -481,5 +517,64 @@ class ErrorLoggingService {
   }
 }
 
-// Export singleton instance
-export const errorLogger = new ErrorLoggingService();
+// Create a getter for lazy initialization to avoid accessing browser APIs during module load
+let _errorLogger: ErrorLoggingService | null = null;
+
+// Use a getter to ensure truly lazy initialization
+export const errorLogger = {
+  get instance(): ErrorLoggingService {
+    if (!_errorLogger) {
+      _errorLogger = new ErrorLoggingService();
+    }
+    return _errorLogger;
+  },
+  
+  // Proxy all methods to the instance
+  logError: (entry: Partial<ErrorLogEntry>) => {
+    return errorLogger.instance.logError(entry);
+  },
+  
+  getRecentErrors: (hours?: number, limit?: number) => {
+    return errorLogger.instance.getRecentErrors(hours, limit);
+  },
+  
+  getErrorPatterns: (hours?: number, minOccurrences?: number) => {
+    return errorLogger.instance.getErrorPatterns(hours, minOccurrences);
+  },
+  
+  getCriticalErrors: () => {
+    return errorLogger.instance.getCriticalErrors();
+  },
+  
+  getErrorsByComponent: (componentName: string, hours?: number) => {
+    return errorLogger.instance.getErrorsByComponent(componentName, hours);
+  },
+  
+  getLocalStorageErrors: () => {
+    return errorLogger.instance.getLocalStorageErrors();
+  },
+  
+  exportErrorsForDebugging: (hours?: number) => {
+    return errorLogger.instance.exportErrorsForDebugging(hours);
+  },
+  
+  logComponentError: (componentName: string, error: Error, additionalContext?: any) => {
+    return errorLogger.instance.logComponentError(componentName, error, additionalContext);
+  },
+  
+  logAPIError: (url: string, method: string, status: number, responseBody: string, error?: Error) => {
+    return errorLogger.instance.logAPIError(url, method, status, responseBody, error);
+  },
+  
+  logASRGoTStageError: (stageId: string, error: Error, parameters?: any) => {
+    return errorLogger.instance.logASRGoTStageError(stageId, error, parameters);
+  },
+  
+  logAuthError: (error: Error, context?: string) => {
+    return errorLogger.instance.logAuthError(error, context);
+  },
+  
+  logDatabaseError: (error: Error, operation?: string) => {
+    return errorLogger.instance.logDatabaseError(error, operation);
+  }
+};

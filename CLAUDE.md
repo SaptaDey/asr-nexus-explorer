@@ -181,6 +181,45 @@ Complete control system covering:
 - **Build**: Vite with React SWC, TypeScript
 - **Deployment**: GitHub → Production (https://scientific-research.online/)
 
+## Error Logging System (NEW - UNTESTED)
+
+### External Error Logging for Claude Code Access
+**Status**: Recently implemented but not verified due to build environment issues
+
+**Key Files**:
+- `src/services/ErrorLoggingService.ts` - Multi-transport error logging service
+- `src/utils/debugHelper.ts` - Claude Code access interface with browser console commands
+- `src/pages/api/debug/errors.ts` - API endpoints for programmatic access
+- `supabase/migrations/20250127_create_error_logs.sql` - Database schema
+- `CLAUDE_ERROR_ACCESS.md` - Complete usage documentation
+
+**Claude Code Access Methods** (Once Tested):
+```javascript
+// Browser console commands
+await healthCheck()              // Quick system status
+await getErrors(24)             // Recent errors
+await getCritical()             // Critical issues only
+await debugComponent('ErrorBoundary') // Component analysis
+
+// Full debug interface
+claudeDebug.getFullErrorReport(48)
+claudeDebug.quickHealthCheck()
+claudeDebug.debugErrorSpike(6)
+claudeDebug.getProductionStatus()
+```
+
+**Integration Points**:
+- Enhanced ErrorBoundary with automatic logging
+- API service error logging with sanitized messages
+- Global error handlers for unhandled errors/promises
+- Main app initialization of error logging
+
+**Security Features**:
+- API keys automatically redacted from logs
+- Error messages sanitized to prevent data exposure
+- Row-level security on database tables
+- User data excluded unless explicitly authorized
+
 ## Development Guidelines
 
 ### Code Quality
@@ -203,7 +242,7 @@ Complete control system covering:
 
 ### Production Deployment
 - All changes pushed to main branch deploy automatically
-- Test thoroughly before pushing (lint, build, manual testing)
+- **CRITICAL**: Test thoroughly before pushing (lint, build, manual testing)
 - Monitor https://scientific-research.online/ after deployment
 - Ensure Supabase integration remains stable
 
@@ -221,4 +260,27 @@ Complete control system covering:
 - **CLI Access**: Already configured for direct GitHub operations
 - **Commit Style**: Descriptive messages with feature/fix prefixes
 
+## Critical Session Memory
+
+### Recent Critical Issue (July 28, 2025)
+**Problem**: Build environment failures were ignored during error logging implementation
+- WSL1/Windows fork failures preventing npm/vite operations
+- Missing dependencies (tinyglobby, broken node_modules/.bin)
+- Untested code (1,676+ lines) was committed to production
+
+**Lesson Learned**: Never ignore build failures or commit untested code
+**Resolution**: Switching to WSL2/Ubuntu environment for proper testing
+
+### Repository State
+- **Current Commit**: 7609e5b (error logging system - UNTESTED)
+- **Previous Stable**: 4d0498b (React fixes working correctly)
+- **Production Status**: Site functional, error logging needs verification
+
+### Environment Requirements
+- **Development**: WSL2/Ubuntu (not WSL1/Windows)
+- **Build Verification**: Must run `npm run build` successfully before any commits
+- **Testing**: All new code must compile and function before deployment
+
 This is a production system serving researchers globally through https://scientific-research.online/. All modifications must maintain system stability, user experience, and research integrity.
+
+**For Future Sessions**: Always verify build environment health and test code compilation before making any commits. The error logging system implementation is sound but requires proper testing in a functional WSL2/Ubuntu environment.

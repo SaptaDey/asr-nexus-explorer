@@ -3,12 +3,6 @@ import { createRoot } from 'react-dom/client'
 
 import App from './App.tsx'
 import './index.css'
-import { safeLog, safeError, initializeSecurity } from './services/security/index'
-import { setupCSRFInterceptor } from './utils/csrfProtection'
-
-// Initialize error logging and debug helpers
-import './services/ErrorLoggingService'
-import './utils/debugHelper'
 
 // Emergency error handling for main.tsx with simplified initialization
 (async () => {
