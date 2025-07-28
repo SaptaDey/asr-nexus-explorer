@@ -204,28 +204,22 @@ export const DebugButton: React.FC = () => {
     };
   }, [debugState.isRecording]);
 
-  const addError = (errorData: Omit<ErrorLog, 'id' | 'timestamp'>) => {
-    const newError: ErrorLog = {
-      ...errorData,
-      id: `error_${++errorIdCounter.current}`,
-      timestamp: new Date().toISOString()
-    };
-
-    // Only update state when newError actually changes, and avoid calling setDebugState within a render or another state update unless truly needed.
-    useEffect(() => {
-      if (newError) {
-        setDebugState(prev => ({
-          ...prev,
-          errors: [newError, ...prev.errors].slice(0, 100),
-        }));
-      }
-    }, [newError]); // Make sure the dependency is correct and not causing the effect to run in a loop
-
-    // Show toast for critical errors
-    if (errorData.severity === 'critical') {
-      toast.error(`Critical Error: ${errorData.message.substring(0, 50)}...`);
-    }
+ const addError = (errorData: Omit<ErrorLog, 'id' | 'timestamp'>) => {
+  const newError: ErrorLog = {
+    ...errorData,
+    id: `error_${++errorIdCounter.current}`,
+    timestamp: new Date().toISOString()
   };
+
+  setDebugState(prev => ({
+    ...prev,
+    errors: [newError, ...prev.errors].slice(0, 100),
+  }));
+
+  if (errorData.severity === 'critical') {
+    toast.error(`Critical Error: ${errorData.message.substring(0, 50)}...`);
+  }
+};
 
   const clearErrors = () => {
     setDebugState(prev => ({
