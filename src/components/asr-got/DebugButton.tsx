@@ -54,6 +54,25 @@ export const DebugButton: React.FC = () => {
   });
   const [activeTab, setActiveTab] = useState('errors');
   const errorIdCounter = useRef(0);
+  const addError = React.useCallback(
+  (errorData: Omit<ErrorLog, 'id' | 'timestamp'>) => {
+    const newError: ErrorLog = {
+      ...errorData,
+      id: `error_${++errorIdCounter.current}`,
+      timestamp: new Date().toISOString()
+    };
+
+    setDebugState(prev => ({
+      ...prev,
+      errors: [newError, ...prev.errors].slice(0, 100),
+    }));
+
+    if (errorData.severity === 'critical') {
+      toast.error(`Critical Error: ${errorData.message.substring(0, 50)}...`);
+    }
+  },
+  []
+);
 
   // Initialize comprehensive error monitoring system
   useEffect(() => {
@@ -202,26 +221,7 @@ export const DebugButton: React.FC = () => {
     return () => {
       errorLoggers.forEach(cleanup => cleanup());
     };
-  }, [debugState.isRecording]);
-
-  const addError = (errorData: Omit<ErrorLog, 'id' | 'timestamp'>) => {
-    const newError: ErrorLog = {
-      ...errorData,
-      id: `error_${++errorIdCounter.current}`,
-      timestamp: new Date().toISOString()
-    };
-
-    setDebugState(prev => ({
-      ...prev,
-      errors: [newError, ...prev.errors].slice(0, 100), // Keep last 100 errors
-      lastUpdate: new Date().toISOString()
-    }));
-
-    // Show toast for critical errors
-    if (errorData.severity === 'critical') {
-      toast.error(`Critical Error: ${errorData.message.substring(0, 50)}...`);
-    }
-  };
+  }, [debugState.isRecording, addError]);
 
   const clearErrors = () => {
     setDebugState(prev => ({
