@@ -1,5 +1,6 @@
 import React from 'react';
-import { errorLogger } from '@/services/ErrorLoggingService';
+// TEMPORARILY DISABLE: Complex error logger to isolate temporal dead zone
+// import { errorLogger } from '@/services/ErrorLoggingService';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -45,22 +46,23 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         eventId
       });
 
-      // Log promise rejection to error logging service
-      errorLogger.logError({
-        error_type: 'javascript',
-        severity: 'error',
-        category: 'unhandled_promise',
-        message: error.message,
-        stack: error.stack,
-        component_name: 'ErrorBoundary',
-        function_name: 'unhandledRejectionHandler',
-        metadata: {
-          reason: event.reason,
-          promiseRejectionEventId: eventId,
-          originalType: typeof event.reason
-        },
-        tags: ['promise', 'unhandled', 'error-boundary']
-      });
+      // TEMPORARILY DISABLE: Complex error logging to isolate temporal dead zone
+      // errorLogger.logError({
+      //   error_type: 'javascript',
+      //   severity: 'error',
+      //   category: 'unhandled_promise',
+      //   message: error.message,
+      //   stack: error.stack,
+      //   component_name: 'ErrorBoundary',
+      //   function_name: 'unhandledRejectionHandler',
+      //   metadata: {
+      //     reason: event.reason,
+      //     promiseRejectionEventId: eventId,
+      //     originalType: typeof event.reason
+      //   },
+      //   tags: ['promise', 'unhandled', 'error-boundary']
+      // });
+      console.error('Unhandled promise rejection logged:', error);
       
       // Prevent the default browser error handling
       event.preventDefault();
@@ -98,22 +100,23 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
       eventId
     });
 
-    // Log error to our comprehensive logging service
-    errorLogger.logError({
-      error_type: 'component',
-      severity: 'critical',
-      category: 'error_boundary',
-      message: error.message,
-      stack: error.stack,
-      component_name: 'ErrorBoundary',
-      function_name: 'componentDidCatch',
-      metadata: {
-        componentStack: errorInfo.componentStack,
-        errorBoundaryEventId: eventId,
-        errorInfo
-      },
-      tags: ['error-boundary', 'critical', 'react']
-    });
+    // TEMPORARILY DISABLE: Complex error logging to isolate temporal dead zone
+    // errorLogger.logError({
+    //   error_type: 'component',
+    //   severity: 'critical',
+    //   category: 'error_boundary',
+    //   message: error.message,
+    //   stack: error.stack,
+    //   component_name: 'ErrorBoundary',
+    //   function_name: 'componentDidCatch',
+    //   metadata: {
+    //     componentStack: errorInfo.componentStack,
+    //     errorBoundaryEventId: eventId,
+    //     errorInfo
+    //   },
+    //   tags: ['error-boundary', 'critical', 'react']
+    // });
+    console.error('Component error caught by ErrorBoundary:', error, errorInfo);
   }
 
   private handleReset = () => {
