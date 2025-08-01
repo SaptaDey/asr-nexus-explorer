@@ -1,10 +1,11 @@
 /**
  * CSRF Protection Utilities
- * SECURITY: Implements Cross-Site Request Forgery protection
+ * SIMPLIFIED: Uses static imports to prevent temporal dead zone issues
  */
 
 import React from 'react';
 import { secureHash } from './securityUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 class CSRFProtection {
   private static instance: CSRFProtection;
@@ -159,7 +160,6 @@ export const useCSRFToken = () => {
 async function getSessionId(): Promise<string> {
   // Try to get from Supabase auth
   try {
-    const { supabase } = await import('@/integrations/supabase/client');
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user?.id) {
       return session.user.id;
