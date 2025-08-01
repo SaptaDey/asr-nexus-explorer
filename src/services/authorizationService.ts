@@ -85,41 +85,55 @@ class AuthorizationService {
   private static instance: AuthorizationService;
   
   // Role-based permissions mapping
-  private readonly rolePermissions: Record<Role, Permission[]> = {
-    [Role.GUEST]: [
+  private readonly rolePermissions: Record<Role, Permission[]> = (() => {
+    const guestPermissions = [
       Permission.VIEW_RESEARCH // Very limited access
-    ],
-    [Role.USER]: [
+    ];
+    
+    const userPermissions = [
       Permission.CREATE_RESEARCH,
       Permission.VIEW_RESEARCH,
       Permission.EDIT_RESEARCH,
       Permission.USE_GEMINI_API,
       Permission.MANAGE_API_KEYS,
       Permission.EXPORT_DATA
-    ],
-    [Role.RESEARCHER]: [
-      ...this.rolePermissions?.[Role.USER] || [],
+    ];
+    
+    const researcherPermissions = [
+      ...userPermissions,
       Permission.DELETE_RESEARCH,
       Permission.SHARE_RESEARCH,
       Permission.USE_PERPLEXITY_API,
       Permission.VIEW_ANALYTICS,
       Permission.IMPORT_DATA
-    ],
-    [Role.PREMIUM]: [
-      ...this.rolePermissions?.[Role.RESEARCHER] || [],
+    ];
+    
+    const premiumPermissions = [
+      ...researcherPermissions,
       Permission.USE_DEVELOPER_MODE,
       Permission.MODIFY_PARAMETERS,
       Permission.ACCESS_RAW_DATA
-    ],
-    [Role.ADMIN]: [
-      ...this.rolePermissions?.[Role.PREMIUM] || [],
+    ];
+    
+    const adminPermissions = [
+      ...premiumPermissions,
       Permission.MANAGE_USERS,
       Permission.VIEW_AUDIT_LOGS
-    ],
-    [Role.SUPER_ADMIN]: [
+    ];
+    
+    const superAdminPermissions = [
       ...Object.values(Permission) // All permissions
-    ]
-  };
+    ];
+    
+    return {
+      [Role.GUEST]: guestPermissions,
+      [Role.USER]: userPermissions,
+      [Role.RESEARCHER]: researcherPermissions,
+      [Role.PREMIUM]: premiumPermissions,
+      [Role.ADMIN]: adminPermissions,
+      [Role.SUPER_ADMIN]: superAdminPermissions
+    };
+  })();
   
   private constructor() {
     // Ensure permissions are properly inherited
