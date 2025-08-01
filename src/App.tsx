@@ -18,21 +18,13 @@ import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
-// Initialize Supabase storage on app start
+// SIMPLIFIED: Remove complex dynamic imports that can cause temporal dead zone
 const initializeApp = async () => {
   try {
-    // Check auth before initializing storage services
-    const { supabase } = await import("@/integrations/supabase/client");
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      console.log('🔄 App: Skipping storage initialization - no authenticated user (emergency mode)');
-      return;
-    }
-    
-    const { supabaseStorage } = await import("@/services/SupabaseStorageService");
-    await supabaseStorage.initializeStorage();
-    console.log('🚀 App initialization completed with authenticated user');
+    console.log('🔄 App: Starting simplified initialization');
+    // Skip complex initialization that was causing temporal dead zone errors
+    // Services will initialize themselves when needed
+    console.log('🚀 App: Simplified initialization completed');
   } catch (error) {
     console.warn('⚠️ App initialization had issues:', error);
   }
@@ -54,12 +46,8 @@ const App = () => {
     // Initialize app on mount
     initializeApp();
     
-    // Initialize debug helper after app is ready
-    import('@/utils/debugHelper.simplified').then(() => {
-      console.log('✅ Debug helper initialized');
-    }).catch(error => {
-      console.warn('Debug helper initialization failed:', error);
-    });
+    // SIMPLIFIED: Skip debug helper initialization to avoid dynamic import conflicts
+    console.log('✅ App loaded - debug helper disabled to prevent initialization conflicts');
   }, []);
 
   return (

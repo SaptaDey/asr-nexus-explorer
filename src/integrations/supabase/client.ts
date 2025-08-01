@@ -1,35 +1,26 @@
-// EMERGENCY FIX: Simplified Supabase client with disabled realtime to prevent errors
+// SIMPLIFIED: Stable Supabase client configuration
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// CRITICAL FIX: Use environment variables instead of hardcoded values
+// Use environment variables with fallback values
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://aogeenqytwrpjvrfwvjw.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvZ2VlbnF5dHdycGp2cmZ3dmp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjE3NTUyMDksImV4cCI6MjAzNzMzMTIwOX0.T_-2c37bIY8__ztVdYmPYQgpMhSprLhJMo9m6lxPCWE';
 
-console.log('🔧 Emergency Supabase client: Initializing with minimal connectivity');
+console.log('🔧 Supabase client: Initializing with stable configuration');
 
-// Create client with COMPLETELY DISABLED realtime to prevent WebSocket connection errors
+// Create client with stable configuration to prevent auth/connection errors
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
-    persistSession: false, // Disable session persistence to prevent auth errors
-    autoRefreshToken: false, // Disable auto refresh to prevent 401 errors
-    detectSessionInUrl: false, // Disable URL session detection
+    persistSession: true, // Keep session persistence
+    autoRefreshToken: true, // Keep auto refresh enabled
+    detectSessionInUrl: true, // Keep URL session detection
   },
-  // CRITICAL: Remove realtime configuration entirely
   global: {
     headers: {
-      'X-Client-Info': 'asr-got-emergency-mode',
+      'X-Client-Info': 'asr-got-stable',
     },
   },
 });
 
-// EMERGENCY: Override realtime methods to prevent any connections
-if (supabase.realtime) {
-  supabase.realtime.connect = () => {
-    console.log('🚫 Realtime connection blocked in emergency mode');
-    return { error: 'Realtime disabled in emergency mode' };
-  };
-}
-
-console.log('🔧 Emergency Supabase client created with disabled realtime');
+console.log('🔧 Supabase client created with stable configuration');

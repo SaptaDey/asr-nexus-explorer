@@ -1,6 +1,10 @@
 // Background Processing Utility Functions with Single-Tool Rule Support
-import { backgroundProcessor } from './index';
+// FIXED: Remove circular dependency by importing BackgroundProcessor directly
+import { BackgroundProcessor } from './BackgroundProcessor';
 import { APICredentials } from './types';
+
+// Create instance directly instead of importing from index
+const backgroundProcessor = new BackgroundProcessor();
 
 // Single-tool rule enforcement types
 type GeminiTool = 'THINKING' | 'STRUCTURED_OUTPUTS' | 'SEARCH_GROUNDING' | 'FUNCTION_CALLING' | 'CODE_EXECUTION' | 'CACHING';

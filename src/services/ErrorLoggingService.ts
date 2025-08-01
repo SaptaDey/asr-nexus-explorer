@@ -1,9 +1,9 @@
 /**
  * ErrorLoggingService - Comprehensive error logging for ASR-GoT
- * Provides multiple transport methods for error logging that Claude Code can access
+ * SIMPLIFIED: Uses static imports only to prevent temporal dead zone errors
  */
 
-// Dynamic import for Supabase to avoid mixed static/dynamic import warnings
+import { supabase } from '@/integrations/supabase/client';
 
 export interface ErrorLogEntry {
   // Error Classification
@@ -211,7 +211,6 @@ class ErrorLoggingService {
    */
   private async logToSupabase(entry: ErrorLogEntry): Promise<void> {
     try {
-      const { supabase } = await import('@/integrations/supabase/client');
       const { error } = await supabase
         .from('error_logs')
         .insert([entry]);
@@ -312,7 +311,6 @@ class ErrorLoggingService {
     this.ensureInitialized();
     
     try {
-      const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase
         .from('error_logs')
         .select('*')
@@ -335,7 +333,6 @@ class ErrorLoggingService {
     this.ensureInitialized();
     
     try {
-      const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase
         .rpc('get_error_patterns', { 
           hours_back: hours, 
@@ -357,7 +354,6 @@ class ErrorLoggingService {
     this.ensureInitialized();
     
     try {
-      const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase
         .from('recent_critical_errors')
         .select('*');
@@ -377,7 +373,6 @@ class ErrorLoggingService {
     this.ensureInitialized();
     
     try {
-      const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase
         .from('error_logs')
         .select('*')
@@ -522,100 +517,31 @@ class ErrorLoggingService {
   }
 }
 
-// Create a getter for lazy initialization to avoid accessing browser APIs during module load
+// SIMPLIFIED: Direct export to avoid complex proxy patterns that can cause temporal dead zone
 let _errorLogger: ErrorLoggingService | null = null;
 
-// Use a getter to ensure truly lazy initialization
-export const errorLogger = {
-  get instance(): ErrorLoggingService {
-    if (!_errorLogger) {
-      _errorLogger = new ErrorLoggingService();
-    }
-    return _errorLogger;
-  },
-  
-  // Proxy all methods to the instance
-  logError: (entry: Partial<ErrorLogEntry>) => {
-    if (!_errorLogger) {
-      _errorLogger = new ErrorLoggingService();
-    }
-    return _errorLogger.logError(entry);
-  },
-  
-  getRecentErrors: (hours?: number, limit?: number) => {
-    if (!_errorLogger) {
-      _errorLogger = new ErrorLoggingService();
-    }
-    return _errorLogger.getRecentErrors(hours, limit);
-  },
-  
-  getErrorPatterns: (hours?: number, minOccurrences?: number) => {
-    if (!_errorLogger) {
-      _errorLogger = new ErrorLoggingService();
-    }
-    return _errorLogger.getErrorPatterns(hours, minOccurrences);
-  },
-  
-  getCriticalErrors: () => {
-    if (!_errorLogger) {
-      _errorLogger = new ErrorLoggingService();
-    }
-    return _errorLogger.getCriticalErrors();
-  },
-  
-  getErrorsByComponent: (componentName: string, hours?: number) => {
-    if (!_errorLogger) {
-      _errorLogger = new ErrorLoggingService();
-    }
-    return _errorLogger.getErrorsByComponent(componentName, hours);
-  },
-  
-  getLocalStorageErrors: () => {
-    if (!_errorLogger) {
-      _errorLogger = new ErrorLoggingService();
-    }
-    return _errorLogger.getLocalStorageErrors();
-  },
-  
-  exportErrorsForDebugging: (hours?: number) => {
-    if (!_errorLogger) {
-      _errorLogger = new ErrorLoggingService();
-    }
-    return _errorLogger.exportErrorsForDebugging(hours);
-  },
-  
-  logComponentError: (componentName: string, error: Error, additionalContext?: any) => {
-    if (!_errorLogger) {
-      _errorLogger = new ErrorLoggingService();
-    }
-    return _errorLogger.logComponentError(componentName, error, additionalContext);
-  },
-  
-  logAPIError: (url: string, method: string, status: number, responseBody: string, error?: Error) => {
-    if (!_errorLogger) {
-      _errorLogger = new ErrorLoggingService();
-    }
-    return _errorLogger.logAPIError(url, method, status, responseBody, error);
-  },
-  
-  logASRGoTStageError: (stageId: string, error: Error, parameters?: any) => {
-    if (!_errorLogger) {
-      _errorLogger = new ErrorLoggingService();
-    }
-    return _errorLogger.logASRGoTStageError(stageId, error, parameters);
-  },
-  
-  logAuthError: (error: Error, context?: string) => {
-    if (!_errorLogger) {
-      _errorLogger = new ErrorLoggingService();
-    }
-    return _errorLogger.logAuthError(error, context);
-  },
-  
-  logDatabaseError: (error: Error, operation?: string) => {
-    if (!_errorLogger) {
-      _errorLogger = new ErrorLoggingService();
-    }
-    return _errorLogger.logDatabaseError(error, operation);
+function getErrorLogger(): ErrorLoggingService {
+  if (!_errorLogger) {
+    _errorLogger = new ErrorLoggingService();
   }
+  return _errorLogger;
+}
+
+// Export simple instance getter instead of complex proxy
+export const errorLogger = {
+  getInstance: getErrorLogger,
+  
+  // Simple method forwarding without getters/setters
+  logError: (entry: Partial<ErrorLogEntry>) => getErrorLogger().logError(entry),
+  getRecentErrors: (hours?: number, limit?: number) => getErrorLogger().getRecentErrors(hours, limit),
+  getErrorPatterns: (hours?: number, minOccurrences?: number) => getErrorLogger().getErrorPatterns(hours, minOccurrences),
+  getCriticalErrors: () => getErrorLogger().getCriticalErrors(),
+  getErrorsByComponent: (componentName: string, hours?: number) => getErrorLogger().getErrorsByComponent(componentName, hours),
+  getLocalStorageErrors: () => getErrorLogger().getLocalStorageErrors(),
+  exportErrorsForDebugging: (hours?: number) => getErrorLogger().exportErrorsForDebugging(hours),
+  logComponentError: (componentName: string, error: Error, additionalContext?: any) => getErrorLogger().logComponentError(componentName, error, additionalContext),
+  logAPIError: (url: string, method: string, status: number, responseBody: string, error?: Error) => getErrorLogger().logAPIError(url, method, status, responseBody, error),
+  logASRGoTStageError: (stageId: string, error: Error, parameters?: any) => getErrorLogger().logASRGoTStageError(stageId, error, parameters),
+  logAuthError: (error: Error, context?: string) => getErrorLogger().logAuthError(error, context),
+  logDatabaseError: (error: Error, operation?: string) => getErrorLogger().logDatabaseError(error, operation)
 };
