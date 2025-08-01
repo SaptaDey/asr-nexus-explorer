@@ -3,7 +3,7 @@
  * Provides multiple transport methods for error logging that Claude Code can access
  */
 
-import { supabase } from '@/integrations/supabase/client';
+// Dynamic import for Supabase to avoid mixed static/dynamic import warnings
 
 export interface ErrorLogEntry {
   // Error Classification
@@ -211,6 +211,7 @@ class ErrorLoggingService {
    */
   private async logToSupabase(entry: ErrorLogEntry): Promise<void> {
     try {
+      const { supabase } = await import('@/integrations/supabase/client');
       const { error } = await supabase
         .from('error_logs')
         .insert([entry]);
@@ -311,6 +312,7 @@ class ErrorLoggingService {
     this.ensureInitialized();
     
     try {
+      const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase
         .from('error_logs')
         .select('*')
@@ -333,6 +335,7 @@ class ErrorLoggingService {
     this.ensureInitialized();
     
     try {
+      const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase
         .rpc('get_error_patterns', { 
           hours_back: hours, 
@@ -354,6 +357,7 @@ class ErrorLoggingService {
     this.ensureInitialized();
     
     try {
+      const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase
         .from('recent_critical_errors')
         .select('*');
@@ -373,6 +377,7 @@ class ErrorLoggingService {
     this.ensureInitialized();
     
     try {
+      const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase
         .from('error_logs')
         .select('*')
@@ -531,50 +536,86 @@ export const errorLogger = {
   
   // Proxy all methods to the instance
   logError: (entry: Partial<ErrorLogEntry>) => {
-    return errorLogger.instance.logError(entry);
+    if (!_errorLogger) {
+      _errorLogger = new ErrorLoggingService();
+    }
+    return _errorLogger.logError(entry);
   },
   
   getRecentErrors: (hours?: number, limit?: number) => {
-    return errorLogger.instance.getRecentErrors(hours, limit);
+    if (!_errorLogger) {
+      _errorLogger = new ErrorLoggingService();
+    }
+    return _errorLogger.getRecentErrors(hours, limit);
   },
   
   getErrorPatterns: (hours?: number, minOccurrences?: number) => {
-    return errorLogger.instance.getErrorPatterns(hours, minOccurrences);
+    if (!_errorLogger) {
+      _errorLogger = new ErrorLoggingService();
+    }
+    return _errorLogger.getErrorPatterns(hours, minOccurrences);
   },
   
   getCriticalErrors: () => {
-    return errorLogger.instance.getCriticalErrors();
+    if (!_errorLogger) {
+      _errorLogger = new ErrorLoggingService();
+    }
+    return _errorLogger.getCriticalErrors();
   },
   
   getErrorsByComponent: (componentName: string, hours?: number) => {
-    return errorLogger.instance.getErrorsByComponent(componentName, hours);
+    if (!_errorLogger) {
+      _errorLogger = new ErrorLoggingService();
+    }
+    return _errorLogger.getErrorsByComponent(componentName, hours);
   },
   
   getLocalStorageErrors: () => {
-    return errorLogger.instance.getLocalStorageErrors();
+    if (!_errorLogger) {
+      _errorLogger = new ErrorLoggingService();
+    }
+    return _errorLogger.getLocalStorageErrors();
   },
   
   exportErrorsForDebugging: (hours?: number) => {
-    return errorLogger.instance.exportErrorsForDebugging(hours);
+    if (!_errorLogger) {
+      _errorLogger = new ErrorLoggingService();
+    }
+    return _errorLogger.exportErrorsForDebugging(hours);
   },
   
   logComponentError: (componentName: string, error: Error, additionalContext?: any) => {
-    return errorLogger.instance.logComponentError(componentName, error, additionalContext);
+    if (!_errorLogger) {
+      _errorLogger = new ErrorLoggingService();
+    }
+    return _errorLogger.logComponentError(componentName, error, additionalContext);
   },
   
   logAPIError: (url: string, method: string, status: number, responseBody: string, error?: Error) => {
-    return errorLogger.instance.logAPIError(url, method, status, responseBody, error);
+    if (!_errorLogger) {
+      _errorLogger = new ErrorLoggingService();
+    }
+    return _errorLogger.logAPIError(url, method, status, responseBody, error);
   },
   
   logASRGoTStageError: (stageId: string, error: Error, parameters?: any) => {
-    return errorLogger.instance.logASRGoTStageError(stageId, error, parameters);
+    if (!_errorLogger) {
+      _errorLogger = new ErrorLoggingService();
+    }
+    return _errorLogger.logASRGoTStageError(stageId, error, parameters);
   },
   
   logAuthError: (error: Error, context?: string) => {
-    return errorLogger.instance.logAuthError(error, context);
+    if (!_errorLogger) {
+      _errorLogger = new ErrorLoggingService();
+    }
+    return _errorLogger.logAuthError(error, context);
   },
   
   logDatabaseError: (error: Error, operation?: string) => {
-    return errorLogger.instance.logDatabaseError(error, operation);
+    if (!_errorLogger) {
+      _errorLogger = new ErrorLoggingService();
+    }
+    return _errorLogger.logDatabaseError(error, operation);
   }
 };
