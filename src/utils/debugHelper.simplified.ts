@@ -1,7 +1,9 @@
 /**
  * Simplified Debug Helper for Claude Code Access
- * This version avoids circular dependencies by using dynamic imports
+ * SIMPLIFIED: Uses static imports to prevent temporal dead zone issues
  */
+
+import { errorLogger } from '@/services/ErrorLoggingService';
 
 /**
  * Main debug interface for Claude Code
@@ -17,7 +19,6 @@ export class ClaudeDebugHelper {
     console.log(`🔍 Generating full error report for last ${hours} hours...`);
     
     try {
-      const { errorLogger } = await import('@/services/ErrorLoggingService');
       return await errorLogger.exportErrorsForDebugging(hours);
     } catch (error) {
       console.error('Failed to get error report:', error);
@@ -33,7 +34,6 @@ export class ClaudeDebugHelper {
     console.log(`📊 Analyzing error patterns for last ${hours} hours...`);
     
     try {
-      const { errorLogger } = await import('@/services/ErrorLoggingService');
       return await errorLogger.getErrorPatterns(hours);
     } catch (error) {
       console.error('Failed to get error patterns:', error);
@@ -48,7 +48,6 @@ export class ClaudeDebugHelper {
     console.log('🚨 Fetching critical errors...');
     
     try {
-      const { errorLogger } = await import('@/services/ErrorLoggingService');
       return await errorLogger.getCriticalErrors();
     } catch (error) {
       console.error('Failed to get critical errors:', error);
@@ -65,7 +64,6 @@ export class ClaudeDebugHelper {
     console.log(`🔧 Analyzing errors for component: ${componentName}`);
     
     try {
-      const { errorLogger } = await import('@/services/ErrorLoggingService');
       return await errorLogger.getErrorsByComponent(componentName, hours);
     } catch (error) {
       console.error('Failed to get component errors:', error);
@@ -80,8 +78,6 @@ export class ClaudeDebugHelper {
     console.log('🏥 Performing quick health check...');
     
     try {
-      const { errorLogger } = await import('@/services/ErrorLoggingService');
-      
       const [critical, patterns, recent] = await Promise.all([
         errorLogger.getCriticalErrors(),
         errorLogger.getErrorPatterns(6), // Last 6 hours for patterns
