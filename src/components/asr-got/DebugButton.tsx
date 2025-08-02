@@ -54,21 +54,38 @@ export const DebugButton: React.FC = () => {
   });
   const [activeTab, setActiveTab] = useState('errors');
   const errorIdCounter = useRef(0);
+  // FIXED: Add recursion guard to prevent infinite loops
+  const isProcessingError = useRef(false);
+  
   const addError = React.useCallback(
   (errorData: Omit<ErrorLog, 'id' | 'timestamp'>) => {
-    const newError: ErrorLog = {
-      ...errorData,
-      id: `error_${++errorIdCounter.current}`,
-      timestamp: new Date().toISOString()
-    };
+    // CRITICAL: Prevent infinite recursion from console.error overrides
+    if (isProcessingError.current) {
+      return;
+    }
+    
+    try {
+      isProcessingError.current = true;
+      
+      const newError: ErrorLog = {
+        ...errorData,
+        id: `error_${++errorIdCounter.current}`,
+        timestamp: new Date().toISOString()
+      };
 
-    setDebugState(prev => ({
-      ...prev,
-      errors: [newError, ...prev.errors].slice(0, 100),
-    }));
+      setDebugState(prev => ({
+        ...prev,
+        errors: [newError, ...prev.errors].slice(0, 100),
+      }));
 
-    if (errorData.severity === 'critical') {
-      toast.error(`Critical Error: ${errorData.message.substring(0, 50)}...`);
+      if (errorData.severity === 'critical') {
+        // Use setTimeout to avoid synchronous toast errors during React updates
+        setTimeout(() => {
+          toast.error(`Critical Error: ${errorData.message.substring(0, 50)}...`);
+        }, 0);
+      }
+    } finally {
+      isProcessingError.current = false;
     }
   },
   []
@@ -135,20 +152,36 @@ export const DebugButton: React.FC = () => {
     };
     window.addEventListener('unhandledrejection', promiseRejectionHandler);
 
-    // Enhanced Console Error Interceptor with better categorization
+    // Enhanced Console Error Interceptor with recursion protection
     const originalConsoleError = console.error;
     console.error = function(...args) {
-      if (debugState.isRecording && args.length > 0) {
-        const errorMessage = args.join(' ');
-        const isStageError = errorMessage.toLowerCase().includes('stage') && 
-                            errorMessage.toLowerCase().includes('failed');
-        
-        addError({
-          type: isStageError ? 'custom' : 'custom',
-          severity: isStageError ? 'critical' : 'medium',
-          message: errorMessage,
-          context: args.length > 1 ? args.slice(1) : undefined
-        });
+      // FIXED: Only intercept if not already processing and recording is active
+      if (debugState.isRecording && !isProcessingError.current && args.length > 0) {
+        try {
+          const errorMessage = args.join(' ');
+          
+          // Skip React development warnings that would cause recursion
+          const isReactWarning = errorMessage.includes('Warning:') || 
+                                errorMessage.includes('act(') ||
+                                errorMessage.includes('ReactDOM');
+          
+          if (!isReactWarning) {
+            const isStageError = errorMessage.toLowerCase().includes('stage') && 
+                                errorMessage.toLowerCase().includes('failed');
+            
+            // Use setTimeout to avoid synchronous errors during React updates
+            setTimeout(() => {
+              addError({
+                type: isStageError ? 'custom' : 'custom',
+                severity: isStageError ? 'critical' : 'medium',
+                message: errorMessage,
+                context: args.length > 1 ? args.slice(1) : undefined
+              });
+            }, 0);
+          }
+        } catch (interceptError) {
+          // Silently fail to prevent cascading errors
+        }
       }
       return originalConsoleError.apply(console, args);
     };
