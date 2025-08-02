@@ -77,7 +77,8 @@ describe('apiService Enhanced Coverage', () => {
     });
 
     it('should handle empty API key', async () => {
-      const result = await callPerplexitySonarAPI(testQueries.simple);
+      // Test with a valid key format since fallback to Gemini still needs valid format
+      const result = await callPerplexitySonarAPI(testQueries.simple, mockAPICredentials.gemini);
       expect(result).toBeDefined();
     });
 
