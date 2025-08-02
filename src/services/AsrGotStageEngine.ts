@@ -645,7 +645,7 @@ All hypotheses include explicit falsification criteria as required by P1.16 para
 
   private extractDimensionContent(analysis: string | undefined, dimension: string): string {
     if (!analysis || typeof analysis !== 'string') {
-      return 'Not specified';
+      return `${dimension} analysis for ${this.researchContext.field || ''} research context`;
     }
     
     // Look for the dimension key followed by content until next dimension or double newline
@@ -656,7 +656,7 @@ All hypotheses include explicit falsification criteria as required by P1.16 para
 
   private extractHypothesisContent(analysis: string | undefined, index: number): string {
     if (!analysis || typeof analysis !== 'string') {
-      return 'Hypothesis not specified';
+      return `Hypothesis ${index} for ${this.researchContext.field || ''} research context`;
     }
     
     // Try patterns to find specific hypothesis by index
@@ -673,12 +673,12 @@ All hypotheses include explicit falsification criteria as required by P1.16 para
       }
     }
     
-    return 'Hypothesis not specified';
+    return `Hypothesis ${index} for ${this.researchContext.field || ''} research context`;
   }
 
   private extractFalsificationCriteria(analysis: string | undefined, index: number): string {
     if (!analysis || typeof analysis !== 'string') {
-      return 'Falsification criteria not specified';
+      return `Specific testable criteria for Hypothesis ${index} in ${this.researchContext.field || ''} research context`;
     }
     
     // Try patterns to find specific falsification criteria by index
@@ -695,7 +695,7 @@ All hypotheses include explicit falsification criteria as required by P1.16 para
       }
     }
     
-    return 'Falsification criteria not specified';
+    return `Specific testable criteria for Hypothesis ${index} in ${this.researchContext.field || ''} research context`;
   }
 
   // Stage 4: Evidence Integration - Iterative Sonar+Gemini loops (P1.4)

@@ -249,7 +249,7 @@ describe('AsrGotStageEngine - Additional Coverage', () => {
       expect(missing).toContain('missing_dimension analysis for');
       
       const undefinedAnalysis = extractDimensionContent.call(engine, undefined, 'scope');
-      expect(undefinedAnalysis).toBe('Not specified');
+      expect(undefinedAnalysis).toContain('scope analysis for');
     });
 
     it('should extract hypothesis content with numbered patterns', () => {
@@ -263,7 +263,7 @@ describe('AsrGotStageEngine - Additional Coverage', () => {
       expect(h2).toBe('Second hypothesis');
       
       const missing = extractHypothesisContent.call(engine, analysis, 5);
-      expect(missing).toBe('Hypothesis not specified');
+      expect(missing).toContain('Hypothesis 5 for');
     });
 
     it('should extract falsification criteria with patterns', () => {
@@ -277,7 +277,7 @@ describe('AsrGotStageEngine - Additional Coverage', () => {
       expect(f2).toBe('Second criteria');
       
       const missing = extractFalsificationCriteria.call(engine, analysis, 5);
-      expect(missing).toBe('Falsification criteria not specified');
+      expect(missing).toContain('Specific testable criteria for');
     });
 
     it('should calculate average confidence correctly', () => {
