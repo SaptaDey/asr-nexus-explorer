@@ -179,7 +179,7 @@ describe('apiService - Enhanced Coverage Tests', () => {
     it('should test token estimation logic', () => {
       const texts = [
         { text: 'short', expectedTokens: 2 },
-        { text: 'this is a longer text sample', expectedTokens: 8 },
+        { text: 'this is a longer text sample', expectedTokens: 7 },
         { text: 'A'.repeat(400), expectedTokens: 100 }
       ];
       

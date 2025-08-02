@@ -1,4 +1,4 @@
-import { setupServer } from 'msw/node';
+import { setupServer } from 'msw/node.js';
 import { http, HttpResponse } from 'msw';
 
 // Mock Gemini API responses
