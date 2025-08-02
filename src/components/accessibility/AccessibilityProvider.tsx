@@ -26,65 +26,17 @@ interface AccessibilityProviderProps {
 export const AccessibilityProvider: React.FC<AccessibilityProviderProps> = ({ children }) => {
   const accessibility = useAccessibility();
 
-  // Set up global keyboard navigation listener
-  useEffect(() => {
-    const handleGlobalKeyboard = (event: KeyboardEvent) => {
-      // Skip if we're in an input field
-      if (event.target instanceof HTMLInputElement || 
-          event.target instanceof HTMLTextAreaElement ||
-          event.target instanceof HTMLSelectElement) {
-        return;
-      }
-
-      // Global keyboard shortcuts for accessibility
-      switch (event.key) {
-        case 'F1':
-          event.preventDefault();
-          accessibility.announceLiveRegion(
-            'ASR-GoT Scientific Reasoning Interface. Use Tab to navigate, Enter to activate buttons, Space to select checkboxes. Press Alt+H for help.'
-          );
-          break;
-        
-        case 'h':
-          if (event.altKey) {
-            event.preventDefault();
-            showKeyboardHelp();
-          }
-          break;
-
-        case 'c':
-          if (event.altKey) {
-            event.preventDefault();
-            accessibility.updatePreferences({ 
-              highContrast: !accessibility.preferences.highContrast 
-            });
-            accessibility.announceLiveRegion(
-              `High contrast mode ${accessibility.preferences.highContrast ? 'disabled' : 'enabled'}`
-            );
-          }
-          break;
-
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-          if (event.altKey) {
-            event.preventDefault();
-            const stageNumber = parseInt(event.key);
-            jumpToStage(stageNumber - 1);
-          }
-          break;
-      }
-    };
-
-    document.addEventListener('keydown', handleGlobalKeyboard);
-    return () => document.removeEventListener('keydown', handleGlobalKeyboard);
-  }, [accessibility, jumpToStage, showKeyboardHelp]);
+  // FIXED: Define functions before useEffect to prevent temporal dead zone errors
+  const jumpToStage = (stageIndex: number) => {
+    // Try to find stage navigation element
+    const stageElement = document.querySelector(`[data-stage="${stageIndex}"]`) as HTMLElement;
+    if (stageElement) {
+      stageElement.focus();
+      accessibility.announceLiveRegion(`Focused on Stage ${stageIndex + 1}`);
+    } else {
+      accessibility.announceLiveRegion(`Stage ${stageIndex + 1} not currently available`);
+    }
+  };
 
   const showKeyboardHelp = () => {
     const helpText = `
@@ -174,16 +126,65 @@ Accessibility Features:
     document.addEventListener('keydown', handleEscape);
   };
 
-  const jumpToStage = (stageIndex: number) => {
-    // Try to find stage navigation element
-    const stageElement = document.querySelector(`[data-stage="${stageIndex}"]`) as HTMLElement;
-    if (stageElement) {
-      stageElement.focus();
-      accessibility.announceLiveRegion(`Focused on Stage ${stageIndex + 1}`);
-    } else {
-      accessibility.announceLiveRegion(`Stage ${stageIndex + 1} not currently available`);
-    }
-  };
+  // Set up global keyboard navigation listener
+  useEffect(() => {
+    const handleGlobalKeyboard = (event: KeyboardEvent) => {
+      // Skip if we're in an input field
+      if (event.target instanceof HTMLInputElement || 
+          event.target instanceof HTMLTextAreaElement ||
+          event.target instanceof HTMLSelectElement) {
+        return;
+      }
+
+      // Global keyboard shortcuts for accessibility
+      switch (event.key) {
+        case 'F1':
+          event.preventDefault();
+          accessibility.announceLiveRegion(
+            'ASR-GoT Scientific Reasoning Interface. Use Tab to navigate, Enter to activate buttons, Space to select checkboxes. Press Alt+H for help.'
+          );
+          break;
+        
+        case 'h':
+          if (event.altKey) {
+            event.preventDefault();
+            showKeyboardHelp();
+          }
+          break;
+
+        case 'c':
+          if (event.altKey) {
+            event.preventDefault();
+            accessibility.updatePreferences({ 
+              highContrast: !accessibility.preferences.highContrast 
+            });
+            accessibility.announceLiveRegion(
+              `High contrast mode ${accessibility.preferences.highContrast ? 'disabled' : 'enabled'}`
+            );
+          }
+          break;
+
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+          if (event.altKey) {
+            event.preventDefault();
+            const stageNumber = parseInt(event.key);
+            jumpToStage(stageNumber - 1);
+          }
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeyboard);
+    return () => document.removeEventListener('keydown', handleGlobalKeyboard);
+  }, [accessibility, jumpToStage, showKeyboardHelp]);
 
   const contextValue: AccessibilityContextType = {
     preferences: accessibility.preferences,
