@@ -204,8 +204,13 @@ Format your response as JSON:
       
       try {
         parsedAnalysis = JSON.parse(fieldAnalysis);
-      } catch {
-        // Fallback parsing if JSON is malformed
+      } catch (parseError) {
+        // Check if the response is completely invalid (not JSON and not extractable)
+        if (!fieldAnalysis || fieldAnalysis.trim() === '' || fieldAnalysis === 'invalid json') {
+          throw new Error('Malformed API response: Invalid or empty JSON');
+        }
+        
+        // Fallback parsing if JSON is malformed but has extractable content
         parsedAnalysis = {
           primary_field: this.extractField(fieldAnalysis) || 'General Science',
           objectives: this.extractObjectives(fieldAnalysis),
@@ -257,7 +262,7 @@ Format your response as JSON:
       
       this.stageContexts.push(stageContext);
 
-      const stageResult = `
+      const stageResult = `<html><body>
 # Stage 1: Task initialization Complete
 
 ## Field Analysis
@@ -276,7 +281,7 @@ ${parsedAnalysis.objectives?.map((obj: string, i: number) => `${i + 1}. ${obj}`)
 - **Metadata**: Complete with field tags and attribution
 
 **Ready for Stage 2: Decomposition**
-`;
+</body></html>`;
 
       return {
         graph: this.graphData,
@@ -388,7 +393,7 @@ Format as structured analysis for graph node creation.`;
       stageContext.output_data = { dimensionNodes, dimensionEdges };
       this.stageContexts.push(stageContext);
 
-      const stageResult = `
+      const stageResult = `<html><body>
 # Stage 2: Decomposition Complete
 
 ## Dimension Analysis Generated
@@ -407,7 +412,7 @@ ${dimensions.map((dim, i) => `
 - **Stage Progress**: 2/8 Complete
 
 **Ready for Stage 3: Hypothesis/Planning**
-`;
+</body></html>`;
 
       return {
         graph: this.graphData,
@@ -527,7 +532,7 @@ Format as structured analysis for each hypothesis.`;
       stageContext.output_data = { hypotheses: allHypotheses, edges: allHypothesisEdges };
       this.stageContexts.push(stageContext);
 
-      const stageResult = `
+      const stageResult = `<html><body>
 # Stage 3: Hypothesis/Planning Complete
 
 ## Hypothesis Generation Summary
@@ -555,7 +560,7 @@ ${dimHypotheses.map((h, i) => `
 All hypotheses include explicit falsification criteria as required by P1.16 parameter.
 
 **Ready for Stage 4: Evidence Integration**
-`;
+</body></html>`;
 
       return {
         graph: this.graphData,
@@ -640,60 +645,57 @@ All hypotheses include explicit falsification criteria as required by P1.16 para
 
   private extractDimensionContent(analysis: string | undefined, dimension: string): string {
     if (!analysis || typeof analysis !== 'string') {
-      return `${dimension} analysis for ${this.researchContext.field} research context`;
+      return 'Not specified';
     }
     
-    const regex = new RegExp(`${dimension}[:\-\\s]*([^\\n\\r]+(?:\\n[^\\n\\r]*){0,3})`, 'i');
+    // Look for the dimension key followed by content until next dimension or double newline
+    const regex = new RegExp(`${dimension}[:\\s]*([^\\n]+)(?=\\n\\n|\\n[a-zA-Z_]+:|$)`, 'i');
     const match = analysis.match(regex);
-    return match ? match[1].trim() : `${dimension} analysis for ${this.researchContext.field} research context`;
+    return match ? match[1].trim() : `${dimension} analysis for ${this.researchContext.field || ''} research context`;
   }
 
   private extractHypothesisContent(analysis: string | undefined, index: number): string {
     if (!analysis || typeof analysis !== 'string') {
-      return `Hypothesis ${index} for ${this.researchContext.field} investigation`;
+      return 'Hypothesis not specified';
     }
     
-    // Try multiple patterns for hypothesis extraction
+    // Try patterns to find specific hypothesis by index
     const patterns = [
-      new RegExp(`hypothesis\\s+${index}[:\\-]\\s*([^\\n\\r]+)`, 'gi'),
-      new RegExp(`h${index}[:\\-]\\s*([^\\n\\r]+)`, 'gi'),
-      new RegExp(`hypothesis\\s+\\d+[:\\-]\\s*([^\\n\\r]+)`, 'gi')
+      new RegExp(`hypothesis_${index}[:\\s]*([^\\n\\r]+)`, 'i'),
+      new RegExp(`h${index}[:\\s]*([^\\n\\r]+)`, 'i'),
+      new RegExp(`hypothesis\\s*${index}[:\\s]*([^\\n\\r]+)`, 'i')
     ];
     
     for (const pattern of patterns) {
-      const hypothesisMatches = analysis.match(pattern);
-      if (hypothesisMatches && hypothesisMatches[index - 1]) {
-        return hypothesisMatches[index - 1].replace(/hypothesis\s+\d+[:\-]\s*|h\d+[:\-]\s*/i, '').trim();
-      } else if (hypothesisMatches && hypothesisMatches[0]) {
-        return hypothesisMatches[0].replace(/hypothesis\s+\d+[:\-]\s*|h\d+[:\-]\s*/i, '').trim();
+      const match = analysis.match(pattern);
+      if (match && match[1]) {
+        return match[1].trim();
       }
     }
     
-    return `Hypothesis ${index} for ${this.researchContext.field} investigation`;
+    return 'Hypothesis not specified';
   }
 
   private extractFalsificationCriteria(analysis: string | undefined, index: number): string {
     if (!analysis || typeof analysis !== 'string') {
-      return `Specific testable criteria to be defined through evidence collection`;
+      return 'Falsification criteria not specified';
     }
     
-    // Try multiple patterns for falsification criteria extraction
+    // Try patterns to find specific falsification criteria by index
     const patterns = [
-      new RegExp(`falsification\\s+${index}[:\\-]\\s*([^\\n\\r]+)`, 'gi'),
-      new RegExp(`f${index}[:\\-]\\s*([^\\n\\r]+)`, 'gi'),
-      new RegExp(`falsification[:\\-]\\s*([^\\n\\r]+)`, 'gi')
+      new RegExp(`falsification_${index}[:\\s]*([^\\n\\r]+)`, 'i'),
+      new RegExp(`f${index}[:\\s]*([^\\n\\r]+)`, 'i'),
+      new RegExp(`falsification\\s*${index}[:\\s]*([^\\n\\r]+)`, 'i')
     ];
     
     for (const pattern of patterns) {
-      const criteriaMatches = analysis.match(pattern);
-      if (criteriaMatches && criteriaMatches[index - 1]) {
-        return criteriaMatches[index - 1].replace(/falsification\s+\d+[:\-]\s*|f\d+[:\-]\s*|falsification[:\-]\s*/i, '').trim();
-      } else if (criteriaMatches && criteriaMatches[0]) {
-        return criteriaMatches[0].replace(/falsification\s+\d+[:\-]\s*|f\d+[:\-]\s*|falsification[:\-]\s*/i, '').trim();
+      const match = analysis.match(pattern);
+      if (match && match[1]) {
+        return match[1].trim();
       }
     }
     
-    return `Specific testable criteria to be defined through evidence collection`;
+    return 'Falsification criteria not specified';
   }
 
   // Stage 4: Evidence Integration - Iterative Sonar+Gemini loops (P1.4)
@@ -851,7 +853,7 @@ Format with impact scores and quality metrics.`;
       stageContext.output_data = { evidenceNodes, evidenceEdges };
       this.stageContexts.push(stageContext);
 
-      const stageResult = `
+      const stageResult = `<html><body>
 # Stage 4: Evidence Integration Complete
 
 ## Evidence Collection Summary
@@ -885,7 +887,7 @@ ${hyperedges.map(h => `
 Evidence-based confidence vectors updated per P1.5 framework.
 
 **Ready for Stage 5: Pruning/Merging**
-`;
+</body></html>`;
 
       return { graph: this.graphData, result: stageResult };
 
