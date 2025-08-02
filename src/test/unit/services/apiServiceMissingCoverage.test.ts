@@ -19,10 +19,26 @@ vi.mock('@/services/CostGuardrails', () => ({
 }));
 
 vi.mock('@/utils/secureNetworkRequest', () => ({
-  secureNetworkRequest: vi.fn(),
+  secureNetworkRequest: vi.fn().mockResolvedValue({
+    ok: true,
+    json: vi.fn().mockResolvedValue({
+      candidates: [{
+        content: { parts: [{ text: 'Mocked response' }] },
+        finishReason: 'STOP'
+      }]
+    })
+  }),
   createGeminiHeaders: vi.fn(() => ({ 'Content-Type': 'application/json' })),
   validateApiKeyFormat: vi.fn(() => true),
-  secureRequestWithTimeout: vi.fn()
+  secureRequestWithTimeout: vi.fn().mockResolvedValue({
+    ok: true,
+    json: vi.fn().mockResolvedValue({
+      candidates: [{
+        content: { parts: [{ text: 'Mocked response' }] },
+        finishReason: 'STOP'
+      }]
+    })
+  })
 }));
 
 vi.mock('@/utils/errorSanitizer', () => ({
@@ -57,7 +73,7 @@ describe('apiService - Missing Function Coverage', () => {
     });
 
     it('should handle callPerplexitySonarAPI without options', async () => {
-      const result = await callPerplexitySonarAPI('test query');
+      const result = await callPerplexitySonarAPI('test query', 'valid-api-key');
       
       expect(result).toBeDefined();
     });
