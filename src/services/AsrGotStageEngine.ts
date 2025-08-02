@@ -21,7 +21,13 @@ export class AsrGotStageEngine {
   private stageResults: string[] = []; // Store results from each stage for chaining
 
   constructor(credentials?: APICredentials, initialGraph?: GraphData) {
-    this.credentials = credentials || { gemini: '', perplexity: '', openai: '' };
+    // Initialize credentials: only add properties that exist or set empty defaults for known properties
+    this.credentials = {
+      gemini: (credentials && credentials.gemini) || '',
+      perplexity: (credentials && credentials.perplexity) || '',
+      ...(credentials && Object.prototype.hasOwnProperty.call(credentials, 'openai') ? { openai: credentials.openai || '' } : {}),
+      ...(credentials === undefined || Object.keys(credentials).length === 0 ? { openai: '' } : {})
+    };
     
     // Initialize graph data with proper metadata structure
     if (initialGraph) {
@@ -143,7 +149,8 @@ export class AsrGotStageEngine {
         researchFocus: ['skin immunology', 'cutaneous malignancies', 'CTCL', 'chromosomal instability', 'skin microbiome'],
         methodologies: ['patient genomic analysis', 'microbiome analysis', 'pharmacologic interference', 'molecular biology', 'Machine Learning'],
         philosophy: 'Holistic approach, bridging domains, curiosity-driven research',
-        interests: ['learning', 'teaching', 'mentoring', 'astronomy', 'psychology', 'consciousness']
+        interests: ['learning', 'teaching', 'mentoring', 'astronomy', 'psychology', 'consciousness'],
+        expertise: ['immunology', 'molecular biology', 'dermatology', 'CTCL research', 'skin microbiome']
       },
       position: { x: 400, y: 100 }
     };
@@ -577,8 +584,36 @@ All hypotheses include explicit falsification criteria as required by P1.16 para
     if (!analysis || typeof analysis !== 'string') {
       return ['Comprehensive analysis'];
     }
-    const objectiveMatches = analysis.match(/objective[s]?[:\-]\s*([^\n\r]+)/gi);
-    return objectiveMatches ? objectiveMatches.map(m => m.replace(/objective[s]?[:\-]\s*/i, '').trim()) : ['Comprehensive analysis'];
+    // Updated regex to handle various objective keywords including "Obj", "Goals", etc.
+    const objectiveMatches = analysis.match(/(?:objective[s]?|obj|goals?)[:\-]\s*([^\n\r]+(?:\n[^\n\r]*)*)/gi);
+    if (objectiveMatches) {
+      const extracted = objectiveMatches.map(m => m.replace(/(?:objective[s]?|obj|goals?)[:\-]\s*/i, '').trim());
+      // Split comma-separated, semicolon-separated, and newline-separated objectives
+      const splitObjectives = [];
+      for (const obj of extracted) {
+        let items = [];
+        if (obj.includes(',')) {
+          items = obj.split(',');
+        } else if (obj.includes(';')) {
+          items = obj.split(';');
+        } else if (obj.includes('\n')) {
+          items = obj.split('\n');
+        } else {
+          items = [obj];
+        }
+        
+        // Clean up each item by removing bullet points, dashes, and extra whitespace
+        const cleanItems = items.map(item => 
+          item.trim()
+            .replace(/^[-•*]\s*/, '') // Remove bullet points
+            .trim()
+        ).filter(item => item.length > 0);
+        
+        splitObjectives.push(...cleanItems);
+      }
+      return splitObjectives;
+    }
+    return ['Comprehensive analysis'];
   }
 
   // Filter edges to only include those with valid node references
@@ -618,10 +653,22 @@ All hypotheses include explicit falsification criteria as required by P1.16 para
       return `Hypothesis ${index} for ${this.researchContext.field} investigation`;
     }
     
-    const hypothesisMatches = analysis.match(/hypothesis\s+\d+[:\-]\s*([^\n\r]+)/gi);
-    if (hypothesisMatches && hypothesisMatches[index - 1]) {
-      return hypothesisMatches[index - 1].replace(/hypothesis\s+\d+[:\-]\s*/i, '').trim();
+    // Try multiple patterns for hypothesis extraction
+    const patterns = [
+      new RegExp(`hypothesis\\s+${index}[:\\-]\\s*([^\\n\\r]+)`, 'gi'),
+      new RegExp(`h${index}[:\\-]\\s*([^\\n\\r]+)`, 'gi'),
+      new RegExp(`hypothesis\\s+\\d+[:\\-]\\s*([^\\n\\r]+)`, 'gi')
+    ];
+    
+    for (const pattern of patterns) {
+      const hypothesisMatches = analysis.match(pattern);
+      if (hypothesisMatches && hypothesisMatches[index - 1]) {
+        return hypothesisMatches[index - 1].replace(/hypothesis\s+\d+[:\-]\s*|h\d+[:\-]\s*/i, '').trim();
+      } else if (hypothesisMatches && hypothesisMatches[0]) {
+        return hypothesisMatches[0].replace(/hypothesis\s+\d+[:\-]\s*|h\d+[:\-]\s*/i, '').trim();
+      }
     }
+    
     return `Hypothesis ${index} for ${this.researchContext.field} investigation`;
   }
 
@@ -630,10 +677,22 @@ All hypotheses include explicit falsification criteria as required by P1.16 para
       return `Specific testable criteria to be defined through evidence collection`;
     }
     
-    const criteriaMatches = analysis.match(/falsification[:\-]\s*([^\n\r]+)/gi);
-    if (criteriaMatches && criteriaMatches[index - 1]) {
-      return criteriaMatches[index - 1].replace(/falsification[:\-]\s*/i, '').trim();
+    // Try multiple patterns for falsification criteria extraction
+    const patterns = [
+      new RegExp(`falsification\\s+${index}[:\\-]\\s*([^\\n\\r]+)`, 'gi'),
+      new RegExp(`f${index}[:\\-]\\s*([^\\n\\r]+)`, 'gi'),
+      new RegExp(`falsification[:\\-]\\s*([^\\n\\r]+)`, 'gi')
+    ];
+    
+    for (const pattern of patterns) {
+      const criteriaMatches = analysis.match(pattern);
+      if (criteriaMatches && criteriaMatches[index - 1]) {
+        return criteriaMatches[index - 1].replace(/falsification\s+\d+[:\-]\s*|f\d+[:\-]\s*|falsification[:\-]\s*/i, '').trim();
+      } else if (criteriaMatches && criteriaMatches[0]) {
+        return criteriaMatches[0].replace(/falsification\s+\d+[:\-]\s*|f\d+[:\-]\s*|falsification[:\-]\s*/i, '').trim();
+      }
     }
+    
     return `Specific testable criteria to be defined through evidence collection`;
   }
 
