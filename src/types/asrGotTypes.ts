@@ -80,6 +80,7 @@ export interface UserProfile {
   methodologies: string[];
   philosophy: string;
   interests: string[];
+  expertise?: string[]; // Optional expertise areas
 }
 
 export interface GraphEdge {

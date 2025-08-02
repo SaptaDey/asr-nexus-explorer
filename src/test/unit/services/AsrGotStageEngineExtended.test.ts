@@ -4,7 +4,7 @@ import { testQueries, testGraphData } from '@/test/fixtures/testData';
 import { mockAPICredentials } from '@/test/mocks/mockServices';
 import type { APICredentials, GraphData, StageExecutionContext, ResearchContext, GraphNode, GraphEdge } from '@/types/asrGotTypes';
 
-// Mock all dependencies comprehensively
+// Mock all dependencies comprehensively using the exact pattern as working tests
 vi.mock('@/utils/background', () => ({
   queueGeminiCall: vi.fn().mockReturnValue('task-id-123'),
   getTaskResult: vi.fn().mockResolvedValue(JSON.stringify({
@@ -44,22 +44,40 @@ vi.mock('@/utils/background', () => ({
     citations_count: 28,
     bias_flags: 0,
     statistical_tests: 12,
+    statistical_power: 0.85,
+    sample_size: 1250,
+    effect_size: 0.4,
+    final_report: '<html><body><div>Test final report</div></body></html>',
+    
+    // Mock formatted text responses that contain patterns for regex matching
     formatted_text: `
-Field: Environmental Science
+    Field: Environmental Science
+    Objectives: Analyze climate impact, Study marine life changes
+    Hypothesis 1: Ocean acidification significantly impacts coral reef systems
+    Hypothesis 2: Rising temperatures alter marine food chain dynamics  
+    Hypothesis 3: Sea level changes affect coastal ecosystem migration
+    Falsification: No correlation between pH levels and coral bleaching
+    Confounding factors: natural climate cycles, human pollution
+    Causal mechanisms: pH reduction leads to calcium carbonate dissolution
+    Temporal patterns: accelerating trend over past decade
+    Statistical power: 0.85
+    Sample size: 1,250
+    Effect size: 0.4
+    P-value: 0.001
+    `
+  })),
+  backgroundProcessor: {
+    addTask: vi.fn().mockReturnValue('task-id-123'),
+    getTaskResult: vi.fn().mockResolvedValue(JSON.stringify({ 
+      success: true, 
+      data: `Field: Environmental Science
 Objectives: Analyze climate impact, Study marine life changes
 Hypothesis 1: Ocean acidification significantly impacts coral reef systems
-Hypothesis 2: Rising temperatures alter marine food chain dynamics  
-Hypothesis 3: Sea level changes affect coastal ecosystem migration
 Falsification: No correlation between pH levels and coral bleaching
-Confounding factors: natural climate cycles, human pollution
-Causal mechanisms: pH reduction leads to calcium carbonate dissolution
-Temporal patterns: accelerating trend over past decade
-Statistical power: 0.85
-Sample size: 1,250
-Effect size: 0.4
-P-value: 0.001
-    `
-  }))
+Statistical power: 0.85`
+    })),
+    getTaskStatus: vi.fn().mockReturnValue('completed')
+  }
 }));
 
 vi.mock('@/services/apiService', () => ({
