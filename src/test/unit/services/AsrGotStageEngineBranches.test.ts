@@ -307,16 +307,15 @@ describe('AsrGotStageEngine Branch Coverage', () => {
   });
 
   describe('Utility Method Coverage', () => {
-    it('should handle getStageResults with various states', () => {
+    it('should handle getStageResults with various states', async () => {
       // Initially empty
       expect(stageEngine.getStageResults()).toEqual([]);
       
-      // After execution
-      stageEngine.executeStage(1, testQueries.simple).then(() => {
-        const results = stageEngine.getStageResults();
-        expect(Array.isArray(results)).toBe(true);
-        expect(results.length).toBeGreaterThan(0);
-      });
+      // After execution of stage 7 (which populates stageResults)
+      await stageEngine.executeStage(7, testQueries.simple);
+      const results = stageEngine.getStageResults();
+      expect(Array.isArray(results)).toBe(true);
+      expect(results.length).toBeGreaterThan(0);
     });
 
     it('should handle getFinalHtmlReport states', () => {

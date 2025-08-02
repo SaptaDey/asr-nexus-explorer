@@ -2,21 +2,83 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { AsrGotStageEngine } from '@/services/AsrGotStageEngine';
 import type { APICredentials, GraphData } from '@/types/asrGotTypes';
 
-// Mock dependencies with minimal mocking for actual coverage
+// Mock dependencies with comprehensive data structure matching working tests
 vi.mock('@/utils/background', () => ({
   queueGeminiCall: vi.fn().mockReturnValue('task-id-123'),
   getTaskResult: vi.fn().mockResolvedValue(JSON.stringify({
     primary_field: 'Environmental Science',
     secondary_fields: ['Biology', 'Chemistry'],
     objectives: ['Analyze climate impact', 'Study marine life changes'],
+    interdisciplinary_connections: ['Oceanography', 'Ecology'],
+    constraints: ['Data availability', 'Time constraints'],
+    initial_scope: 'Comprehensive climate change analysis',
+    
+    // Stage 2 Decomposition mock data
+    dimensions: {
+      scope: 'Comprehensive environmental impact assessment',
+      objectives: 'Study marine ecosystem changes due to climate factors',
+      constraints: 'Limited to published research from 2020-2024',
+      data_needs: 'Peer-reviewed studies, oceanographic data',
+      use_cases: 'Policy recommendations, conservation strategies',
+      potential_biases: 'Publication bias, geographic sampling bias',
+      knowledge_gaps: 'Long-term ecosystem interaction effects'
+    },
+    
+    // Stage 3 Hypothesis mock data  
     hypothesis_1: 'Ocean acidification significantly impacts coral reef systems',
+    hypothesis_2: 'Rising temperatures alter marine food chain dynamics',
+    hypothesis_3: 'Sea level changes affect coastal ecosystem migration',
+    falsification_1: 'No correlation between pH levels and coral bleaching',
+    falsification_2: 'Temperature changes show no ecosystem impact',
+    falsification_3: 'Coastal changes are independent of sea level rise',
+    
+    // Stage 4 Evidence mock data
+    evidence_sources: 15,
+    causal_relationships: 8,
     confounding_factors: ['natural climate cycles', 'human pollution'],
     causal_mechanisms: 'pH reduction leads to calcium carbonate dissolution',
+    temporal_patterns: 'accelerating trend over past decade',
+    
+    // Additional stage mock data
+    complexity_score: 2.3,
+    pathways_identified: 2,
+    citations_count: 28,
+    bias_flags: 0,
+    statistical_tests: 12,
     statistical_power: 0.85,
     sample_size: 1250,
     effect_size: 0.4,
-    formatted_text: 'Field: Environmental Science\nObjectives: Test objectives'
-  }))
+    final_report: '<html><body><div>Test final report</div></body></html>',
+    
+    // Mock formatted text responses that contain patterns for regex matching
+    formatted_text: `
+    Field: Environmental Science
+    Objectives: Analyze climate impact, Study marine life changes
+    Hypothesis 1: Ocean acidification significantly impacts coral reef systems
+    Hypothesis 2: Rising temperatures alter marine food chain dynamics  
+    Hypothesis 3: Sea level changes affect coastal ecosystem migration
+    Falsification: No correlation between pH levels and coral bleaching
+    Confounding factors: natural climate cycles, human pollution
+    Causal mechanisms: pH reduction leads to calcium carbonate dissolution
+    Temporal patterns: accelerating trend over past decade
+    Statistical power: 0.85
+    Sample size: 1,250
+    Effect size: 0.4
+    P-value: 0.001
+    `
+  })),
+  backgroundProcessor: {
+    addTask: vi.fn().mockReturnValue('task-id-123'),
+    getTaskResult: vi.fn().mockResolvedValue(JSON.stringify({ 
+      success: true, 
+      data: `Field: Environmental Science
+Objectives: Analyze climate impact, Study marine life changes
+Hypothesis 1: Ocean acidification significantly impacts coral reef systems
+Falsification: No correlation between pH levels and coral bleaching
+Statistical power: 0.85`
+    })),
+    getTaskStatus: vi.fn().mockReturnValue('completed')
+  }
 }));
 
 vi.mock('@/services/apiService', () => ({
