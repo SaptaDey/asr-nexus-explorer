@@ -43,7 +43,8 @@ describe('AsrGotStageEngine', () => {
     const engine = new AsrGotStageEngine(dummyCredentials);
     expect(engine.calculateConfidence([])).toBe(0);
     expect(engine.calculateConfidence(['a'])).toBe(0.15);
-    expect(engine.calculateConfidence(['a', 'b', 'c', 'd', 'e', 'f'])).toBe(1.0);
+    // Fix floating-point precision issue by using toBeCloseTo for decimal comparisons
+    expect(engine.calculateConfidence(['a', 'b', 'c', 'd', 'e', 'f'])).toBeCloseTo(1.0, 10);
   });
 
   it('should getStageResults returns a copy', () => {
