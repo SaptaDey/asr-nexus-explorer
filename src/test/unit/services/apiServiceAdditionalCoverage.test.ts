@@ -64,11 +64,8 @@ describe('apiService - Enhanced Coverage', () => {
       // Ensure fresh mocks for each test
       vi.clearAllMocks();
       
-      // Set up default mocks that should work for all tests
-      const { validateAPIKey } = require('@/utils/securityUtils');
-      const { validateApiKeyFormat } = require('@/utils/secureNetworkRequest');
-      vi.mocked(validateAPIKey).mockReturnValue(true);
-      vi.mocked(validateApiKeyFormat).mockReturnValue(true);
+      // The mocks are already set up at the top of the file, no need to require them again
+      // The vi.mock calls at the top have already mocked these modules
     });
     it('should handle rate limiting properly', async () => {
       const { apiRateLimiter } = await import('@/utils/securityUtils');
@@ -128,7 +125,7 @@ describe('apiService - Enhanced Coverage', () => {
       const { secureRequestWithTimeout } = await import('@/utils/secureNetworkRequest');
       vi.mocked(secureRequestWithTimeout).mockResolvedValue(mockResponse as any);
 
-      const result = await callPerplexitySonarAPI('test query');
+      const result = await callPerplexitySonarAPI('test query', 'test-api-key');
       expect(result).toBe('Test response');
     });
   });
