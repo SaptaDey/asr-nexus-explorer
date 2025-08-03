@@ -8,6 +8,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Comprehensive Test Suite](https://github.com/SaptaDey/asr-nexus-explorer/actions/workflows/test.yml/badge.svg)](https://github.com/SaptaDey/asr-nexus-explorer/actions/workflows/test.yml)
 
 **🚀 Revolutionary AI-powered research platform implementing a 9-stage mandatory pipeline for conducting structured scientific research using graph-based reasoning visualization and multi-AI orchestration**
 
