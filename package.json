@@ -28,6 +28,8 @@
     "test:ci": "npm run test:coverage && npm run test:e2e:smoke",
     "test:ci:fast": "npm run test:coverage && npm run test:e2e:fast",
     "test:ci:full": "npm run test:coverage && npm run test:e2e",
+    "test:e2e:info": "./scripts/e2e-performance-info.sh",
+    "test:e2e:perf": "./scripts/test-performance.sh",
     "test:watch": "vitest",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
