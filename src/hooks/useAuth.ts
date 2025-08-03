@@ -61,14 +61,26 @@ export function useAuth(): UseAuthReturn {
    */
   const signUp = useCallback(async (data: SignUpData) => {
     try {
-      const result = await authService.current.signUp(data);
+      console.log('useAuth: signUp called');
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Sign up timeout - please check your connection')), 30000)
+      );
+      
+      const signUpPromise = authService.current.signUp(data);
+      
+      const result = await Promise.race([signUpPromise, timeoutPromise]) as any;
       
       if (result.error) {
+        console.error('useAuth: Sign up failed with error:', result.error);
         return { success: false, error: result.error.message };
       }
 
+      console.log('useAuth: Sign up successful');
       return { success: true };
     } catch (error) {
+      console.error('useAuth: Sign up caught error:', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Sign up failed' 
@@ -81,14 +93,26 @@ export function useAuth(): UseAuthReturn {
    */
   const signIn = useCallback(async (data: SignInData) => {
     try {
-      const result = await authService.current.signIn(data);
+      console.log('useAuth: signIn called');
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Sign in timeout - please check your connection')), 30000)
+      );
+      
+      const signInPromise = authService.current.signIn(data);
+      
+      const result = await Promise.race([signInPromise, timeoutPromise]) as any;
       
       if (result.error) {
+        console.error('useAuth: Sign in failed with error:', result.error);
         return { success: false, error: result.error.message };
       }
 
+      console.log('useAuth: Sign in successful');
       return { success: true };
     } catch (error) {
+      console.error('useAuth: Sign in caught error:', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Sign in failed' 

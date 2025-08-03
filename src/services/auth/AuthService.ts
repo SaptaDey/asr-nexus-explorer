@@ -191,8 +191,10 @@ export class AuthService {
     error: AuthError | null;
   }> {
     try {
+      console.log('AuthService: signUp called with email:', data.email);
       this.updateState({ loading: true });
 
+      console.log('AuthService: Calling supabase.auth.signUp');
       const { data: authData, error } = await this.supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -207,11 +209,15 @@ export class AuthService {
         }
       });
 
+      console.log('AuthService: Supabase signUp response:', { authData, error });
+
       if (error) {
+        console.error('AuthService: Sign up error:', error);
         this.updateState({ loading: false });
         return { user: null, session: null, error };
       }
 
+      console.log('AuthService: Sign up successful');
       // Profile will be created automatically by the database trigger
       // Session change will be handled by the auth state change listener
 
@@ -222,6 +228,7 @@ export class AuthService {
       };
 
     } catch (error) {
+      console.error('AuthService: Caught exception during sign up:', error);
       this.updateState({ loading: false });
       const authError = error as AuthError;
       return { user: null, session: null, error: authError };
@@ -237,18 +244,24 @@ export class AuthService {
     error: AuthError | null;
   }> {
     try {
+      console.log('AuthService: signIn called with email:', data.email);
       this.updateState({ loading: true });
 
+      console.log('AuthService: Calling supabase.auth.signInWithPassword');
       const { data: authData, error } = await this.supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password
       });
 
+      console.log('AuthService: Supabase response:', { authData, error });
+
       if (error) {
+        console.error('AuthService: Sign in error:', error);
         this.updateState({ loading: false });
         return { user: null, session: null, error };
       }
 
+      console.log('AuthService: Sign in successful');
       // Session change will be handled by the auth state change listener
 
       return { 
@@ -258,6 +271,7 @@ export class AuthService {
       };
 
     } catch (error) {
+      console.error('AuthService: Caught exception during sign in:', error);
       this.updateState({ loading: false });
       const authError = error as AuthError;
       return { user: null, session: null, error: authError };

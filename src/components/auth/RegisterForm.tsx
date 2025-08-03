@@ -8,7 +8,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuthContext } from '@/contexts/AuthContext'
-import { Loader2, Eye, EyeOff, Check, Github, Chrome } from 'lucide-react'
+import { Loader2, Eye, EyeOff, Check } from 'lucide-react'
+import { GoogleIcon, GitHubIcon } from '@/components/icons/BrandIcons'
 
 interface RegisterFormProps {
   onSuccess?: () => void
@@ -48,6 +49,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('RegisterForm: Starting registration process', formData.email)
     setError(null)
 
     if (!isPasswordValid) {
@@ -63,6 +65,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
     setLoading(true)
 
     try {
+      console.log('RegisterForm: Calling signUp')
       // Register the user using AuthContext
       const result = await signUp({
         email: formData.email,
@@ -72,17 +75,22 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
         expertiseAreas: [],
         institution: ''
       })
+      console.log('RegisterForm: signUp result:', result)
       
       if (!result.success) {
+        console.error('RegisterForm: Registration failed:', result.error)
         setError(result.error || 'Registration failed')
         return
       }
       
+      console.log('RegisterForm: Registration successful')
       // Show success message instead of immediately calling onSuccess
       setRegistrationSuccess(true)
     } catch (err: any) {
+      console.error('RegisterForm: Caught error:', err)
       setError(err.message || 'Registration failed')
     } finally {
+      console.log('RegisterForm: Setting loading to false')
       setLoading(false)
     }
   }
@@ -123,11 +131,16 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
   }
 
   return (
-    <Card className={`w-full max-w-md mx-auto ${className}`}>
-      <CardHeader>
-        <CardTitle className="text-center">Create ASR-GoT Account</CardTitle>
+    <Card className={`w-full max-w-md mx-auto shadow-xl border-0 ${className}`}>
+      <CardHeader className="space-y-1 pb-6">
+        <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          Create Your Account
+        </CardTitle>
+        <p className="text-center text-sm text-gray-600">
+          Join the scientific research revolution
+        </p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-8 pb-8">
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <Alert variant="destructive">
@@ -146,7 +159,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
           )}
 
           <div className="space-y-2">
-            <label htmlFor="fullName" className="text-sm font-medium">
+            <label htmlFor="fullName" className="text-sm font-medium text-gray-700">
               Full Name
             </label>
             <Input
@@ -158,11 +171,12 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
               placeholder="Enter your full name"
               required
               disabled={loading}
+              className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors"
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
+            <label htmlFor="email" className="text-sm font-medium text-gray-700">
               Email
             </label>
             <Input
@@ -174,11 +188,12 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
               placeholder="Enter your email"
               required
               disabled={loading}
+              className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors"
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">
+            <label htmlFor="password" className="text-sm font-medium text-gray-700">
               Password
             </label>
             <div className="relative">
@@ -191,12 +206,13 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
                 placeholder="Create a password"
                 required
                 disabled={loading}
+                className="h-11 pr-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-500 hover:text-gray-700 transition-colors"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={loading}
               >
@@ -209,21 +225,23 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
             </div>
             
             {formData.password && (
-              <div className="text-xs space-y-1">
-                {passwordRequirements.map((req, index) => (
-                  <div key={index} className={`flex items-center space-x-2 ${
-                    req.test ? 'text-green-600' : 'text-gray-500'
-                  }`}>
-                    <Check className={`h-3 w-3 ${req.test ? 'opacity-100' : 'opacity-30'}`} />
-                    <span>{req.text}</span>
-                  </div>
-                ))}
+              <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                <div className="text-xs space-y-1.5">
+                  {passwordRequirements.map((req, index) => (
+                    <div key={index} className={`flex items-center space-x-2 transition-colors ${
+                      req.test ? 'text-green-600' : 'text-gray-500'
+                    }`}>
+                      <Check className={`h-3 w-3 transition-opacity ${req.test ? 'opacity-100' : 'opacity-30'}`} />
+                      <span>{req.text}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="confirmPassword" className="text-sm font-medium">
+            <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
               Confirm Password
             </label>
             <div className="relative">
@@ -236,12 +254,13 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
                 placeholder="Confirm your password"
                 required
                 disabled={loading}
+                className="h-11 pr-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-500 hover:text-gray-700 transition-colors"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 disabled={loading}
               >
@@ -254,17 +273,17 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
             </div>
             
             {formData.confirmPassword && (
-              <div className={`text-xs flex items-center space-x-2 ${
+              <div className={`text-xs flex items-center space-x-2 mt-2 transition-colors ${
                 passwordsMatch ? 'text-green-600' : 'text-red-500'
               }`}>
-                <Check className={`h-3 w-3 ${passwordsMatch ? 'opacity-100' : 'opacity-30'}`} />
+                <Check className={`h-3 w-3 transition-opacity ${passwordsMatch ? 'opacity-100' : 'opacity-30'}`} />
                 <span>{passwordsMatch ? 'Passwords match' : 'Passwords do not match'}</span>
               </div>
             )}
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="subscriptionTier" className="text-sm font-medium">
+            <label htmlFor="subscriptionTier" className="text-sm font-medium text-gray-700">
               Subscription Plan
             </label>
             <Select 
@@ -272,26 +291,26 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
               onValueChange={handleSubscriptionChange}
               disabled={loading}
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors">
                 <SelectValue placeholder="Select a plan" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="free">
-                  <div className="flex flex-col">
-                    <span className="font-medium">Free</span>
-                    <span className="text-sm text-gray-500">1,000 API calls/month</span>
+                  <div className="flex flex-col py-1">
+                    <span className="font-semibold">Free</span>
+                    <span className="text-sm text-gray-600">1,000 API calls/month</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="pro">
-                  <div className="flex flex-col">
-                    <span className="font-medium">Pro</span>
-                    <span className="text-sm text-gray-500">10,000 API calls/month</span>
+                  <div className="flex flex-col py-1">
+                    <span className="font-semibold">Pro</span>
+                    <span className="text-sm text-gray-600">10,000 API calls/month</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="enterprise">
-                  <div className="flex flex-col">
-                    <span className="font-medium">Enterprise</span>
-                    <span className="text-sm text-gray-500">100,000 API calls/month</span>
+                  <div className="flex flex-col py-1">
+                    <span className="font-semibold">Enterprise</span>
+                    <span className="text-sm text-gray-600">100,000 API calls/month</span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -300,7 +319,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
 
           <Button
             type="submit"
-            className="w-full"
+            className="w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none"
             disabled={loading || !isPasswordValid || !passwordsMatch}
           >
             {loading ? (
@@ -326,49 +345,55 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, className = '' }: Reg
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <Button
                 type="button"
                 variant="outline"
-                className="w-full"
+                className="w-full h-11 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2 group"
                 onClick={() => handleOAuthSignIn('google')}
                 disabled={loading || oauthLoading !== null}
               >
                 {oauthLoading === 'google' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Chrome className="h-4 w-4" />
+                  <>
+                    <GoogleIcon className="h-5 w-5" />
+                    <span className="text-gray-700 font-medium">Google</span>
+                  </>
                 )}
-                <span className="sr-only">Sign up with Google</span>
               </Button>
 
               <Button
                 type="button"
                 variant="outline"
-                className="w-full"
+                className="w-full h-11 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2 group"
                 onClick={() => handleOAuthSignIn('github')}
                 disabled={loading || oauthLoading !== null}
               >
                 {oauthLoading === 'github' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Github className="h-4 w-4" />
+                  <>
+                    <GitHubIcon className="h-5 w-5 text-gray-800 group-hover:text-gray-900" />
+                    <span className="text-gray-700 font-medium">GitHub</span>
+                  </>
                 )}
-                <span className="sr-only">Sign up with GitHub</span>
               </Button>
-
             </div>
           </div>
 
           <div className="text-center space-y-2">
-            <Button
-              type="button"
-              variant="link"
-              className="text-sm"
-              onClick={onSwitchToLogin}
-            >
-              Already have an account? Sign in
-            </Button>
+            <p className="text-sm text-gray-600">
+              Already have an account?{' '}
+              <Button
+                type="button"
+                variant="link"
+                className="text-blue-600 hover:text-blue-700 font-medium p-0 h-auto transition-colors"
+                onClick={onSwitchToLogin}
+              >
+                Sign in
+              </Button>
+            </p>
           </div>
         </form>
       </CardContent>

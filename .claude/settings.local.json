@@ -94,7 +94,15 @@
       "Bash(git rev-list:*)",
       "Bash(dig:*)",
       "Bash(git revert:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(./scripts/pre-push-tests.sh:*)",
+      "Bash(bash:*)",
+      "Bash(NODE_ENV=test npm run test:unit -- --coverage --reporter=verbose)",
+      "Bash(NODE_ENV=test NODE_OPTIONS=\"--max-old-space-size=8192\" npm run test:integration)",
+      "Bash(NODE_ENV=test npm run test:security)",
+      "Bash(NODE_ENV=test npm run test:performance)",
+      "Bash(NODE_ENV=test npm run test:e2e:smoke)",
+      "Bash(NODE_ENV=test NODE_OPTIONS=\"--max-old-space-size=8192\" npm run test:coverage)"
     ],
     "deny": []
   }

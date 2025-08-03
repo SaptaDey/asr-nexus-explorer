@@ -59,17 +59,20 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header */}
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2 text-blue-600 hover:text-blue-700">
-            <ArrowLeft className="h-5 w-5" />
-            <span>Back to Home</span>
+          <Link to="/" className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors group">
+            <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="font-medium">Back to Home</span>
           </Link>
-          <div className="flex items-center space-x-2">
-            <Brain className="h-8 w-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">ASR-GoT</span>
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <Brain className="h-10 w-10 text-blue-600" />
+              <div className="absolute inset-0 bg-blue-600 opacity-20 blur-xl rounded-full"></div>
+            </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">ASR-GoT</span>
           </div>
         </div>
       </div>
@@ -78,14 +81,14 @@ export default function AuthPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto">
           {/* Welcome Message */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome to ASR-GoT
+          <div className="text-center mb-10">
+            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+              {mode === 'login' ? 'Welcome Back' : 'Get Started'}
             </h1>
-            <p className="text-gray-600">
+            <p className="text-lg text-gray-600 max-w-md mx-auto">
               {mode === 'login' 
-                ? 'Sign in to access your research sessions and data'
-                : 'Create an account to start your scientific research journey'
+                ? 'Continue your journey in AI-powered scientific research'
+                : 'Join thousands of researchers revolutionizing scientific discovery'
               }
             </p>
           </div>
@@ -101,17 +104,25 @@ export default function AuthPage() {
           )}
 
           {/* Mode Toggle */}
-          <div className="flex rounded-lg bg-gray-100 p-1 mb-6">
+          <div className="flex rounded-xl bg-gray-100/80 backdrop-blur-sm p-1.5 mb-8 shadow-inner">
             <Button
               variant={mode === 'login' ? 'default' : 'ghost'}
-              className="flex-1"
+              className={`flex-1 h-10 font-medium transition-all duration-200 ${
+                mode === 'login' 
+                  ? 'bg-white shadow-md text-gray-900' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
               onClick={() => setMode('login')}
             >
               Sign In
             </Button>
             <Button
               variant={mode === 'register' ? 'default' : 'ghost'}
-              className="flex-1"
+              className={`flex-1 h-10 font-medium transition-all duration-200 ${
+                mode === 'register' 
+                  ? 'bg-white shadow-md text-gray-900' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
               onClick={() => setMode('register')}
             >
               Sign Up
@@ -132,42 +143,42 @@ export default function AuthPage() {
           )}
 
           {/* Features Preview */}
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle className="text-center text-lg">
-                What you'll get with ASR-GoT
+          <Card className="mt-10 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-center text-lg font-semibold text-gray-800">
+                Why Choose ASR-GoT?
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                  <span>AI-powered scientific research framework with 9-stage pipeline</span>
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3 group">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 group-hover:scale-125 transition-transform"></div>
+                  <span className="text-gray-700 leading-relaxed">AI-powered scientific research framework with 9-stage pipeline</span>
                 </div>
-                <div className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                  <span>Secure API key storage and usage tracking</span>
+                <div className="flex items-start space-x-3 group">
+                  <div className="w-2 h-2 bg-indigo-600 rounded-full mt-2 group-hover:scale-125 transition-transform"></div>
+                  <span className="text-gray-700 leading-relaxed">Secure API key storage and usage tracking</span>
                 </div>
-                <div className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                  <span>Session persistence and research history</span>
+                <div className="flex items-start space-x-3 group">
+                  <div className="w-2 h-2 bg-purple-600 rounded-full mt-2 group-hover:scale-125 transition-transform"></div>
+                  <span className="text-gray-700 leading-relaxed">Session persistence and research history</span>
                 </div>
-                <div className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                  <span>Advanced graph visualizations and analytics</span>
+                <div className="flex items-start space-x-3 group">
+                  <div className="w-2 h-2 bg-pink-600 rounded-full mt-2 group-hover:scale-125 transition-transform"></div>
+                  <span className="text-gray-700 leading-relaxed">Advanced graph visualizations and analytics</span>
                 </div>
-                <div className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                  <span>Comprehensive report generation and export</span>
+                <div className="flex items-start space-x-3 group">
+                  <div className="w-2 h-2 bg-rose-600 rounded-full mt-2 group-hover:scale-125 transition-transform"></div>
+                  <span className="text-gray-700 leading-relaxed">Comprehensive report generation and export</span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Privacy Notice */}
-          <Alert className="mt-6">
-            <AlertDescription className="text-xs text-center">
-              Your data is securely encrypted and stored. We never share your information with third parties.
+          <Alert className="mt-8 border-0 bg-blue-50/50 backdrop-blur-sm">
+            <AlertDescription className="text-sm text-center text-gray-700 leading-relaxed">
+              🔒 Your data is securely encrypted and stored. We never share your information with third parties.
               API keys are encrypted and only used to make requests on your behalf.
             </AlertDescription>
           </Alert>

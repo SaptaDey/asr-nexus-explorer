@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useAuthContext } from '@/contexts/AuthContext'
-import { Loader2, Eye, EyeOff, Github, Chrome } from 'lucide-react'
+import { Loader2, Eye, EyeOff } from 'lucide-react'
+import { GoogleIcon, GitHubIcon } from '@/components/icons/BrandIcons'
 
 interface LoginFormProps {
   onSuccess?: () => void
@@ -28,21 +29,28 @@ export function LoginForm({ onSuccess, onSwitchToRegister, className = '' }: Log
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('LoginForm: Starting login process', formData.email)
     setError(null)
     setLoading(true)
 
     try {
+      console.log('LoginForm: Calling signIn')
       const result = await signIn(formData)
+      console.log('LoginForm: signIn result:', result)
       
       if (!result.success) {
+        console.error('LoginForm: Login failed:', result.error)
         setError(result.error || 'Login failed')
         return
       }
       
+      console.log('LoginForm: Login successful, calling onSuccess')
       onSuccess?.()
     } catch (err: any) {
+      console.error('LoginForm: Caught error:', err)
       setError(err.message || 'Login failed')
     } finally {
+      console.log('LoginForm: Setting loading to false')
       setLoading(false)
     }
   }
@@ -76,11 +84,16 @@ export function LoginForm({ onSuccess, onSwitchToRegister, className = '' }: Log
   }
 
   return (
-    <Card className={`w-full max-w-md mx-auto ${className}`}>
-      <CardHeader>
-        <CardTitle className="text-center">Sign In to ASR-GoT</CardTitle>
+    <Card className={`w-full max-w-md mx-auto shadow-xl border-0 ${className}`}>
+      <CardHeader className="space-y-1 pb-6">
+        <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          Welcome Back
+        </CardTitle>
+        <p className="text-center text-sm text-gray-600">
+          Sign in to continue your research journey
+        </p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-8 pb-8">
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <Alert variant="destructive">
@@ -89,7 +102,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, className = '' }: Log
           )}
 
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
+            <label htmlFor="email" className="text-sm font-medium text-gray-700">
               Email
             </label>
             <Input
@@ -101,11 +114,12 @@ export function LoginForm({ onSuccess, onSwitchToRegister, className = '' }: Log
               placeholder="Enter your email"
               required
               disabled={loading}
+              className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors"
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">
+            <label htmlFor="password" className="text-sm font-medium text-gray-700">
               Password
             </label>
             <div className="relative">
@@ -118,12 +132,13 @@ export function LoginForm({ onSuccess, onSwitchToRegister, className = '' }: Log
                 placeholder="Enter your password"
                 required
                 disabled={loading}
+                className="h-11 pr-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-500 hover:text-gray-700 transition-colors"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={loading}
               >
@@ -138,7 +153,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, className = '' }: Log
 
           <Button
             type="submit"
-            className="w-full"
+            className="w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium transition-all duration-200 transform hover:scale-[1.02]"
             disabled={loading}
           >
             {loading ? (
@@ -164,49 +179,55 @@ export function LoginForm({ onSuccess, onSwitchToRegister, className = '' }: Log
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <Button
                 type="button"
                 variant="outline"
-                className="w-full"
+                className="w-full h-11 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2 group"
                 onClick={() => handleOAuthSignIn('google')}
                 disabled={loading || oauthLoading !== null}
               >
                 {oauthLoading === 'google' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Chrome className="h-4 w-4" />
+                  <>
+                    <GoogleIcon className="h-5 w-5" />
+                    <span className="text-gray-700 font-medium">Google</span>
+                  </>
                 )}
-                <span className="sr-only">Sign in with Google</span>
               </Button>
 
               <Button
                 type="button"
                 variant="outline"
-                className="w-full"
+                className="w-full h-11 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2 group"
                 onClick={() => handleOAuthSignIn('github')}
                 disabled={loading || oauthLoading !== null}
               >
                 {oauthLoading === 'github' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Github className="h-4 w-4" />
+                  <>
+                    <GitHubIcon className="h-5 w-5 text-gray-800 group-hover:text-gray-900" />
+                    <span className="text-gray-700 font-medium">GitHub</span>
+                  </>
                 )}
-                <span className="sr-only">Sign in with GitHub</span>
               </Button>
-
             </div>
           </div>
 
           <div className="text-center space-y-2">
-            <Button
-              type="button"
-              variant="link"
-              className="text-sm"
-              onClick={onSwitchToRegister}
-            >
-              Don't have an account? Sign up
-            </Button>
+            <p className="text-sm text-gray-600">
+              Don't have an account?{' '}
+              <Button
+                type="button"
+                variant="link"
+                className="text-blue-600 hover:text-blue-700 font-medium p-0 h-auto transition-colors"
+                onClick={onSwitchToRegister}
+              >
+                Sign up
+              </Button>
+            </p>
           </div>
         </form>
       </CardContent>

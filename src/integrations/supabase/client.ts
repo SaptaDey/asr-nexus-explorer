@@ -24,3 +24,14 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 });
 
 console.log('🔧 Supabase client created with stable configuration');
+
+// Test connection on initialization
+supabase.auth.getSession().then(({ data, error }) => {
+  if (error) {
+    console.error('🚨 Supabase connection test failed:', error);
+  } else {
+    console.log('✅ Supabase connection test successful:', data?.session ? 'Session found' : 'No session');
+  }
+}).catch(err => {
+  console.error('🚨 Supabase connection test error:', err);
+});
