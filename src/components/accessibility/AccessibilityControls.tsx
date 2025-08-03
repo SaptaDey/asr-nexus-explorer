@@ -120,7 +120,7 @@ export const AccessibilityControls: React.FC<AccessibilityControlsProps> = ({ cl
           variant="outline" 
           size="sm"
           className={`${className} relative bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-700 hover:text-blue-800 transition-all duration-200`}
-          aria-label="Open accessibility settings and preferences"
+          aria-label="Open accessibility settings"
         >
           <Accessibility className="h-4 w-4 mr-2" />
           <span className="font-medium">Accessibility</span>
