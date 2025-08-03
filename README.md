@@ -246,6 +246,50 @@ npm run build:dev
 
 The application is deployed at **https://scientific-research.online/** with automatic GitHub integration.
 
+### Testing
+
+The project includes comprehensive testing with multiple test modes optimized for different scenarios:
+
+```bash
+# Unit and Integration Tests
+npm run test:unit          # Unit tests only
+npm run test:integration   # Integration tests only 
+npm run test:coverage      # Generate coverage reports
+
+# End-to-End (E2E) Tests - Performance Optimized
+npm run test:e2e:smoke     # 🚀 Ultra-fast smoke tests (~12 seconds)
+npm run test:e2e:fast      # ⚡ Fast E2E mode (Chromium only, ~5 minutes)
+npm run test:e2e           # 🔍 Full E2E suite (5 browsers, comprehensive)
+npm run test:e2e:ui        # Interactive E2E test runner
+
+# Combined Test Suites for CI/CD
+npm run test:ci            # 💨 Fastest CI: coverage + smoke tests (~2 minutes)
+npm run test:ci:fast       # ⚡ Standard CI: coverage + fast E2E (~7 minutes)
+npm run test:ci:full       # 🔍 Complete CI: coverage + full E2E suite (~15 minutes)
+npm run test:all           # Complete local test suite
+```
+
+## 🚀 **Performance Optimizations** 
+
+| Test Mode | Duration | Browsers | Tests | Use Case |
+|-----------|----------|----------|-------|----------|
+| **Smoke** | ~12 seconds | Chromium | 9 critical path | 💨 Rapid development feedback |
+| **Fast** | ~5 minutes | Chromium | ~34 tests | ⚡ PR validation |
+| **Full** | ~15 minutes | 5 browsers | ~400 tests | 🔍 Release validation |
+
+**🎯 Performance Improvements:**
+- **15x faster CI feedback**: 30+ minutes → ~2 minutes with smoke tests
+- **15 workers**: Increased from 2 → 15 for maximum parallelization
+- **Smart test selection**: Different modes for different validation needs
+- **Optimized configuration**: Reduced timeouts, minimal trace collection in CI
+
+**💡 Usage Recommendations:**
+- Use `test:ci` (smoke mode) for fastest development workflows
+- Use `test:ci:fast` for comprehensive PR validation
+- Use `test:ci:full` for release validation and browser compatibility testing
+
+**Coverage Requirements**: The project maintains 85%+ test coverage across all metrics.
+
 ---
 
 ## 🔧 Technology Stack

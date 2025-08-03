@@ -2037,7 +2037,8 @@ Return analysis in structured format with confidence score (0-1).
     }
     
     const confounders: string[] = [];
-    const confoundingSection = analysis.match(/confounding[^:]*:([^]*?)(?=\n\d|\n[A-Z]|\n$)/i);
+    // Use simpler regex to capture everything after "confounding...:" 
+    const confoundingSection = analysis.match(/confounding[^:]*:(.*)/is);
     if (confoundingSection) {
       const confoundingText = confoundingSection[1];
       const matches = confoundingText.match(/[-•]\s*([^;\n]+)/g);
@@ -2192,7 +2193,8 @@ Return analysis in structured format with confidence score (0-1).
     const powerMatch = analysis.match(/statistical power[^:]*:\s*([0-9.]+)/i);
     const sampleSizeMatch = analysis.match(/sample size[^:]*:\s*([0-9,]+)/i);
     const effectSizeMatch = analysis.match(/effect size[^:]*:\s*([0-9.]+)/i);
-    const pValueMatch = analysis.match(/p[- ]value[^:]*:\s*([0-9.]+)/i);
+    // Updated p-value regex to handle both "p value: 0.05" and "p < 0.05" formats
+    const pValueMatch = analysis.match(/p[- ]value[^:]*:\s*([0-9.]+)/i) || analysis.match(/p\s*[<>]\s*([0-9.]+)/i);
     
     let powerScore = 0.5; // Base power score
     
