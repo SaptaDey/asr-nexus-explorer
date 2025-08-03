@@ -66,6 +66,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage/lcov.info
           flags: unit-tests
           name: codecov-unit-tests
@@ -452,4 +453,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: '✅ **All Tests Passed!**\n\n🚀 This PR is ready for review and merge.\n\n**Test Results:**\n- ✅ Lint & Type Check\n- ✅ Unit Tests\n- ✅ Integration Tests\n- ✅ Security Tests\n- ✅ E2E Tests\n- ✅ Coverage Requirements\n- ✅ Build Test'
+
             })
