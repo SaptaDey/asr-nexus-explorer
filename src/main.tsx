@@ -4,37 +4,72 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Emergency error handling for main.tsx with simplified initialization
+// Proper application initialization with full security
 (async () => {
   try {
-    // EMERGENCY: Skip complex security initialization for now to get app running
-    console.log('🚀 Emergency initialization: Skipping complex security setup');
+    console.log('🚀 ASR-GoT: Starting secure application initialization');
     
-    // Simple logging functions
-    const safeLog = (msg: string) => console.log(msg);
-    const safeError = (msg: string, error?: any) => console.error(msg, error);
+    // Initialize security systems first
+    try {
+      // Import and initialize security services
+      const { SecurityInitializer } = await import('@/services/security/SecurityInitializer');
+      const { ErrorLoggingService } = await import('@/services/ErrorLoggingService');
+      
+      // Initialize security framework
+      console.log('🔒 Initializing security framework...');
+      await SecurityInitializer.initialize();
+      
+      // Initialize error logging with security compliance
+      console.log('📊 Initializing secure error logging...');
+      await ErrorLoggingService.initialize();
+      
+      console.log('✅ Security initialization completed');
+    } catch (securityError) {
+      console.error('🚨 Security initialization failed:', securityError);
+      // Don't proceed without security - this is critical
+      throw new Error('Critical security initialization failure');
+    }
     
-    safeLog('📦 main.tsx: Starting React app creation...');
+    // Advanced error handling for browser extension conflicts (non-compromising)
+    window.addEventListener('error', (event) => {
+      // Log but don't suppress errors - maintain visibility
+      if (event.message?.includes('message port closed') || 
+          event.filename?.includes('chrome-extension://') ||
+          event.filename?.includes('moz-extension://')) {
+        console.warn('🔌 Browser extension error detected (non-blocking):', event.message);
+        // Don't prevent default - let security logging handle it
+      }
+    });
+
+    // Handle unhandled promise rejections with proper logging
+    window.addEventListener('unhandledrejection', (event) => {
+      if (event.reason?.message?.includes('message port closed')) {
+        console.warn('🔌 Browser extension promise rejection (non-blocking):', event.reason);
+        // Don't prevent default - maintain proper error reporting
+      }
+    });
+    
+    console.log('📦 ASR-GoT: Starting React application...');
   
   const rootElement = document.getElementById("root");
   if (!rootElement) {
     throw new Error('Root element not found');
   }
   
-  safeLog('🎯 main.tsx: Creating React root...');
+  console.log('🎯 ASR-GoT: Creating React root...');
   const root = createRoot(rootElement);
   
-  safeLog('🎨 main.tsx: Rendering App component...');
+  console.log('🎨 ASR-GoT: Rendering App component...');
   root.render(<App />);
   
   // Mark as loaded after a short delay
   setTimeout(() => {
     document.body.setAttribute('data-app-loaded', 'true');
-    safeLog('✅ main.tsx: App loaded successfully');
+    console.log('✅ ASR-GoT: Application loaded successfully');
   }, 100);
   
   } catch (error) {
-    safeError('❌ main.tsx: Critical error during app initialization:', error);
+    console.error('❌ ASR-GoT: Critical error during app initialization:', error);
   
   // Show error on page safely
   const errorDiv = document.createElement('div');

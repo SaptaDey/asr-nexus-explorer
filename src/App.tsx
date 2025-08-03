@@ -20,16 +20,29 @@ import ASRGoTInterface from "./pages/ASRGoTInterface";
 import EnhancedASRGoTInterface from "./pages/EnhancedASRGoTInterface";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { FloatingIconSystem } from "./components/ui/FloatingIconSystem";
 
-// SIMPLIFIED: Remove complex dynamic imports that can cause temporal dead zone
+// Complete application initialization with all security measures
 const initializeApp = async () => {
   try {
-    console.log('🔄 App: Starting simplified initialization');
-    // Skip complex initialization that was causing temporal dead zone errors
-    // Services will initialize themselves when needed
-    console.log('🚀 App: Simplified initialization completed');
+    console.log('🔄 App: Starting complete initialization');
+    
+    // Initialize core services
+    const { InitializationService } = await import('@/services/initialization/InitializationService');
+    await InitializationService.initialize();
+    
+    // Initialize background processing
+    const { BackgroundProcessor } = await import('@/utils/background/BackgroundProcessor');
+    await BackgroundProcessor.initialize();
+    
+    // Initialize memory management
+    const { MemoryManager } = await import('@/services/memory/MemoryManager');
+    await MemoryManager.initialize();
+    
+    console.log('🚀 App: Complete initialization finished');
   } catch (error) {
-    console.warn('⚠️ App initialization had issues:', error);
+    console.error('❌ App initialization failed:', error);
+    throw error; // Don't suppress initialization failures
   }
 };
 
@@ -49,8 +62,17 @@ const App = () => {
     // Initialize app on mount
     initializeApp();
     
-    // SIMPLIFIED: Skip debug helper initialization to avoid dynamic import conflicts
-    console.log('✅ App loaded - debug helper disabled to prevent initialization conflicts');
+    // Initialize debug helper for development
+    if (process.env.NODE_ENV === 'development') {
+      import('@/utils/debugHelper').then(({ initializeDebugHelper }) => {
+        initializeDebugHelper();
+        console.log('🔧 Debug helper initialized');
+      }).catch(error => {
+        console.warn('⚠️ Debug helper initialization failed:', error);
+      });
+    }
+    
+    console.log('✅ App loaded with complete initialization');
   }, []);
 
   return (
@@ -61,6 +83,7 @@ const App = () => {
             <TooltipProvider>
                     <Toaster />
                     <Sonner />
+                    <FloatingIconSystem />
                     <BrowserRouter>
                     <Routes>
                       {/* Public routes */}

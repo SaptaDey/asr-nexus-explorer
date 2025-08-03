@@ -4,6 +4,7 @@
  */
 
 import { toast } from 'sonner';
+import { notificationManager } from '@/components/ui/NotificationBell';
 
 interface PlotlyModule {
   default: any;
@@ -16,6 +17,7 @@ interface PlotlyModule {
 // Global cache for loaded Plotly instance
 let plotlyInstance: PlotlyModule | null = null;
 let loadingPromise: Promise<PlotlyModule> | null = null;
+let hasAnnouncedError = false; // Prevent duplicate error announcements
 
 /**
  * Dynamically loads Plotly.js with error handling and fallbacks
@@ -50,6 +52,7 @@ export const loadPlotly = async (): Promise<PlotlyModule> => {
       };
 
       console.log('📊 Plotly.js loaded successfully');
+      hasAnnouncedError = false; // Reset error flag on successful load
       return plotlyInstance;
     } catch (error) {
       console.error('❌ Failed to load Plotly.js:', error);
@@ -80,24 +83,42 @@ export const loadPlotly = async (): Promise<PlotlyModule> => {
       const mockPlotly: PlotlyModule = {
         default: null,
         newPlot: async () => {
-          toast.error('Chart visualization unavailable - Plotly.js failed to load');
+          if (!hasAnnouncedError) {
+            toast.error('Chart visualization unavailable - Plotly.js failed to load');
+            notificationManager.addNotification('Chart visualization unavailable - Plotly.js failed to load', 'error');
+            hasAnnouncedError = true;
+          }
           console.warn('🚫 Plotly newPlot called but library not available');
         },
         react: async () => {
-          toast.error('Chart visualization unavailable - Plotly.js failed to load');
+          if (!hasAnnouncedError) {
+            toast.error('Chart visualization unavailable - Plotly.js failed to load');
+            notificationManager.addNotification('Chart visualization unavailable - Plotly.js failed to load', 'error');
+            hasAnnouncedError = true;
+          }
           console.warn('🚫 Plotly react called but library not available');
         },
         purge: () => {
           console.warn('🚫 Plotly purge called but library not available');
         },
         downloadImage: async () => {
-          toast.error('Chart export unavailable - Plotly.js failed to load');
+          if (!hasAnnouncedError) {
+            toast.error('Chart export unavailable - Plotly.js failed to load');
+            hasAnnouncedError = true;
+          }
           console.warn('🚫 Plotly downloadImage called but library not available');
           return '';
         },
       };
 
       plotlyInstance = mockPlotly;
+      
+      // Only announce error once globally
+      if (!hasAnnouncedError) {
+        hasAnnouncedError = true;
+        console.error('🚨 Plotly.js loading failed globally - charts will be unavailable');
+      }
+      
       throw new Error(`Failed to load Plotly.js: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   })();

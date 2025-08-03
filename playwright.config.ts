@@ -1,76 +1,79 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * @see https://playwright.dev/docs/test-configuration
+ * Read environment variables from file.
+ * https://github.com/motdotla/dotenv
+ */
+// import dotenv from 'dotenv';
+// import path from 'path';
+// dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+/**
+ * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: './src/test/e2e',
+  testDir: './e2e',
+  /* Run tests in files in parallel */
   fullyParallel: true,
+  /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0, // Reduced retries for faster CI
-  workers: process.env.CI ? 30 : undefined, // Dramatically increased from 2 to 30 for ultra-fast CI performance
-  reporter: process.env.CI ? 'github' : 'html', // Use GitHub reporter for CI, HTML for local
+  /* Retry on CI only */
+  retries: process.env.CI ? 2 : 0,
+  /* Opt out of parallel tests on CI. */
+  workers: process.env.CI ? 1 : undefined,
+  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
+  reporter: 'html',
+  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    baseURL: 'http://localhost:4173',
-    trace: process.env.CI ? 'retain-on-failure' : 'on-first-retry', // Reduce trace collection in CI
-    screenshot: 'only-on-failure',
-    video: process.env.CI ? 'retain-on-failure' : 'retain-on-failure', // Minimize video capture
-    // Performance optimizations for CI
-    ...(process.env.CI && {
-      ignoreHTTPSErrors: true,
-      bypassCSP: true,
-    }),
+    /* Base URL to use in actions like `await page.goto('/')`. */
+    // baseURL: 'http://localhost:3000',
+
+    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+    trace: 'on-first-retry',
   },
 
-  projects: process.env.E2E_SMOKE ? [
-    // Smoke mode: Ultra-fast critical path tests only (Chromium, minimal test set)
-    {
-      name: 'smoke-chromium',
-      use: { 
-        ...devices['Desktop Chrome'],
-        // Optimize for speed
-        headless: true,
-        video: 'off',
-        screenshot: 'only-on-failure'
-      },
-      testMatch: '**/smoke/*.spec.ts', // Only run smoke tests
-    },
-  ] : process.env.E2E_FAST ? [
-    // Fast mode: Only Chromium for quick validation
+  /* Configure projects for major browsers */
+  projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-  ] : [
-    // Full mode: All browsers for comprehensive testing
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
+
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
     },
+
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
     },
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    },
+
+    /* Test against mobile viewports. */
+    // {
+    //   name: 'Mobile Chrome',
+    //   use: { ...devices['Pixel 5'] },
+    // },
+    // {
+    //   name: 'Mobile Safari',
+    //   use: { ...devices['iPhone 12'] },
+    // },
+
+    /* Test against branded browsers. */
+    // {
+    //   name: 'Microsoft Edge',
+    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
+    // },
+    // {
+    //   name: 'Google Chrome',
+    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+    // },
   ],
 
-  webServer: {
-    command: 'npm run preview',
-    url: 'http://localhost:4173',
-    reuseExistingServer: !process.env.CI,
-    timeout: process.env.CI ? 60 * 1000 : 120 * 1000, // Faster timeout for CI
-    stdout: process.env.CI ? 'ignore' : 'pipe', // Reduce logging in CI
-    stderr: process.env.CI ? 'ignore' : 'pipe',
-  },
+  /* Run your local dev server before starting the tests */
+  // webServer: {
+  //   command: 'npm run start',
+  //   url: 'http://localhost:3000',
+  //   reuseExistingServer: !process.env.CI,
+  // },
 });

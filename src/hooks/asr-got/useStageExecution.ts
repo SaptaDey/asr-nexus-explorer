@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import { toast } from "sonner";
 import { APICredentials, GraphData, ResearchContext } from '@/types/asrGotTypes';
+import { costTrackingManager } from '@/components/ui/FloatingIconSystem';
 import {
   initializeGraph,
   decomposeTask,
@@ -76,6 +77,9 @@ export const useStageExecution = ({
       let result = '';
       const context = createStageContext();
       
+      // Track stage execution start time for token estimation
+      const stageStartTime = performance.now();
+      
       switch (stageIndex) {
         case 0: // Initialization
           result = await initializeGraph(input, context);
@@ -108,6 +112,37 @@ export const useStageExecution = ({
       }
       
       updateStageResults(stageIndex, result);
+      
+      // Calculate token usage estimation based on result length and processing time
+      const stageEndTime = performance.now();
+      const processingTime = stageEndTime - stageStartTime;
+      
+      // Estimate tokens based on result length (rough approximation: 1 token ≈ 4 characters)
+      const estimatedTokens = Math.round(result.length / 4);
+      
+      // Stage names for tracking
+      const stageNames = [
+        'Initialization',
+        'Decomposition', 
+        'Hypothesis Planning',
+        'Evidence Integration',
+        'Pruning & Merging',
+        'Subgraph Extraction',
+        'Composition',
+        'Reflection',
+        'Final Analysis'
+      ];
+      
+      // Determine primary AI provider used (default to gemini, could be enhanced to detect actual usage)
+      const primaryProvider = apiKeys.gemini ? 'gemini' : apiKeys.perplexity ? 'perplexity' : 'openai';
+      
+      // Track cost for this stage
+      costTrackingManager.addStageUsage(
+        stageIndex,
+        stageNames[stageIndex] || `Stage ${stageIndex + 1}`,
+        estimatedTokens,
+        primaryProvider
+      );
       
       toast.success(`Stage ${stageIndex + 1} completed successfully`);
       

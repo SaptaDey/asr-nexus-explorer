@@ -25,13 +25,27 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 
 console.log('🔧 Supabase client created with stable configuration');
 
-// Test connection on initialization
+// Test connection on initialization with performance tracking
+const connectionTestStart = performance.now();
 supabase.auth.getSession().then(({ data, error }) => {
+  const connectionTime = performance.now() - connectionTestStart;
+  
   if (error) {
-    console.error('🚨 Supabase connection test failed:', error);
+    console.error('🚨 Supabase connection test failed:', {
+      error,
+      duration: `${connectionTime.toFixed(2)}ms`
+    });
   } else {
-    console.log('✅ Supabase connection test successful:', data?.session ? 'Session found' : 'No session');
+    console.log('✅ Supabase connection test successful:', {
+      hasSession: !!data?.session,
+      duration: `${connectionTime.toFixed(2)}ms`,
+      timestamp: new Date().toISOString()
+    });
   }
 }).catch(err => {
-  console.error('🚨 Supabase connection test error:', err);
+  const connectionTime = performance.now() - connectionTestStart;
+  console.error('🚨 Supabase connection test error:', {
+    error: err,
+    duration: `${connectionTime.toFixed(2)}ms`
+  });
 });

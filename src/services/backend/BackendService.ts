@@ -58,9 +58,15 @@ export class BackendService {
   }
 
   /**
-   * Initialize all backend services
+   * Initialize all backend services (singleton pattern - only once)
    */
   async initialize(): Promise<BackendServiceStatus> {
+    // Prevent repeated initialization
+    if (this.isInitialized) {
+      console.log('🔄 Backend service already initialized, returning cached status');
+      return this.status;
+    }
+
     console.log('🚀 Initializing ASR-GoT Backend Service...');
 
     try {

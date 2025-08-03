@@ -39,6 +39,7 @@ import { useASRGoT } from '@/hooks/useASRGoT';
 import { useProcessingMode } from '@/hooks/asr-got/useProcessingMode';
 import { costAwareOrchestration } from '@/services/CostAwareOrchestrationService';
 import { toast } from 'sonner';
+import { systemNotificationManager } from '@/components/ui/FloatingIconSystem';
 import { Link } from 'react-router-dom';
 import { APICredentials } from '@/types/asrGotTypes';
 import { backendService } from '@/services/backend/BackendService';
@@ -136,19 +137,44 @@ const ASRGoTInterfaceContent: React.FC = () => {
     }
   });
 
-  // Initialize backend and monitor health
+  // Initialize backend and monitor health (only once)
   useEffect(() => {
     const initializeBackend = async () => {
       try {
+        // Check if backend was already initialized to prevent repeated announcements
+        if (backendStatus?.initialized) {
+          console.log('🔄 Backend already initialized, skipping re-initialization');
+          return;
+        }
+
         console.log('🚀 Initializing backend services...');
         const status = await backendService.initialize();
         setBackendStatus(status);
         setBackendHealthy(backendService.isHealthy());
         if (status.health.errors.length > 0) {
           console.warn('⚠️ Backend initialized with errors:', status.health.errors);
-          toast.warning('Backend services initialized with some limitations');
+          // Only show warning if there are actual critical errors, not just auth-related limitations
+          const criticalErrors = status.health.errors.filter(error => 
+            !error.includes('no authenticated user') && 
+            !error.includes('Skipping') &&
+            !error.includes('emergency mode')
+          );
+          
+          if (criticalErrors.length > 0) {
+            const errorMessage = `Backend services initialized with ${criticalErrors.length} error(s)`;
+            toast.warning(errorMessage);
+            systemNotificationManager.addNotification(errorMessage, 'warning', 'system');
+            console.error('🚨 Critical backend errors:', criticalErrors);
+          } else {
+            // Just auth-related limitations, show as info instead
+            const infoMessage = 'Backend services running in guest mode - sign in for full features';
+            toast.info(infoMessage);
+            systemNotificationManager.addNotification(infoMessage, 'info', 'auth');
+          }
         } else {
-          toast.success('Backend services connected successfully');
+          const successMessage = 'Backend services connected successfully';
+          toast.success(successMessage);
+          systemNotificationManager.addNotification(successMessage, 'success', 'system');
         }
       } catch (error) {
         console.error('❌ Backend initialization failed:', error);

@@ -69,19 +69,30 @@ export class AuthService {
    */
   private async initialize(): Promise<void> {
     try {
-      // Get initial session
-      const { data: { session }, error } = await this.supabase.auth.getSession();
+      // Add timeout to prevent hanging on initialization
+      const initTimeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Auth initialization timeout')), 10000)
+      );
+
+      const initPromise = this.supabase.auth.getSession();
       
-      if (error) {
+      // Race between initialization and timeout
+      const { data: { session }, error } = await Promise.race([initPromise, initTimeout]) as any;
+      
+      if (error && !error.message?.includes('timeout')) {
         console.error('Error getting initial session:', error);
-      } else {
+      } else if (!error) {
         await this.handleSessionChange(session);
       }
 
-      // Listen for auth changes
+      // Listen for auth changes with error handling
       this.supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
-        await this.handleSessionChange(session);
+        try {
+          console.log('Auth state changed:', event, session?.user?.id);
+          await this.handleSessionChange(session);
+        } catch (stateChangeError) {
+          console.error('Error handling auth state change:', stateChangeError);
+        }
       });
 
       this.updateState({ initialized: true, loading: false });
@@ -96,12 +107,30 @@ export class AuthService {
    * Handle session changes and update auth state
    */
   private async handleSessionChange(session: Session | null): Promise<void> {
+    const startTime = performance.now();
+    
     try {
+      console.log('AuthService: handleSessionChange started', { 
+        hasSession: !!session, 
+        userId: session?.user?.id,
+        timestamp: new Date().toISOString()
+      });
+      
       let authUser: AuthUser | null = null;
 
       if (session?.user) {
-        // Load user profile
+        // Performance tracking: Profile loading
+        const profileStartTime = performance.now();
+        console.log('AuthService: Loading user profile...');
+        
         const profile = await this.getProfile(session.user.id);
+        
+        const profileEndTime = performance.now();
+        console.log('AuthService: Profile loading completed', {
+          duration: `${(profileEndTime - profileStartTime).toFixed(2)}ms`,
+          hasProfile: !!profile
+        });
+        
         authUser = {
           ...session.user,
           profile: profile || undefined
@@ -121,6 +150,9 @@ export class AuthService {
         session: null,
         loading: false
       });
+    } finally {
+      const totalTime = performance.now() - startTime;
+      console.log(`AuthService: handleSessionChange total duration: ${totalTime.toFixed(2)}ms`);
     }
   }
 
@@ -243,17 +275,28 @@ export class AuthService {
     session: Session | null;
     error: AuthError | null;
   }> {
+    const startTime = performance.now();
+    
     try {
-      console.log('AuthService: signIn called with email:', data.email);
+      console.log('AuthService: signIn started', { email: data.email, timestamp: new Date().toISOString() });
       this.updateState({ loading: true });
 
+      // Performance tracking: Before Supabase call
+      const supabaseStartTime = performance.now();
       console.log('AuthService: Calling supabase.auth.signInWithPassword');
+      
       const { data: authData, error } = await this.supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password
       });
 
-      console.log('AuthService: Supabase response:', { authData, error });
+      // Performance tracking: After Supabase call
+      const supabaseEndTime = performance.now();
+      console.log('AuthService: Supabase auth call completed', {
+        duration: `${(supabaseEndTime - supabaseStartTime).toFixed(2)}ms`,
+        hasError: !!error,
+        hasUser: !!authData?.user
+      });
 
       if (error) {
         console.error('AuthService: Sign in error:', error);
@@ -275,6 +318,9 @@ export class AuthService {
       this.updateState({ loading: false });
       const authError = error as AuthError;
       return { user: null, session: null, error: authError };
+    } finally {
+      const totalTime = performance.now() - startTime;
+      console.log(`AuthService: signIn total duration: ${totalTime.toFixed(2)}ms`);
     }
   }
 
@@ -662,17 +708,37 @@ export class AuthService {
    * Get user profile
    */
   private async getProfile(userId: string): Promise<DbProfile | null> {
+    const startTime = performance.now();
+    
     try {
+      console.log('AuthService: getProfile database query started', { userId });
+      
       const { data, error } = await this.supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
         .single();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      const queryTime = performance.now() - startTime;
+      console.log('AuthService: getProfile database query completed', {
+        duration: `${queryTime.toFixed(2)}ms`,
+        hasData: !!data,
+        errorCode: error?.code
+      });
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('AuthService: Profile query error:', error);
+        throw error;
+      }
+      
       return data;
     } catch (error) {
-      console.error('Error getting profile:', error);
+      const queryTime = performance.now() - startTime;
+      console.error('AuthService: Error getting profile:', {
+        error,
+        duration: `${queryTime.toFixed(2)}ms`,
+        userId
+      });
       return null;
     }
   }

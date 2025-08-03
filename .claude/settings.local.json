@@ -102,7 +102,15 @@
       "Bash(NODE_ENV=test npm run test:security)",
       "Bash(NODE_ENV=test npm run test:performance)",
       "Bash(NODE_ENV=test npm run test:e2e:smoke)",
-      "Bash(NODE_ENV=test NODE_OPTIONS=\"--max-old-space-size=8192\" npm run test:coverage)"
+      "Bash(NODE_ENV=test NODE_OPTIONS=\"--max-old-space-size=8192\" npm run test:coverage)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=16384\" npx playwright install --with-deps)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=16384\" npx playwright install)",
+      "Bash(NODE_ENV=production NODE_OPTIONS=\"--max-old-space-size=16384\" npm run build)",
+      "Bash(NODE_ENV=test VITE_SUPABASE_URL=https://test.supabase.co VITE_SUPABASE_ANON_KEY=test-anon-key NODE_OPTIONS=\"--max-old-space-size=16384\" npm run test:e2e)",
+      "Bash(NODE_ENV=test VITE_SUPABASE_URL=https://test.supabase.co VITE_SUPABASE_ANON_KEY=test-anon-key NODE_OPTIONS=\"--max-old-space-size=16384\" npx playwright test --config=playwright.ci.config.ts --workers=16)",
+      "Bash(NODE_ENV=test NODE_OPTIONS=\"--max-old-space-size=8192\" npx vitest run src/test/integration --reporter=verbose)",
+      "Bash(NODE_ENV=test npx playwright test --project=chromium --project=firefox)",
+      "Bash(NODE_ENV=test NODE_OPTIONS=\"--max-old-space-size=16384\" npm run test:coverage)"
     ],
     "deny": []
   }

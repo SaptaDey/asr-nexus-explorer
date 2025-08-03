@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { systemNotificationManager } from '@/components/ui/FloatingIconSystem';
 
 export interface AccessibilityPreferences {
   highContrast: boolean;
@@ -123,18 +124,44 @@ export const useAccessibility = () => {
     setPreferences(prev => ({ ...prev, ...updates }));
   }, []);
 
+  // Enhanced announcement system using notification bell
   const announceLiveRegion = useCallback((message: string, priority: 'polite' | 'assertive' = 'polite') => {
-    if (liveRegionRef.current) {
-      liveRegionRef.current.setAttribute('aria-live', priority);
+    // Determine notification type based on message content
+    let type: 'info' | 'warning' | 'success' | 'error' = 'info';
+    
+    if (message.toLowerCase().includes('error') || message.toLowerCase().includes('failed')) {
+      type = 'error';
+    } else if (message.toLowerCase().includes('warning') || message.toLowerCase().includes('limitation')) {
+      type = 'warning';
+    } else if (message.toLowerCase().includes('success') || message.toLowerCase().includes('complete')) {
+      type = 'success';
+    }
+
+    // Determine category based on message content
+    let category: 'system' | 'stage' | 'auth' | 'general' = 'general';
+    
+    if (message.toLowerCase().includes('stage') || message.toLowerCase().includes('research')) {
+      category = 'stage';
+    } else if (message.toLowerCase().includes('auth') || message.toLowerCase().includes('sign') || message.toLowerCase().includes('login')) {
+      category = 'auth';
+    } else if (message.toLowerCase().includes('backend') || message.toLowerCase().includes('service') || message.toLowerCase().includes('plotly')) {
+      category = 'system';
+    }
+
+    // Add to system notification manager
+    systemNotificationManager.addNotification(message, type, category);
+    
+    // For critical accessibility messages, still maintain quiet live region for screen readers
+    if (priority === 'assertive' && preferences.screenReaderMode && liveRegionRef.current) {
+      liveRegionRef.current.setAttribute('aria-live', 'assertive');
       liveRegionRef.current.textContent = '';
-      // Use a timeout to ensure screen readers pick up the change
       setTimeout(() => {
         if (liveRegionRef.current) {
           liveRegionRef.current.textContent = message;
         }
       }, 100);
     }
-  }, []);
+  }, [preferences.screenReaderMode]);
 
   const trapFocus = useCallback((container: HTMLElement) => {
     const focusableElements = container.querySelectorAll(

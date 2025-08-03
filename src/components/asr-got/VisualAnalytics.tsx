@@ -17,8 +17,8 @@ import { safeJSONParse, validatePlotlyConfig, apiRateLimiter } from '@/utils/sec
 import { sanitizePlotlyConfig } from '@/utils/htmlSanitizer';
 import { EvidenceDataExtractor, EvidenceBasedChart } from '@/services/EvidenceDataExtractor';
 
-// Import Plotly.js dynamically to avoid bundle size issues
-// Type definitions are now in src/types/plotly.d.ts
+// Import Plotly.js dynamically using our secure loader
+import { loadPlotly, createPlotlyChart, cleanupPlotlyChart, isPlotlyAvailable } from '@/utils/plotlyLoader';
 
 interface AnalyticsFigure {
   id: string;
@@ -68,29 +68,28 @@ export const VisualAnalytics: React.FC<VisualAnalyticsProps> = ({
   const CHARTS_PER_PAGE = 4; // Render only 4 charts at a time
   const LAZY_LOAD_THRESHOLD = 2; // Start loading next batch when within 2 charts of end
 
-  // Load Plotly.js dynamically
+  // Load Plotly.js using our secure loader
   useEffect(() => {
-    if (window.Plotly) {
-      setPlotlyLoaded(true);
-      return;
-    }
+    const loadPlotlyLibrary = async () => {
+      try {
+        if (isPlotlyAvailable()) {
+          setPlotlyLoaded(true);
+          return;
+        }
 
-    const script = document.createElement('script');
-    script.src = 'https://cdn.plot.ly/plotly-3.0.1.min.js';
-    script.onload = () => {
-      setPlotlyLoaded(true);
-      toast.success('Plotly.js loaded for visual analytics');
-    };
-    script.onerror = () => {
-      toast.error('Failed to load Plotly.js');
-    };
-    document.head.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
+        console.log('📊 Loading Plotly.js for visual analytics...');
+        await loadPlotly();
+        setPlotlyLoaded(true);
+        toast.success('Visual analytics ready - Plotly.js loaded');
+      } catch (error) {
+        console.error('❌ Failed to load Plotly.js for visual analytics:', error);
+        setPlotlyLoaded(false);
+        // Don't announce via live region - let the plotlyLoader handle it
+        toast.error('Visual analytics unavailable - chart library failed to load');
       }
     };
+
+    loadPlotlyLibrary();
   }, []);
 
   // Cleanup timeouts on unmount to prevent memory leaks

@@ -80,3 +80,9 @@ src/test/**/*.md
 
 # Keep only essential markdown files
 # README.md and CLAUDE.md are NOT ignored (kept in repo)
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

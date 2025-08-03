@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { datasetCollectionService, ScientificDataset, DataExtractionResult } from '@/services/DatasetCollectionService';
 import { advancedVisualizationService, VisualizationSpec, MetaAnalysisResult } from '@/services/AdvancedVisualizationService';
 import { ResearchContext } from '@/types/asrGotTypes';
+import { loadPlotly, createPlotlyChart, cleanupPlotlyChart, isPlotlyAvailable } from '@/utils/plotlyLoader';
 
 interface MetaAnalysisVisualAnalyticsProps {
   researchContext: ResearchContext;
@@ -43,24 +44,27 @@ export const MetaAnalysisVisualAnalytics: React.FC<MetaAnalysisVisualAnalyticsPr
   const [plotlyLoaded, setPlotlyLoaded] = useState(false);
   const [hasPerformedAnalysis, setHasPerformedAnalysis] = useState(false);
 
-  // Load Plotly.js dynamically
+  // Load Plotly.js using our secure loader
   useEffect(() => {
-    if (window.Plotly) {
-      setPlotlyLoaded(true);
-      return;
-    }
+    const loadPlotlyLibrary = async () => {
+      try {
+        if (isPlotlyAvailable()) {
+          setPlotlyLoaded(true);
+          return;
+        }
 
-    const script = document.createElement('script');
-    script.src = 'https://cdn.plot.ly/plotly-3.0.1.min.js';
-    script.onload = () => setPlotlyLoaded(true);
-    script.onerror = () => toast.error('Failed to load Plotly.js');
-    document.head.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
+        console.log('📊 Loading Plotly.js for meta-analysis visualizations...');
+        await loadPlotly();
+        setPlotlyLoaded(true);
+        toast.success('Meta-analysis visualizations ready');
+      } catch (error) {
+        console.error('❌ Failed to load Plotly.js for meta-analysis:', error);
+        setPlotlyLoaded(false);
+        toast.error('Meta-analysis visualizations unavailable');
       }
     };
+
+    loadPlotlyLibrary();
   }, []);
 
   // Initialize API keys

@@ -92,8 +92,10 @@ export function useAuth(): UseAuthReturn {
    * Sign in user
    */
   const signIn = useCallback(async (data: SignInData) => {
+    const startTime = performance.now();
+    
     try {
-      console.log('useAuth: signIn called');
+      console.log('useAuth: signIn started', { email: data.email, timestamp: new Date().toISOString() });
       
       // Add timeout to prevent hanging
       const timeoutPromise = new Promise((_, reject) => 
@@ -117,6 +119,9 @@ export function useAuth(): UseAuthReturn {
         success: false, 
         error: error instanceof Error ? error.message : 'Sign in failed' 
       };
+    } finally {
+      const totalTime = performance.now() - startTime;
+      console.log(`useAuth: signIn total duration: ${totalTime.toFixed(2)}ms`);
     }
   }, []);
 
