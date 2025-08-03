@@ -15,6 +15,8 @@ import ResearchFramework from "./pages/ResearchFramework";
 import GraphNeuralNetworks from "./pages/GraphNeuralNetworks";
 import UserDashboard from "./pages/UserDashboard";
 import AuthPage from "./pages/AuthPage";
+import ASRGoTInterface from "./pages/ASRGoTInterface";
+import EnhancedASRGoTInterface from "./pages/EnhancedASRGoTInterface";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -67,6 +69,8 @@ const App = () => {
                     <Route path="/ai-powered" element={<AIPowered />} />
                     <Route path="/research-framework" element={<ResearchFramework />} />
                     <Route path="/graph-neural-networks" element={<GraphNeuralNetworks />} />
+                    <Route path="/asr-got-interface" element={<ASRGoTInterface />} />
+                    <Route path="/enhanced-asr-got-interface" element={<EnhancedASRGoTInterface />} />
                     
                     {/* Protected routes - require authentication */}
                     <Route 

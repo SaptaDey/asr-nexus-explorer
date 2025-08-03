@@ -32,7 +32,8 @@ import { SessionControls } from '@/components/asr-got/SessionControls'
 import { ApiKeyManager } from '@/components/auth/ApiKeyManager'
 import { ResearchInterface } from '@/components/asr-got/ResearchInterface'
 import { EnhancedGraphVisualization } from '@/components/asr-got/EnhancedGraphVisualization'
-import { TreeOfReasoningVisualization } from '@/components/asr-got/TreeOfReasoningVisualization'
+// Tree visualization temporarily disabled for performance optimization
+// import { TreeOfReasoningVisualization } from '@/components/asr-got/TreeOfReasoningVisualization'
 import { UnifiedAPICredentialsModal } from '@/components/asr-got/UnifiedAPICredentialsModal'
 import { toast } from 'sonner'
 
@@ -386,10 +387,12 @@ export default function EnhancedASRGoTInterface() {
                       graphData={graphData}
                       onNodeClick={(node) => console.log('Node clicked:', node)}
                     />
+                    {/* Tree visualization temporarily disabled for performance optimization
                     <TreeOfReasoningVisualization 
                       graphData={graphData}
                       parameters={{}}
                     />
+                    */}
                   </>
                 ) : (
                   <Card>
