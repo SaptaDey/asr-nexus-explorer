@@ -199,10 +199,6 @@ export class BackendInitializer {
       errors: []
     };
   }
-}
-
-export const backendInitializer = BackendInitializer.getInstance();
-  }
 
   /**
    * Initialize all required storage buckets
@@ -458,5 +454,4 @@ export const backendInitializer = BackendInitializer.getInstance();
   }
 }
 
-// Export singleton instance
 export const backendInitializer = BackendInitializer.getInstance();
