@@ -8,7 +8,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0, // Reduced retries for faster CI
-  workers: process.env.CI ? 12 : undefined, // Dramatically increased from 2 to 12 for CI performance
+  workers: process.env.CI ? 15 : undefined, // Dramatically increased from 2 to 15 for maximum CI performance
   reporter: process.env.CI ? 'github' : 'html', // Use GitHub reporter for CI, HTML for local
   use: {
     baseURL: 'http://localhost:4173',
