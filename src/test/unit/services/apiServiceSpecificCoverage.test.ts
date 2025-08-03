@@ -66,13 +66,13 @@ describe('apiService - Specific Line Coverage', () => {
     const { callGeminiAPI } = await import('@/services/apiService');
     const { secureRequestWithTimeout } = await import('@/utils/secureNetworkRequest');
     
-    // Mock MAX_TOKENS response repeatedly to trigger the error path
+    // Mock MAX_TOKENS response repeatedly WITHOUT content to trigger the error path
     const maxTokensResponse = {
       ok: true,
       json: () => Promise.resolve({
         candidates: [{
           finishReason: 'MAX_TOKENS',
-          content: { parts: [{ text: 'Partial content' }] }
+          content: null // No content to trigger the error
         }]
       })
     };
@@ -93,6 +93,16 @@ describe('apiService - Specific Line Coverage', () => {
     const { callGeminiAPI } = await import('@/services/apiService');
     const { secureRequestWithTimeout } = await import('@/utils/secureNetworkRequest');
     
+    // Override the mocked TextEncoder to return the correct byte size
+    global.TextEncoder = class {
+      encode(text: string) {
+        // Return an array with length proportional to string length
+        // For caching test: make sure bytes > 200000 when text.length = 100000  
+        const byteArray = new Uint8Array(text.length * 3); // 3 bytes per char
+        return byteArray;
+      }
+    };
+    
     // Mock successful response
     (secureRequestWithTimeout as any).mockResolvedValue({
       ok: true,
@@ -103,8 +113,9 @@ describe('apiService - Specific Line Coverage', () => {
       })
     });
     
-    // Create a prompt larger than 200000 bytes AND use thinking-cache capability
-    const largeCachePrompt = 'x'.repeat(250000);
+    // Create a prompt: 100,000 chars * 3 bytes = 300,000 bytes > 200,000 (triggers caching)
+    // 100,000 chars / 4 = 25,000 tokens < 32,000 (avoids chunking)
+    const largeCachePrompt = 'x'.repeat(100000);
     
     const result = await callGeminiAPI(
       largeCachePrompt, 

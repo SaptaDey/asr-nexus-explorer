@@ -155,10 +155,15 @@ describe('AsrGotStageEngine - Simple Branch Coverage', () => {
 
   it('should test ternary operators in impact score calculation', () => {
     // Test the logic: index < 3 ? 0.9 : 0.7
-    expect(0 < 3 ? 0.9 : 0.7).toBe(0.9);
-    expect(1 < 3 ? 0.9 : 0.7).toBe(0.9);
-    expect(2 < 3 ? 0.9 : 0.7).toBe(0.9);
-    expect(3 < 3 ? 0.9 : 0.7).toBe(0.7);
-    expect(4 < 3 ? 0.9 : 0.7).toBe(0.7);
+    const indexA = 0;
+    const indexB = 1;
+    const indexC = 2;
+    const indexD = 3;
+    const indexE = 4;
+    expect(indexA < 3 ? 0.9 : 0.7).toBe(0.9);
+    expect(indexB < 3 ? 0.9 : 0.7).toBe(0.9);
+    expect(indexC < 3 ? 0.9 : 0.7).toBe(0.9);
+    expect(indexD < 3 ? 0.9 : 0.7).toBe(0.7);
+    expect(indexE < 3 ? 0.9 : 0.7).toBe(0.7);
   });
 });

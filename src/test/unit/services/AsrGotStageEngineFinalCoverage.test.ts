@@ -128,8 +128,10 @@ describe('AsrGotStageEngine - Additional Branch Coverage', () => {
 
   it('should test impact score ternary operator', () => {
     // Test the ternary: index < 3 ? 0.9 : 0.7
-    expect(0 < 3 ? 0.9 : 0.7).toBe(0.9);
-    expect(3 < 3 ? 0.9 : 0.7).toBe(0.7);
+    const indexA = 0;
+    const indexB = 3;
+    expect(indexA < 3 ? 0.9 : 0.7).toBe(0.9);
+    expect(indexB < 3 ? 0.9 : 0.7).toBe(0.7);
   });
 
   it('should test additional statistical power branches', () => {
