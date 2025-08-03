@@ -246,6 +246,34 @@ npm run build:dev
 
 The application is deployed at **https://scientific-research.online/** with automatic GitHub integration.
 
+### Testing
+
+The project includes comprehensive testing with multiple test modes for different scenarios:
+
+```bash
+# Unit and Integration Tests
+npm run test:unit          # Unit tests only
+npm run test:integration   # Integration tests only 
+npm run test:coverage      # Generate coverage reports
+
+# End-to-End (E2E) Tests
+npm run test:e2e          # Full E2E suite (5 browsers, ~191 tests)
+npm run test:e2e:fast     # Fast E2E mode (Chromium only, quick validation)
+npm run test:e2e:ui       # Interactive E2E test runner
+
+# Combined Test Suites
+npm run test:ci           # CI mode: coverage + fast E2E (recommended)
+npm run test:ci:full      # Full CI: coverage + complete E2E suite
+npm run test:all          # Complete local test suite
+```
+
+**Performance Optimizations:**
+- **Fast E2E Mode**: Use `npm run test:e2e:fast` for quick validation (Chromium only)
+- **CI Mode**: `npm run test:ci` uses fast E2E to reduce build times from ~20min to ~5min
+- **Full Testing**: `npm run test:e2e` runs all 5 browsers when comprehensive testing is needed
+
+**Coverage Requirements**: The project maintains 85%+ test coverage across all metrics.
+
 ---
 
 ## 🔧 Technology Stack

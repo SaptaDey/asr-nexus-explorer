@@ -50,6 +50,11 @@ error_log/
 dist/
 bun.lockb
 
+# Test coverage reports
+coverage/
+*.lcov
+.nyc_output/
+
 # Development scripts (moved to organized structure)
 apply_*.mjs
 check_schema.*

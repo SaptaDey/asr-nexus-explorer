@@ -8,7 +8,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 2 : undefined, // Increased from 1 to 2 for CI
   reporter: 'html',
   use: {
     baseURL: 'http://localhost:4173',
@@ -17,7 +17,14 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
 
-  projects: [
+  projects: process.env.E2E_FAST ? [
+    // Fast mode: Only Chromium for quick validation
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ] : [
+    // Full mode: All browsers for comprehensive testing
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
