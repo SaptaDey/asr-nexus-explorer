@@ -131,36 +131,37 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
           </div>}
       </div>
 
-      {/* Desktop Content Area */}
-      <div className={`transition-all duration-300 ${contentMargin}`}>
-        {/* Header Content */}
-        {headerContent && <div className="bg-white border-b p-6 sticky top-0 z-20">
-            {headerContent}
-          </div>}
-        
-        {/* Main Content - Compacted to match top/bottom section widths */}
-        <div className="px-4 py-6">
-          <div className="max-w-7xl mx-auto">
-            {isFullscreen ? <div className="fixed inset-0 z-50 bg-white overflow-auto">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      {activeItem?.icon}
-                      <h2 className="text-2xl font-semibold">{activeItem?.label}</h2>
-                      {activeItem?.badge && <Badge variant="secondary">{activeItem.badge}</Badge>}
+      {/* Desktop Content Area - Fixed positioning to prevent shifting */}
+      <div className="fixed inset-y-0 right-0 left-0 overflow-auto">
+        <div className={`transition-all duration-300 ${contentMargin} h-full`}>
+          {/* Header Content */}
+          {headerContent && <div className="bg-white border-b p-6 sticky top-0 z-20">
+              {headerContent}
+            </div>}
+          
+          {/* Main Content - Compacted to match top/bottom section widths */}
+          <div className="px-4 py-6 h-full">
+            <div className="max-w-7xl mx-auto h-full">
+              {isFullscreen ? <div className="fixed inset-0 z-50 bg-white overflow-auto">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        {activeItem?.icon}
+                        <h2 className="text-2xl font-semibold">{activeItem?.label}</h2>
+                        {activeItem?.badge && <Badge variant="secondary">{activeItem.badge}</Badge>}
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => setIsFullscreen(false)}>
+                        <Minimize2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => setIsFullscreen(false)}>
-                      <Minimize2 className="h-4 w-4" />
-                    </Button>
+                    {children}
                   </div>
-                  {children}
-                </div>
-              </div> : <Card className="bg-white/90 backdrop-blur-sm border border-slate-200">
-                <CardContent className="p-6">
-                  
-                  {children}
-                </CardContent>
-              </Card>}
+                </div> : <Card className="bg-white/90 backdrop-blur-sm border border-slate-200 h-full">
+                  <CardContent className="p-6 h-full overflow-auto">
+                    {children}
+                  </CardContent>
+                </Card>}
+            </div>
           </div>
         </div>
       </div>

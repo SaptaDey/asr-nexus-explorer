@@ -703,13 +703,13 @@ export const FloatingIconSystem: React.FC = () => {
         {/* Notification Bell - Bottom */}
         <NotificationIcon position="bottom" />
         
-        {/* Cost Tracking - Middle */}
-        <div className="absolute bottom-16 right-0 mb-2">
+        {/* Cost Tracking - Middle (more spacing) */}
+        <div className="absolute bottom-20 right-0 mb-2">
           <CostTrackingIcon position="middle" />
         </div>
         
-        {/* Debug Button - Top */}
-        <div className="absolute bottom-32 right-0 mb-4">
+        {/* Debug Button - Top (more spacing) */}
+        <div className="absolute bottom-40 right-0 mb-4">
           <DebugIcon position="top" />
         </div>
       </div>

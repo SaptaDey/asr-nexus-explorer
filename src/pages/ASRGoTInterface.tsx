@@ -1214,7 +1214,7 @@ If no quantitative data exists in the evidence content, return empty array [].
                   </Badge>}
               </div>
 
-              {/* User Authentication */}
+              {/* User Authentication - Unified Component */}
               {user ? <div className="flex items-center space-x-2">
                   {profile && <div className="text-right text-sm">
                       <p className="font-medium text-gray-900">{profile.full_name}</p>
@@ -1229,16 +1229,11 @@ If no quantitative data exists in the evidence content, return empty array [].
                     </Button>
                   </Link>
                 </div> : <div className="flex items-center space-x-2">
-                  <Link to="/auth?mode=login">
-                    <Button variant="outline" size="sm">
-                      <LogIn className="h-4 w-4 mr-2" />
-                      <span className="hidden sm:inline">Sign In</span>
-                    </Button>
-                  </Link>
-                  <Link to="/auth?mode=register">
-                    <Button size="sm">
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      <span className="hidden sm:inline">Sign Up</span>
+                  <Link to="/auth">
+                    <Button variant="outline" size="sm" className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100 hover:border-blue-300 text-blue-700 hover:text-blue-800 transition-all duration-200">
+                      <User className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Account</span>
+                      <span className="sm:hidden">Auth</span>
                     </Button>
                   </Link>
                 </div>}
@@ -1261,11 +1256,6 @@ If no quantitative data exists in the evidence content, return empty array [].
               </div>
               <Progress value={usageStats.usagePercentage} className="mt-1 h-2" />
             </div>}
-        </div>
-        
-        {/* 🐛 Debug Button - Always Visible at Bottom */}
-        <div className="fixed bottom-4 right-4 z-50">
-          <DebugButton />
         </div>
         
         {/* Compact Hero Section with Side-by-Side Layout */}
@@ -1331,21 +1321,22 @@ If no quantitative data exists in the evidence content, return empty array [].
                       </div>
                     </div>
                     
-                    {/* Right Side - New Logo Image */}
+                    {/* Right Side - Enhanced Logo Image */}
                     <div className="flex justify-center lg:justify-end order-1 lg:order-2">
                       <div className="relative">
                         <div 
-                          className="w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 bg-contain bg-no-repeat bg-center rounded-full shadow-2xl" 
+                          className="w-64 h-64 sm:w-72 sm:h-72 lg:w-80 lg:h-80 bg-contain bg-no-repeat bg-center shadow-2xl border-4 border-white/20 backdrop-blur-sm" 
                           style={{
                             backgroundImage: 'url("/img/new_logo.png")',
                             backgroundSize: 'contain',
                             backgroundPosition: 'center',
                             imageRendering: 'optimizeQuality',
-                            filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.1))'
+                            filter: 'drop-shadow(0 15px 30px rgba(0,0,0,0.15))',
+                            borderRadius: '24px'
                           }}
                         ></div>
-                        {/* Subtle glow effect */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-200/30 via-purple-200/20 to-teal-200/30 rounded-full blur-xl -z-10"></div>
+                        {/* Enhanced glow effect */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-300/40 via-purple-300/30 to-teal-300/40 rounded-3xl blur-2xl -z-10 transform scale-110"></div>
                       </div>
                     </div>
                     
@@ -1378,94 +1369,75 @@ If no quantitative data exists in the evidence content, return empty array [].
             </div>
           </div>
           
-          {/* Clean Interactive Controls */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-4">
-            {/* Mode Toggle */}
-            <div className="w-full sm:w-auto bg-white/90 backdrop-blur-sm rounded-lg px-4 sm:px-6 py-3 shadow-lg border border-gray-200">
-              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-                <div className={`transition-all duration-300 ${isAutomatic ? 'text-green-600' : 'text-blue-600'}`}>
-                  {isAutomatic ? <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-xs sm:text-sm font-semibold">AUTO MODE</span>
-                    </div> : <div className="flex items-center gap-2">
-                      <ToggleLeft className="h-4 w-4" />
-                      <span className="text-xs sm:text-sm font-semibold">MANUAL MODE</span>
-                    </div>}
+          {/* Compact and Elegant Interactive Controls */}
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="bg-white/95 backdrop-blur-sm rounded-xl px-4 py-2 shadow-lg border border-gray-200/80">
+              <div className="flex items-center gap-3">
+                {/* Mode Toggle - Compact */}
+                <div className={`flex items-center gap-2 transition-all duration-300 ${isAutomatic ? 'text-green-600' : 'text-blue-600'}`}>
+                  {isAutomatic ? <>
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-xs font-semibold">AUTO</span>
+                    </> : <>
+                      <ToggleLeft className="h-3 w-3" />
+                      <span className="text-xs font-semibold">MANUAL</span>
+                    </>}
                 </div>
-                <Button onClick={toggleMode} className={`transition-all duration-300 ${isAutomatic ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white font-medium rounded-md px-3 sm:px-4 py-2 text-xs sm:text-sm`} size="sm">
-                  <span className="hidden sm:inline">Switch to {isAutomatic ? 'Manual' : 'Auto'}</span>
-                  <span className="sm:hidden">{isAutomatic ? 'Manual' : 'Auto'}</span>
+                <Button onClick={toggleMode} className={`transition-all duration-300 ${isAutomatic ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white font-medium rounded-lg px-3 py-1 text-xs`} size="sm">
+                  {isAutomatic ? 'Manual' : 'Auto'}
                 </Button>
+                
+                {/* Separator */}
+                <div className="w-px h-6 bg-gray-200"></div>
+                
+                {/* API Configuration - Compact */}
+                <Button size="sm" variant={apiKeys.gemini && apiKeys.perplexity ? "default" : "outline"} onClick={() => setShowAPICredentialsModal(true)} className={`transition-all duration-200 rounded-lg px-3 py-1 font-medium text-xs ${apiKeys.gemini && apiKeys.perplexity ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-blue-300 text-blue-600 hover:bg-blue-50'}`}>
+                  <Settings className="h-3 w-3 mr-1" />
+                  {apiKeys.gemini && apiKeys.perplexity ? 'APIs ✓' : 'Setup'}
+                </Button>
+                
+                {/* Contact - Compact */}
+                <Link to="/contact">
+                  <Button size="sm" variant="outline" className="border-slate-300 text-slate-600 hover:bg-slate-50 transition-all duration-200 rounded-lg px-3 py-1 font-medium text-xs">
+                    <Mail className="h-3 w-3 mr-1" />
+                    Contact
+                  </Button>
+                </Link>
               </div>
             </div>
-            
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-              <Link to="/contact">
-                <Button size="sm" className="bg-slate-600 hover:bg-slate-700 text-white shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto">
-                  <Mail className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Contact Us</span>
-                  <span className="sm:hidden">Contact</span>
-                </Button>
-              </Link>
-              
-              {/* API Configuration Button */}
-              <Button size="sm" variant={apiKeys.gemini && apiKeys.perplexity ? "default" : "outline"} onClick={() => setShowAPICredentialsModal(true)} className={`shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto ${apiKeys.gemini && apiKeys.perplexity ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-blue-300 text-blue-600 hover:bg-blue-50'}`}>
-                <Settings className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">
-                  {apiKeys.gemini && apiKeys.perplexity ? 'API Setup ✓' : 'Configure APIs'}
-                </span>
-                <span className="sm:hidden">
-                  {apiKeys.gemini && apiKeys.perplexity ? 'APIs ✓' : 'APIs'}
-                </span>
-              </Button>
-            </div>
-            
-            {/* API Setup Message */}
-            {!(apiKeys.gemini && apiKeys.perplexity) && !hasBackendApiKeys && (
-              <div className="text-center mt-4">
-                <p className="text-sm text-gray-600">
-                  To start research, configure API keys. Set up API credentials or create an account for secure backend storage.
-                </p>
-              </div>
-            )}
-            
-            <div>
-              {/* Enhanced Pause/Resume Controls */}
-              {(queryHistorySessionId || currentSessionId) && <div className="flex items-center gap-2">
-                  {isPaused ? <Button size="sm" variant="default" onClick={handleEnhancedResumeSession} className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white">
-                      <PlayCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-                      <span className="hidden sm:inline">Resume Session</span>
-                      <span className="sm:hidden">Resume</span>
-                    </Button> : <Button size="sm" variant="outline" onClick={handlePauseSession} disabled={!isProcessing} className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto border-orange-300 text-orange-600 hover:bg-orange-50 disabled:opacity-50">
-                      <Pause className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-                      <span className="hidden sm:inline">Pause Session</span>
-                      <span className="sm:hidden">Pause</span>
+          </div>
+          
+          {/* Session Controls - Compact */}
+          <div className="flex items-center justify-center gap-2 mb-4">
+            {/* Enhanced Pause/Resume Controls */}
+            {(queryHistorySessionId || currentSessionId) && <div className="bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2 shadow-lg border border-gray-200/80">
+                <div className="flex items-center gap-2">
+                  {isPaused ? <Button size="sm" variant="default" onClick={handleEnhancedResumeSession} className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-3 py-1 font-medium text-xs">
+                      <PlayCircle className="h-3 w-3 mr-1" />
+                      Resume
+                    </Button> : <Button size="sm" variant="outline" onClick={handlePauseSession} disabled={!isProcessing} className="border-orange-300 text-orange-600 hover:bg-orange-50 disabled:opacity-50 rounded-lg px-3 py-1 font-medium text-xs">
+                      <Pause className="h-3 w-3 mr-1" />
+                      Pause
                     </Button>}
                   
                   {/* Save Session Button for Authenticated Users */}
-                  {user && <Button size="sm" variant="outline" onClick={handleSaveSession} className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto border-blue-300 text-blue-600 hover:bg-blue-50">
-                      <Database className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-                      <span className="hidden sm:inline">Save Session</span>
-                      <span className="sm:hidden">Save</span>
+                  {user && <Button size="sm" variant="outline" onClick={handleSaveSession} className="border-blue-300 text-blue-600 hover:bg-blue-50 rounded-lg px-3 py-1 font-medium text-xs">
+                      <Database className="h-3 w-3 mr-1" />
+                      Save
                     </Button>}
-                </div>}
-              
-              {/* Auto-save Status Indicator */}
-              {isAutoSaveEnabled && <div className="flex items-center px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                  <span className="text-xs text-green-700 font-medium">
-                    <span className="hidden sm:inline">Auto-saving</span>
-                    <span className="sm:hidden">Auto</span>
-                  </span>
-                </div>}
-              
-              {currentStage >= 8 && <Button size="sm" variant={showBiasAudit ? "default" : "outline"} onClick={() => setShowBiasAudit(!showBiasAudit)} className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto">
-                  <Zap className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">{showBiasAudit ? 'Hide' : 'Show'} Bias Audit</span>
-                  <span className="sm:hidden">{showBiasAudit ? 'Hide' : 'Show'} Audit</span>
-                </Button>}
-            </div>
+                </div>
+              </div>}
+            
+            {/* Auto-save Status Indicator */}
+            {isAutoSaveEnabled && <div className="flex items-center px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                <span className="text-xs text-green-700 font-medium">Auto-saving</span>
+              </div>}
+            
+            {currentStage >= 8 && <Button size="sm" variant={showBiasAudit ? "default" : "outline"} onClick={() => setShowBiasAudit(!showBiasAudit)} className="rounded-lg px-3 py-1 font-medium text-xs">
+                <Zap className="h-3 w-3 mr-1" />
+                {showBiasAudit ? 'Hide' : 'Show'} Audit
+              </Button>}
           </div>
         </div>
 
@@ -1489,197 +1461,231 @@ If no quantitative data exists in the evidence content, return empty array [].
 
             {/* Side-by-side Framework Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* 9-Stage Framework */}
-              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-slate-200">
-                <div className="text-center mb-4">
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">🔬 9-Stage Research Framework</h3>
-                  <p className="text-sm text-slate-600">
-                    Advanced AI orchestration through 9 mandatory stages
-                  </p>
-                </div>
+              {/* 9-Stage Framework - Enhanced Design */}
+              <div className="bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-blue-100/50 relative overflow-hidden">
+                {/* Decorative background elements */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-200/20 to-purple-200/20 rounded-full blur-3xl -translate-y-16 translate-x-16"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-green-200/20 to-teal-200/20 rounded-full blur-2xl translate-y-12 -translate-x-12"></div>
+                
+                <div className="relative z-10">
+                  <div className="text-center mb-6">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg">
+                      <span className="text-2xl">🔬</span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-3">9-Stage Research Framework</h3>
+                    <p className="text-slate-600 leading-relaxed">
+                      Advanced AI orchestration through 9 mandatory stages for comprehensive scientific analysis
+                    </p>
+                  </div>
 
-                <MermaidChart
-                  chart={`
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-inner border border-white/50">
+                    <MermaidChart
+                      chart={`
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#f8fafc', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#3b82f6', 'lineColor': '#64748b', 'secondaryColor': '#e2e8f0', 'tertiaryColor': '#cbd5e1', 'background': '#ffffff', 'mainBkg': '#f8fafc', 'secondBkg': '#e2e8f0', 'tertiaryBkg': '#cbd5e1'}}}%%
 flowchart TD
-    subgraph "🎯 Scientific Reasoning Methodology"
-        S1[🎯 Stage 1<br/>Initialization<br/>📝 Task Definition] 
-        S2[🔍 Stage 2<br/>Decomposition<br/>📊 Multi-Dimensional Analysis]
-        S3[💡 Stage 3<br/>Hypothesis Planning<br/>🧠 AI-Generated Theories]
-        S4[📈 Stage 4<br/>Evidence Integration<br/>🔬 Bayesian Updates]
-        S5[✂️ Stage 5<br/>Pruning & Merging<br/>⚡ Graph Optimization]
-        S6[🎯 Stage 6<br/>Subgraph Extraction<br/>🚀 High-Value Pathways]
-        S7[📝 Stage 7<br/>Composition<br/>📋 Narrative Generation]
-        S8[🔍 Stage 8<br/>Reflection<br/>✅ Quality Audit]
-        S9[📊 Stage 9<br/>Final Analysis<br/>🎓 PhD-Level Report]
+    subgraph "🎯 Advanced Scientific Reasoning Pipeline"
+        S1["🎯 Stage 1<br/>🔧 Initialization<br/>📝 Task Definition<br/>⚡ Knowledge Constraints"] 
+        S2["🔍 Stage 2<br/>📊 Decomposition<br/>🧩 Multi-Dimensional Analysis<br/>🎯 Scope & Objectives"]
+        S3["💡 Stage 3<br/>🧠 Hypothesis Planning<br/>🔬 AI-Generated Theories<br/>📈 Impact Scoring"]
+        S4["📈 Stage 4<br/>🔗 Evidence Integration<br/>🧮 Bayesian Updates<br/>⚡ Causal Inference"]
+        S5["✂️ Stage 5<br/>🎛️ Pruning & Merging<br/>⚡ Graph Optimization<br/>📊 Information Theory"]
+        S6["🎯 Stage 6<br/>🚀 Subgraph Extraction<br/>💎 High-Value Pathways<br/>🔍 Critical Analysis"]
+        S7["📝 Stage 7<br/>📋 Composition<br/>✍️ Narrative Generation<br/>📚 Academic Standards"]
+        S8["🔍 Stage 8<br/>✅ Reflection<br/>🛡️ Quality Audit<br/>🔍 Bias Detection"]
+        S9["📊 Stage 9<br/>🎓 Final Analysis<br/>📊 PhD-Level Report<br/>🏆 Comprehensive Synthesis"]
     end
     
     S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8 --> S9
-    S8 -.-> S1
+    S8 -.->|"🔄 Iterative Refinement"| S1
     
-    style S1 fill:#ffebee,stroke:#d32f2f
-    style S2 fill:#f3e5f5,stroke:#7b1fa2
-    style S3 fill:#e8f5e8,stroke:#388e3c
-    style S4 fill:#e1f5fe,stroke:#0288d1
-    style S5 fill:#fff3e0,stroke:#f57c00
-    style S6 fill:#fce4ec,stroke:#c2185b
-    style S7 fill:#e0f2f1,stroke:#00695c
-    style S8 fill:#f1f8e9,stroke:#558b2f
-    style S9 fill:#e8eaf6,stroke:#3f51b5
-                  `}
-                  className="w-full h-auto"
-                  id="nine-stage-framework"
-                />
+    classDef stage1 fill:#fee2e2,stroke:#dc2626,stroke-width:3px,color:#991b1b
+    classDef stage2 fill:#fce7f3,stroke:#be185d,stroke-width:3px,color:#831843
+    classDef stage3 fill:#ecfdf5,stroke:#059669,stroke-width:3px,color:#064e3b
+    classDef stage4 fill:#e0f2fe,stroke:#0284c7,stroke-width:3px,color:#0c4a6e
+    classDef stage5 fill:#fff7ed,stroke:#ea580c,stroke-width:3px,color:#9a3412
+    classDef stage6 fill:#fdf2f8,stroke:#db2777,stroke-width:3px,color:#9d174d
+    classDef stage7 fill:#f0fdf4,stroke:#16a34a,stroke-width:3px,color:#15803d
+    classDef stage8 fill:#f1f5f9,stroke:#64748b,stroke-width:3px,color:#334155
+    classDef stage9 fill:#eef2ff,stroke:#6366f1,stroke-width:3px,color:#4338ca
+    
+    class S1 stage1
+    class S2 stage2
+    class S3 stage3
+    class S4 stage4
+    class S5 stage5
+    class S6 stage6
+    class S7 stage7
+    class S8 stage8
+    class S9 stage9
+                      `}
+                      className="w-full h-auto min-h-[600px]"
+                      id="enhanced-nine-stage-framework"
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Research Methodology Mind Map */}
-              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-slate-200">
-                <div className="text-center mb-4">
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">🧠 Research Methodology Mind Map</h3>
-                  <p className="text-sm text-slate-600">
-                    Comprehensive methodology covering graph theory and AI integration
-                  </p>
-                </div>
-                <MermaidChart
-                  chart={`
-%%{init: {'theme':'base', 'themeVariables': {'fontSize': '18px', 'fontFamily': 'Inter, system-ui, sans-serif', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#334155', 'lineColor': '#64748b', 'primaryColor': '#f8fafc', 'secondaryColor': '#e2e8f0', 'tertiaryColor': '#cbd5e1'}}}%%
+              {/* Research Methodology Mind Map - Enhanced Design */}
+              <div className="bg-gradient-to-br from-white via-green-50/30 to-teal-50/30 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-green-100/50 relative overflow-hidden">
+                {/* Decorative background elements */}
+                <div className="absolute top-0 left-0 w-28 h-28 bg-gradient-to-br from-green-200/20 to-teal-200/20 rounded-full blur-3xl -translate-y-14 -translate-x-14"></div>
+                <div className="absolute bottom-0 right-0 w-36 h-36 bg-gradient-to-tl from-purple-200/20 to-pink-200/20 rounded-full blur-3xl translate-y-18 translate-x-18"></div>
+                
+                <div className="relative z-10">
+                  <div className="text-center mb-6">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-teal-600 rounded-2xl mb-4 shadow-lg">
+                      <span className="text-2xl">🧠</span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-3">Research Methodology Mind Map</h3>
+                    <p className="text-slate-600 leading-relaxed">
+                      Comprehensive methodology covering graph theory, AI integration, and scientific reasoning
+                    </p>
+                  </div>
+
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-inner border border-white/50">
+                    <MermaidChart
+                      chart={`
+%%{init: {'theme':'base', 'themeVariables': {'fontSize': '14px', 'fontFamily': 'Inter, system-ui, sans-serif', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#16a34a', 'lineColor': '#059669', 'primaryColor': '#f0fdf4', 'secondaryColor': '#dcfce7', 'tertiaryColor': '#bbf7d0', 'background': '#ffffff', 'mainBkg': '#f0fdf4', 'secondBkg': '#dcfce7'}}}%%
 mindmap
   root)🧠 ASR-GoT Research Methodology(
-    )🔬 Scientific Method Foundation(
+    )🔬 Scientific Foundation(
       )📋 9-Stage Pipeline(
-        🎯 Stage 1: Initialization
-          Task Definition
-          Root Node Creation
-          Knowledge Constraints K1-K3
-        🔍 Stage 2: Decomposition
-          Multi-Dimensional Analysis
-          Scope & Objectives
-          Bias Identification
-        💡 Stage 3: Hypothesis Planning
-          3-5 Testable Hypotheses
-          Impact Scoring
-          Falsification Criteria
-        📈 Stage 4: Evidence Integration
-          Iterative AI Analysis
-          Bayesian Updates
-          Causal Inference
-        ✂️ Stage 5: Pruning & Merging
-          Graph Optimization
-          Information Theory
-          Complexity Reduction
+        🎯 Initialization
+          📝 Task Definition & Setup
+          🔧 Root Node Creation
+          📚 Knowledge Constraints K1-K3
+        🔍 Decomposition  
+          🧩 Multi-Dimensional Analysis
+          🎯 Scope & Objectives Definition
+          🛡️ Bias Identification & Mitigation
+        💡 Hypothesis Planning
+          🔬 3-5 Testable Hypotheses
+          📊 Impact Scoring & Ranking
+          ❌ Falsification Criteria
+        📈 Evidence Integration
+          🔄 Iterative AI Analysis Loops
+          🧮 Bayesian Updates & Inference
+          🔗 Causal Relationship Mapping
+        ✂️ Pruning & Merging
+          ⚡ Graph Optimization Algorithms
+          📊 Information Theory Applications
+          🎛️ Complexity Reduction Methods
       )📊 Evidence Processing(
         🔍 Real-time Search
-          Perplexity Sonar Integration
-          Academic Database Access
-          Web Evidence Collection
+          🌐 Perplexity Sonar Integration
+          📚 Academic Database Access
+          🕸️ Web Evidence Collection
         📝 Citation Management
-          Vancouver Standard
-          Source Verification
-          Academic Quality Check
+          📋 Vancouver Citation Standard
+          ✅ Source Verification & Validation
+          🏆 Academic Quality Assurance
         📈 Statistical Analysis
-          Quantitative Methods
-          Power Analysis
-          Effect Size Calculation
+          📊 Quantitative Methods & Tools
+          ⚡ Statistical Power Analysis
+          📏 Effect Size Calculations
       )📋 Report Generation(
         🎓 PhD-level Quality
-          Comprehensive Analysis
-          Academic Standards
-          Peer Review Ready
+          📊 Comprehensive Analysis Framework
+          🏛️ Academic Standards Compliance
+          👥 Peer Review Readiness
         📄 Multi-format Export
-          HTML with Visualizations
-          Academic Paper Format
-          Interactive Reports
+          🌐 HTML with Interactive Visualizations
+          📰 Academic Paper Format
+          💻 Interactive Research Reports
     )🤖 AI Integration Architecture(
       )🔄 Multi-AI Orchestration(
         🌐 Perplexity Sonar
-          Real-time Web Search
-          Current Information
-          Source Reliability
+          ⚡ Real-time Web Search Capabilities
+          📰 Current Information Retrieval
+          🔍 Source Reliability Assessment
         🧠 Gemini 2.5 Pro
-          Advanced Reasoning
-          Complex Analysis
-          Pattern Recognition
-        ⚡ Smart Routing
-          Optimal AI Selection
-          Load Balancing
-          Cost Optimization
-      )🧮 Reasoning Methods(
+          🧮 Advanced Reasoning & Analysis
+          🔍 Complex Pattern Recognition
+          🎯 Multi-modal Understanding
+        ⚡ Smart AI Routing
+          🎯 Optimal AI Selection Logic
+          ⚖️ Load Balancing & Distribution
+          💰 Cost-aware Optimization
+      )🧮 Advanced Reasoning(
         📊 Bayesian Updates
-          Prior Knowledge
-          Evidence Integration
-          Posterior Calculation
+          📚 Prior Knowledge Integration
+          🔗 Evidence-based Updates
+          📈 Posterior Probability Calculation
         🔗 Causal Inference
-          Pearl's Framework
-          Counterfactual Analysis
-          Mechanism Discovery
+          🏛️ Pearl's Causal Framework
+          🔄 Counterfactual Analysis
+          🔧 Mechanism Discovery Methods
         🎯 Pattern Recognition
-          Data Mining
-          Anomaly Detection
-          Trend Analysis
-      )✅ Quality Control(
+          ⛏️ Advanced Data Mining
+          ⚠️ Anomaly Detection Systems
+          📈 Trend Analysis & Forecasting
+      )✅ Quality Assurance(
         🛡️ Bias Detection
-          Cognitive Bias Analysis
-          Statistical Bias Check
-          Methodological Review
+          🧠 Cognitive Bias Analysis
+          📊 Statistical Bias Checking
+          🔍 Methodological Review
         📏 Confidence Scoring
-          Multi-dimensional Vectors
-          Evidence Quality
-          Consensus Alignment
-        ✔️ Validation Checks
-          Cross-reference Verification
-          Logical Consistency
-          Academic Standards
+          📊 Multi-dimensional Confidence Vectors
+          🏆 Evidence Quality Assessment
+          🎯 Consensus Alignment Metrics
+        ✔️ Validation Systems
+          🔗 Cross-reference Verification
+          🧮 Logical Consistency Checks
+          🏛️ Academic Standards Compliance
     )📊 Graph Theory Foundation(
       )🔗 Node Architecture(
         💡 Hypothesis Nodes
-          Research Questions
-          Theoretical Predictions
-          Testable Statements
+          ❓ Research Questions & Inquiries
+          🔮 Theoretical Predictions
+          🧪 Testable Scientific Statements
         📋 Evidence Nodes
-          Empirical Data
-          Research Findings
-          Statistical Results
+          📊 Empirical Data & Measurements
+          🔬 Research Findings & Results
+          📈 Statistical Analysis Results
         🔍 Analysis Nodes
-          Synthesis Points
-          Conclusion Markers
-          Decision Nodes
+          🔗 Synthesis & Integration Points
+          🎯 Conclusion & Decision Markers
+          🧮 Computational Analysis Nodes
         📚 Knowledge Nodes
-          K1: Communication Style
-          K2: Content Requirements
-          K3: User Profile
-      )↔️ Edge Relations(
-        ✅ Supportive Links
-          Evidence Supporting
-          Logical Consistency
-          Reinforcement Patterns
-        ❌ Contradictory Links
-          Conflicting Evidence
-          Alternative Theories
-          Debate Points
+          💬 K1: Communication Preferences
+          📋 K2: Content Requirements
+          👤 K3: User Profile & Expertise
+      )↔️ Relationship Mapping(
+        ✅ Supportive Relations
+          📊 Evidence Supporting Hypotheses
+          🧮 Logical Consistency Patterns
+          🔗 Reinforcement Relationships
+        ❌ Contradictory Relations
+          ⚔️ Conflicting Evidence Sources
+          🤔 Alternative Theory Proposals
+          💭 Scientific Debate Points
         🔗 Causal Relations
-          Direct Causation
-          Indirect Influence
-          Mediating Factors
-        🔄 Temporal Relations
-          Sequential Dependencies
-          Time-based Patterns
-          Historical Context
-      )⚙️ Graph Operations(
+          ➡️ Direct Causation Links
+          〰️ Indirect Influence Pathways
+          🔄 Mediating Factor Analysis
+        🕒 Temporal Relations
+          📅 Sequential Dependencies
+          📈 Time-based Pattern Recognition
+          📚 Historical Context Integration
+      )⚙️ Advanced Operations(
         ✂️ Pruning Operations
-          Low-value Removal
-          Redundancy Elimination
-          Quality Filtering
+          🗑️ Low-value Content Removal
+          🔄 Redundancy Elimination
+          🎯 Quality-based Filtering
         🔄 Merging Operations
-          Node Consolidation
-          Relationship Synthesis
-          Information Integration
+          🔗 Node Consolidation Processes
+          🧩 Relationship Synthesis
+          📊 Information Integration Methods
         🎯 Extraction Operations
-          High-impact Pathways
-          Critical Path Analysis
-          Key Insight Isolation
-                  `}
-                  className="w-full h-auto min-h-[800px]"
-                  id="methodology-mindmap-portrait"
-                />
+          💎 High-impact Pathway Identification
+          🛤️ Critical Path Analysis
+          💡 Key Insight Isolation & Highlighting
+                      `}
+                      className="w-full h-auto min-h-[800px]"
+                      id="enhanced-methodology-mindmap"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
