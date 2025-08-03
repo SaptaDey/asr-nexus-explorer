@@ -119,15 +119,14 @@ export const AccessibilityControls: React.FC<AccessibilityControlsProps> = ({ cl
         <Button 
           variant="outline" 
           size="sm"
-          className={`${className} relative bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-700 hover:text-blue-800 transition-all duration-200`}
+          className={`${className} relative bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-700 hover:text-blue-800 transition-all duration-200 min-w-0 px-2`}
           aria-label="Open accessibility settings"
+          title="Accessibility Settings"
         >
-          <Accessibility className="h-4 w-4 mr-2" />
-          <span className="font-medium">Accessibility</span>
+          <Accessibility className="h-4 w-4" />
           {isScreenReader && (
-            <Badge variant="secondary" className="ml-2 text-xs bg-green-100 text-green-700 border-green-200">
-              <Headphones className="h-3 w-3 mr-1" />
-              SR
+            <Badge variant="secondary" className="ml-1 text-xs bg-green-100 text-green-700 border-green-200 min-w-0 px-1">
+              <Headphones className="h-3 w-3" />
             </Badge>
           )}
         </Button>

@@ -48,46 +48,160 @@ export class BackendInitializer {
     this.healthStatus.errors = [];
 
     try {
-      // Step 1: Test database connection
-      await this.testDatabaseConnection();
-      
-      // Step 2: Initialize storage buckets
-      await this.initializeStorageBuckets();
-      
-      // Step 3: Test real-time connection
-      await this.testRealtimeConnection();
+      // Database health check with timeout
+      await this.checkDatabaseHealth();
 
-      // Step 4: Validate required tables exist
-      await this.validateDatabaseTables();
+      // Storage health check with timeout  
+      await this.checkStorageHealth();
+
+      // Realtime health check with timeout
+      await this.checkRealtimeHealth();
 
       this.isInitialized = true;
       console.log('✅ Backend initialization completed successfully');
-      
-      if (this.healthStatus.errors && this.healthStatus.errors.length === 0) {
-        toast.success('Backend connected successfully');
-      } else {
-        toast.warning(`Backend connected with ${this.healthStatus.errors.length} warnings`);
-      }
 
-      return this.healthStatus;
     } catch (error) {
-      console.error('❌ Backend initialization failed:', error);
-      this.healthStatus.errors.push(`Initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      toast.error('Backend initialization failed. Some features may not work.');
-      return this.healthStatus;
+      console.error('❌ Backend initialization error:', error);
+      this.healthStatus.errors.push(`Initialization: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    return this.healthStatus;
+  }
+
+  /**
+   * Check database connectivity with timeout
+   */
+  private async checkDatabaseHealth(): Promise<void> {
+    try {
+      console.log('🔍 Checking database connectivity...');
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Database check timeout after 5 seconds')), 5000);
+      });
+
+      const healthCheck = supabase.from('asr_got_analyses').select('count', { count: 'exact', head: true });
+      
+      await Promise.race([healthCheck, timeoutPromise]);
+      
+      this.healthStatus.database = 'connected';
+      console.log('✅ Database connection successful');
+      
+    } catch (error) {
+      console.warn('⚠️ Database check failed:', error);
+      this.healthStatus.database = 'error';
+      this.healthStatus.errors.push(`Database: ${error instanceof Error ? error.message : 'Connection failed'}`);
     }
   }
 
   /**
-   * Test database connectivity
+   * Check storage connectivity with timeout
    */
-  private async testDatabaseConnection(): Promise<void> {
+  private async checkStorageHealth(): Promise<void> {
     try {
-      console.log('🔍 Testing database connection...');
+      console.log('🗄️ Checking storage connectivity...');
       
-      // CRITICAL FIX: Skip all database tests to prevent 401 errors
-      console.log('✅ Database connection test skipped to prevent 401 errors (safe mode)');
-      this.healthStatus.database = 'connected';
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Storage check timeout after 5 seconds')), 5000);
+      });
+
+      const bucketCheck = supabase.storage.listBuckets();
+      
+      const { data: buckets, error } = await Promise.race([bucketCheck, timeoutPromise]) as any;
+      
+      if (error) throw error;
+
+      this.healthStatus.storage = 'connected';
+      
+      // Check individual buckets
+      if (buckets) {
+        this.healthStatus.buckets['asr-got-analyses'] = buckets.some((b: any) => b.name === 'asr-got-analyses');
+        this.healthStatus.buckets['asr-got-visualizations'] = buckets.some((b: any) => b.name === 'asr-got-visualizations');
+        this.healthStatus.buckets['query-figures'] = buckets.some((b: any) => b.name === 'query-figures');
+      }
+      
+      console.log('✅ Storage connection successful');
+      
+    } catch (error) {
+      console.warn('⚠️ Storage check failed:', error);
+      this.healthStatus.storage = 'error';
+      this.healthStatus.errors.push(`Storage: ${error instanceof Error ? error.message : 'Connection failed'}`);
+    }
+  }
+
+  /**
+   * Check realtime connectivity with timeout
+   */
+  private async checkRealtimeHealth(): Promise<void> {
+    try {
+      console.log('🔗 Checking realtime connectivity...');
+      
+      // Simple realtime check with timeout
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Realtime check timeout after 3 seconds')), 3000);
+      });
+
+      const channel = supabase.channel('health-check');
+      const subscribePromise = new Promise((resolve) => {
+        channel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            resolve(true);
+          }
+        });
+      });
+
+      await Promise.race([subscribePromise, timeoutPromise]);
+      
+      channel.unsubscribe();
+      
+      this.healthStatus.realtime = 'connected';
+      console.log('✅ Realtime connection successful');
+      
+    } catch (error) {
+      console.warn('⚠️ Realtime check failed:', error);
+      this.healthStatus.realtime = 'error';
+      this.healthStatus.errors.push(`Realtime: ${error instanceof Error ? error.message : 'Connection failed'}`);
+    }
+  }
+
+  /**
+   * Get current health status
+   */
+  getHealthStatus(): BackendHealthStatus {
+    return this.healthStatus;
+  }
+
+  /**
+   * Quick health check (for periodic monitoring)
+   */
+  async quickHealthCheck(): Promise<BackendHealthStatus> {
+    if (!this.isInitialized) {
+      return await this.initializeBackend();
+    }
+    return this.healthStatus;
+  }
+
+  /**
+   * Reset initialization state (for testing)
+   */
+  reset(): void {
+    this.isInitialized = false;
+    this.healthStatus = {
+      database: 'error',
+      realtime: 'error',
+      storage: 'error',
+      buckets: {
+        'asr-got-analyses': false,
+        'asr-got-visualizations': false,
+        'query-figures': false
+      },
+      errors: []
+    };
+  }
+}
+
+export const backendInitializer = BackendInitializer.getInstance();
       return;
       
       // DISABLED: Authentication check that was causing 401 errors
