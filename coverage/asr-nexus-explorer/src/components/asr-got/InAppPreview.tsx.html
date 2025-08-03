@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">4.78% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/209</span>
+                <span class='fraction'>10/209</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>0/0</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">4.78% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/209</span>
+                <span class='fraction'>10/209</span>
             </div>
         
             
@@ -383,18 +383,18 @@
 <a name='L318'></a><a href='#L318'>318</a>
 <a name='L319'></a><a href='#L319'>319</a>
 <a name='L320'></a><a href='#L320'>320</a>
-<a name='L321'></a><a href='#L321'>321</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L321'></a><a href='#L321'>321</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -406,8 +406,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -418,7 +418,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -703,18 +703,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >/**<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * In-App Preview Component for Exports
  * Provides iframe preview functionality for HTML/PDF exports
-<span class="cstat-no" title="statement not covered" > */</span>
+ */
 &nbsp;
-<span class="cstat-no" title="statement not covered" >import React, { useState, useRef, useEffect } from 'react';</span>
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-<span class="cstat-no" title="statement not covered" >import { Button } from '@/components/ui/button';</span>
-<span class="cstat-no" title="statement not covered" >import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';</span>
-<span class="cstat-no" title="statement not covered" >import { Badge } from '@/components/ui/badge';</span>
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-<span class="cstat-no" title="statement not covered" >import { </span>
+import { 
   Download, 
   FileText, 
   Printer, 
@@ -726,8 +726,8 @@ import { Progress } from '@/components/ui/progress';
   RefreshCw,
   ExternalLink
 } from 'lucide-react';
-<span class="cstat-no" title="statement not covered" >import { motion } from 'framer-motion';</span>
-<span class="cstat-no" title="statement not covered" >import { toast } from 'sonner';</span>
+import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 &nbsp;
 interface InAppPreviewProps {
   content: string;
@@ -738,7 +738,7 @@ interface InAppPreviewProps {
   className?: string;
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export const InAppPreview: React.FC&lt;InAppPreviewProps&gt; = ({</span>
+export const InAppPreview: React.FC&lt;InAppPreviewProps&gt; = <span class="fstat-no" title="function not covered" >({</span>
 <span class="cstat-no" title="statement not covered" >  content,</span>
 <span class="cstat-no" title="statement not covered" >  title,</span>
 <span class="cstat-no" title="statement not covered" >  type,</span>
@@ -1030,7 +1030,7 @@ interface InAppPreviewProps {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-03T00:29:42.388Z
+                at 2025-08-03T00:42:47.588Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

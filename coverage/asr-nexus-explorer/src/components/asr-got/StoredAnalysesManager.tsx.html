@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">5.38% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/223</span>
+                <span class='fraction'>12/223</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>0/0</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">5.38% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/223</span>
+                <span class='fraction'>12/223</span>
             </div>
         
             
@@ -385,20 +385,20 @@
 <a name='L320'></a><a href='#L320'>320</a>
 <a name='L321'></a><a href='#L321'>321</a>
 <a name='L322'></a><a href='#L322'>322</a>
-<a name='L323'></a><a href='#L323'>323</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L323'></a><a href='#L323'>323</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -409,7 +409,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -707,20 +707,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >/**<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * Stored Analyses Manager Component
  * Interface for retrieving and managing stored ASR-GoT analyses from Supabase
-<span class="cstat-no" title="statement not covered" > */</span>
+ */
 &nbsp;
-<span class="cstat-no" title="statement not covered" >import React, { useState, useEffect } from 'react';</span>
-<span class="cstat-no" title="statement not covered" >import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';</span>
-<span class="cstat-no" title="statement not covered" >import { Button } from '@/components/ui/button';</span>
-<span class="cstat-no" title="statement not covered" >import { Badge } from '@/components/ui/badge';</span>
-<span class="cstat-no" title="statement not covered" >import { Loader2, Download, Eye, Trash2, Calendar, FileText, Image } from 'lucide-react';</span>
-<span class="cstat-no" title="statement not covered" >import { supabaseStorage, StoredAnalysis } from '@/services/SupabaseStorageService';</span>
-<span class="cstat-no" title="statement not covered" >import { Alert, AlertDescription } from '@/components/ui/alert';</span>
-<span class="cstat-no" title="statement not covered" >import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';</span>
-<span class="cstat-no" title="statement not covered" >import { ScrollArea } from '@/components/ui/scroll-area';</span>
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Download, Eye, Trash2, Calendar, FileText, Image } from 'lucide-react';
+import { supabaseStorage, StoredAnalysis } from '@/services/SupabaseStorageService';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 &nbsp;
 interface StoredAnalysisItem {
   id: string;
@@ -731,7 +731,7 @@ interface StoredAnalysisItem {
   content_length: number;
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export const StoredAnalysesManager: React.FC&lt;{ currentSessionId?: string | null; onLoadAnalysis?: (analysisId: string) =&gt; void }&gt; = ({ currentSessionId, onLoadAnalysis }) =&gt; {</span>
+export const StoredAnalysesManager: React.FC&lt;{ currentSessionId?: string | null; onLoadAnalysis?: (analysisId: string) =&gt; void }&gt; = <span class="fstat-no" title="function not covered" >({ currentSessionId, onLoadAnalysis }) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  const [analyses, setAnalyses] = useState&lt;StoredAnalysisItem[]&gt;([]);</span>
 <span class="cstat-no" title="statement not covered" >  const [loading, setLoading] = useState(true);</span>
 <span class="cstat-no" title="statement not covered" >  const [error, setError] = useState&lt;string | null&gt;(null);</span>
@@ -1036,7 +1036,7 @@ interface StoredAnalysisItem {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-03T00:29:42.388Z
+                at 2025-08-03T00:42:47.588Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>
