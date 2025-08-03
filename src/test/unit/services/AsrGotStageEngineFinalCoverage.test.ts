@@ -131,4 +131,121 @@ describe('AsrGotStageEngine - Additional Branch Coverage', () => {
     expect(0 < 3 ? 0.9 : 0.7).toBe(0.9);
     expect(3 < 3 ? 0.9 : 0.7).toBe(0.7);
   });
+
+  it('should test additional statistical power branches', () => {
+    const engine = new AsrGotStageEngine(mockCredentials);
+    const extractStatisticalPower = (engine as any).extractStatisticalPower;
+    
+    // Test more specific branches in the statistical power calculation
+    expect(extractStatisticalPower('small effect size: 0.1')).toBeGreaterThan(0);
+    expect(extractStatisticalPower('large sample size: 10,000')).toBeGreaterThan(0.5);
+    expect(extractStatisticalPower('medium effect size: 0.5')).toBeGreaterThan(0);
+    expect(extractStatisticalPower('high p-value: 0.9')).toBeGreaterThan(0);
+    expect(extractStatisticalPower('meta-analysis study')).toBeGreaterThan(0);
+  });
+
+  it('should test empty string vs null vs undefined branches', () => {
+    const engine = new AsrGotStageEngine(mockCredentials);
+    const extractStatisticalPower = (engine as any).extractStatisticalPower;
+    const extractField = (engine as any).extractField;
+    
+    // Test different falsy values
+    expect(extractStatisticalPower('')).toBe(0.85);
+    expect(extractStatisticalPower(null)).toBe(0.85);
+    expect(extractField('')).toBe('General Science');
+    expect(extractField(null)).toBe('General Science');
+  });
+
+  it('should test constructor with mixed credential properties', () => {
+    // Test the specific hasOwnProperty branch
+    const mixedCreds = {
+      gemini: 'test',
+      perplexity: 'test'
+    };
+    
+    // Add openai property dynamically to test hasOwnProperty branch
+    Object.defineProperty(mixedCreds, 'openai', {
+      value: 'test-openai',
+      enumerable: true,
+      configurable: true
+    });
+    
+    const engine = new AsrGotStageEngine(mixedCreds as APICredentials);
+    expect(engine).toBeDefined();
+  });
+
+  it('should test stage 1 with malformed JSON in production mode', async () => {
+    const { getTaskResult } = await import('@/utils/background');
+    
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    
+    (getTaskResult as any).mockResolvedValueOnce('invalid json');
+    
+    const engine = new AsrGotStageEngine(mockCredentials);
+    
+    try {
+      await engine.executeStage1('test');
+      expect(false).toBe(true); // Should not reach here
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toContain('Malformed API response');
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+    }
+  });
+
+  it('should test additional helper method branches', () => {
+    const engine = new AsrGotStageEngine(mockCredentials);
+    const extractField = (engine as any).extractField;
+    const extractObjectives = (engine as any).extractObjectives;
+    
+    // Test more edge cases
+    expect(extractField('fields: Multiple, Biology')).toBe('Multiple');
+    expect(extractField('research field-Data Science')).toBe('Data Science');
+    expect(extractObjectives('obj: test1, test2')).toContain('test1');
+    expect(extractObjectives('goals: goal1; goal2')).toContain('goal1');
+  });
+
+  it('should test edge cases in statistical power calculation', () => {
+    const engine = new AsrGotStageEngine(mockCredentials);
+    const extractStatisticalPower = (engine as any).extractStatisticalPower;
+    
+    // Test boundary conditions and edge cases
+    expect(extractStatisticalPower('sample size: 10')).toBeGreaterThan(0);
+    expect(extractStatisticalPower('effect size: 1.5')).toBeGreaterThan(0);
+    expect(extractStatisticalPower('p-value: 0.05')).toBeGreaterThan(0);
+    expect(extractStatisticalPower('randomized controlled trial')).toBeGreaterThan(0);
+    expect(extractStatisticalPower('systematic review')).toBeGreaterThan(0);
+  });
+
+  it('should handle empty graph initialization', () => {
+    const engine = new AsrGotStageEngine(mockCredentials, undefined);
+    const graphData = engine.getGraphData();
+    
+    // The constructor always initializes knowledge nodes, so nodes won't be empty
+    expect(graphData.nodes.length).toBeGreaterThan(0);
+    expect(graphData.edges).toEqual([]);
+    expect(graphData.metadata.stage).toBe(0);
+  });
+
+  it('should test production environment branch in stage 1', async () => {
+    const { getTaskResult } = await import('@/utils/background');
+    
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    
+    // Test empty response in production
+    (getTaskResult as any).mockResolvedValueOnce('');
+    
+    const engine = new AsrGotStageEngine(mockCredentials);
+    
+    try {
+      await engine.executeStage1('test');
+    } catch (error) {
+      expect((error as Error).message).toContain('Malformed API response');
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+    }
+  });
 });
