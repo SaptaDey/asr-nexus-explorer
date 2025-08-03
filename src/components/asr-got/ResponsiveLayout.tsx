@@ -138,28 +138,30 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
             {headerContent}
           </div>}
         
-        {/* Main Content */}
-        <div className="p-6">
-          {isFullscreen ? <div className="fixed inset-0 z-50 bg-white overflow-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    {activeItem?.icon}
-                    <h2 className="text-2xl font-semibold">{activeItem?.label}</h2>
-                    {activeItem?.badge && <Badge variant="secondary">{activeItem.badge}</Badge>}
+        {/* Main Content - Compacted to match top/bottom section widths */}
+        <div className="px-4 py-6">
+          <div className="max-w-7xl mx-auto">
+            {isFullscreen ? <div className="fixed inset-0 z-50 bg-white overflow-auto">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      {activeItem?.icon}
+                      <h2 className="text-2xl font-semibold">{activeItem?.label}</h2>
+                      {activeItem?.badge && <Badge variant="secondary">{activeItem.badge}</Badge>}
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setIsFullscreen(false)}>
+                      <Minimize2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => setIsFullscreen(false)}>
-                    <Minimize2 className="h-4 w-4" />
-                  </Button>
+                  {children}
                 </div>
-                {children}
-              </div>
-            </div> : <Card>
-              <CardContent className="p-8">
-                
-                {children}
-              </CardContent>
-            </Card>}
+              </div> : <Card className="bg-white/90 backdrop-blur-sm border border-slate-200">
+                <CardContent className="p-6">
+                  
+                  {children}
+                </CardContent>
+              </Card>}
+          </div>
         </div>
       </div>
     </div>;

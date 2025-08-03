@@ -1541,51 +1541,144 @@ flowchart TD
                 </div>
                 <MermaidChart
                   chart={`
-%%{init: {'theme':'base', 'themeVariables': {'fontSize': '16px', 'fontFamily': 'arial', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000'}}}%%
+%%{init: {'theme':'base', 'themeVariables': {'fontSize': '18px', 'fontFamily': 'Inter, system-ui, sans-serif', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#334155', 'lineColor': '#64748b', 'primaryColor': '#f8fafc', 'secondaryColor': '#e2e8f0', 'tertiaryColor': '#cbd5e1'}}}%%
 mindmap
-  root((ASR-GoT Framework))
-    Graph Theory
-      Node Types
-        Hypothesis Nodes
-        Evidence Nodes
-        Analysis Nodes
-      Edge Relations
-        Supportive Links
-        Contradictory Links
-        Causal Relations
-      Graph Operations
-        Pruning
-        Merging
-        Extraction
-    AI Integration
-      Multi-AI Orchestration
-        Perplexity Sonar
-        Gemini 2.5 Pro
-        Smart Routing
-      Reasoning Methods
-        Bayesian Updates
-        Causal Inference
-        Pattern Recognition
-      Quality Control
-        Bias Detection
-        Confidence Scoring
-        Validation Checks
-    Scientific Method
-      9-Stage Pipeline
-        Initialization
-        Decomposition
-        Hypothesis Planning
-      Evidence Processing
-        Real-time Search
-        Citation Management
-        Statistical Analysis
-      Report Generation
-        PhD-level Quality
-        Vancouver Citations
-        Multi-format Export
+  root)🧠 ASR-GoT Research Methodology(
+    )🔬 Scientific Method Foundation(
+      )📋 9-Stage Pipeline(
+        🎯 Stage 1: Initialization
+          Task Definition
+          Root Node Creation
+          Knowledge Constraints K1-K3
+        🔍 Stage 2: Decomposition
+          Multi-Dimensional Analysis
+          Scope & Objectives
+          Bias Identification
+        💡 Stage 3: Hypothesis Planning
+          3-5 Testable Hypotheses
+          Impact Scoring
+          Falsification Criteria
+        📈 Stage 4: Evidence Integration
+          Iterative AI Analysis
+          Bayesian Updates
+          Causal Inference
+        ✂️ Stage 5: Pruning & Merging
+          Graph Optimization
+          Information Theory
+          Complexity Reduction
+      )📊 Evidence Processing(
+        🔍 Real-time Search
+          Perplexity Sonar Integration
+          Academic Database Access
+          Web Evidence Collection
+        📝 Citation Management
+          Vancouver Standard
+          Source Verification
+          Academic Quality Check
+        📈 Statistical Analysis
+          Quantitative Methods
+          Power Analysis
+          Effect Size Calculation
+      )📋 Report Generation(
+        🎓 PhD-level Quality
+          Comprehensive Analysis
+          Academic Standards
+          Peer Review Ready
+        📄 Multi-format Export
+          HTML with Visualizations
+          Academic Paper Format
+          Interactive Reports
+    )🤖 AI Integration Architecture(
+      )🔄 Multi-AI Orchestration(
+        🌐 Perplexity Sonar
+          Real-time Web Search
+          Current Information
+          Source Reliability
+        🧠 Gemini 2.5 Pro
+          Advanced Reasoning
+          Complex Analysis
+          Pattern Recognition
+        ⚡ Smart Routing
+          Optimal AI Selection
+          Load Balancing
+          Cost Optimization
+      )🧮 Reasoning Methods(
+        📊 Bayesian Updates
+          Prior Knowledge
+          Evidence Integration
+          Posterior Calculation
+        🔗 Causal Inference
+          Pearl's Framework
+          Counterfactual Analysis
+          Mechanism Discovery
+        🎯 Pattern Recognition
+          Data Mining
+          Anomaly Detection
+          Trend Analysis
+      )✅ Quality Control(
+        🛡️ Bias Detection
+          Cognitive Bias Analysis
+          Statistical Bias Check
+          Methodological Review
+        📏 Confidence Scoring
+          Multi-dimensional Vectors
+          Evidence Quality
+          Consensus Alignment
+        ✔️ Validation Checks
+          Cross-reference Verification
+          Logical Consistency
+          Academic Standards
+    )📊 Graph Theory Foundation(
+      )🔗 Node Architecture(
+        💡 Hypothesis Nodes
+          Research Questions
+          Theoretical Predictions
+          Testable Statements
+        📋 Evidence Nodes
+          Empirical Data
+          Research Findings
+          Statistical Results
+        🔍 Analysis Nodes
+          Synthesis Points
+          Conclusion Markers
+          Decision Nodes
+        📚 Knowledge Nodes
+          K1: Communication Style
+          K2: Content Requirements
+          K3: User Profile
+      )↔️ Edge Relations(
+        ✅ Supportive Links
+          Evidence Supporting
+          Logical Consistency
+          Reinforcement Patterns
+        ❌ Contradictory Links
+          Conflicting Evidence
+          Alternative Theories
+          Debate Points
+        🔗 Causal Relations
+          Direct Causation
+          Indirect Influence
+          Mediating Factors
+        🔄 Temporal Relations
+          Sequential Dependencies
+          Time-based Patterns
+          Historical Context
+      )⚙️ Graph Operations(
+        ✂️ Pruning Operations
+          Low-value Removal
+          Redundancy Elimination
+          Quality Filtering
+        🔄 Merging Operations
+          Node Consolidation
+          Relationship Synthesis
+          Information Integration
+        🎯 Extraction Operations
+          High-impact Pathways
+          Critical Path Analysis
+          Key Insight Isolation
                   `}
-                  className="w-full h-auto"
-                  id="methodology-mindmap-compact"
+                  className="w-full h-auto min-h-[800px]"
+                  id="methodology-mindmap-portrait"
                 />
               </div>
             </div>
