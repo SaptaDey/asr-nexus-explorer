@@ -151,7 +151,7 @@ describe('AsrGotStageEngine - Targeted Branch Coverage Tests', () => {
       // Create a scenario that will cause an error in stage 5
       // Force an error by making graph data invalid
       const graphData = engine.getGraphData();
-      // @ts-ignore - intentionally break the graph structure
+      // @ts-expect-error - intentionally break the graph structure
       graphData.edges = null;
 
       await expect(engine.executeStage5()).rejects.toThrow();
@@ -174,7 +174,7 @@ describe('AsrGotStageEngine - Targeted Branch Coverage Tests', () => {
       
       // Force an error by breaking graph structure
       const graphData = engine.getGraphData();
-      // @ts-ignore - intentionally break the graph structure 
+      // @ts-expect-error - intentionally break the graph structure 
       graphData.nodes = null;
 
       await expect(engine.executeStage6()).rejects.toThrow();
