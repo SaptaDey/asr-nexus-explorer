@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppContextManager } from "@/contexts/AppContextManager";
+import { AuthProvider } from "@/contexts/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Contact from "./pages/Contact";
@@ -55,47 +56,49 @@ const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AppContextManager>
-          <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter>
-                  <Routes>
-                    {/* Public routes */}
-                    <Route path="/" element={<Index />} />
-                    <Route path="/auth" element={<AuthPage />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/guide" element={<GraphOfThoughtsGuide />} />
-                    <Route path="/ai-powered" element={<AIPowered />} />
-                    <Route path="/research-framework" element={<ResearchFramework />} />
-                    <Route path="/graph-neural-networks" element={<GraphNeuralNetworks />} />
-                    <Route path="/asr-got-interface" element={<ASRGoTInterface />} />
-                    <Route path="/enhanced-asr-got-interface" element={<EnhancedASRGoTInterface />} />
-                    
-                    {/* Protected routes - require authentication */}
-                    <Route 
-                      path="/dashboard" 
-                      element={
-                        <ProtectedRoute>
-                          <UserDashboard />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route 
-                      path="/stage/:stageId" 
-                      element={
-                        <ProtectedRoute>
-                          <StageDetail />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                  </BrowserRouter>
-          </TooltipProvider>
-        </AppContextManager>
+        <AuthProvider>
+          <AppContextManager>
+            <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter>
+                    <Routes>
+                      {/* Public routes */}
+                      <Route path="/" element={<Index />} />
+                      <Route path="/auth" element={<AuthPage />} />
+                      <Route path="/contact" element={<Contact />} />
+                      <Route path="/guide" element={<GraphOfThoughtsGuide />} />
+                      <Route path="/ai-powered" element={<AIPowered />} />
+                      <Route path="/research-framework" element={<ResearchFramework />} />
+                      <Route path="/graph-neural-networks" element={<GraphNeuralNetworks />} />
+                      <Route path="/asr-got-interface" element={<ASRGoTInterface />} />
+                      <Route path="/enhanced-asr-got-interface" element={<EnhancedASRGoTInterface />} />
+                      
+                      {/* Protected routes - require authentication */}
+                      <Route 
+                        path="/dashboard" 
+                        element={
+                          <ProtectedRoute>
+                            <UserDashboard />
+                          </ProtectedRoute>
+                        } 
+                      />
+                      <Route 
+                        path="/stage/:stageId" 
+                        element={
+                          <ProtectedRoute>
+                            <StageDetail />
+                          </ProtectedRoute>
+                        } 
+                      />
+                      
+                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                    </BrowserRouter>
+            </TooltipProvider>
+          </AppContextManager>
+        </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
