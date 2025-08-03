@@ -72,15 +72,19 @@ describe('AsrGotStageEngine - Targeted Branch Coverage Tests', () => {
 
   describe('Error Handling Branches', () => {
     it('should handle non-Error objects in Stage 2 catch block (branch 30[0])', async () => {
-      queueGeminiCall.mockReturnValue('test-task-id');
+      // Clear any previous mocks
+      vi.clearAllMocks();
       
-      // Mock to throw a non-Error object
-      getTaskResult.mockRejectedValue('string error not Error object');
-
+      queueGeminiCall.mockReturnValue('test-task-id');
+      getTaskResult.mockResolvedValueOnce('{"primary_field": "Test Field", "objectives": ["Test Objective"], "constraints": ["Test Constraint"], "initial_scope": "Test Scope"}');
+      
       // First execute stage 1 to set up the engine
       await engine.executeStage1('test query');
+      
+      // Now mock to throw a non-Error object for stage 2
+      getTaskResult.mockRejectedValue('string error not Error object');
 
-      // Now test stage 2 error handling
+      // Test stage 2 error handling
       await expect(engine.executeStage2()).rejects.toThrow();
       
       // Check that the stage context was properly updated
