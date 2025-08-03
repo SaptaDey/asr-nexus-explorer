@@ -9,6 +9,10 @@ on:
     # Run tests daily at 2 AM UTC
     - cron: '0 2 * * *'
 
+permissions:
+  issues: write
+  pull-requests: write
+
 env:
   NODE_VERSION: '20'
   CACHE_NAME: node-modules-v1
@@ -508,4 +512,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: '✅ **All Tests Passed!**\n\n🚀 This PR is ready for review and merge.\n\n**Test Results:**\n- ✅ Lint & Type Check\n- ✅ Unit Tests\n- ✅ Integration Tests\n- ✅ Security Tests\n- ✅ E2E Tests\n- ✅ Coverage Requirements\n- ✅ Build Test'
+
             })
