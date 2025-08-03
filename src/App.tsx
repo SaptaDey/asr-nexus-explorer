@@ -22,28 +22,21 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { FloatingIconSystem } from "./components/ui/FloatingIconSystem";
 
-// Complete application initialization with all security measures
-const initializeApp = async () => {
-  try {
-    console.log('🔄 App: Starting complete initialization');
-    
-    // Initialize core services
-    const { InitializationService } = await import('@/services/initialization/InitializationService');
-    await InitializationService.initialize();
-    
-    // Initialize background processing
-    const { BackgroundProcessor } = await import('@/utils/background/BackgroundProcessor');
-    await BackgroundProcessor.initialize();
-    
-    // Initialize memory management
-    const { MemoryManager } = await import('@/services/memory/MemoryManager');
-    await MemoryManager.initialize();
-    
-    console.log('🚀 App: Complete initialization finished');
-  } catch (error) {
-    console.error('❌ App initialization failed:', error);
-    throw error; // Don't suppress initialization failures
+// Lightweight app initialization - services load when needed
+const initializeApp = () => {
+  console.log('🔄 App: Starting lightweight initialization');
+  
+  // Initialize debug helper for development (non-blocking)
+  if (process.env.NODE_ENV === 'development') {
+    import('@/utils/debugHelper').then(({ initializeDebugHelper }) => {
+      initializeDebugHelper();
+      console.log('🔧 Debug helper initialized');
+    }).catch(error => {
+      console.warn('⚠️ Debug helper initialization failed:', error);
+    });
   }
+  
+  console.log('✅ App: Lightweight initialization completed');
 };
 
 const App = () => {
@@ -62,17 +55,7 @@ const App = () => {
     // Initialize app on mount
     initializeApp();
     
-    // Initialize debug helper for development
-    if (process.env.NODE_ENV === 'development') {
-      import('@/utils/debugHelper').then(({ initializeDebugHelper }) => {
-        initializeDebugHelper();
-        console.log('🔧 Debug helper initialized');
-      }).catch(error => {
-        console.warn('⚠️ Debug helper initialization failed:', error);
-      });
-    }
-    
-    console.log('✅ App loaded with complete initialization');
+    console.log('✅ App loaded successfully');
   }, []);
 
   return (

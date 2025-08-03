@@ -8,13 +8,19 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJh
 
 console.log('🔧 Supabase client: Initializing with stable configuration');
 
-// Create client with stable configuration to prevent auth/connection errors
+// Create client with stable configuration and enhanced error handling
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
     persistSession: true, // Keep session persistence
     autoRefreshToken: true, // Keep auto refresh enabled
     detectSessionInUrl: true, // Keep URL session detection
+  },
+  realtime: {
+    // Make realtime connections more resilient
+    params: {
+      eventsPerSecond: 2, // Reduce event frequency to prevent overload
+    },
   },
   global: {
     headers: {
@@ -25,16 +31,17 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 
 console.log('🔧 Supabase client created with stable configuration');
 
-// Test connection on initialization with performance tracking
+// Test connection on initialization with enhanced error handling and non-blocking approach
 const connectionTestStart = performance.now();
 supabase.auth.getSession().then(({ data, error }) => {
   const connectionTime = performance.now() - connectionTestStart;
   
   if (error) {
-    console.error('🚨 Supabase connection test failed:', {
-      error,
+    console.warn('⚠️ Supabase connection test failed (non-blocking):', {
+      error: error.message, // Only log message, not full error object
       duration: `${connectionTime.toFixed(2)}ms`
     });
+    // Don't throw error - let app continue loading
   } else {
     console.log('✅ Supabase connection test successful:', {
       hasSession: !!data?.session,
@@ -44,8 +51,9 @@ supabase.auth.getSession().then(({ data, error }) => {
   }
 }).catch(err => {
   const connectionTime = performance.now() - connectionTestStart;
-  console.error('🚨 Supabase connection test error:', {
-    error: err,
+  console.warn('⚠️ Supabase connection test error (non-blocking):', {
+    error: err.message || 'Connection failed', // Only log message
     duration: `${connectionTime.toFixed(2)}ms`
   });
+  // Don't throw error - let app continue loading
 });
