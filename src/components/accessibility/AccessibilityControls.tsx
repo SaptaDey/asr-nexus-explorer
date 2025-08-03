@@ -6,7 +6,25 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Accessibility, Eye, Keyboard, Volume2, Settings, Contrast, Type, MousePointer } from 'lucide-react';
+import { 
+  Accessibility, 
+  Eye, 
+  EyeOff,
+  Keyboard, 
+  Volume2, 
+  VolumeX,
+  Settings, 
+  Contrast, 
+  Type, 
+  MousePointer,
+  Focus,
+  Glasses,
+  Headphones,
+  MonitorSpeaker,
+  Zap,
+  RotateCcw,
+  TestTube
+} from 'lucide-react';
 import { useAccessibilityContext } from './AccessibilityProvider';
 
 interface AccessibilityControlsProps {
@@ -101,13 +119,14 @@ export const AccessibilityControls: React.FC<AccessibilityControlsProps> = ({ cl
         <Button 
           variant="outline" 
           size="sm"
-          className={`${className} relative`}
-          aria-label="Open accessibility settings"
+          className={`${className} relative bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-700 hover:text-blue-800 transition-all duration-200`}
+          aria-label="Open accessibility settings and preferences"
         >
           <Accessibility className="h-4 w-4 mr-2" />
-          Accessibility
+          <span className="font-medium">Accessibility</span>
           {isScreenReader && (
-            <Badge variant="secondary" className="ml-2 text-xs">
+            <Badge variant="secondary" className="ml-2 text-xs bg-green-100 text-green-700 border-green-200">
+              <Headphones className="h-3 w-3 mr-1" />
               SR
             </Badge>
           )}
@@ -137,7 +156,7 @@ export const AccessibilityControls: React.FC<AccessibilityControlsProps> = ({ cl
             <Card className="border-blue-200 bg-blue-50">
               <CardHeader className="pb-3">
                 <CardTitle className="text-blue-800 flex items-center text-lg">
-                  <Volume2 className="h-4 w-4 mr-2" />
+                  <MonitorSpeaker className="h-5 w-5 mr-2" />
                   Screen Reader Detected
                 </CardTitle>
               </CardHeader>
@@ -153,7 +172,7 @@ export const AccessibilityControls: React.FC<AccessibilityControlsProps> = ({ cl
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Eye className="h-4 w-4 mr-2" />
+                <Glasses className="h-5 w-5 mr-2" />
                 Visual Preferences
               </CardTitle>
             </CardHeader>
@@ -176,7 +195,7 @@ export const AccessibilityControls: React.FC<AccessibilityControlsProps> = ({ cl
 
               <div className="flex items-center justify-between">
                 <Label htmlFor="reduced-motion" className="flex items-center space-x-2">
-                  <MousePointer className="h-4 w-4" />
+                  <Zap className="h-4 w-4" />
                   <span>Reduced Motion</span>
                 </Label>
                 <Switch
@@ -227,7 +246,7 @@ export const AccessibilityControls: React.FC<AccessibilityControlsProps> = ({ cl
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label htmlFor="focus-visible" className="flex items-center space-x-2">
-                  <Settings className="h-4 w-4" />
+                  <Focus className="h-4 w-4" />
                   <span>Enhanced Focus Indicators</span>
                 </Label>
                 <Switch
@@ -259,7 +278,7 @@ export const AccessibilityControls: React.FC<AccessibilityControlsProps> = ({ cl
 
               <div className="flex items-center justify-between">
                 <Label htmlFor="screen-reader-mode" className="flex items-center space-x-2">
-                  <Volume2 className="h-4 w-4" />
+                  <Headphones className="h-4 w-4" />
                   <span>Screen Reader Mode</span>
                 </Label>
                 <Switch
@@ -307,7 +326,10 @@ export const AccessibilityControls: React.FC<AccessibilityControlsProps> = ({ cl
           {/* Accessibility Testing */}
           <Card>
             <CardHeader>
-              <CardTitle>Accessibility Testing</CardTitle>
+              <CardTitle className="flex items-center">
+                <TestTube className="h-4 w-4 mr-2" />
+                Accessibility Testing
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <Button 
@@ -315,6 +337,7 @@ export const AccessibilityControls: React.FC<AccessibilityControlsProps> = ({ cl
                 className="w-full"
                 aria-describedby="test-desc"
               >
+                <TestTube className="h-4 w-4 mr-2" />
                 Run Accessibility Test
               </Button>
               <p id="test-desc" className="text-sm text-gray-600 mt-2">
@@ -326,7 +349,10 @@ export const AccessibilityControls: React.FC<AccessibilityControlsProps> = ({ cl
           {/* Reset Settings */}
           <Card>
             <CardHeader>
-              <CardTitle>Reset Settings</CardTitle>
+              <CardTitle className="flex items-center">
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Reset Settings
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <Button 
@@ -344,6 +370,7 @@ export const AccessibilityControls: React.FC<AccessibilityControlsProps> = ({ cl
                 }}
                 className="w-full"
               >
+                <RotateCcw className="h-4 w-4 mr-2" />
                 Reset to Defaults
               </Button>
             </CardContent>

@@ -1245,31 +1245,6 @@ If no quantitative data exists in the evidence content, return empty array [].
             </div>
           </div>
 
-          {/* API Setup Alert */}
-          {!(apiKeys.gemini && apiKeys.perplexity) && !hasBackendApiKeys && <Alert className="mb-2 rounded-sm">
-              <Key className="h-4 w-4" />
-              <AlertDescription>
-                To start research, configure API keys. 
-                {user ? <>
-                    <Link to="/dashboard" className="text-blue-600 hover:underline ml-1">
-                      Go to dashboard
-                    </Link>
-                    {' or '}
-                    <Button variant="link" className="p-0 h-auto" onClick={() => setShowAPICredentialsModal(true)}>
-                      configure locally
-                    </Button>
-                  </> : <>
-                    <Button variant="link" className="p-0 h-auto ml-1" onClick={() => setShowAPICredentialsModal(true)}>
-                      Set up API credentials
-                    </Button>
-                    {' or '}
-                    <Link to="/auth?mode=register" className="text-blue-600 hover:underline">
-                      create an account
-                    </Link>
-                    {' for secure backend storage.'}
-                  </>}
-              </AlertDescription>
-            </Alert>}
 
           {/* Usage Stats for Authenticated Users */}
           {user && usageStats && <div className="bg-white/50 backdrop-blur-sm rounded-lg p-2 mb-2 border border-gray-200">
@@ -1444,7 +1419,18 @@ If no quantitative data exists in the evidence content, return empty array [].
                   {apiKeys.gemini && apiKeys.perplexity ? 'APIs ✓' : 'APIs'}
                 </span>
               </Button>
-              
+            </div>
+            
+            {/* API Setup Message */}
+            {!(apiKeys.gemini && apiKeys.perplexity) && !hasBackendApiKeys && (
+              <div className="text-center mt-4">
+                <p className="text-sm text-gray-600">
+                  To start research, configure API keys. Set up API credentials or create an account for secure backend storage.
+                </p>
+              </div>
+            )}
+            
+            <div>
               {/* Enhanced Pause/Resume Controls */}
               {(queryHistorySessionId || currentSessionId) && <div className="flex items-center gap-2">
                   {isPaused ? <Button size="sm" variant="default" onClick={handleEnhancedResumeSession} className="shadow-lg transition-all duration-200 rounded-lg px-3 sm:px-6 py-2 sm:py-3 font-semibold text-xs sm:text-sm w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white">
