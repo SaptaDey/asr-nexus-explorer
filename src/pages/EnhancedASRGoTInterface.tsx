@@ -1,7 +1,7 @@
 // Enhanced ASR-GoT Interface with Full Backend Integration
 // Complete integration of frontend and backend services
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -75,12 +75,8 @@ export default function EnhancedASRGoTInterface() {
   const [usageStats, setUsageStats] = useState<any>(null)
   const [backendApiKeys, setBackendApiKeys] = useState<any>({})
 
-  // Load initial data
-  useEffect(() => {
-    loadInitialData()
-  }, [user])
-
-  const loadInitialData = async () => {
+  // Define loadInitialData before the useEffect that uses it
+  const loadInitialData = useCallback(async () => {
     try {
       if (user) {
         const [usage, apiKeys] = await Promise.all([
@@ -93,7 +89,12 @@ export default function EnhancedASRGoTInterface() {
     } catch (error) {
       console.error('Failed to load initial data:', error)
     }
-  }
+  }, [user, getUsageStats, hasBackendApiKeys])
+
+  // Load initial data
+  useEffect(() => {
+    loadInitialData()
+  }, [user, loadInitialData])
 
   const handleStartResearch = async () => {
     if (!query.trim()) {
