@@ -2,7 +2,7 @@
  * ASR-GoT Interface - Integrated Implementation
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -196,7 +196,7 @@ const ASRGoTInterfaceContent: React.FC = () => {
     }, 30000); // Check every 30 seconds
 
     return () => clearInterval(healthCheckInterval);
-  }, []);
+  }, [backendHealthy, backendStatus?.initialized]);
 
   // Load backend API keys and usage stats
   useEffect(() => {
@@ -230,7 +230,7 @@ const ASRGoTInterfaceContent: React.FC = () => {
       };
       createSession();
     }
-  }, [researchContext?.topic, currentStage, backendHealthy]);
+  }, [researchContext?.topic, researchContext, parameters, currentStage, backendHealthy]);
 
   // Update session progress
   useEffect(() => {
@@ -252,6 +252,14 @@ const ASRGoTInterfaceContent: React.FC = () => {
     }
   }, [currentStage, stageResults, graphData, isProcessing, backendHealthy]);
 
+  // Define handleCompleteSession before the useEffect that uses it
+  const handleCompleteSession = useCallback(async () => {
+    if (isComplete && queryHistorySessionId) {
+      await completeSession();
+      toast.success('🎉 Research session completed and saved to History!');
+    }
+  }, [isComplete, queryHistorySessionId, completeSession]);
+
   // Auto-switch to export tab when all 9 stages are completed
   useEffect(() => {
     if (currentStage >= 8 && stageResults.length >= 9) {
@@ -265,7 +273,7 @@ const ASRGoTInterfaceContent: React.FC = () => {
         handleCompleteSession();
       }
     }
-  }, [currentStage, stageResults]);
+  }, [currentStage, stageResults, handleCompleteSession]);
 
   // Handle automatic Supabase storage events
   useEffect(() => {
@@ -316,13 +324,6 @@ const ASRGoTInterfaceContent: React.FC = () => {
       console.error('Resume error:', error);
     }
   };
-  const handleCompleteSession = async () => {
-    if (isComplete && queryHistorySessionId) {
-      await completeSession();
-      toast.success('🎉 Research session completed and saved to History!');
-    }
-  };
-
   // Enhanced pause/resume functionality with backend integration
   const handlePauseSession = async () => {
     try {
