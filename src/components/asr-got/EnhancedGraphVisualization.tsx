@@ -350,7 +350,7 @@ const GraphVisualizationInner: React.FC<EnhancedGraphVisualizationProps> = ({
         virtualizedData: null
       };
     }
-  }, [safeGraphData, isVirtualizationEnabled, graphMetrics, onError]); // Using safeGraphData for stable dependency
+  }, [safeGraphData, safeNodes, safeEdges, isVirtualizationEnabled, graphMetrics, onError]); // Using safeGraphData for stable dependency
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);

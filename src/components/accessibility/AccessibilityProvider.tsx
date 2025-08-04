@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useCallback } from 'react';
 import { useAccessibility, AccessibilityPreferences, FocusManagement } from '@/hooks/useAccessibility';
 
 interface AccessibilityContextType {
@@ -27,7 +27,7 @@ export const AccessibilityProvider: React.FC<AccessibilityProviderProps> = ({ ch
   const accessibility = useAccessibility();
 
   // FIXED: Define functions before useEffect to prevent temporal dead zone errors
-  const jumpToStage = (stageIndex: number) => {
+  const jumpToStage = useCallback((stageIndex: number) => {
     // Try to find stage navigation element
     const stageElement = document.querySelector(`[data-stage="${stageIndex}"]`) as HTMLElement;
     if (stageElement) {
@@ -36,9 +36,9 @@ export const AccessibilityProvider: React.FC<AccessibilityProviderProps> = ({ ch
     } else {
       accessibility.announceLiveRegion(`Stage ${stageIndex + 1} not currently available`);
     }
-  };
+  }, [accessibility]);
 
-  const showKeyboardHelp = () => {
+  const showKeyboardHelp = useCallback(() => {
     const helpText = `
 Keyboard Navigation Help for ASR-GoT Interface:
 
@@ -124,7 +124,7 @@ Accessibility Features:
     };
     
     document.addEventListener('keydown', handleEscape);
-  };
+  }, [accessibility]);
 
   // Set up global keyboard navigation listener
   useEffect(() => {
