@@ -515,3 +515,7 @@ jobs:
               body: '✅ **All Tests Passed!**\n\n🚀 This PR is ready for review and merge.\n\n**Test Results:**\n- ✅ Lint & Type Check\n- ✅ Unit Tests\n- ✅ Integration Tests\n- ✅ Security Tests\n- ✅ E2E Tests\n- ✅ Coverage Requirements\n- ✅ Build Test'
 
             })
+
+      - name: Run Gemini CLI
+          uses: google-github-actions/run-gemini-cli@v0.1.5
+
